@@ -17,7 +17,7 @@ export function MachineList() {
   const query = useMachines(debouncedSearchValue);
 
   return (
-    <div className="h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] mx-auto py-4 px-2 md:px-10">
+    <div className="h-[calc(100vh-60px)] max-h-full w-full max-w-[1500px] mx-auto py-4 px-2 md:px-10">
       <div className="flex items-center pb-4 gap-2">
         <Input
           placeholder="Filter machines..."
