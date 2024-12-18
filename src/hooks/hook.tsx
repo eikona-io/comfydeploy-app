@@ -4,14 +4,12 @@ import { useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 export function useWorkflowIdInWorkflowPage() {
-	const matchRoute = useMatchRoute();
-	const params = matchRoute({ to: "/workflow/$workflowId" });
+  const matchRoute = useMatchRoute();
+  const params = matchRoute({ to: "/workflows/$workflowId/$view" });
 
-	if (!params) {
-		return null;
-	}
+  if (!params) {
+    return null;
+  }
 
-	console.log(params);
-
-	return params.workflowId;
+  return params.workflowId;
 }

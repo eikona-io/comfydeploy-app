@@ -1,19 +1,17 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type React from "react";
 import { forwardRef, useCallback, useRef } from "react";
 import useResizeObserver from "use-resize-observer";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import {
-	Tree,
-	Folder,
-	File,
-	CollapseButton,
-	TreeViewElement,
+  CollapseButton,
+  File,
+  Folder,
+  Tree,
+  type TreeViewElement,
 } from "./tree-view-api";
-
-// TODO: Add the ability to add custom icons
 
 interface TreeViewComponentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -58,7 +56,7 @@ export const TreeView = ({
     <div
       ref={containerRef}
       className={cn(
-        "w-full rounded-md overflow-hidden py-1 relative",
+        "relative w-full overflow-hidden rounded-md py-1",
         className,
       )}
     >
@@ -67,7 +65,7 @@ export const TreeView = ({
         initialExpendedItems={initialExpendedItems}
         elements={elements}
         style={{ height, width }}
-        className="w-full h-full overflow-y-auto"
+        className="h-full w-full overflow-y-auto"
       >
         {getVirtualItems().map((element) => (
           <TreeItem
