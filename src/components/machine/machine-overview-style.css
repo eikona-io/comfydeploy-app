@@ -1,0 +1,78 @@
+/* Customize dragging state */
+.react-grid-item.react-grid-placeholder {
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: Customize the item being dragged */
+.react-grid-item.react-draggable-dragging {
+  cursor: grabbing;
+}
+
+@keyframes shake1 {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-0.5deg);
+  }
+  75% {
+    transform: rotate(0.5deg);
+  }
+}
+
+@keyframes shake2 {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(0.4deg);
+  }
+  75% {
+    transform: rotate(-0.4deg);
+  }
+}
+
+@keyframes shake3 {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-0.3deg);
+  }
+  75% {
+    transform: rotate(0.6deg);
+  }
+}
+
+.shake-animation > div:first-child {
+  transform-origin: center center;
+}
+
+.shake-animation:nth-child(3n + 1) > div:first-child {
+  animation: shake1 0.2s infinite;
+}
+
+.shake-animation:nth-child(3n + 2) > div:first-child {
+  animation: shake2 0.22s infinite;
+}
+
+.shake-animation:nth-child(3n + 3) > div:first-child {
+  animation: shake3 0.18s infinite;
+}
+
+/* Stop shaking when being dragged and scale up */
+.react-draggable-dragging.shake-animation > div:first-child {
+  animation: none;
+  transform: scale(1.05);
+  transition: transform 0.2s ease;
+}
+
+/* Add a subtle transition for smoother movement when dragging */
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: transform;
+}

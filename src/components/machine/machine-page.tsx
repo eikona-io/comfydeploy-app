@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Portal } from "@/components/ui/custom/portal";
+import { MachineOverview } from "./machine-overview";
 
 type View = "settings" | "overview" | "logs";
 
@@ -32,7 +33,7 @@ export default function MachinePage({
       navigate({
         to: "/machines/$machineId",
         params: { machineId: params.machine_id },
-        search: { view: "logs" }
+        search: { view: "logs" },
       });
     }
   }, [machine?.status, view, navigate, params.machine_id]);
@@ -41,7 +42,7 @@ export default function MachinePage({
     navigate({
       to: "/machines/$machineId",
       params: { machineId: params.machine_id },
-      search: { view: newView }
+      search: { view: newView },
     });
   };
 
@@ -90,7 +91,7 @@ export default function MachinePage({
   }
 
   return (
-    <div>
+    <div className="w-full">
       <Portal targetId="sidebar-panel-machines" trigger={isSidebarOpen}>
         <SidebarMenuSub>
           {routes.map((route) => (
@@ -116,7 +117,7 @@ export default function MachinePage({
             case "settings":
               return <div>Settings</div>;
             case "overview":
-              return <div>Overview</div>;
+              return <MachineOverview machine={machine} setView={setView} />;
             case "logs":
               return <div>Logs</div>;
           }
