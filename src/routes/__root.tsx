@@ -2,6 +2,8 @@ import {
 	Link,
 	Outlet,
 	createRootRoute,
+	createRootRouteWithContext,
+	redirect,
 	useBlocker,
 	useRouter,
 } from "@tanstack/react-router";
@@ -23,21 +25,47 @@ import React, { useEffect } from "react";
 import { SignedIn, useAuth } from "@clerk/clerk-react";
 import { RedirectToSignIn, SignedOut, SignIn } from "@clerk/clerk-react";
 
-export const Route = createRootRoute({
+type Context = {
+	auth?: ReturnType<typeof useAuth>;
+};
+
+export const Route = createRootRouteWithContext<Context>()({
 	component: RootComponent,
+	beforeLoad: ({ context, location }) => {
+		if (
+			context.auth &&
+			!context.auth.isSignedIn &&
+			location.pathname !== "/auth/sign-in"
+		) {
+			throw redirect({
+				to: "/auth/sign-in",
+				// search: {
+				// 	redirect: location.href,
+				// },
+			});
+		} else if (
+			context.auth &&
+			context.auth.isSignedIn &&
+			location.pathname === "/"
+		) {
+			throw redirect({
+				to: "/workflows",
+			});
+		}
+	},
 });
 
 function RootComponent() {
 	const { navigate } = useRouter();
 	const { isSignedIn } = useAuth();
 
-	useEffect(() => {
-		if (!isSignedIn) {
-			// navigate({ to: "/" });
-		} else {
-			navigate({ to: "/workflows" });
-		}
-	}, [isSignedIn, navigate]);
+	// useEffect(() => {
+	// 	if (!isSignedIn) {
+	// 		// navigate({ to: "/" });
+	// 	} else {
+	// 		navigate({ to: "/workflows" });
+	// 	}
+	// }, [isSignedIn, navigate]);
 
 	return (
 		<SidebarProvider>
