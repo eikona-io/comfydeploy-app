@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as WorkflowsImport } from './routes/workflows'
+import { Route as MachinesImport } from './routes/machines'
 import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowWorkflowIdImport } from './routes/workflow/$workflowId'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
@@ -22,6 +23,12 @@ import { Route as AuthSignInImport } from './routes/auth/sign-in'
 const WorkflowsRoute = WorkflowsImport.update({
   id: '/workflows',
   path: '/workflows',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const MachinesRoute = MachinesImport.update({
+  id: '/machines',
+  path: '/machines',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -60,6 +67,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/machines': {
+      id: '/machines'
+      path: '/machines'
+      fullPath: '/machines'
+      preLoaderRoute: typeof MachinesImport
+      parentRoute: typeof rootRoute
+    }
     '/workflows': {
       id: '/workflows'
       path: '/workflows'
@@ -95,6 +109,7 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/machines': typeof MachinesRoute
   '/workflows': typeof WorkflowsRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -103,6 +118,7 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/machines': typeof MachinesRoute
   '/workflows': typeof WorkflowsRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -112,6 +128,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/machines': typeof MachinesRoute
   '/workflows': typeof WorkflowsRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
@@ -122,6 +139,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/machines'
     | '/workflows'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -129,6 +147,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/machines'
     | '/workflows'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -136,6 +155,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/machines'
     | '/workflows'
     | '/auth/sign-in'
     | '/auth/sign-up'
@@ -145,6 +165,7 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MachinesRoute: typeof MachinesRoute
   WorkflowsRoute: typeof WorkflowsRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
@@ -153,6 +174,7 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MachinesRoute: MachinesRoute,
   WorkflowsRoute: WorkflowsRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
@@ -170,6 +192,7 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/machines",
         "/workflows",
         "/auth/sign-in",
         "/auth/sign-up",
@@ -178,6 +201,9 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/machines": {
+      "filePath": "machines.tsx"
     },
     "/workflows": {
       "filePath": "workflows.tsx"
