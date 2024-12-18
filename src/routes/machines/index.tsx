@@ -1,7 +1,7 @@
 import { MachineList } from "@/components/machines/machine-list";
 import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/machines")({
+export const Route = createFileRoute("/machines/")({
   component: RouteComponent,
 });
 

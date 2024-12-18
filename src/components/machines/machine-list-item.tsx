@@ -40,6 +40,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MachineStatus } from "@/components/machines/machine-status";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
+import { Link } from "@tanstack/react-router";
 
 // -------------------------constants-------------------------
 
@@ -202,11 +203,11 @@ export function MachineListItem({
                     return null;
                 }
               })()}
-              <a href={`/machines/${machine.id}`}>
+              <Link href={`/machines/${machine.id}`}>
                 <h2 className="text-base font-medium whitespace-nowrap">
                   {machine.name}
                 </h2>
-              </a>
+              </Link>
             </div>
 
             {!isExpanded && machine.gpu && (
@@ -477,7 +478,7 @@ const MachineListActionBar = ({
 }) => {
   return (
     <>
-      <a href={`/machines/${machine.id}`}>
+      <Link href={`/machines/${machine.id}`}>
         <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
           {isExpanded && (
             <span className="text-muted-foreground mr-2 font-normal text-xs">
@@ -486,11 +487,11 @@ const MachineListActionBar = ({
           )}
           <LineChart className="w-4 h-4 text-muted-foreground" />
         </Button>
-      </a>
+      </Link>
       <Separator orientation="vertical" className="h-4" />
       {!isDockerCommandStepsNull && (
         <>
-          <a href={`/machines/${machine.id}?view=settings`}>
+          <Link href={`/machines/${machine.id}?view=settings`}>
             <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
               {isExpanded && (
                 <span className="text-muted-foreground mr-2 font-normal text-xs">
@@ -499,11 +500,11 @@ const MachineListActionBar = ({
               )}
               <Settings className="w-4 h-4 text-muted-foreground" />
             </Button>
-          </a>
+          </Link>
           <Separator orientation="vertical" className="h-4" />
         </>
       )}
-      <a href={`/machines/${machine.id}?view=logs`}>
+      <Link href={`/machines/${machine.id}?view=logs`}>
         <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
           {isExpanded && (
             <span className="text-muted-foreground mr-2 font-normal text-xs">
@@ -512,7 +513,7 @@ const MachineListActionBar = ({
           )}
           <FileClock className="w-4 h-4 text-muted-foreground" />
         </Button>
-      </a>
+      </Link>
     </>
   );
 };
@@ -674,7 +675,7 @@ function MachineListItemWorkflows({ machine }: { machine: any }) {
           )
             ?.filter((w) => w.selected_machine_id === machine.id)
             .map((workflow) => (
-              <a
+              <Link
                 key={workflow.id}
                 href={`/workflows/${workflow.id}`}
                 target="_blank"
@@ -683,7 +684,7 @@ function MachineListItemWorkflows({ machine }: { machine: any }) {
               >
                 <span className="truncate">{workflow.name}</span>
                 <ExternalLink className="w-3 h-3" />
-              </a>
+              </Link>
             ))}
         </div>
       )}
@@ -732,7 +733,7 @@ function MachineListItemDeployments({
                 key={deployment.id}
                 className="flex items-center justify-between gap-2 text-2xs bg-gray-50 py-0.5 px-2 rounded-sm w-fit"
               >
-                <a
+                <Link
                   href={`/workflows/${deployment.workflow_id}?view=deployment`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -750,7 +751,7 @@ function MachineListItemDeployments({
                     {deployment.environment}
                   </Badge>
                   <ExternalLink className="w-3 h-3" />
-                </a>
+                </Link>
               </div>
             ))}
         </div>
