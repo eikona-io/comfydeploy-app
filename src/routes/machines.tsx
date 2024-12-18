@@ -1,9 +1,10 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { MachineList } from "@/components/machines/machine-list";
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createFileRoute('/machines')({
+export const Route = createFileRoute("/machines")({
   component: RouteComponent,
-})
+});
 
 function RouteComponent() {
-  return <div>Hello "/machines"!</div>
+  return <MachineList />;
 }
