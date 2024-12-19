@@ -1,7 +1,7 @@
 "use client";
 
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useMachine } from "@/hooks/useMachines";
+import { useMachine } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useWorkflowVersion } from "../workflow-list";

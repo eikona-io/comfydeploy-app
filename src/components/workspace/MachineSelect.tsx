@@ -14,7 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useMachine, useMachines } from "@/hooks/useMachines";
+import { useMachine, useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
