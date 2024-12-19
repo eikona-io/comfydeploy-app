@@ -1,0 +1,67 @@
+"use client";
+
+import { api } from "@/lib/api";
+import { useMutation, useQuery } from "@tanstack/react-query";
+
+export function useSessionAPI(machineId: string | null) {
+  return {
+    createSession: useMutation({
+      mutationKey: ["session", machineId],
+      mutationFn: async (data: any) => {
+        console.log(data);
+
+        try {
+          const response = await api({
+            url: "session",
+            init: {
+              method: "POST",
+              body: JSON.stringify({
+                machine_id: machineId,
+                ...data,
+              }),
+            },
+          });
+
+          return response;
+        } catch (e) {
+          throw e;
+        }
+      },
+    }),
+    deleteSession: useMutation({
+      mutationKey: ["session", "delete"],
+      mutationFn: async (data: {
+        sessionId: string;
+      }) => {
+        console.log(data);
+        return await api({
+          url: `session/${data.sessionId}`,
+          init: {
+            method: "DELETE",
+          },
+        });
+      },
+    }),
+    listSession: useQuery<any[]>({
+      queryKey: ["sessions"],
+      refetchInterval: 2000,
+      enabled: !!machineId,
+      meta: {
+        params: {
+          machine_id: machineId,
+        },
+      },
+      // queryFn: async () => {
+      //   return await api({
+      //     url: "session",
+      //     init:
+
+      //       body: JSON.stringify({
+      //         machine_id: machineId,
+      //       }),
+      //     ,
+      //   });
+      // },
+    }),
+  };
+}
