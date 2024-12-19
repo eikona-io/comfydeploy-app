@@ -23,6 +23,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { SignedIn, useAuth } from "@clerk/clerk-react";
 import { RedirectToSignIn, SignIn, SignedOut } from "@clerk/clerk-react";
 import React, { useEffect } from "react";
+import { Toaster } from "sonner";
 import { Providers } from "../lib/providers";
 
 type Context = {
@@ -82,6 +83,7 @@ function RootComponent() {
           </div>
           <SidebarTrigger className="fixed top-4 left-2 z-50 h-8 w-8 rounded-full bg-secondary p-2 md:hidden" />
           <Outlet />
+          <Toaster richColors closeButton={true} />
         </div>
       </Providers>
       <TanStackRouterDevtools position="bottom-right" />
