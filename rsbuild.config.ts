@@ -51,7 +51,6 @@ export default defineConfig({
           "NEXT_PUBLIC_POSTHOG_KEY",
 
           "NEXT_PUBLIC_CD_API_URL",
-          "GITHUB_TOKEN",
         ]),
         TanStackRouterRspack(),
       ],
