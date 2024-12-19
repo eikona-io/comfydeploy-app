@@ -11,20 +11,15 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as MachinesImport } from './routes/machines'
 import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowsIndexImport } from './routes/workflows/index'
+import { Route as MachinesIndexImport } from './routes/machines/index'
+import { Route as MachinesMachineIdImport } from './routes/machines/$machineId'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
 import { Route as AuthSignInImport } from './routes/auth/sign-in'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
 
 // Create/Update Routes
-
-const MachinesRoute = MachinesImport.update({
-  id: '/machines',
-  path: '/machines',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const IndexRoute = IndexImport.update({
   id: '/',
@@ -35,6 +30,18 @@ const IndexRoute = IndexImport.update({
 const WorkflowsIndexRoute = WorkflowsIndexImport.update({
   id: '/workflows/',
   path: '/workflows/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const MachinesIndexRoute = MachinesIndexImport.update({
+  id: '/machines/',
+  path: '/machines/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const MachinesMachineIdRoute = MachinesMachineIdImport.update({
+  id: '/machines/$machineId',
+  path: '/machines/$machineId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -67,13 +74,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/machines': {
-      id: '/machines'
-      path: '/machines'
-      fullPath: '/machines'
-      preLoaderRoute: typeof MachinesImport
-      parentRoute: typeof rootRoute
-    }
     '/auth/sign-in': {
       id: '/auth/sign-in'
       path: '/auth/sign-in'
@@ -86,6 +86,20 @@ declare module '@tanstack/react-router' {
       path: '/auth/sign-up'
       fullPath: '/auth/sign-up'
       preLoaderRoute: typeof AuthSignUpImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId': {
+      id: '/machines/$machineId'
+      path: '/machines/$machineId'
+      fullPath: '/machines/$machineId'
+      preLoaderRoute: typeof MachinesMachineIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/': {
+      id: '/machines/'
+      path: '/machines'
+      fullPath: '/machines'
+      preLoaderRoute: typeof MachinesIndexImport
       parentRoute: typeof rootRoute
     }
     '/workflows/': {
@@ -109,18 +123,20 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/machines': typeof MachinesRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/machines/$machineId': typeof MachinesMachineIdRoute
+  '/machines': typeof MachinesIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/machines': typeof MachinesRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/machines/$machineId': typeof MachinesMachineIdRoute
+  '/machines': typeof MachinesIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
@@ -128,9 +144,10 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/machines': typeof MachinesRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/machines/$machineId': typeof MachinesMachineIdRoute
+  '/machines/': typeof MachinesIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
@@ -139,25 +156,28 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/machines'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/machines/$machineId'
+    | '/machines'
     | '/workflows'
     | '/workflows/$workflowId/$view'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/machines'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/machines/$machineId'
+    | '/machines'
     | '/workflows'
     | '/workflows/$workflowId/$view'
   id:
     | '__root__'
     | '/'
-    | '/machines'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/machines/$machineId'
+    | '/machines/'
     | '/workflows/'
     | '/workflows/$workflowId/$view'
   fileRoutesById: FileRoutesById
@@ -165,18 +185,20 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  MachinesRoute: typeof MachinesRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
+  MachinesMachineIdRoute: typeof MachinesMachineIdRoute
+  MachinesIndexRoute: typeof MachinesIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  MachinesRoute: MachinesRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  MachinesMachineIdRoute: MachinesMachineIdRoute,
+  MachinesIndexRoute: MachinesIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
 }
@@ -192,9 +214,10 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/machines",
         "/auth/sign-in",
         "/auth/sign-up",
+        "/machines/$machineId",
+        "/machines/",
         "/workflows/",
         "/workflows/$workflowId/$view"
       ]
@@ -202,14 +225,17 @@ export const routeTree = rootRoute
     "/": {
       "filePath": "index.tsx"
     },
-    "/machines": {
-      "filePath": "machines.tsx"
-    },
     "/auth/sign-in": {
       "filePath": "auth/sign-in.tsx"
     },
     "/auth/sign-up": {
       "filePath": "auth/sign-up.tsx"
+    },
+    "/machines/$machineId": {
+      "filePath": "machines/$machineId.tsx"
+    },
+    "/machines/": {
+      "filePath": "machines/index.tsx"
     },
     "/workflows/": {
       "filePath": "workflows/index.tsx"
