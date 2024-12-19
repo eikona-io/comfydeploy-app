@@ -12,6 +12,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
+import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { cn } from "@/lib/utils";
@@ -62,7 +63,14 @@ function WorkflowPageComponent() {
 
   switch (currentView) {
     case "requests":
-      view = <RequestPage />;
+      view = (
+        <PaddingLayout>
+          <RequestPage />
+        </PaddingLayout>
+      );
+      break;
+    case "workspace":
+      view = <WorkspaceClientWrapper workflow_id={workflowId} />;
       break;
   }
 
@@ -85,7 +93,7 @@ function WorkflowPageComponent() {
   const [sessionId, setSessionId] = useQueryState("sessionId");
 
   return (
-    <>
+    <div className="relative flex h-full w-full flex-col">
       <Portal targetId="sidebar-panel" trigger={isMobileSidebarOpen}>
         <SidebarMenuSub>
           {tabs.map((tab) => (
@@ -163,8 +171,8 @@ function WorkflowPageComponent() {
           ))}
         </SidebarMenuSub>
       </Portal>
-      <PaddingLayout>{view}</PaddingLayout>
-    </>
+      {view}
+    </div>
   );
 }
 

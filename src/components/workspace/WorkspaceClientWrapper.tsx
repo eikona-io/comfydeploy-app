@@ -1,0 +1,87 @@
+"use client";
+
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/useMachines";
+import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useWorkflowVersion } from "../workflow-list";
+import { SessionCreator } from "./SessionView";
+import { WorkspaceLoading, WorkspaceMachineLoading } from "./WorkspaceLoading";
+
+interface WorkspaceClientWrapperProps {
+  workflow_id: string;
+  className?: string;
+  isPublic?: boolean;
+}
+
+export function WorkspaceClientWrapper({
+  ...props
+}: WorkspaceClientWrapperProps) {
+  const {
+    workflow,
+    mutateWorkflow,
+    isLoading: isLoadingWorkflow,
+  } = useCurrentWorkflow(props.workflow_id);
+
+  const { data: versions, isLoading: isLoadingVersions } = useQuery({
+    enabled: !!props.workflow_id,
+    queryKey: ["workflow", props.workflow_id, "versions"],
+    meta: {
+      limit: 1,
+    },
+  });
+
+  const { data: machine, isLoading } = useMachine(
+    workflow?.selected_machine_id,
+  );
+
+  if (isLoadingWorkflow || isLoading || isLoadingVersions || !versions) {
+    return <WorkspaceLoading />;
+  }
+
+  if (!machine && !isLoading && !isLoadingWorkflow)
+    return (
+      <div
+        className={cn(
+          "flex h-full w-full items-center justify-center",
+          props.className,
+        )}
+      >
+        No machine selected, please select a machine at the bottom left.
+      </div>
+    );
+
+  if (
+    machine?.type === "comfy-deploy-serverless" &&
+    machine?.status === "building"
+  )
+    return (
+      <WorkspaceMachineLoading
+        machine={machine}
+        endpoint={`${process.env.NEXT_PUBLIC_CD_ENDPOINT!}/api/machine`}
+      />
+    );
+
+  const machineBuilderVersion = machine?.machine_builder_version;
+
+  if (Number.parseInt(machineBuilderVersion) >= 4) {
+    return (
+      <SessionCreator
+        workflowId={props.workflow_id}
+        workflowLatestVersion={versions[0]}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex h-full w-full items-center justify-center",
+        props.className,
+      )}
+    >
+      Machine builder version {machineBuilderVersion} is not supported for
+      workspace.
+    </div>
+  );
+}
