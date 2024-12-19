@@ -36,7 +36,7 @@ import { useEffect, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMachine } from "@/hooks/useMachines";
+import { useMachine } from "@/hooks/use-machine";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";

@@ -30,6 +30,13 @@ export function useMachinesAll() {
   });
 }
 
+export function useMachine(machine_id?: string) {
+  return useQuery<any>({
+    enabled: !!machine_id,
+    queryKey: ["machine", machine_id],
+  });
+}
+
 export function useMachineEvents(machine_id: string) {
   return useQuery<any[]>({
     queryKey: ["machine", machine_id, "events"],
