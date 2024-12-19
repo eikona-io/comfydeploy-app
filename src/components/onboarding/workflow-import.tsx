@@ -7,6 +7,7 @@ import {
   WorkflowImportMachine,
   findFirstDuplicateNode,
 } from "@/components/onboarding/workflow-machine-import";
+import { WorkflowModelCheck } from "@/components/onboarding/workflow-model-check";
 import {
   Accordion,
   AccordionContent,
@@ -311,7 +312,7 @@ export default function WorkflowImport() {
     {
       id: 4,
       title: "Model Checking (Beta)",
-      component: <div>Model Checking</div>,
+      component: WorkflowModelCheck,
       validate: (validation) => {
         return { isValid: true };
       },

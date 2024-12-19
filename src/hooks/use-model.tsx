@@ -122,16 +122,9 @@ export function useModels() {
     queryFn: async ({ queryKey }) => {
       console.log("refreshing private models");
       setIsPrivateModelRefreshing(true);
-      const contents = await fetch("/api/volume", {
-        method: "POST",
-        body: JSON.stringify({
-          url: queryKey.join("/"),
-          type: "private-volume",
-          disableCache: disableCacheRef.current,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => data);
+      const contents = await api({
+        url: queryKey.join("/"),
+      });
       setIsPrivateModelRefreshing(false);
       disableCacheRef.current = false;
       toast.success("Private Models Refreshed");
@@ -151,25 +144,11 @@ export function useModels() {
     queryKey: ["volume", "public-models"],
     queryFn: async ({ queryKey }) => {
       setIsPublicModelRefreshing(true);
-      const contents = await fetch("/api/volume", {
-        method: "POST",
-        body: JSON.stringify({
-          url: queryKey.join("/"),
-          type: "public-volume",
-          disableCache: disableCacheRef.current,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => data);
+      const contents = await api({
+        url: queryKey.join("/"),
+      });
       setIsPublicModelRefreshing(false);
       disableCacheRef.current = false;
-      // sendInternalEventToCD({
-      //   type: "refresh_defs",
-      //   data: {
-      //     volume_content: contents,
-      //     rewrite: true,
-      //   },
-      // });
       toast.success("Public Models Refreshed");
       return {
         structure: contents.structure as VolFSStructure,
@@ -178,14 +157,12 @@ export function useModels() {
     },
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    // enabled: false,
   });
 
   const { data: downloadingModels, refetch: refetchDownloadingModels } =
     useQuery({
       queryKey: ["volume", "downloading-models"],
       queryFn: async ({ queryKey }) => {
-        // const contents = await getDownloadingModels();
         const contents = await api({
           url: queryKey.join("/"),
         });
