@@ -44,6 +44,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 // import { useCurrentPlan } from "@/components/useCurrentPlan";
 import { motion } from "framer-motion";
 import React, { use } from "react";
+import { MachineSelect } from "./workspace/MachineSelect";
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -353,13 +354,13 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="flex w-full flex-col justify-center gap-2">
-        {/* {workflow_id && parentPath === "workflows" && isAdminAndMember && (
-					<MachineSelect
-						workflow_id={workflow_id}
-						leaveEmpty
-						className="bg-slate-100 border rounded-full p-2"
-					/>
-				)} */}
+        {workflow_id && parentPath === "workflows" && isAdminAndMember && (
+          <MachineSelect
+            workflow_id={workflow_id}
+            leaveEmpty
+            className="rounded-full border bg-slate-100 p-2"
+          />
+        )}
 
         {showV2Alert && (
           <Alert className="relative mb-2 bg-yellow-50">

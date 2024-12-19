@@ -19,6 +19,12 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
+			"style": {
+				"useSelfClosingElements": {
+					"level": "error",
+					"fix": "safe"
+				}
+			},
 			"recommended": true,
 			"suspicious": {
 				"noDoubleEquals": {

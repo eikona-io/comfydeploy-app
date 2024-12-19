@@ -133,7 +133,7 @@ export default function Workspace({
   }, [workflowId]);
 
   const { value: selectedVersion } = useSelectedVersion(workflowId);
-  // const [isDraftDifferent, setIsDraftDifferent] = useState(false);
+
   const isDraftDifferent = useMemo(() => {
     if (!selectedVersion || !currentWorkflow) return false;
 
@@ -240,7 +240,7 @@ export default function Workspace({
       // It's important to check the origin for security reasons
       if (event.origin !== endpoint) return;
 
-      console.log(event.data);
+      // console.log(event.data);
 
       if (event.data.internal) {
         switch (event.data.internal.type) {
