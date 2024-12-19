@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingWrapper } from "@/components/LoadingWrapper";
+import { LoadingWrapper } from "@/components/loading-wrapper";
 import { CardContent } from "@/components/ui/card";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { RunsTable } from "./RunsTable";

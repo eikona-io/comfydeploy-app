@@ -32,15 +32,7 @@ function WorkflowPageComponent() {
   if (currentView === "workspace") {
     return (
       <PaddingLayout>
-        <motion.div
-          layout
-          className={cn("flex h-full w-full flex-col gap-4 pt-4 lg:flex-row")}
-        >
-          <RealtimeWorkflowProvider workflowId={workflowId}>
-            <RunComponent />
-            <WorkflowComponent />
-          </RealtimeWorkflowProvider>
-        </motion.div>
+        <RequestPage />
       </PaddingLayout>
     );
   }
@@ -49,5 +41,23 @@ function WorkflowPageComponent() {
     <div className="p-2">
       <h3>Workflow {workflowId}</h3>
     </div>
+  );
+}
+
+function RequestPage() {
+  const { workflowId, view: currentView } = Route.useParams();
+
+  return (
+    <>
+      <motion.div
+        layout
+        className={cn("flex h-full w-full flex-col gap-4 pt-4 lg:flex-row")}
+      >
+        <RealtimeWorkflowProvider workflowId={workflowId}>
+          <RunComponent />
+          <WorkflowComponent />
+        </RealtimeWorkflowProvider>
+      </motion.div>
+    </>
   );
 }

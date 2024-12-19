@@ -1,6 +1,6 @@
 "use client";
 
-import { LoadingWrapper } from "@/components/LoadingWrapper";
+import { LoadingWrapper } from "@/components/loading-wrapper";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
