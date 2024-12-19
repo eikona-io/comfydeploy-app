@@ -1,7 +1,7 @@
-import { defineConfig, rspack } from '@rsbuild/core'
-import { pluginReact } from '@rsbuild/plugin-react'
-import { TanStackRouterRspack } from '@tanstack/router-plugin/rspack'
-import path from "node:path"
+import path from "node:path";
+import { defineConfig, rspack } from "@rsbuild/core";
+import { pluginReact } from "@rsbuild/plugin-react";
+import { TanStackRouterRspack } from "@tanstack/router-plugin/rspack";
 
 export default defineConfig({
   plugins: [pluginReact()],
@@ -12,10 +12,10 @@ export default defineConfig({
     },
   },
   source: {
-    entry: { index: './src/main.tsx' },
+    entry: { index: "./src/main.tsx" },
   },
   html: {
-    template: './index.html',
+    template: "./index.html",
   },
   tools: {
     rspack: {
@@ -28,7 +28,7 @@ export default defineConfig({
             test: /\.css$/,
             use: [
               {
-                loader: 'postcss-loader',
+                loader: "postcss-loader",
                 options: {
                   postcssOptions: {
                     plugins: {
@@ -39,24 +39,22 @@ export default defineConfig({
                 },
               },
             ],
-            type: 'javascript/auto',
+            type: "javascript/auto",
           },
         ],
       },
       plugins: [
-        new rspack.EnvironmentPlugin(
-          [
-            'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY',
+        new rspack.EnvironmentPlugin([
+          "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
 
-            'NEXT_PUBLIC_POSTHOG_HOST',
-            'NEXT_PUBLIC_POSTHOG_KEY',
+          "NEXT_PUBLIC_POSTHOG_HOST",
+          "NEXT_PUBLIC_POSTHOG_KEY",
 
-            'NEXT_PUBLIC_CD_API_URL'
-          ]
-        ),
-        TanStackRouterRspack(
-        ),
+          "NEXT_PUBLIC_CD_API_URL",
+          "GITHUB_TOKEN",
+        ]),
+        TanStackRouterRspack(),
       ],
     },
   },
-})
+});
