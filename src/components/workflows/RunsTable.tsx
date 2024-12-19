@@ -20,7 +20,7 @@ import { useQueryState } from "nuqs";
 import React, { use, useEffect } from "react";
 import { create } from "zustand";
 
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import {

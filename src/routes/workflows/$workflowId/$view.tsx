@@ -1,4 +1,5 @@
 import { PaddingLayout } from "@/components/PaddingLayout";
+import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
 import { cn } from "@/lib/utils";
@@ -35,8 +36,10 @@ function WorkflowPageComponent() {
           layout
           className={cn("flex h-full w-full flex-col gap-4 pt-4 lg:flex-row")}
         >
-          <RunComponent />
-          <WorkflowComponent />
+          <RealtimeWorkflowProvider workflowId={workflowId}>
+            <RunComponent />
+            <WorkflowComponent />
+          </RealtimeWorkflowProvider>
         </motion.div>
       </PaddingLayout>
     );
