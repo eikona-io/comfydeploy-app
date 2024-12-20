@@ -17,9 +17,13 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
-import { getBranchInfo } from "@/hooks/use-github-branch-info";
+import {
+  getBranchInfo,
+  useGithubBranchInfo,
+} from "@/hooks/use-github-branch-info";
 import { useMachines } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
+import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
@@ -27,6 +31,7 @@ import {
   ChevronUp,
   ExternalLink,
   Loader2,
+  Lock,
   Pencil,
   Search,
 } from "lucide-react";
@@ -86,86 +91,86 @@ const gpuOptions: GpuOption[] = [
 ];
 
 // Add this function outside of any component
-// export function convertToDockerSteps(
-//   customNodes: Record<string, any> = {},
-//   selectedConflictingNodes: Record<string, any[]> = {},
-// ): z.infer<typeof dockerStepsSchema> {
-//   const conflict = findFirstDuplicateNode(
-//     customNodes,
-//     selectedConflictingNodes,
-//   );
-//   if (conflict) {
-//     throw new Error(
-//       `Duplicate node found: "${conflict.name}". The URL "${conflict.url}" conflicts with "${conflict.conflictWith.url}" from ${conflict.conflictWith.source}`,
-//     );
-//   }
+export function convertToDockerSteps(
+  customNodes: Record<string, any> = {},
+  selectedConflictingNodes: Record<string, any[]> = {},
+): any {
+  const conflict = findFirstDuplicateNode(
+    customNodes,
+    selectedConflictingNodes,
+  );
+  if (conflict) {
+    throw new Error(
+      `Duplicate node found: "${conflict.name}". The URL "${conflict.url}" conflicts with "${conflict.conflictWith.url}" from ${conflict.conflictWith.source}`,
+    );
+  }
 
-//   const urlMap = new Map<
-//     string,
-//     { url: string; source: string; name: string }
-//   >();
+  const urlMap = new Map<
+    string,
+    { url: string; source: string; name: string }
+  >();
 
-//   Object.entries(customNodes).forEach(([url, node]) => {
-//     const lowerUrl = url.toLowerCase();
-//     if (urlMap.has(lowerUrl)) {
-//       const existing = urlMap.get(lowerUrl)!;
-//       throw new Error(
-//         `Duplicate node found: "${node.name}". The URL "${url}" conflicts with "${existing.url}" from ${existing.source}`,
-//       );
-//     }
-//     urlMap.set(lowerUrl, { url, source: "custom nodes", name: node.name });
-//   });
+  for (const [url, node] of Object.entries(customNodes)) {
+    const lowerUrl = url.toLowerCase();
+    if (urlMap.has(lowerUrl)) {
+      const existing = urlMap.get(lowerUrl)!;
+      throw new Error(
+        `Duplicate node found: "${node.name}". The URL "${url}" conflicts with "${existing.url}" from ${existing.source}`,
+      );
+    }
+    urlMap.set(lowerUrl, { url, source: "custom nodes", name: node.name });
+  }
 
-//   Object.entries(selectedConflictingNodes).forEach(([nodeName, nodes]) => {
-//     nodes.forEach((node) => {
-//       const lowerUrl = node.url.toLowerCase();
-//       if (urlMap.has(lowerUrl)) {
-//         const existing = urlMap.get(lowerUrl)!;
-//         throw new Error(
-//           `Duplicate node found: "${nodeName}". The URL "${node.url}" conflicts with "${existing.url}" from ${existing.source}`,
-//         );
-//       }
-//       urlMap.set(lowerUrl, {
-//         url: node.url,
-//         source: "conflicting nodes",
-//         name: nodeName,
-//       });
-//     });
-//   });
+  for (const [nodeName, nodes] of Object.entries(selectedConflictingNodes)) {
+    for (const node of nodes) {
+      const lowerUrl = node.url.toLowerCase();
+      if (urlMap.has(lowerUrl)) {
+        const existing = urlMap.get(lowerUrl)!;
+        throw new Error(
+          `Duplicate node found: "${nodeName}". The URL "${node.url}" conflicts with "${existing.url}" from ${existing.source}`,
+        );
+      }
+      urlMap.set(lowerUrl, {
+        url: node.url,
+        source: "conflicting nodes",
+        name: nodeName,
+      });
+    }
+  }
 
-//   return {
-//     steps: [
-//       // Map custom nodes
-//       ...Object.entries(customNodes).map(([url, node]) => ({
-//         id: crypto.randomUUID().slice(0, 10),
-//         type: "custom-node" as const,
-//         data: {
-//           name: node.name,
-//           hash: node.hash || undefined,
-//           url: url,
-//           files: [url],
-//           install_type: "git-clone" as const,
-//           pip: node.pip || undefined,
-//         },
-//       })),
-//       // Map selected conflicting nodes
-//       ...Object.entries(selectedConflictingNodes).flatMap(([nodeName, nodes]) =>
-//         nodes.map((node) => ({
-//           id: crypto.randomUUID().slice(0, 10),
-//           type: "custom-node" as const,
-//           data: {
-//             name: nodeName,
-//             hash: node.hash || undefined,
-//             url: node.url,
-//             files: [node.url],
-//             install_type: "git-clone" as const,
-//             pip: node.pip || undefined,
-//           },
-//         })),
-//       ),
-//     ],
-//   } satisfies z.infer<typeof dockerStepsSchema>;
-// }
+  return {
+    steps: [
+      // Map custom nodes
+      ...Object.entries(customNodes).map(([url, node]) => ({
+        id: crypto.randomUUID().slice(0, 10),
+        type: "custom-node" as const,
+        data: {
+          name: node.name,
+          hash: node.hash || undefined,
+          url: url,
+          files: [url],
+          install_type: "git-clone" as const,
+          pip: node.pip || undefined,
+        },
+      })),
+      // Map selected conflicting nodes
+      ...Object.entries(selectedConflictingNodes).flatMap(([nodeName, nodes]) =>
+        nodes.map((node) => ({
+          id: crypto.randomUUID().slice(0, 10),
+          type: "custom-node" as const,
+          data: {
+            name: nodeName,
+            hash: node.hash || undefined,
+            url: node.url,
+            files: [node.url],
+            install_type: "git-clone" as const,
+            pip: node.pip || undefined,
+          },
+        })),
+      ),
+    ],
+  };
+}
 
 export function WorkflowImportMachine({
   validation,
@@ -355,171 +360,169 @@ function ExistingMachine({ validation, setValidation }: StepProps) {
   );
 }
 
-// export function WorkflowImportNewMachineSetup({
-//   validation,
-//   setValidation,
-// }: StepProps) {
-//   const { data: latestComfyUI, isLoading } = useQuery({
-//     queryKey: ["latestComfyUI"],
-//     queryFn: () =>
-//       getBranchInfoServer("https://github.com/comfyanonymous/ComfyUI"),
-//   });
-//   const sub = useCurrentPlan();
+export function WorkflowImportNewMachineSetup({
+  validation,
+  setValidation,
+}: StepProps) {
+  const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
+    "https://github.com/comfyanonymous/ComfyUI",
+  );
+  const sub = useCurrentPlan();
 
-//   const comfyUIOptions: ComfyUIOption[] = [
-//     {
-//       id: "recommended",
-//       name: "Recommended",
-//       hash: comfyui_hash,
-//     },
-//     {
-//       id: "latest",
-//       name: "Latest",
-//       hash: latestComfyUI?.commit.sha || null,
-//     },
-//     {
-//       id: "custom",
-//       name: "Custom",
-//       hash: null,
-//     },
-//   ];
+  const comfyUIOptions: ComfyUIOption[] = [
+    {
+      id: "recommended",
+      name: "Recommended",
+      hash: comfyui_hash,
+    },
+    {
+      id: "latest",
+      name: "Latest",
+      hash: latestComfyUI?.commit.sha || null,
+    },
+    {
+      id: "custom",
+      name: "Custom",
+      hash: null,
+    },
+  ];
 
-//   return (
-//     <div className="relative flex flex-col gap-4">
-//       <AdvanceSettings validation={validation} setValidation={setValidation} />
-//       <div>
-//         <div className="mb-2">
-//           <span className="font-medium text-sm">Machine Name </span>
-//           <span className="text-red-500">*</span>
-//         </div>
-//         <Input
-//           placeholder="Machine name..."
-//           value={validation.machineName}
-//           onChange={(e) =>
-//             setValidation({ ...validation, machineName: e.target.value })
-//           }
-//         />
-//       </div>
+  return (
+    <div className="relative flex flex-col gap-4">
+      {/* <AdvanceSettings validation={validation} setValidation={setValidation} /> */}
+      <div>
+        <div className="mb-2">
+          <span className="font-medium text-sm">Machine Name </span>
+          <span className="text-red-500">*</span>
+        </div>
+        <Input
+          placeholder="Machine name..."
+          value={validation.machineName}
+          onChange={(e) =>
+            setValidation({ ...validation, machineName: e.target.value })
+          }
+        />
+      </div>
 
-//       <div>
-//         <div className="mb-2">
-//           <span className="font-medium text-sm">GPU </span>
-//           <span className="text-red-500">*</span>
-//         </div>
-//         <div className="flex flex-col gap-2">
-//           {gpuOptions.map((gpu) => (
-//             <div
-//               key={gpu.id}
-//               onClick={() => {
-//                 if (!sub?.plans?.plans && !gpu.isForFreePlan) {
-//                   return;
-//                 }
+      <div>
+        <div className="mb-2">
+          <span className="font-medium text-sm">GPU </span>
+          <span className="text-red-500">*</span>
+        </div>
+        <div className="flex flex-col gap-2">
+          {gpuOptions.map((gpu) => (
+            <div
+              key={gpu.id}
+              onClick={() => {
+                if (!sub?.plans?.plans && !gpu.isForFreePlan) {
+                  return;
+                }
 
-//                 setValidation({ ...validation, gpuType: gpu.id });
-//               }}
-//               className={cn(
-//                 "cursor-pointer rounded-lg border p-4 transition-all duration-200",
-//                 "hover:border-gray-400",
-//                 validation.gpuType === gpu.id
-//                   ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
-//                   : "border-gray-200 opacity-60",
-//                 !sub?.plans?.plans &&
-//                   !gpu.isForFreePlan &&
-//                   "cursor-not-allowed",
-//               )}
-//             >
-//               <div className="mb-1 flex items-center justify-between">
-//                 <span className="flex flex-row items-center gap-1 font-medium">
-//                   {gpu.name}
-//                   {!sub?.plans?.plans && !gpu.isForFreePlan && (
-//                     <Lock className="h-3 w-3" />
-//                   )}
-//                 </span>
-//                 <span className="text-gray-600 text-sm">{gpu.ram}</span>
-//               </div>
-//               <div className="flex items-center justify-between">
-//                 <span className="max-w-[70%] text-[11px] text-gray-400">
-//                   <span className="font-medium text-gray-600">
-//                     {gpu.description.bold}
-//                   </span>{" "}
-//                   {gpu.description.regular}
-//                 </span>
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
+                setValidation({ ...validation, gpuType: gpu.id });
+              }}
+              className={cn(
+                "cursor-pointer rounded-lg border p-4 transition-all duration-200",
+                "hover:border-gray-400",
+                validation.gpuType === gpu.id
+                  ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
+                  : "border-gray-200 opacity-60",
+                !sub?.plans?.plans &&
+                  !gpu.isForFreePlan &&
+                  "cursor-not-allowed",
+              )}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <span className="flex flex-row items-center gap-1 font-medium">
+                  {gpu.name}
+                  {!sub?.plans?.plans && !gpu.isForFreePlan && (
+                    <Lock className="h-3 w-3" />
+                  )}
+                </span>
+                <span className="text-gray-600 text-sm">{gpu.ram}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="max-w-[70%] text-[11px] text-gray-400">
+                  <span className="font-medium text-gray-600">
+                    {gpu.description.bold}
+                  </span>{" "}
+                  {gpu.description.regular}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-//       <div>
-//         <div className="mb-2">
-//           <span className="font-medium text-sm">ComfyUI Version </span>
-//           <span className="text-red-500">*</span>
-//         </div>
-//         <div className="flex flex-col gap-2">
-//           {comfyUIOptions.map((option) => (
-//             <div
-//               key={option.id}
-//               onClick={() => {
-//                 setValidation({
-//                   ...validation,
-//                   selectedComfyOption: option.id,
-//                   comfyUiHash:
-//                     option.id === "custom"
-//                       ? validation.comfyUiHash
-//                       : option.hash || "",
-//                 });
-//               }}
-//               className={cn(
-//                 "cursor-pointer rounded-lg border p-4 transition-all duration-200",
-//                 "hover:border-gray-400",
-//                 validation.selectedComfyOption === option.id
-//                   ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
-//                   : "border-gray-200 opacity-60",
-//               )}
-//             >
-//               <div className="mb-1 flex items-center justify-between">
-//                 <span className="font-medium">{option.name}</span>
-//                 {option.id !== "custom" && (
-//                   <Link
-//                     href={`https://github.com/comfyanonymous/ComfyUI/commits/${option.hash}`}
-//                     target="_blank"
-//                     className="text-muted-foreground"
-//                   >
-//                     <ExternalLink className="h-3 w-3" />
-//                   </Link>
-//                 )}
-//               </div>
-//               <div className="flex items-center justify-between">
-//                 {option.id === "custom" ? (
-//                   <Input
-//                     className="w-full font-mono text-[11px]"
-//                     placeholder="Enter commit hash..."
-//                     value={validation.comfyUiHash || ""}
-//                     onChange={(e) => {
-//                       setValidation({
-//                         ...validation,
-//                         selectedComfyOption: "custom",
-//                         comfyUiHash: e.target.value,
-//                       });
-//                     }}
-//                   />
-//                 ) : (
-//                   <span className="text-[11px] text-gray-400">
-//                     {option.id === "latest" && isLoading ? (
-//                       <Skeleton className="h-4 w-24" />
-//                     ) : (
-//                       <span className="font-mono">{option.hash}</span>
-//                     )}
-//                   </span>
-//                 )}
-//               </div>
-//             </div>
-//           ))}
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
+      <div>
+        <div className="mb-2">
+          <span className="font-medium text-sm">ComfyUI Version </span>
+          <span className="text-red-500">*</span>
+        </div>
+        <div className="flex flex-col gap-2">
+          {comfyUIOptions.map((option) => (
+            <div
+              key={option.id}
+              onClick={() => {
+                setValidation({
+                  ...validation,
+                  selectedComfyOption: option.id,
+                  comfyUiHash:
+                    option.id === "custom"
+                      ? validation.comfyUiHash
+                      : option.hash || "",
+                });
+              }}
+              className={cn(
+                "cursor-pointer rounded-lg border p-4 transition-all duration-200",
+                "hover:border-gray-400",
+                validation.selectedComfyOption === option.id
+                  ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
+                  : "border-gray-200 opacity-60",
+              )}
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <span className="font-medium">{option.name}</span>
+                {option.id !== "custom" && (
+                  <Link
+                    href={`https://github.com/comfyanonymous/ComfyUI/commits/${option.hash}`}
+                    target="_blank"
+                    className="text-muted-foreground"
+                  >
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
+              </div>
+              <div className="flex items-center justify-between">
+                {option.id === "custom" ? (
+                  <Input
+                    className="w-full font-mono text-[11px]"
+                    placeholder="Enter commit hash..."
+                    value={validation.comfyUiHash || ""}
+                    onChange={(e) => {
+                      setValidation({
+                        ...validation,
+                        selectedComfyOption: "custom",
+                        comfyUiHash: e.target.value,
+                      });
+                    }}
+                  />
+                ) : (
+                  <span className="text-[11px] text-gray-400">
+                    {option.id === "latest" && isLoading ? (
+                      <Skeleton className="h-4 w-24" />
+                    ) : (
+                      <span className="font-mono">{option.hash}</span>
+                    )}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function WorkflowImportCustomNodeSetup({
   validation,

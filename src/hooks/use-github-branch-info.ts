@@ -25,3 +25,14 @@ export async function getBranchInfo(gitUrl: string) {
     queryFn: () => fetchBranchInfo(gitUrl),
   });
 }
+
+// Hook version
+export function useGithubBranchInfo(gitUrl: string) {
+  return useQuery({
+    queryKey: ["branch-info", gitUrl],
+    queryFn: () => fetchBranchInfo(gitUrl),
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    retry: 2,
+  });
+}

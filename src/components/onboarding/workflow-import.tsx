@@ -5,6 +5,8 @@ import type {
 import {
   WorkflowImportCustomNodeSetup,
   WorkflowImportMachine,
+  WorkflowImportNewMachineSetup,
+  convertToDockerSteps,
   findFirstDuplicateNode,
 } from "@/components/onboarding/workflow-machine-import";
 import { WorkflowModelCheck } from "@/components/onboarding/workflow-model-check";
@@ -167,31 +169,34 @@ export default function WorkflowImport() {
   const [isNavigating, setIsNavigating] = useState(false);
 
   const createWorkflow = async (machineId?: string) => {
-    const result = {
-      error: "Not implemented",
+    const requestBody = {
+      name: validation.workflowName,
+      workflow_json:
+        validation.importOption === "import"
+          ? validation.importJson
+          : validation.workflowJson,
+      ...(validation.workflowApi && { workflow_api: validation.workflowApi }),
+      ...(machineId && { machine_id: machineId }),
     };
-    // const result = await addWorkflowJsonWithoutMachine(
-    //   {
-    //     workflowName: validation.workflowName,
-    //     ...(validation.importOption === "import"
-    //       ? { workflowJson: validation.importJson }
-    //       : {
-    //           ...(validation.workflowJson && {
-    //             workflowJson: validation.workflowJson,
-    //           }),
-    //           ...(validation.workflowApi && {
-    //             workflowApi: validation.workflowApi,
-    //           }),
-    //         }),
-    //   },
-    //   machineId,
-    // );
 
-    if (result.error) {
-      throw new Error(result.error);
+    const result = await fetch(
+      `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      },
+    );
+
+    if (!result.ok) {
+      const error = await result.json();
+      throw new Error(error.message || "Failed to create workflow");
     }
 
-    return result;
+    return result.json();
   };
 
   // Define steps configuration
@@ -239,7 +244,50 @@ export default function WorkflowImport() {
       },
       actions: {
         onNext: async (validation) => {
-          return true;
+          try {
+            switch (validation.machineOption) {
+              // case "none":
+              case "existing":
+                // console.log(validation);
+                // console.log(validation.workflowApi);
+                // console.log(validation.workflowJson);
+
+                // Execute the promise with toast and handle navigation
+                toast.promise(
+                  createWorkflow(validation.selectedMachineId || undefined),
+                  {
+                    loading: "Creating workflow...",
+                    success: (data) => {
+                      console.log(data);
+                      if (data.workflow_id) {
+                        navigate({
+                          to: "/workflows/$workflowId/$view",
+                          params: {
+                            workflowId: data.workflow_id,
+                            view: "workspace",
+                          },
+                          search: { view: undefined },
+                        });
+                      }
+                      return `Workflow "${validation.workflowName}" has been created!`;
+                    },
+                    error: (err) => `Failed to create workflow: ${err.message}`,
+                  },
+                );
+
+                return true;
+
+              case "new":
+                // Maybe store some state and continue to next step
+                return true;
+
+              default:
+                return false;
+            }
+          } catch (error) {
+            toast.error(`Failed to create workflow: ${error}`);
+            return false;
+          }
         },
       },
     },
@@ -325,13 +373,94 @@ export default function WorkflowImport() {
     {
       id: 5,
       title: "Machine Settings",
-      component: <div>Machine Settings</div>,
+      component: WorkflowImportNewMachineSetup,
       validate: (validation) => {
+        if (!validation.machineName?.trim()) {
+          return { isValid: false, error: "Please enter a machine name" };
+        }
+
+        if (
+          validation.selectedComfyOption === "custom" &&
+          !validation.comfyUiHash?.trim()
+        ) {
+          return {
+            isValid: false,
+            error: "Please enter a ComfyUI commit hash",
+          };
+        }
+
         return { isValid: true };
       },
       actions: {
         onNext: async (validation) => {
-          return true;
+          try {
+            // Type guard to ensure required fields exist
+            if (
+              !validation.machineName ||
+              !validation.comfyUiHash ||
+              !validation.gpuType
+            ) {
+              throw new Error("Missing required fields");
+            }
+
+            const docker_commands = convertToDockerSteps(
+              validation.dependencies?.custom_nodes,
+              validation.selectedConflictingNodes,
+            );
+
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine/serverless`,
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${await getToken()}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  name: validation.machineName,
+                  comfyui_version: validation.comfyUiHash,
+                  gpu: validation.gpuType.toUpperCase() as
+                    | "T4"
+                    | "A10G"
+                    | "A100",
+                  docker_command_steps: docker_commands,
+                }),
+              },
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to create machine");
+            }
+
+            const data = await response.json();
+            toast.success(`${validation.machineName} created successfully!`);
+            const machineId = data.id;
+
+            // Create workflow with the new machine ID
+            const workflowResult = await createWorkflow(machineId);
+
+            toast.success(
+              `Workflow "${validation.workflowName}" created successfully!`,
+            );
+            if (workflowResult.workflow_id) {
+              window.open(
+                `/workflows/${workflowResult.workflow_id}/workspace`,
+                "_blank",
+              );
+            }
+
+            toast.info("Redirecting to machine page...");
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId },
+              search: { view: "logs" },
+            });
+
+            return true;
+          } catch (error) {
+            toast.error(`Failed to create: ${error}`);
+            return false;
+          }
         },
       },
     },
