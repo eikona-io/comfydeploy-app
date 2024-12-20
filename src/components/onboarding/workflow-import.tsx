@@ -2,7 +2,12 @@ import type {
   ConflictingNodeInfo,
   WorkflowDependencies,
 } from "@/components/onboarding/workflow-analyze";
-import { WorkflowImportMachine } from "@/components/onboarding/workflow-machine-import";
+import {
+  WorkflowImportCustomNodeSetup,
+  WorkflowImportMachine,
+  findFirstDuplicateNode,
+} from "@/components/onboarding/workflow-machine-import";
+import { WorkflowModelCheck } from "@/components/onboarding/workflow-model-check";
 import {
   Accordion,
   AccordionContent,
@@ -242,8 +247,60 @@ export default function WorkflowImport() {
     {
       id: 3,
       title: "Custom Node Setup",
-      component: <div>Custom Node Setup</div>,
+      component: WorkflowImportCustomNodeSetup,
       validate: (validation) => {
+        // Check if dependencies exist
+        if (!validation.dependencies) {
+          return { isValid: false, error: "No dependencies found" };
+        }
+
+        // Check custom nodes
+        const customNodesWithoutHash = Object.entries(
+          validation.dependencies.custom_nodes || {},
+        ).filter(([_, node]) => !node.hash);
+
+        if (customNodesWithoutHash.length > 0) {
+          return {
+            isValid: false,
+            error: `Some custom nodes are missing hashes: ${customNodesWithoutHash
+              .map(([url]) => url)
+              .join(", ")}`,
+          };
+        }
+
+        // Check selected conflicting nodes
+        const selectedConflictsWithoutHash = Object.entries(
+          validation.selectedConflictingNodes || {},
+        ).flatMap(([nodeName, conflicts]) =>
+          conflicts
+            .filter((node) => !node.hash)
+            .map((node) => `${nodeName} (${node.url})`),
+        );
+
+        if (selectedConflictsWithoutHash.length > 0) {
+          return {
+            isValid: false,
+            error: `Some selected conflicting nodes are missing hashes: ${selectedConflictsWithoutHash.join(
+              ", ",
+            )}`,
+          };
+        }
+
+        // Check if there is any duplicated nodes imported
+        const duplicateNode = findFirstDuplicateNode(
+          validation.dependencies?.custom_nodes,
+          validation.selectedConflictingNodes,
+        );
+        if (duplicateNode) {
+          return {
+            isValid: false,
+            error: `Duplicate node found: "${duplicateNode.url
+              .split("/")
+              .slice(-1)
+              .join("/")}"`,
+          };
+        }
+
         return { isValid: true };
       },
       actions: {
@@ -255,7 +312,7 @@ export default function WorkflowImport() {
     {
       id: 4,
       title: "Model Checking (Beta)",
-      component: <div>Model Checking</div>,
+      component: WorkflowModelCheck,
       validate: (validation) => {
         return { isValid: true };
       },

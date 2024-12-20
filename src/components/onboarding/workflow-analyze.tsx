@@ -1,3 +1,11 @@
+import { generateDependencyGraphJson } from "comfyui-json";
+
+const BLACKLISTED_CUSTOM_NODES = [
+  "https://github.com/bennykok/comfyui-deploy",
+  // Add more blacklisted nodes here
+  "https://github.com/mrhan1993/ComfyUI-Fooocus",
+];
+
 export type CustomNodeInfo = {
   url: string;
   name: string;
@@ -28,3 +36,37 @@ export type WorkflowDependencies = {
     [nodeName: string]: ConflictingNodeInfo[];
   };
 };
+
+export async function analyzeWorkflowJson(
+  workflowJson: string,
+): Promise<WorkflowDependencies> {
+  const response = await generateDependencyGraphJson({
+    workflow_json: JSON.parse(workflowJson),
+  });
+
+  // Create lowercase version of blacklist for comparison
+  const blacklistLower = BLACKLISTED_CUSTOM_NODES.map((url) =>
+    url.toLowerCase(),
+  );
+
+  const filteredResponse = {
+    ...response,
+    custom_nodes: Object.fromEntries(
+      Object.entries(response.custom_nodes).filter(([url]) => {
+        return !blacklistLower.includes(url.toLowerCase());
+      }),
+    ),
+    conflicting_nodes: Object.fromEntries(
+      Object.entries(response.conflicting_nodes)
+        .map(([nodeName, conflicts]) => [
+          nodeName,
+          conflicts.filter((conflict: ConflictingNodeInfo) => {
+            return !blacklistLower.includes(conflict.url.toLowerCase());
+          }),
+        ])
+        .filter(([_, conflicts]) => conflicts.length > 0),
+    ),
+  };
+
+  return filteredResponse;
+}
