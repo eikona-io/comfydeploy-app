@@ -12,6 +12,7 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
+import { ContainersTable } from "@/components/workspace/ContainersTable";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
@@ -71,6 +72,13 @@ function WorkflowPageComponent() {
       break;
     case "workspace":
       view = <WorkspaceClientWrapper workflow_id={workflowId} />;
+      break;
+    case "containers":
+      view = (
+        <PaddingLayout className="mt-10">
+          <ContainersTable workflow_id={workflowId} />
+        </PaddingLayout>
+      );
       break;
   }
 
