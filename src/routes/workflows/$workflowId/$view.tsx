@@ -1,4 +1,5 @@
 import { PaddingLayout } from "@/components/PaddingLayout";
+import { LoadingWrapper } from "@/components/loading-wrapper";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { SessionItem } from "@/components/sessions/SessionItem";
 import { Portal } from "@/components/ui/custom/portal";
@@ -12,6 +13,11 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
+import { ContainersTable } from "@/components/workspace/ContainersTable";
+import {
+  APIDocs,
+  DeploymentDisplay,
+} from "@/components/workspace/DeploymentDisplay";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
@@ -71,6 +77,27 @@ function WorkflowPageComponent() {
       break;
     case "workspace":
       view = <WorkspaceClientWrapper workflow_id={workflowId} />;
+      break;
+    case "containers":
+      view = (
+        <PaddingLayout className="mt-10">
+          <ContainersTable workflow_id={workflowId} />
+        </PaddingLayout>
+      );
+      break;
+    case "deployment":
+      view = (
+        <PaddingLayout>
+          <div className="relative w-full">
+            <LoadingWrapper tag="api">
+              <APIDocs
+                domain={process.env.NEXT_PUBLIC_CD_API_URL!}
+                workflow_id={workflowId}
+              />
+            </LoadingWrapper>
+          </div>
+        </PaddingLayout>
+      );
       break;
   }
 

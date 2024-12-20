@@ -1,16 +1,14 @@
 "use client";
 
-import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 import { cn } from "@/lib/utils";
 // import { PreventNavigation } from "@/repo/components/ui/custom/prevent-navigation";
 // import { createNewDraftVersion } from "@/server/actions/cdActions";
-import { useAuth, useUser } from "@clerk/clerk-react";
+import { useAuth } from "@clerk/clerk-react";
 // import { uploadFile } from "@repo/lib/uploadFile";
 import { motion } from "framer-motion";
 import { AnimatePresence } from "framer-motion";
 import { diff } from "json-diff-ts";
-import { Save } from "lucide-react";
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import {
@@ -35,10 +33,6 @@ export function useSelectedVersion(workflow_id: string | null) {
     defaultValue: workflow?.versions?.[0].version ?? 1,
     ...parseAsInteger,
   });
-
-  // const {
-
-  // } = useWorkflowVersion(workflow_id);
 
   const {
     data: versionData,
