@@ -1,4 +1,7 @@
-import { BuildStepsUI } from "@/components/machine/machine-build-log";
+import {
+  BuildStepsUI,
+  MachineBuildLog,
+} from "@/components/machine/machine-build-log";
 import { MachineOverview } from "@/components/machine/machine-overview";
 import { Portal } from "@/components/ui/custom/portal";
 import {
@@ -121,13 +124,12 @@ export default function MachinePage({
             case "logs":
               if (machine?.status === "building") {
                 return (
-                  // <MachineBuildLog
-                  //   machine={machine}
-                  //   instance_id={machine.build_machine_instance_id!}
-                  //   machine_id={params.machine_id}
-                  //   endpoint={endpoint}
-                  // />
-                  <div>Logs</div>
+                  <MachineBuildLog
+                    machine={machine}
+                    instance_id={machine.build_machine_instance_id!}
+                    machine_id={params.machine_id}
+                    endpoint={machineEndpoint}
+                  />
                 );
               }
 
