@@ -105,7 +105,7 @@ function LogContent({
                   <span className="w-[180px] flex-shrink-0">
                     {new Date(x.timestamp * 1000).toLocaleString()}
                   </span>
-                  <div className="h-full w-[1px] flex-shrink-0 bg-stone-400"></div>
+                  <div className="h-full w-[1px] flex-shrink-0 bg-stone-400" />
                 </>
               )}
               <div>{x.logs}</div>

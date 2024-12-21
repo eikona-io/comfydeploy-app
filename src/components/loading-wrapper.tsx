@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Suspense } from "react";
-import { LoadingIcon } from "./loading-icon";
+import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 
 export function LoadingWrapper(props: {
   tag: string;

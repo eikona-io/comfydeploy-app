@@ -1,8 +1,8 @@
 "use client";
 
 import { AutoFormSubmit } from "@/components/auto-form";
-import { LoadingIcon } from "@/components/loading-icon";
 import { Button } from "@/components/ui/button";
+import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 import {
   Dialog,
   DialogContent,
@@ -49,6 +49,7 @@ import {
   SDInputsRender,
 } from "@/components/SDInputs/SDInputsRender";
 import { useConfirmServerActionDialog } from "@/components/auto-form/auto-form-dialog";
+import { type LogsType, LogsViewer } from "@/components/log/logs-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -60,7 +61,6 @@ import {
   VersionSelectV2,
   useSelectedVersion,
 } from "@/components/version-select";
-import { type LogsType, LogsViewer } from "@/components/workflows/LogsViewer";
 import { getEnvColor } from "@/components/workspace/ContainersTable";
 import { useWorkflowDeployments } from "@/components/workspace/ContainersTable";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";

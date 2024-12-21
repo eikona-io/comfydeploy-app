@@ -1,4 +1,4 @@
-import type { LogsType } from "@/components/workflows/LogsViewer";
+import type { LogsType } from "@/components/log/logs-viewer";
 import { useAuth } from "@clerk/clerk-react";
 import { useEffect, useMemo, useState } from "react";
 import useWebSocket from "react-use-websocket";
@@ -62,7 +62,7 @@ interface BuildProgressBarProps {
   machine_id: string;
   endpoint: string;
   instance_id: string;
-  machine: MachineType;
+  machine: any;
 }
 
 export function getMachineBuildProgress({
