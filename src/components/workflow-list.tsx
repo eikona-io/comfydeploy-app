@@ -69,6 +69,8 @@ export function useWorkflowVersion(
   const BATCH_SIZE = 5;
   return useInfiniteQuery<any[]>({
     queryKey: ["workflow", workflow_id, "versions"],
+    queryKeyHashFn: (queryKey) =>
+      [...queryKey, "versions", debouncedSearchValue].toString(),
     meta: {
       limit: BATCH_SIZE,
       offset: 0,

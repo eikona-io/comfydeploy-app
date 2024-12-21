@@ -12,7 +12,7 @@ export function getRelativeTime(time: string | Date | null | undefined) {
 }
 
 function formatDuration(seconds: number) {
-  if (seconds == 0) return "0 sec";
+  if (seconds === 0) return "0 sec";
 
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -26,7 +26,7 @@ function formatDuration(seconds: number) {
     result += `${minutes} mins `;
   }
   if (remainingSeconds > 0) {
-    result += `${remainingSeconds.toFixed(1)} sec${remainingSeconds !== 1 ? 's' : ''}`;
+    result += `${remainingSeconds.toFixed(1)} sec${remainingSeconds !== 1 ? "s" : ""}`;
   }
   return result.trim();
 }

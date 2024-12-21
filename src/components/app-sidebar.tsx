@@ -44,6 +44,7 @@ import { Link, useLocation } from "@tanstack/react-router";
 // import { useCurrentPlan } from "@/components/useCurrentPlan";
 import { motion } from "framer-motion";
 import React, { use } from "react";
+import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
 
 function UserMenu() {
@@ -255,10 +256,10 @@ export function AppSidebar() {
                 workflow_id={workflow_id}
                 className="min-w-0 flex-grow"
               />
-              {/* <VersionSelectV2
-								workflow_id={workflow_id}
-								className="flex-shrink-0 w-20"
-							/> */}
+              <VersionSelectV2
+                workflow_id={workflow_id}
+                className="w-20 flex-shrink-0"
+              />
             </div>
           </>
         )}

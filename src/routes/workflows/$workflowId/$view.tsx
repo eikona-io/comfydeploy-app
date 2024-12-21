@@ -14,10 +14,7 @@ import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpda
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
 import { ContainersTable } from "@/components/workspace/ContainersTable";
-import {
-  APIDocs,
-  DeploymentDisplay,
-} from "@/components/workspace/DeploymentDisplay";
+import { APIDocs } from "@/components/workspace/DeploymentDisplay";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
@@ -75,9 +72,6 @@ function WorkflowPageComponent() {
         </PaddingLayout>
       );
       break;
-    case "workspace":
-      view = <WorkspaceClientWrapper workflow_id={workflowId} />;
-      break;
     case "containers":
       view = (
         <PaddingLayout className="mt-10">
@@ -88,7 +82,7 @@ function WorkflowPageComponent() {
     case "deployment":
       view = (
         <PaddingLayout>
-          <div className="relative w-full">
+          <div className="relative mx-auto my-10 w-full max-w-screen-lg">
             <LoadingWrapper tag="api">
               <APIDocs
                 domain={process.env.NEXT_PUBLIC_CD_API_URL!}
@@ -198,6 +192,14 @@ function WorkflowPageComponent() {
           ))}
         </SidebarMenuSub>
       </Portal>
+      {mountedViews.has("workspace") ? (
+        <div
+          className="h-full w-full"
+          style={{ display: currentView === "workspace" ? "block" : "none" }}
+        >
+          <WorkspaceClientWrapper workflow_id={workflowId} />
+        </div>
+      ) : null}
       {view}
     </div>
   );

@@ -6,6 +6,7 @@ import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { RunsTable } from "./RunsTable";
 
 import { motion } from "framer-motion";
+import { RunWorkflowButton } from "../run/VersionSelect";
 
 // import { RunWorkflowButton } from "@/components/VersionSelect";
 
@@ -30,12 +31,10 @@ export default function RunComponent(props: {
                 workflow_id={workflow_id}
                 defaultData={props.defaultData}
               />
-              {/* TODO: Add this back in */}
-              {/* <RunWorkflowButton
+              <RunWorkflowButton
                 className="absolute top-6 right-4"
                 workflow_id={workflow_id}
-                filterWorkspace={false}
-              /> */}
+              />
             </>
           </LoadingWrapper>
         </CardContent>

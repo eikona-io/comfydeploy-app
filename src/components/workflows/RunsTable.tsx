@@ -274,9 +274,9 @@ export function RunsTableVirtualized(props: {
             <TooltipTrigger>
               <div
                 className={`h-2 w-2 rounded-full ${
-                  connectionStatus === "connected" && socket?.active
+                  connectionStatus === "connected"
                     ? "bg-green-500"
-                    : connectionStatus === "connected" || socket?.active
+                    : connectionStatus === "connected"
                       ? "bg-yellow-500"
                       : "bg-red-500"
                 } animate-pulse`}
@@ -289,7 +289,7 @@ export function RunsTableVirtualized(props: {
                   ? "Connected"
                   : "Disconnected"}
               </p>
-              <p>Socket: {socket?.active ? "Connected" : "Disconnected"}</p>
+              {/* <p>Socket: {socket?.active ? "Connected" : "Disconnected"}</p> */}
             </TooltipContent>
           </Tooltip>
         </div>

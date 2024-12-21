@@ -1,0 +1,17 @@
+.canvas-container{
+  position: absolute !important;
+}
+#brush{
+  background-color: transparent;
+  outline: black dashed 1px;
+  box-shadow: white 0px 0px 0px 1px;
+  border-radius: 50%;
+  position: absolute;
+  z-index: 8889;
+  pointer-events: none;
+  left: 1601.2px;
+  top: 445.198px;
+  width: 100px;
+  height: 100px;
+}
+

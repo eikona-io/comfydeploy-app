@@ -483,6 +483,7 @@ export function DeploymentDisplay({
     </Dialog>
   );
 }
+import { CreateDeploymentButtonV2 } from "../run/VersionSelect";
 import { useWorkflowDeployments } from "./ContainersTable";
 
 export function APIDocs({
@@ -530,7 +531,7 @@ export function APIDocs({
       {!model && (
         <h2 className="flex items-center justify-between gap-2 font-bold text-2xl">
           Deployment
-          {/* <CreateDeploymentButtonV2 workflow_id={workflow_id} /> */}
+          <CreateDeploymentButtonV2 workflow_id={workflow_id} />
         </h2>
       )}
 
