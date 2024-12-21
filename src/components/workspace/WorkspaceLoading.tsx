@@ -1,6 +1,6 @@
 import { TextShimmer } from "@/components/motion-ui/text-shimmer";
 import { Progress } from "@/components/ui/progress";
-import { getMachineBuildProgress } from "@/components/workspace/useMachineBuildProgress";
+import { getMachineBuildProgress } from "@/hooks/use-machine-build-progress";
 import { AnimatePresence, easeOut, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -28,7 +28,7 @@ export function WorkspaceLoading({
                            linear-gradient(90deg, #2c2c2c 1px, transparent 1px)`,
           backgroundSize: "20px 20px",
         }}
-      ></div>
+      />
 
       <div className="relative z-10 flex flex-col items-center">
         <div className="mb-8 text-sm">
@@ -60,19 +60,19 @@ export function WorkspaceLoading({
           {/* Left node */}
           <div className="flex h-24 w-40 flex-col justify-between rounded-md bg-[#3c3c3c] p-2 shadow-lg">
             <div className="flex justify-start">
-              <div className="h-3 w-3 rounded-full bg-[#00ff00]"></div>
+              <div className="h-3 w-3 rounded-full bg-[#00ff00]" />
             </div>
-            <div className="h-3 w-full rounded bg-[#2c2c2c]"></div>
-            <div className="h-3 w-3/4 rounded bg-[#2c2c2c]"></div>
+            <div className="h-3 w-full rounded bg-[#2c2c2c]" />
+            <div className="h-3 w-3/4 rounded bg-[#2c2c2c]" />
           </div>
 
           {/* Right node - positioned lower */}
           <div className="mt-16 flex h-24 w-40 flex-col justify-between rounded-md bg-[#3c3c3c] p-2 shadow-lg">
             <div className="flex justify-start">
-              <div className="h-3 w-3 rounded-full bg-[#00ff00]"></div>
+              <div className="h-3 w-3 rounded-full bg-[#00ff00]" />
             </div>
-            <div className="h-3 w-full rounded bg-[#2c2c2c]"></div>
-            <div className="h-3 w-3/4 rounded bg-[#2c2c2c]"></div>
+            <div className="h-3 w-full rounded bg-[#2c2c2c]" />
+            <div className="h-3 w-3/4 rounded bg-[#2c2c2c]" />
           </div>
 
           {/* Curved connection line */}
@@ -106,7 +106,7 @@ export function WorkspaceMachineLoading({
   machine,
   endpoint,
 }: {
-  machine: MachineType;
+  machine: any;
   endpoint: string;
 }) {
   const messages = [

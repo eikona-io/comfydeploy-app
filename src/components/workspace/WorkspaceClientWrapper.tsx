@@ -58,7 +58,7 @@ export function WorkspaceClientWrapper({
     return (
       <WorkspaceMachineLoading
         machine={machine}
-        endpoint={`${process.env.NEXT_PUBLIC_CD_ENDPOINT!}/api/machine`}
+        endpoint={`${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`}
       />
     );
 

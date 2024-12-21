@@ -13,8 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMachineBuildProgress } from "@/components/workspace/useMachineBuildProgress";
 import { useMachines } from "@/hooks/use-machine";
+import { useMachineBuildProgress } from "@/hooks/use-machine-build-progress";
 import { useAuth } from "@clerk/clerk-react";
 import { differenceInHours } from "date-fns";
 import {
