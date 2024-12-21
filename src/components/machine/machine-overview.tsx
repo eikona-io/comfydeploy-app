@@ -1,15 +1,52 @@
+import {
+  CPU_MEMORY_MAP,
+  MachineListItemEvents,
+  getLastActiveText,
+  isMachineDeprecated,
+  useHasActiveEvents,
+} from "@/components/machines/machine-list-item";
+import { MachineStatus } from "@/components/machines/machine-status";
+import { ShineBorder } from "@/components/magicui/shine-border";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useMachineEvents } from "@/hooks/use-machine";
+import { getRelativeTime } from "@/lib/get-relative-time";
+import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { differenceInMilliseconds, max } from "date-fns";
 import {
   Activity,
   AlertCircle,
   Box,
   CheckCircle2,
+  Clock,
   Edit,
   ExternalLink,
   FileClock,
   GitBranch,
   HardDrive,
   Info,
+  Layers,
   Library,
   LineChart,
   ListRestart,
@@ -20,51 +57,14 @@ import {
   RefreshCw,
   Save,
   Table as TableIcon,
-  Workflow,
-  Zap,
-  X,
-  Ticket,
-  Clock,
   Thermometer,
-  Layers,
+  Ticket,
+  Workflow,
+  X,
+  Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Responsive, WidthProvider } from "react-grid-layout";
-import {
-  CPU_MEMORY_MAP,
-  getLastActiveText,
-  isMachineDeprecated,
-  MachineListItemEvents,
-  useHasActiveEvents,
-} from "@/components/machines/machine-list-item";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "@tanstack/react-router";
-import { getRelativeTime } from "@/lib/get-relative-time";
-import { useMachineEvents } from "@/hooks/use-machine";
-import { Separator } from "@/components/ui/separator";
-import { MachineStatus } from "@/components/machines/machine-status";
-import { ShineBorder } from "@/components/magicui/shine-border";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
@@ -82,7 +82,7 @@ const calculateTotalUpEventTime = (events: any[] | undefined): string => {
   }));
 
   eventTimes.sort(
-    (a, b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0)
+    (a, b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0),
   );
 
   let totalDuration = 0;
@@ -162,7 +162,6 @@ export function MachineOverview({
     { i: "containerTable", x: 1, y: 2, w: 2, h: 8, maxH: 16, minH: 8 },
     { i: "buildLog", x: 0, y: 3, w: 2, h: 12, maxH: 12, minH: 12 },
   ];
-  // const { showDevMode } = use(FeatureFlagsContext);
 
   const [layout, setLayout] = useState(() => {
     const savedLayout = getFromLS(machine.id);
@@ -182,7 +181,7 @@ export function MachineOverview({
 
   return (
     <div className="w-full">
-      <div className="flex flex-row justify-between items-center px-4 py-2">
+      <div className="flex flex-row items-center justify-between px-4 py-2">
         <div
           className={cn("flex flex-row gap-2", isEditingLayout && "invisible")}
         >
@@ -191,7 +190,7 @@ export function MachineOverview({
             disabled={isDockerCommandStepsNull}
             onClick={() => setView("settings")}
           >
-            <Edit className="w-4 h-4 mr-2" />
+            <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>
           <Button
@@ -202,7 +201,7 @@ export function MachineOverview({
             }
             onClick={async () => {}}
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <RefreshCw className="mr-2 h-4 w-4" />
             Rebuild
           </Button>
           {/* {(process.env.NODE_ENV === "development" || showDevMode) &&
@@ -347,7 +346,7 @@ function MachineAlert({
     variant: "warning" | "destructive",
     title: string,
     description: React.ReactNode,
-    bgColor: string
+    bgColor: string,
   ) =>
     show && (
       <Alert variant={variant} className={`rounded-[10px] ${bgColor} relative`}>
@@ -373,13 +372,13 @@ function MachineAlert({
       return (
         <div className="space-y-2">
           <p>The following custom nodes failed to import:</p>
-          <ul className="list-disc pl-4 space-y-1 font-mono">
+          <ul className="list-disc space-y-1 pl-4 font-mono">
             {failedLogs.map(
               (log: { logs: string; timestamp: number }, index: number) => (
                 <li key={index} className="text-sm">
                   {log.logs}
                 </li>
-              )
+              ),
             )}
           </ul>
         </div>
@@ -404,7 +403,7 @@ function MachineAlert({
             <br /> Please upgrade to the latest version to ensure compatibility
             and access new features.
           </>,
-          "bg-yellow-50"
+          "bg-yellow-50",
         )}
       {hasImportFailedLogs &&
         importFailedDescription &&
@@ -414,7 +413,7 @@ function MachineAlert({
           "destructive",
           "Custom Node Import Failed",
           importFailedDescription,
-          "bg-red-50"
+          "bg-red-50",
         )}
     </div>
   );
@@ -424,27 +423,27 @@ function MachineAlert({
 
 function MachineInfo({ machine }: { machine: any }) {
   return (
-    <Card className="rounded-[10px] h-full flex flex-col">
+    <Card className="flex h-full flex-col rounded-[10px]">
       <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-semibold flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Information
           <div className="flex items-center">
-            <HardDrive className="w-4 h-4 text-muted-foreground" />
+            <HardDrive className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex items-center">
-        <div className="space-y-1 w-full">
-          <div className="flex flex-row justify-between items-center">
-            <div className="text-sm font-medium">Machine ID</div>
-            <div className="text-xs font-mono text-muted-foreground max-w-[100px] md:max-w-none truncate">
+      <CardContent className="flex flex-1 items-center">
+        <div className="w-full space-y-1">
+          <div className="flex flex-row items-center justify-between">
+            <div className="font-medium text-sm">Machine ID</div>
+            <div className="max-w-[100px] truncate font-mono text-muted-foreground text-xs md:max-w-none">
               {machine.id}
             </div>
           </div>
 
           {machine.machine_version && (
-            <div className="flex flex-row justify-between items-center">
-              <div className="text-sm font-medium">Version</div>
+            <div className="flex flex-row items-center justify-between">
+              <div className="font-medium text-sm">Version</div>
               <div className="font-mono">
                 <Badge
                   variant="outline"
@@ -456,30 +455,30 @@ function MachineInfo({ machine }: { machine: any }) {
             </div>
           )}
 
-          <div className="flex flex-row justify-between items-center">
-            <div className="text-sm font-medium">Type</div>
+          <div className="flex flex-row items-center justify-between">
+            <div className="font-medium text-sm">Type</div>
             <Badge variant={"outline"} className="!text-2xs !font-semibold">
               {machine.type}
             </Badge>
           </div>
 
-          <div className="flex flex-row justify-between items-center">
-            <div className="text-sm font-medium">ComfyUI</div>
+          <div className="flex flex-row items-center justify-between">
+            <div className="font-medium text-sm">ComfyUI</div>
             <Link
               href={`https://github.com/comfyanonymous/ComfyUI/commit/${machine.comfyui_version}`}
               target="_blank"
               className="flex flex-row items-center gap-1"
             >
-              <span className="text-xs font-mono text-muted-foreground max-w-[100px] md:max-w-none truncate">
+              <span className="max-w-[100px] truncate font-mono text-muted-foreground text-xs md:max-w-none">
                 {machine.comfyui_version}
               </span>
-              <ExternalLink className="w-3 h-3 text-muted-foreground" />
+              <ExternalLink className="h-3 w-3 text-muted-foreground" />
             </Link>
           </div>
 
-          <div className="flex flex-row justify-between items-center">
-            <div className="text-sm font-medium">Created At</div>
-            <div className="text-xs text-muted-foreground">
+          <div className="flex flex-row items-center justify-between">
+            <div className="font-medium text-sm">Created At</div>
+            <div className="text-muted-foreground text-xs">
               {getRelativeTime(machine.created_at)}
             </div>
           </div>
@@ -497,46 +496,46 @@ function MachineOverviewStatus({ machine }: { machine: any }) {
     <>
       <Separator className="my-4" />
 
-      <h2 className="text-sm font-medium">Specifications</h2>
+      <h2 className="font-medium text-sm">Specifications</h2>
 
       <div className="grid grid-cols-2 py-2">
-        <div className="flex flex-row gap-2 items-center text-sm font-medium p-0.5">
-          <HardDrive className="w-4 h-4" />
+        <div className="flex flex-row items-center gap-2 p-0.5 font-medium text-sm">
+          <HardDrive className="h-4 w-4" />
           {machine.gpu}
         </div>
-        <div className="flex flex-row gap-2 items-center text-sm font-medium p-0.5">
-          <MemoryStick className="w-4 h-4" />
+        <div className="flex flex-row items-center gap-2 p-0.5 font-medium text-sm">
+          <MemoryStick className="h-4 w-4" />
           {machine.gpu ? CPU_MEMORY_MAP[machine.gpu] : ""}
         </div>
-        <div className="col-span-2 flex flex-row items-center justify-between text-sm font-medium bg-gray-50 rounded-[4px] p-0.5">
-          <div className="text-xs font-medium flex items-center gap-2">
-            <Ticket className="w-4 h-4" /> Queue Per GPU
+        <div className="col-span-2 flex flex-row items-center justify-between rounded-[4px] bg-gray-50 p-0.5 font-medium text-sm">
+          <div className="flex items-center gap-2 font-medium text-xs">
+            <Ticket className="h-4 w-4" /> Queue Per GPU
           </div>
-          <div className="text-xs text-muted-foreground font-mono">
+          <div className="font-mono text-muted-foreground text-xs">
             {machine.allow_concurrent_inputs}
           </div>
         </div>
-        <div className="col-span-2 flex flex-row items-center justify-between text-sm font-medium p-0.5">
-          <div className="text-xs font-medium flex items-center gap-2">
-            <Layers className="w-4 h-4" /> Max Parallel GPU
+        <div className="col-span-2 flex flex-row items-center justify-between p-0.5 font-medium text-sm">
+          <div className="flex items-center gap-2 font-medium text-xs">
+            <Layers className="h-4 w-4" /> Max Parallel GPU
           </div>
-          <div className="text-xs text-muted-foreground font-mono">
+          <div className="font-mono text-muted-foreground text-xs">
             {machine.concurrency_limit}
           </div>
         </div>
-        <div className="col-span-2 flex flex-row items-center justify-between text-sm font-medium bg-gray-50 rounded-[4px] p-0.5">
-          <div className="text-xs font-medium flex items-center gap-2">
-            <Clock className="w-4 h-4" /> Workflow Timeout
+        <div className="col-span-2 flex flex-row items-center justify-between rounded-[4px] bg-gray-50 p-0.5 font-medium text-sm">
+          <div className="flex items-center gap-2 font-medium text-xs">
+            <Clock className="h-4 w-4" /> Workflow Timeout
           </div>
-          <div className="text-xs text-muted-foreground font-mono">
+          <div className="font-mono text-muted-foreground text-xs">
             {machine.run_timeout}s
           </div>
         </div>
-        <div className="col-span-2 flex flex-row items-center justify-between text-sm font-medium p-0.5">
-          <div className="text-xs font-medium flex items-center gap-2">
-            <Thermometer className="w-4 h-4" /> Warm Time
+        <div className="col-span-2 flex flex-row items-center justify-between p-0.5 font-medium text-sm">
+          <div className="flex items-center gap-2 font-medium text-xs">
+            <Thermometer className="h-4 w-4" /> Warm Time
           </div>
-          <div className="text-xs text-muted-foreground font-mono">
+          <div className="font-mono text-muted-foreground text-xs">
             {machine.idle_timeout}s
           </div>
         </div>
@@ -545,49 +544,49 @@ function MachineOverviewStatus({ machine }: { machine: any }) {
   );
 
   const content = (
-    <Card className="rounded-[10px] w-full h-full">
+    <Card className="h-full w-full rounded-[10px]">
       <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-semibold flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Status
           <div className="flex items-center">
             {hasActiveEvents ? (
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
             ) : (
-              <Pause className="w-4 h-4 text-muted-foreground" />
+              <Pause className="h-4 w-4 text-muted-foreground" />
             )}
           </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex flex-row items-center justify-between">
-          <h2 className="text-sm font-medium">Current Status</h2>
+          <h2 className="font-medium text-sm">Current Status</h2>
           <Badge
             variant={hasActiveEvents ? "green" : "secondary"}
             className="!font-semibold flex items-center gap-1"
           >
             {hasActiveEvents ? (
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
             ) : (
-              <Pause className="w-3 h-3 text-muted-foreground" />
+              <Pause className="h-3 w-3 text-muted-foreground" />
             )}
             {hasActiveEvents ? "Running" : "Idle"}
           </Badge>
         </div>
 
-        <div className="py-4 grid grid-cols-2 gap-4 items-center">
+        <div className="grid grid-cols-2 items-center gap-4 py-4">
           <div className="flex flex-col gap-2">
             <h3
               className={cn(
-                "text-sm font-base text-gray-600 flex items-center gap-2",
-                hasActiveEvents ? "text-yellow-500" : ""
+                "flex items-center gap-2 font-base text-gray-600 text-sm",
+                hasActiveEvents ? "text-yellow-500" : "",
               )}
             >
-              Last Activity <Zap className="w-[14px] h-[14px]" />
+              Last Activity <Zap className="h-[14px] w-[14px]" />
             </h3>
             <p
               className={cn(
-                "text-2xl font-bold",
-                hasActiveEvents ? "text-yellow-500" : "text-black"
+                "font-bold text-2xl",
+                hasActiveEvents ? "text-yellow-500" : "text-black",
               )}
             >
               {getLastActiveText(events)}
@@ -595,10 +594,10 @@ function MachineOverviewStatus({ machine }: { machine: any }) {
           </div>
 
           <div className="flex flex-col gap-2">
-            <h3 className="text-sm font-base text-gray-600 flex items-center gap-2">
-              Runtime <Activity className="w-[14px] h-[14px]" />
+            <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
+              Runtime <Activity className="h-[14px] w-[14px]" />
             </h3>
-            <p className="text-2xl font-bold text-black">
+            <p className="font-bold text-2xl text-black">
               {calculateTotalUpEventTime(events)}
             </p>
           </div>
@@ -606,7 +605,7 @@ function MachineOverviewStatus({ machine }: { machine: any }) {
 
         <Separator className="my-2" />
 
-        <h2 className="text-sm font-medium py-2">Builds</h2>
+        <h2 className="py-2 font-medium text-sm">Builds</h2>
         <div className="flex flex-row items-center justify-between py-1">
           <div className="flex flex-row items-center gap-2">
             <MachineStatus machine={machine} />
@@ -621,7 +620,7 @@ function MachineOverviewStatus({ machine }: { machine: any }) {
               )}
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             {getRelativeTime(machine.updated_at)}
           </p>
         </div>
@@ -634,7 +633,7 @@ function MachineOverviewStatus({ machine }: { machine: any }) {
   return hasActiveEvents ? (
     <ShineBorder
       color="green"
-      className="p-0 w-full h-full"
+      className="h-full w-full p-0"
       borderRadius={10}
       borderWidth={2}
     >
@@ -652,7 +651,7 @@ function MachineCustomNodes({ machine }: { machine: any }) {
         return {
           variant: "secondary" as const,
           label: "Installing",
-          icon: <Loader2 className="w-3 h-3 animate-spin mr-1" />,
+          icon: <Loader2 className="mr-1 h-3 w-3 animate-spin" />,
           className: "animate-pulse",
         };
       case "error":
@@ -684,18 +683,18 @@ function MachineCustomNodes({ machine }: { machine: any }) {
 
   const renderCard = (nodes: any[] = [], hasFailedNodes = false) => {
     const content = (
-      <Card className="rounded-[10px] h-full w-full flex flex-col">
-        <CardHeader className="pb-4 flex-none">
-          <CardTitle className="text-xl font-semibold flex items-center justify-between">
+      <Card className="flex h-full w-full flex-col rounded-[10px]">
+        <CardHeader className="flex-none pb-4">
+          <CardTitle className="flex items-center justify-between font-semibold text-xl">
             Custom Nodes
             <div className="flex items-center">
-              <Library className="w-4 h-4 text-muted-foreground" />
+              <Library className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden">
           {nodes.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-4">
+            <div className="py-4 text-center text-muted-foreground text-sm">
               No custom nodes installed
             </div>
           ) : (
@@ -704,36 +703,36 @@ function MachineCustomNodes({ machine }: { machine: any }) {
                 {nodes.map((node, index) => {
                   const badgeProps = getNodeBadgeProps(
                     machine.status,
-                    node.isFailed
+                    node.isFailed,
                   );
                   return (
                     <div
                       key={node.id}
                       className={cn(
-                        "flex flex-row items-center w-full justify-between rounded-[4px] p-1 transition-all hover:bg-gray-100",
+                        "flex w-full flex-row items-center justify-between rounded-[4px] p-1 transition-all hover:bg-gray-100",
                         index % 2 === 1 && "bg-gray-50",
-                        node.isFailed && "bg-red-50"
+                        node.isFailed && "bg-red-50",
                       )}
                     >
                       <Link
                         href={`${node.data.url}/commit/${node.data.hash}`}
                         target="_blank"
-                        className="text-sm flex items-center flex-row gap-2"
+                        className="flex flex-row items-center gap-2 text-sm"
                       >
-                        <span className="truncate flex-1">
+                        <span className="flex-1 truncate">
                           {node.data.name}
                         </span>
                         <ExternalLink className="h-3 w-3" />
                       </Link>
                       <div className="flex flex-row items-center gap-2">
-                        <span className="text-2xs font-mono text-muted-foreground max-w-[100px] hidden md:block truncate">
+                        <span className="hidden max-w-[100px] truncate font-mono text-2xs text-muted-foreground md:block">
                           {node.data.hash}
                         </span>
                         <Badge
                           variant={badgeProps.variant}
                           className={cn(
                             "!text-2xs !font-semibold !leading-tight px-3",
-                            badgeProps.className
+                            badgeProps.className,
                           )}
                         >
                           {badgeProps.icon}
@@ -753,7 +752,7 @@ function MachineCustomNodes({ machine }: { machine: any }) {
     return hasFailedNodes ? (
       <ShineBorder
         color="red"
-        className="p-0 w-full h-full"
+        className="h-full w-full p-0"
         borderRadius={10}
         borderWidth={2}
       >
@@ -772,7 +771,7 @@ function MachineCustomNodes({ machine }: { machine: any }) {
           JSON.parse(machine.import_failed_logs || "[]").map((log: any) => {
             const match = log.logs.match(/: (.+)$/);
             return match ? match[1] : "";
-          })
+          }),
         );
       } catch (error) {
         console.error("Error parsing failed logs:", error);
@@ -786,14 +785,14 @@ function MachineCustomNodes({ machine }: { machine: any }) {
         .map((node: any) => ({
           ...node,
           isFailed: failedNodePaths.has(
-            `/comfyui/custom_nodes/${node.data?.url.split("/").pop()}`
+            `/comfyui/custom_nodes/${node.data?.url.split("/").pop()}`,
           ),
         }));
     }, [machine.docker_command_steps.steps, failedNodePaths]);
 
     return renderCard(
       customNodes,
-      customNodes.some((node: any) => node.isFailed)
+      customNodes.some((node: any) => node.isFailed),
     );
   }
 
@@ -812,7 +811,7 @@ function MachineCustomNodes({ machine }: { machine: any }) {
           hash: node.hash,
           name: node.name || node.url.split("/").pop(),
         },
-      })
+      }),
     );
 
     return renderCard(customNodes);
@@ -824,7 +823,7 @@ function MachineCustomNodes({ machine }: { machine: any }) {
 
 function MachineWorkflowDeployment({ machine }: { machine: any }) {
   const [activeTab, setActiveTab] = useState<"workflows" | "deployments">(
-    "workflows"
+    "workflows",
   );
   const { data: workflows, isLoading: isWorkflowsLoading } = useQuery({
     queryKey: ["workflows", "all"],
@@ -834,23 +833,23 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
   });
 
   return (
-    <Card className="rounded-[10px] h-full flex flex-col">
-      <CardHeader className="pb-4 flex-none">
-        <CardTitle className="text-xl font-semibold flex items-center justify-between">
+    <Card className="flex h-full flex-col rounded-[10px]">
+      <CardHeader className="flex-none pb-4">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Workflows & Deployments
           <div className="flex items-center">
-            <Workflow className="w-4 h-4 text-muted-foreground" />
+            <Workflow className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex rounded-[8px] bg-muted p-1 mb-4 flex-none">
+      <CardContent className="flex flex-1 flex-col overflow-hidden">
+        <div className="mb-4 flex flex-none rounded-[8px] bg-muted p-1">
           <button
             className={cn(
-              "flex-1 px-3 py-1 text-sm font-medium rounded-[8px] transition-all",
+              "flex-1 rounded-[8px] px-3 py-1 font-medium text-sm transition-all",
               activeTab === "workflows"
                 ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
             onClick={() => setActiveTab("workflows")}
           >
@@ -858,10 +857,10 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
           </button>
           <button
             className={cn(
-              "flex-1 px-3 py-1 text-sm font-medium rounded-[8px] transition-all",
+              "flex-1 rounded-[8px] px-3 py-1 font-medium text-sm transition-all",
               activeTab === "deployments"
                 ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-muted-foreground hover:text-foreground",
             )}
             onClick={() => setActiveTab("deployments")}
           >
@@ -887,13 +886,13 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
-                      "flex flex-row items-center gap-2 text-xs rounded-[4px] p-1 hover:bg-gray-100 transition-all",
-                      index % 2 === 1 && "bg-gray-50"
+                      "flex flex-row items-center gap-2 rounded-[4px] p-1 text-xs transition-all hover:bg-gray-100",
+                      index % 2 === 1 && "bg-gray-50",
                     )}
                   >
-                    <Box className="w-4 h-4" />
+                    <Box className="h-4 w-4" />
                     {workflow.name}
-                    <ExternalLink className="w-3 h-3" />
+                    <ExternalLink className="h-3 w-3" />
                   </Link>
                 ))}
             </div>
@@ -915,19 +914,19 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
                   <div
                     key={deployment.id}
                     className={cn(
-                      "flex flex-row items-center justify-between rounded-[4px] p-1 hover:bg-gray-100 transition-all",
-                      index % 2 === 1 && "bg-gray-50"
+                      "flex flex-row items-center justify-between rounded-[4px] p-1 transition-all hover:bg-gray-100",
+                      index % 2 === 1 && "bg-gray-50",
                     )}
                   >
                     <Link
                       href={`/workflows/${deployment.workflow_id}?view=deployment`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex flex-row items-center gap-2 text-xs rounded-[4px]"
+                      className="flex flex-row items-center gap-2 rounded-[4px] text-xs"
                     >
-                      <GitBranch className="w-4 h-4" />
+                      <GitBranch className="h-4 w-4" />
                       {deployment.workflow.name}
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="h-3 w-3" />
                     </Link>
                     <Badge
                       variant={
@@ -953,12 +952,12 @@ function MachineContainerGraph({ machine }: { machine: any }) {
   const { data: events, isLoading } = useMachineEvents(machine.id);
 
   return (
-    <Card className="rounded-[10px] h-full">
+    <Card className="h-full rounded-[10px]">
       <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-semibold flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Container Activity
           <div className="flex items-center">
-            <LineChart className="w-4 h-4 text-muted-foreground" />
+            <LineChart className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardTitle>
       </CardHeader>
@@ -977,12 +976,12 @@ function MachineContainerTable({ machine }: { machine: any }) {
   const { data: events, isLoading } = useMachineEvents(machine.id);
 
   return (
-    <Card className="rounded-[10px] h-full flex flex-col">
-      <CardHeader className="pb-4 flex-none">
-        <CardTitle className="text-xl font-semibold flex items-center justify-between">
+    <Card className="flex h-full flex-col rounded-[10px]">
+      <CardHeader className="flex-none pb-4">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Container History
           <div className="flex items-center">
-            <TableIcon className="w-4 h-4 text-muted-foreground" />
+            <TableIcon className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardTitle>
         <CardDescription>
@@ -1036,16 +1035,16 @@ function MachineContainerTable({ machine }: { machine: any }) {
                         {event.end_time ? (
                           endTime.toLocaleString()
                         ) : (
-                          <Skeleton className="w-16 h-4 rounded-[4px]" />
+                          <Skeleton className="h-4 w-16 rounded-[4px]" />
                         )}
                       </TableCell>
                       <TableCell>{durationText.trim() || "0s"}</TableCell>
                       <TableCell>
                         <Badge variant={status === "Done" ? "green" : "yellow"}>
                           {status === "Done" ? (
-                            <CheckCircle2 className="w-3 h-3" />
+                            <CheckCircle2 className="h-3 w-3" />
                           ) : (
-                            <Loader2 className="w-3 h-3 animate-spin" />
+                            <Loader2 className="h-3 w-3 animate-spin" />
                           )}
                           {status}
                         </Badge>
@@ -1065,12 +1064,12 @@ function MachineContainerTable({ machine }: { machine: any }) {
 
 function MachineBuildLog({ machine }: { machine: any }) {
   return (
-    <Card className="rounded-[10px] h-full">
+    <Card className="h-full rounded-[10px]">
       <CardHeader className="pb-4">
-        <CardTitle className="text-xl font-semibold flex items-center justify-between">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Build Log
           <div className="flex items-center">
-            <FileClock className="w-4 h-4 text-muted-foreground" />
+            <FileClock className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardTitle>
         <CardDescription>Machine build logs</CardDescription>

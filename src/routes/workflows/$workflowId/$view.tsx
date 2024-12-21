@@ -1,6 +1,7 @@
 import { PaddingLayout } from "@/components/PaddingLayout";
 import { LoadingWrapper } from "@/components/loading-wrapper";
 import { useIsAdminAndMember } from "@/components/permissions";
+import { SharePageComponent } from "@/components/run/SharePageComponent";
 import { SessionItem } from "@/components/sessions/SessionItem";
 import { Portal } from "@/components/ui/custom/portal";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
@@ -15,9 +16,15 @@ import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
 import { ContainersTable } from "@/components/workspace/ContainersTable";
 import { APIDocs } from "@/components/workspace/DeploymentDisplay";
+import { MachineSelect } from "@/components/workspace/MachineSelect";
+import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
+import {
+  getInputsFromWorkflowAPI,
+  getInputsFromWorkflowJSON,
+} from "@/lib/getInputsFromWorkflow";
 import { cn } from "@/lib/utils";
 import { createFileRoute, notFound, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
@@ -64,6 +71,10 @@ function WorkflowPageComponent() {
 
   let view: React.ReactNode;
 
+  const { workflow } = useCurrentWorkflow(workflowId);
+
+  const { value: version } = useSelectedVersion(workflowId);
+
   switch (currentView) {
     case "requests":
       view = (
@@ -93,13 +104,39 @@ function WorkflowPageComponent() {
         </PaddingLayout>
       );
       break;
+    case "playground":
+      view = (
+        <PaddingLayout>
+          <div className={cn("h-full w-full")}>
+            {/* {(!_workflow?.versions?.[0].id || !machine_id) && (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-4 text-sm">
+                {!_workflow?.versions?.[0].id && (
+                  <div>You need to have one workflow version to run</div>
+                )}
+                {!machine_id && (
+                  <div>
+                    <MachineSelect workflow_id={workflow_id} leaveEmpty />
+                  </div>
+                )}
+              </div>
+            )} */}
+            {workflow?.selected_machine_id && version?.id && (
+              <SharePageComponent
+                runOrigin={"manual"}
+                machine_id={workflow?.selected_machine_id}
+                workflow_version_id={version?.id}
+                inputs={getInputsFromWorkflowAPI(version?.workflow_api)}
+              />
+            )}
+          </div>
+        </PaddingLayout>
+      );
+      break;
   }
 
   const isAdminAndMember = useIsAdminAndMember();
 
   const tabs = isAdminAndMember ? pages : ["playground", "gallery"];
-
-  const { workflow } = useCurrentWorkflow(workflowId);
 
   const { createSession, listSession, deleteSession } = useSessionAPI(
     workflow?.selected_machine_id,

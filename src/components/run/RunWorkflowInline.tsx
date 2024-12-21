@@ -292,7 +292,6 @@ export function RunWorkflowInline({
     return plainInputsToZod(inputs);
   }, [inputs]);
 
-  const { v2RunApi } = use(FeatureFlagsContext);
   const fetchToken = useAuthStore((state) => state.fetchToken);
 
   const {
@@ -337,64 +336,64 @@ export function RunWorkflowInline({
     setStatus({ state: "preparing", live_status: "", progress: 0 });
     try {
       const origin = window.location.origin;
-      if (v2RunApi || model_id) {
-        const auth = await fetchToken();
-        const body = model_id
-          ? { model_id: model_id, inputs: val }
-          : {
-              workflow_version_id: workflow_version_id,
-              machine_id: machine_id,
-              inputs: val,
-              origin: runOrigin,
-              batch_number: 1,
-            };
-
-        if (model_id) {
-          setLoading2(true);
-        }
-
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_CD_API_URL}/api/run${model_id ? "/sync" : ""}`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${auth}`,
-            },
-            body: JSON.stringify(body),
-          },
-        );
-        if (!response.ok) {
-          throw new Error(await response.text());
-        }
-
-        if (model_id) {
-          const data = await response.json();
-          setLoading2(false);
-          const mediaData = data[0]?.data;
-          if (mediaData?.images?.[0]?.url) {
-            setImage([{ url: mediaData.images[0].url }]);
-          } else if (mediaData?.video?.[0]?.url) {
-            setImage([{ url: mediaData.video[0].url }]);
-          }
-        }
-      } else {
-        const a = await callServerPromise(
-          createRun({
-            origin,
+      // if (v2RunApi || model_id) {
+      const auth = await fetchToken();
+      const body = model_id
+        ? { model_id: model_id, inputs: val }
+        : {
             workflow_version_id: workflow_version_id,
             machine_id: machine_id,
             inputs: val,
-            runOrigin: runOrigin,
-          }),
-        );
-        if (a && !("error" in a) && "workflow_run_id" in a) {
-          setRunId(a.workflow_run_id as string);
-        } else {
-          setLoading2(false);
-        }
-        console.log(a);
+            origin: runOrigin,
+            batch_number: 1,
+          };
+
+      if (model_id) {
+        setLoading2(true);
       }
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/run${model_id ? "/sync" : ""}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth}`,
+          },
+          body: JSON.stringify(body),
+        },
+      );
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      if (model_id) {
+        const data = await response.json();
+        setLoading2(false);
+        const mediaData = data[0]?.data;
+        if (mediaData?.images?.[0]?.url) {
+          setImage([{ url: mediaData.images[0].url }]);
+        } else if (mediaData?.video?.[0]?.url) {
+          setImage([{ url: mediaData.video[0].url }]);
+        }
+      }
+      // } else {
+      // const a = await callServerPromise(
+      //   createRun({
+      //     origin,
+      //     workflow_version_id: workflow_version_id,
+      //     machine_id: machine_id,
+      //     inputs: val,
+      //     runOrigin: runOrigin,
+      //   }),
+      // );
+      // if (a && !("error" in a) && "workflow_run_id" in a) {
+      //   setRunId(a.workflow_run_id as string);
+      // } else {
+      //   setLoading2(false);
+      // }
+      // console.log(a);
+      // }
       setIsLoading(false);
       if (!blocking) {
         setLoading2(false);
