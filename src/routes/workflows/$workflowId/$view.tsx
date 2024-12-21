@@ -1,3 +1,4 @@
+import { GalleryView } from "@/components/GalleryView";
 import { PaddingLayout } from "@/components/PaddingLayout";
 import { LoadingWrapper } from "@/components/loading-wrapper";
 import { useIsAdminAndMember } from "@/components/permissions";
@@ -108,18 +109,6 @@ function WorkflowPageComponent() {
       view = (
         <PaddingLayout>
           <div className={cn("h-full w-full")}>
-            {/* {(!_workflow?.versions?.[0].id || !machine_id) && (
-              <div className="flex h-full w-full flex-col items-center justify-center gap-4 text-sm">
-                {!_workflow?.versions?.[0].id && (
-                  <div>You need to have one workflow version to run</div>
-                )}
-                {!machine_id && (
-                  <div>
-                    <MachineSelect workflow_id={workflow_id} leaveEmpty />
-                  </div>
-                )}
-              </div>
-            )} */}
             {workflow?.selected_machine_id && version?.id && (
               <SharePageComponent
                 runOrigin={"manual"}
@@ -131,6 +120,9 @@ function WorkflowPageComponent() {
           </div>
         </PaddingLayout>
       );
+      break;
+    case "gallery":
+      view = <GalleryView workflowID={workflowId} />;
       break;
   }
 
