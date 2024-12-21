@@ -496,12 +496,12 @@ export function CreateDeploymentButtonV2({
       // );
       await callServerPromise(
         api({
-          url: "deployments",
+          url: "deployment",
           init: {
             method: "POST",
             body: JSON.stringify({
               workflow_id: workflow?.id!,
-              version_id: version?.id,
+              workflow_version_id: version?.id,
               machine_id: machine,
               environment: environment,
             }),
