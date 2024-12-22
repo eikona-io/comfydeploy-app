@@ -469,7 +469,8 @@ export function SDInputsRender({
 import { Check, ChevronsUpDown, Pencil, X } from "lucide-react";
 import * as React from "react";
 
-import { useModels } from "@/components/storage/model-list-view";
+import { useModels } from "@/hooks/use-model";
+
 import {
   Command,
   CommandEmpty,

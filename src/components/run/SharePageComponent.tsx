@@ -29,7 +29,6 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 // import Markdown from "react-markdown";
 // import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
-import useSWR from "swr";
 
 export function SharePageComponent(props: {
   inputs: any[];

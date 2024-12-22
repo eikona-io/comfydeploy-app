@@ -136,8 +136,8 @@ export function useModels() {
     refetchInterval: (data) => {
       return 30000;
     },
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount: false,
+    // refetchOnWindowFocus: false,
   });
 
   const { data: public_volume, refetch: _refetchPublicVolume } = useQuery({
@@ -155,8 +155,8 @@ export function useModels() {
         models: contents.models as any[],
       };
     },
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
+    // refetchOnMount: false,
+    // refetchOnWindowFocus: false,
   });
 
   const { data: downloadingModels, refetch: refetchDownloadingModels } =

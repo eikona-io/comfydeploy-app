@@ -1,11 +1,7 @@
 import {
-  Link,
   Outlet,
-  createRootRoute,
   createRootRouteWithContext,
   redirect,
-  useBlocker,
-  useRouter,
 } from "@tanstack/react-router";
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
@@ -20,9 +16,9 @@ const TanStackRouterDevtools =
       );
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { SignedIn, useAuth } from "@clerk/clerk-react";
-import { RedirectToSignIn, SignIn, SignedOut } from "@clerk/clerk-react";
-import React, { useEffect } from "react";
+import { SignedIn, type useAuth } from "@clerk/clerk-react";
+import { RedirectToSignIn, SignedOut } from "@clerk/clerk-react";
+import React from "react";
 import { Toaster } from "sonner";
 import { Providers } from "../lib/providers";
 

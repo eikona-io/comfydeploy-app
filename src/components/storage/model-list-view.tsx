@@ -43,9 +43,10 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { sendInetrnalEventToCD as sendInternalEventToCD } from "@/components/workspace/sendEventToCD";
 import { useLocalStorage } from "@/lib/useLocalStorage";
-import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
+
+import { useModels } from "@/hooks/use-model";
 
 type RetryResponse = {
   id: string;
@@ -185,214 +186,214 @@ type RetryMutationVariables = {
   modelName: string;
 };
 
-export function useModels() {
-  const setIsPrivateModelRefreshing = modelBrowserState(
-    (s) => s.setIsPrivateModelRefreshing,
-  );
+// export function useModels() {
+//   const setIsPrivateModelRefreshing = modelBrowserState(
+//     (s) => s.setIsPrivateModelRefreshing,
+//   );
 
-  const setIsPublicModelRefreshing = modelBrowserState(
-    (s) => s.setIsPublicModelRefreshing,
-  );
+//   const setIsPublicModelRefreshing = modelBrowserState(
+//     (s) => s.setIsPublicModelRefreshing,
+//   );
 
-  // const [disableCache, setDisableCache] = useState(false);
-  const disableCacheRef = useRef(false);
+//   // const [disableCache, setDisableCache] = useState(false);
+//   const disableCacheRef = useRef(false);
 
-  const { data: private_volume, refetch: _refetchPrivateVolume } = useQuery({
-    queryKey: ["volume", "private-models"],
-    queryFn: async ({ queryKey }) => {
-      console.log("refreshing private models");
-      setIsPrivateModelRefreshing(true);
-      // const contents = await getPrivateVolumeList(true);
-      // const contents = await api({
-      //   url: queryKey.join("/"),
-      // });
-      const contents = await fetch(`/api/volume`, {
-        method: "POST",
-        body: JSON.stringify({
-          url: queryKey.join("/"),
-          type: "private-volume",
-          disableCache: disableCacheRef.current,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => data);
-      setIsPrivateModelRefreshing(false);
-      disableCacheRef.current = false;
-      toast.success("Private Models Refreshed");
-      return {
-        structure: contents.structure as VolFSStructure,
-        models: contents.models as ModelType[],
-      };
-    },
-    refetchInterval: (data) => {
-      return 30000;
-    },
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    // enabled: false,
-  });
+//   const { data: private_volume, refetch: _refetchPrivateVolume } = useQuery({
+//     queryKey: ["volume", "private-models"],
+//     queryFn: async ({ queryKey }) => {
+//       console.log("refreshing private models");
+//       setIsPrivateModelRefreshing(true);
+//       // const contents = await getPrivateVolumeList(true);
+//       // const contents = await api({
+//       //   url: queryKey.join("/"),
+//       // });
+//       const contents = await fetch(`/api/volume`, {
+//         method: "POST",
+//         body: JSON.stringify({
+//           url: queryKey.join("/"),
+//           type: "private-volume",
+//           disableCache: disableCacheRef.current,
+//         }),
+//       })
+//         .then((res) => res.json())
+//         .then((data) => data);
+//       setIsPrivateModelRefreshing(false);
+//       disableCacheRef.current = false;
+//       toast.success("Private Models Refreshed");
+//       return {
+//         structure: contents.structure as VolFSStructure,
+//         models: contents.models as ModelType[],
+//       };
+//     },
+//     refetchInterval: (data) => {
+//       return 30000;
+//     },
+//     refetchOnMount: false,
+//     refetchOnWindowFocus: false,
+//     // enabled: false,
+//   });
 
-  const { data: public_volume, refetch: _refetchPublicVolume } = useQuery({
-    queryKey: ["volume", "public-models"],
-    queryFn: async ({ queryKey }) => {
-      setIsPublicModelRefreshing(true);
-      // const contents = await getPublicVolumeList(true);
-      // const contents = await api({
-      //   url: queryKey.join("/"),
-      // });
-      const contents = await fetch(`/api/volume`, {
-        method: "POST",
-        body: JSON.stringify({
-          url: queryKey.join("/"),
-          type: "public-volume",
-          disableCache: disableCacheRef.current,
-        }),
-      })
-        .then((res) => res.json())
-        .then((data) => data);
-      setIsPublicModelRefreshing(false);
-      disableCacheRef.current = false;
-      // sendInternalEventToCD({
-      //   type: "refresh_defs",
-      //   data: {
-      //     volume_content: contents,
-      //     rewrite: true,
-      //   },
-      // });
-      toast.success("Public Models Refreshed");
-      return {
-        structure: contents.structure as VolFSStructure,
-        models: contents.models as ModelType[],
-      };
-    },
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    // enabled: false,
-  });
+//   const { data: public_volume, refetch: _refetchPublicVolume } = useQuery({
+//     queryKey: ["volume", "public-models"],
+//     queryFn: async ({ queryKey }) => {
+//       setIsPublicModelRefreshing(true);
+//       // const contents = await getPublicVolumeList(true);
+//       // const contents = await api({
+//       //   url: queryKey.join("/"),
+//       // });
+//       const contents = await fetch(`/api/volume`, {
+//         method: "POST",
+//         body: JSON.stringify({
+//           url: queryKey.join("/"),
+//           type: "public-volume",
+//           disableCache: disableCacheRef.current,
+//         }),
+//       })
+//         .then((res) => res.json())
+//         .then((data) => data);
+//       setIsPublicModelRefreshing(false);
+//       disableCacheRef.current = false;
+//       // sendInternalEventToCD({
+//       //   type: "refresh_defs",
+//       //   data: {
+//       //     volume_content: contents,
+//       //     rewrite: true,
+//       //   },
+//       // });
+//       toast.success("Public Models Refreshed");
+//       return {
+//         structure: contents.structure as VolFSStructure,
+//         models: contents.models as ModelType[],
+//       };
+//     },
+//     refetchOnMount: false,
+//     refetchOnWindowFocus: false,
+//     // enabled: false,
+//   });
 
-  const { data: downloadingModels, refetch: refetchDownloadingModels } =
-    useQuery({
-      queryKey: ["volume", "downloading-models"],
-      queryFn: async ({ queryKey }) => {
-        // const contents = await getDownloadingModels();
-        const contents = await api({
-          url: queryKey.join("/"),
-        });
-        return contents;
-      },
-      refetchOnWindowFocus: false,
-      refetchInterval: (data) => {
-        if (data?.state.data?.length === 0) {
-          return 50000;
-        }
-        return 1000;
-      },
-    });
+//   const { data: downloadingModels, refetch: refetchDownloadingModels } =
+//     useQuery({
+//       queryKey: ["volume", "downloading-models"],
+//       queryFn: async ({ queryKey }) => {
+//         // const contents = await getDownloadingModels();
+//         const contents = await api({
+//           url: queryKey.join("/"),
+//         });
+//         return contents;
+//       },
+//       refetchOnWindowFocus: false,
+//       refetchInterval: (data) => {
+//         if (data?.state.data?.length === 0) {
+//           return 50000;
+//         }
+//         return 1000;
+//       },
+//     });
 
-  const flattenedModels = useMemo<Model[]>(() => {
-    const flatten = (
-      items: (VolFolder | VolFile)[],
-      models: ModelType[],
-      prefix = "",
-      isPrivate: boolean,
-    ): Model[] => {
-      return items.reduce<Model[]>((acc, item) => {
-        const path = `${item.path}`;
-        const pathParts = path.split("/");
-        const category = pathParts.length > 1 ? pathParts[0] : "other";
-        if (item.type === "file") {
-          const name = pathParts.pop() || "";
-          const type = pathParts[0];
-          const existingModel = acc.find((m) => m.path === path);
-          if (existingModel) {
-            existingModel.isPrivate = existingModel.isPrivate || isPrivate;
-            existingModel.isPublic = existingModel.isPublic || !isPrivate;
-          } else {
-            const model = models.find((m) => {
-              const folder_path = m.folder_path
-                ? [m.folder_path, m.model_name].join("/")
-                : m.model_name;
-              const status = m.status;
-              if (!folder_path || status !== "success") return false;
-              return folder_path?.includes(path);
-            });
-            if (!model?.id) return acc;
-            acc.push({
-              id: model?.id, // Use path as fallback ID if model is not found
-              path,
-              name,
-              type,
-              isPrivate,
-              isPublic: !isPrivate,
-              category,
-              created_at: model?.created_at || new Date(), // Add created time
-              error_log: model?.error_log || "",
-              status: model?.status || "failed", // Add status field
-              size: model?.size || 0,
-            });
-          }
-        } else if (item.type === "folder" && item.contents) {
-          return [
-            ...acc,
-            ...flatten(item.contents, models, `${path}/`, isPrivate),
-          ];
-        }
-        return acc;
-      }, []);
-    };
+//   const flattenedModels = useMemo<Model[]>(() => {
+//     const flatten = (
+//       items: (VolFolder | VolFile)[],
+//       models: ModelType[],
+//       prefix = "",
+//       isPrivate: boolean,
+//     ): Model[] => {
+//       return items.reduce<Model[]>((acc, item) => {
+//         const path = `${item.path}`;
+//         const pathParts = path.split("/");
+//         const category = pathParts.length > 1 ? pathParts[0] : "other";
+//         if (item.type === "file") {
+//           const name = pathParts.pop() || "";
+//           const type = pathParts[0];
+//           const existingModel = acc.find((m) => m.path === path);
+//           if (existingModel) {
+//             existingModel.isPrivate = existingModel.isPrivate || isPrivate;
+//             existingModel.isPublic = existingModel.isPublic || !isPrivate;
+//           } else {
+//             const model = models.find((m) => {
+//               const folder_path = m.folder_path
+//                 ? [m.folder_path, m.model_name].join("/")
+//                 : m.model_name;
+//               const status = m.status;
+//               if (!folder_path || status !== "success") return false;
+//               return folder_path?.includes(path);
+//             });
+//             if (!model?.id) return acc;
+//             acc.push({
+//               id: model?.id, // Use path as fallback ID if model is not found
+//               path,
+//               name,
+//               type,
+//               isPrivate,
+//               isPublic: !isPrivate,
+//               category,
+//               created_at: model?.created_at || new Date(), // Add created time
+//               error_log: model?.error_log || "",
+//               status: model?.status || "failed", // Add status field
+//               size: model?.size || 0,
+//             });
+//           }
+//         } else if (item.type === "folder" && item.contents) {
+//           return [
+//             ...acc,
+//             ...flatten(item.contents, models, `${path}/`, isPrivate),
+//           ];
+//         }
+//         return acc;
+//       }, []);
+//     };
 
-    const publicModels = public_volume
-      ? flatten(
-          public_volume.structure.contents,
-          public_volume.models,
-          "",
-          false,
-        )
-      : [];
-    const privateModels = private_volume
-      ? flatten(
-          private_volume.structure.contents,
-          private_volume.models,
-          "",
-          true,
-        )
-      : [];
+//     const publicModels = public_volume
+//       ? flatten(
+//           public_volume.structure.contents,
+//           public_volume.models,
+//           "",
+//           false,
+//         )
+//       : [];
+//     const privateModels = private_volume
+//       ? flatten(
+//           private_volume.structure.contents,
+//           private_volume.models,
+//           "",
+//           true,
+//         )
+//       : [];
 
-    // Combine and merge public and private models, prioritizing private model IDs
-    return [...publicModels, ...privateModels].reduce((acc, model) => {
-      const existingModel = acc.find((m) => m.path === model.path);
-      if (existingModel) {
-        existingModel.isPrivate = existingModel.isPrivate || model.isPrivate;
-        existingModel.isPublic = existingModel.isPublic || model.isPublic;
-        // If the model is private, use its ID
-        if (model.isPrivate) existingModel.id = model.id;
-      } else {
-        acc.push(model);
-      }
-      return acc;
-    }, [] as Model[]);
-  }, [public_volume, private_volume]);
+//     // Combine and merge public and private models, prioritizing private model IDs
+//     return [...publicModels, ...privateModels].reduce((acc, model) => {
+//       const existingModel = acc.find((m) => m.path === model.path);
+//       if (existingModel) {
+//         existingModel.isPrivate = existingModel.isPrivate || model.isPrivate;
+//         existingModel.isPublic = existingModel.isPublic || model.isPublic;
+//         // If the model is private, use its ID
+//         if (model.isPrivate) existingModel.id = model.id;
+//       } else {
+//         acc.push(model);
+//       }
+//       return acc;
+//     }, [] as Model[]);
+//   }, [public_volume, private_volume]);
 
-  const refetchPrivateVolume = (disableCache = false) => {
-    disableCacheRef.current = disableCache;
-    return _refetchPrivateVolume();
-  };
+//   const refetchPrivateVolume = (disableCache = false) => {
+//     disableCacheRef.current = disableCache;
+//     return _refetchPrivateVolume();
+//   };
 
-  const refetchPublicVolume = (disableCache = false) => {
-    disableCacheRef.current = disableCache;
-    return _refetchPublicVolume();
-  };
+//   const refetchPublicVolume = (disableCache = false) => {
+//     disableCacheRef.current = disableCache;
+//     return _refetchPublicVolume();
+//   };
 
-  return {
-    flattenedModels,
-    public_volume,
-    private_volume,
-    downloadingModels,
-    refetchDownloadingModels,
-    refetchPrivateVolume,
-    refetchPublicVolume,
-  };
-}
+//   return {
+//     flattenedModels,
+//     public_volume,
+//     private_volume,
+//     downloadingModels,
+//     refetchDownloadingModels,
+//     refetchPrivateVolume,
+//     refetchPublicVolume,
+//   };
+// }
 
 const modelBrowserState = create<{
   addModelModalOpen: boolean;
@@ -895,17 +896,15 @@ export function ModelListView(props: {
             ))}
           </div>
 
-          <>
-            <Button
-              className="h-6 min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
-              size="sm"
-              Icon={Plus}
-              onClick={() => setAddModelModalOpen(true)}
-              iconPlacement="right"
-            >
-              Add
-            </Button>
-          </>
+          <Button
+            className="h-6 min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
+            size="sm"
+            Icon={Plus}
+            onClick={() => setAddModelModalOpen(true)}
+            iconPlacement="right"
+          >
+            Add
+          </Button>
         </div>
 
         <div className="relative">

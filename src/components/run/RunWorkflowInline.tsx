@@ -17,7 +17,6 @@ import {
 import { plainInputsToZod } from "@/lib/workflowVersionInputsToZod";
 // import { HandleFileUpload } from "@/server/uploadFile";
 import { useAuth, useClerk } from "@clerk/clerk-react";
-import JSZip from "jszip";
 import { Play } from "lucide-react";
 import {
   type FormEvent,
@@ -102,6 +101,8 @@ export async function parseFilesToImgURLs(
       return processFile(value);
     } else if (Array.isArray(value)) {
       if (toZip) {
+        // Lazy load JSZip only when needed
+        const JSZip = (await import("jszip")).default;
         const zip = new JSZip();
         for (const item of value) {
           if (item instanceof File) {
