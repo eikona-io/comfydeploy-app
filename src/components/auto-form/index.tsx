@@ -95,6 +95,10 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
     }
   }, [valuesString]);
 
+  React.useEffect(() => {
+    console.log("Current form errors:", form.formState.errors);
+  }, [form.formState.errors]);
+
   return (
     <Form {...form}>
       <ScrollArea>
