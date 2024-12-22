@@ -38,7 +38,9 @@ const WorkflowsIndexRoute = WorkflowsIndexImport.update({
   id: '/workflows/',
   path: '/workflows/',
   getParentRoute: () => rootRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/workflows/index.lazy').then((d) => d.Route),
+)
 
 const MachinesIndexRoute = MachinesIndexImport.update({
   id: '/machines/',
@@ -68,7 +70,9 @@ const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
   id: '/workflows/$workflowId/$view',
   path: '/workflows/$workflowId/$view',
   getParentRoute: () => rootRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/workflows/$workflowId/$view.lazy').then((d) => d.Route),
+)
 
 // Populate the FileRoutesByPath interface
 
