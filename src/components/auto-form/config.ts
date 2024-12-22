@@ -1,5 +1,11 @@
 // import ModelSelector from "./custom/model-picker-url-only";
 // import AutoFormSelect from "./custom/select";
+import AutoFormComfyUIVersion from "./custom/comfyui-version";
+import AutoFormDockerSteps from "./custom/docker-steps-ui";
+import ExtraDockerCommands from "./custom/extra-docker-commands";
+import AutoFormMaxAlwaysOnPicker from "./custom/max-always-on-picker";
+import AutoFormMaxGPUPicker from "./custom/max-gpu-picker";
+import AutoFormTimeoutPicker from "./custom/timeout-picker";
 import AutoFormCheckbox from "./fields/checkbox";
 import AutoFormDate from "./fields/date";
 import AutoFormEnum from "./fields/enum";
@@ -7,6 +13,7 @@ import AutoFormFile from "./fields/file";
 import AutoFormInput from "./fields/input";
 import AutoFormNumber from "./fields/number";
 import AutoFormRadioGroup from "./fields/radio-group";
+import AutoFormSlider from "./fields/slider";
 import AutoFormSwitch from "./fields/switch";
 import AutoFormTextarea from "./fields/textarea";
 
@@ -45,15 +52,15 @@ export const INPUT_COMPONENTS = {
   // models: AutoFormModelsPicker,
   // gpuPicker: AutoFormGPUPicker,
   // modelUrlPicker: AutoFormModelsPickerUrl,
-  // timeoutPicker: AutoFormTimeoutPicker,
-  // "max-gpu-picker": AutoFormMaxGPUPicker,
-  // "max-always-on-picker": AutoFormMaxAlwaysOnPicker,
+  timeoutPicker: AutoFormTimeoutPicker,
+  "max-gpu-picker": AutoFormMaxGPUPicker,
+  "max-always-on-picker": AutoFormMaxAlwaysOnPicker,
   // dependency: AutoFormDependencyUI,
-  // extraDockerCommands: ExtraDockerCommands,
+  extraDockerCommands: ExtraDockerCommands,
   // newWorkflow: AutoFormNewWorkflow,
-  // slider: AutoFormSlider,
-  // dockerSteps: AutoFormDockerSteps,
-  // comfyuiVersion: AutoFormComfyUIVersion,
+  slider: AutoFormSlider,
+  dockerSteps: AutoFormDockerSteps,
+  comfyuiVersion: AutoFormComfyUIVersion,
   // newWorkflowFromJson: AutoFormNewWorkflowFromJson,
 
   // "select-custom-input": AutoFormSelectInput,

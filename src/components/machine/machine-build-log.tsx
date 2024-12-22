@@ -41,7 +41,6 @@ const useDialogStore = create<DialogState>((set) => ({
 
 export const MemoizedStepsUI = memo(StepsUI);
 const MemoizedLogsViewer = memo(LogsViewer);
-// export const MemoizedInlineSettings = memo(InlineSettings);
 
 export function BuildStepsUI({
   machine,
@@ -53,7 +52,7 @@ export function BuildStepsUI({
   const [viewMode, setViewMode] = useState<ViewMode>("new");
 
   return (
-    <div className="flex h-full max-h-[600px] flex-col">
+    <div className="flex h-full max-h-[calc(100vh-100px)] flex-col">
       <div className="mb-4 flex space-x-2">
         <Button
           variant={viewMode === "new" ? "default" : "outline"}
