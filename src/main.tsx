@@ -3,7 +3,7 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import "./globals.css";
-import { LoadingIcon } from "./components/loading-icon";
+import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 // Set up a Router instance
 const router = createRouter({
   routeTree,

@@ -1,6 +1,9 @@
-import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import {
+  BuildStepsUI,
+  MachineBuildLog,
+} from "@/components/machine/machine-build-log";
+import { MachineOverview } from "@/components/machine/machine-overview";
+import { Portal } from "@/components/ui/custom/portal";
 import {
   SidebarMenuSub,
   SidebarMenuSubButton,
@@ -8,19 +11,19 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Portal } from "@/components/ui/custom/portal";
-import { MachineOverview } from "./machine-overview";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 type View = "settings" | "overview" | "logs";
 
 export default function MachinePage({
   params,
-  endpoint,
 }: {
   params: { machine_id: string };
-  endpoint?: string;
 }) {
   const navigate = useNavigate();
+  const machineEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
   const { view } = useSearch({ from: "/machines/$machineId" });
 
   const { data: machine, isLoading } = useQuery<any>({
@@ -64,13 +67,13 @@ export default function MachinePage({
 
   if (isLoading || !machine) {
     return (
-      <div className="w-full max-w-[1500px] mx-auto md:p-4">
-        <Skeleton className="h-10 w-48 m-4 rounded-[8px]" />
+      <div className="mx-auto w-full max-w-[1500px] md:p-4">
+        <Skeleton className="m-4 h-10 w-48 rounded-[8px]" />
         <div className="flex flex-row gap-3 p-4 pb-2">
           <Skeleton className="h-10 w-24 rounded-[8px]" />
           <Skeleton className="h-10 w-24 rounded-[8px]" />
         </div>
-        <div className="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
           <div className="space-y-4">
             <Skeleton className="h-[200px] w-full rounded-[8px]" />
             <Skeleton className="h-[300px] w-full rounded-[8px]" />
@@ -109,8 +112,8 @@ export default function MachinePage({
         </SidebarMenuSub>
       </Portal>
 
-      <div className="w-full max-w-[1500px] mx-auto md:p-4">
-        <h1 className="text-2xl font-medium p-4">{machine.name}</h1>
+      <div className="mx-auto w-full max-w-[1500px] md:p-4">
+        <h1 className="p-4 font-medium text-2xl">{machine.name}</h1>
 
         {(() => {
           switch (view) {
@@ -119,7 +122,25 @@ export default function MachinePage({
             case "overview":
               return <MachineOverview machine={machine} setView={setView} />;
             case "logs":
-              return <div>Logs</div>;
+              if (machine?.status === "building") {
+                return (
+                  <MachineBuildLog
+                    machine={machine}
+                    instance_id={machine.build_machine_instance_id!}
+                    machine_id={params.machine_id}
+                    endpoint={machineEndpoint}
+                  />
+                );
+              }
+
+              if (!machine?.build_log) return <div>No logs</div>;
+
+              return (
+                <BuildStepsUI
+                  machine={machine}
+                  logs={JSON.parse(machine.build_log)}
+                />
+              );
           }
         })()}
       </div>

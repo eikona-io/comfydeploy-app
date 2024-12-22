@@ -1,5 +1,6 @@
 "use client";
 import { CopyButton } from "@/components/copy-button";
+import { LogsViewer } from "@/components/log/logs-viewer";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -10,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { LogsViewer } from "@/components/workflows/LogsViewer";
 
 export function LogDialog({
   run,

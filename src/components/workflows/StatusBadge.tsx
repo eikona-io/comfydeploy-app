@@ -1,11 +1,11 @@
 import { Badge } from "@/components/ui/badge";
+import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Check, Clock12, Minus, X } from "lucide-react";
-import { LoadingIcon } from "../loading-icon";
 
 export function StatusBadge({
   status,

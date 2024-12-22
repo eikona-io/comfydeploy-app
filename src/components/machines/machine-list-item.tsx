@@ -1,5 +1,24 @@
+import { CustomNodeList } from "@/components/machines/custom-node-list";
+import { MachineStatus } from "@/components/machines/machine-status";
+import { ShineBorder } from "@/components/magicui/shine-border";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import { LoadingIcon } from "@/components/ui/custom/loading-icon";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMachineEvents } from "@/hooks/use-machine";
+import { getMachineBuildProgress } from "@/hooks/use-machine-build-progress";
+import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
   addHours,
   differenceInHours,
@@ -8,8 +27,6 @@ import {
   isAfter,
   subHours,
 } from "date-fns";
-import { useMemo } from "react";
-import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 import {
   AlertCircleIcon,
   ChevronDown,
@@ -23,24 +40,8 @@ import {
   Settings,
   Zap,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { getRelativeTime } from "@/lib/get-relative-time";
-import { ShineBorder } from "@/components/magicui/shine-border";
-import { Separator } from "@/components/ui/separator";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
+import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@/components/ui/skeleton";
-import { MachineStatus } from "@/components/machines/machine-status";
-import { CustomNodeList } from "@/components/machines/custom-node-list";
-import { Link } from "@tanstack/react-router";
 
 // -------------------------constants-------------------------
 
@@ -97,7 +98,7 @@ export const getLastActiveText = (events: any[] | undefined) => {
       }
       return latest;
     },
-    null as (typeof events)[0] | null
+    null as (typeof events)[0] | null,
   );
 
   if (!mostRecentEvent?.start_time) return "Never";
@@ -129,22 +130,21 @@ export function MachineListItem({
   isExpanded,
   setIsExpanded,
   machineActionItemList,
-  modalBuilderEndpoint,
 }: {
   machine: any;
   isExpanded: boolean;
   setIsExpanded: (isExpanded: boolean) => void;
   machineActionItemList: React.ReactNode;
-  modalBuilderEndpoint?: string;
 }) {
   const { data: events, isLoading } = useMachineEvents(machine.id);
   const { hasActiveEvents } = useHasActiveEvents(machine.id);
+  const modalBuilderEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
 
   const isStale = useMemo(() => {
     if (machine.status === "building") {
       const buildDuration = differenceInHours(
         new Date(),
-        new Date(machine.updated_at)
+        new Date(machine.updated_at),
       );
       return buildDuration >= 1;
     }
@@ -159,60 +159,60 @@ export function MachineListItem({
   const content = (
     <div
       className={cn(
-        "border rounded-sm p-4 shadow-sm w-full min-h-[80px] bg-white flex items-center flex-col group relative overflow-hidden",
+        "group relative flex min-h-[80px] w-full flex-col items-center overflow-hidden rounded-sm border bg-white p-4 shadow-sm",
         isStale && "bg-gray-50 contrast-75",
         machine.status === "error" && "bg-red-100",
         machine.import_failed_logs &&
           JSON.parse(machine.import_failed_logs).length > 0 &&
           "bg-yellow-50",
         isDeprecated && !isStale && "bg-yellow-50",
-        hasActiveEvents && "bg-green-50/80"
+        hasActiveEvents && "bg-green-50/80",
       )}
     >
-      {/* <BuildProgressWrapper
+      <BuildProgressWrapper
         machine={machine}
         modalBuilderEndpoint={modalBuilderEndpoint}
         isStale={isStale}
-      /> */}
+      />
 
-      <div className="flex flex-row justify-between w-full z-[2]">
-        <div className="flex flex-row gap-4 items-center">
-          <div className="flex justify-center flex-col">
-            <div className="flex flex-row gap-2 items-center">
+      <div className="z-[2] flex w-full flex-row justify-between">
+        <div className="flex flex-row items-center gap-4">
+          <div className="flex flex-col justify-center">
+            <div className="flex flex-row items-center gap-2">
               {(() => {
                 switch (true) {
                   case machine.status === "building" && !isStale:
-                    return <LoadingIcon className="w-4 h-4" />;
+                    return <LoadingIcon className="h-4 w-4" />;
                   case machine.status === "error":
                     return (
-                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
                     );
                   case isStale:
-                    return <Clock className="w-3 h-3" />;
+                    return <Clock className="h-3 w-3" />;
                   case (machine.import_failed_logs &&
                     JSON.parse(machine.import_failed_logs).length > 0) ||
                     isDeprecated:
                     return (
-                      <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                      <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
                     );
                   case machine.status === "ready":
                     return (
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                      <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
                     );
                   default:
                     return null;
                 }
               })()}
               <Link href={`/machines/${machine.id}`}>
-                <h2 className="text-base font-medium whitespace-nowrap">
+                <h2 className="whitespace-nowrap font-medium text-base">
                   {machine.name}
                 </h2>
               </Link>
             </div>
 
             {!isExpanded && machine.gpu && (
-              <div className="flex flex-row gap-1 items-center text-2xs font-medium">
-                <HardDrive className="w-[14px] h-[14px]" />
+              <div className="flex flex-row items-center gap-1 font-medium text-2xs">
+                <HardDrive className="h-[14px] w-[14px]" />
                 {machine.gpu}
               </div>
             )}
@@ -227,7 +227,7 @@ export function MachineListItem({
                 />
               </div>
 
-              <div className="hidden xl:flex items-center space-x-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+              <div className="hidden items-center space-x-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 xl:flex">
                 <MachineListActionBar
                   machine={machine}
                   isExpanded={false}
@@ -237,9 +237,9 @@ export function MachineListItem({
             </>
           )}
         </div>
-        <div className="flex flex-row gap-2 items-center w-full justify-end">
+        <div className="flex w-full flex-row items-center justify-end gap-2">
           {isExpanded && (
-            <div className="hidden xl:flex items-center space-x-2">
+            <div className="hidden items-center space-x-2 xl:flex">
               <MachineListActionBar
                 machine={machine}
                 isExpanded={true}
@@ -249,7 +249,7 @@ export function MachineListItem({
           )}
           {!isExpanded && (
             <>
-              <div className="hidden xl:block xl:max-w-[250px] xl:w-full">
+              <div className="hidden xl:block xl:w-full xl:max-w-[250px]">
                 <MachineListItemEvents
                   isExpanded={false}
                   events={{ data: events, isLoading }}
@@ -281,9 +281,9 @@ export function MachineListItem({
             className="!text-2xs !font-semibold flex items-center gap-1"
           >
             {hasActiveEvents ? (
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
             ) : (
-              <Pause className="w-3 h-3 text-muted-foreground" />
+              <Pause className="h-3 w-3 text-muted-foreground" />
             )}
             {hasActiveEvents ? "Running" : "Idle"}
           </Badge>
@@ -293,7 +293,7 @@ export function MachineListItem({
             onClick={() => setIsExpanded(!isExpanded)}
           >
             <ChevronDown
-              className={`w-4 h-4 transition-transform duration-200 ${
+              className={`h-4 w-4 transition-transform duration-200 ${
                 isExpanded ? "rotate-180" : ""
               }`}
             />
@@ -302,25 +302,25 @@ export function MachineListItem({
       </div>
 
       <div
-        className={`grid transition-all duration-300 w-full z-[2] ${
+        className={`z-[2] grid w-full transition-all duration-300 ${
           isExpanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
         <div
           className={cn(
-            "overflow-hidden transition-opacity duration-200 delay-150",
-            isExpanded ? "opacity-100" : "opacity-0"
+            "overflow-hidden transition-opacity delay-150 duration-200",
+            isExpanded ? "opacity-100" : "opacity-0",
           )}
         >
           {isExpanded && (
             <>
               {/* details */}
               <div className="space-y-3 py-3">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
                   <div className="space-y-2">
-                    <div className="flex flex-row gap-2 items-center mb-2">
+                    <div className="mb-2 flex flex-row items-center gap-2">
                       <Zap
-                        className={`w-4 h-4 ${
+                        className={`h-4 w-4 ${
                           hasActiveEvents
                             ? "text-yellow-500"
                             : "text-muted-foreground"
@@ -329,7 +329,7 @@ export function MachineListItem({
                       <span
                         className={`text-xs ${
                           hasActiveEvents
-                            ? "text-yellow-500 font-medium"
+                            ? "font-medium text-yellow-500"
                             : "text-muted-foreground"
                         }`}
                       >
@@ -338,43 +338,43 @@ export function MachineListItem({
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex flex-col justify-center">
-                        <h3 className="text-xs font-medium">Machine ID</h3>
-                        <span className="text-2xs text-muted-foreground font-mono block w-full truncate">
+                        <h3 className="font-medium text-xs">Machine ID</h3>
+                        <span className="block w-full truncate font-mono text-2xs text-muted-foreground">
                           {machine.id}
                         </span>
                       </div>
                       <div className="flex flex-col justify-center">
-                        <h3 className="text-xs font-medium">Status</h3>
+                        <h3 className="font-medium text-xs">Status</h3>
                         <MachineStatus machine={machine} />
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-medium">Specifications</h3>
+                      <h3 className="font-medium text-xs">Specifications</h3>
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-row gap-2 items-center text-xs">
-                          <HardDrive className="w-4 h-4" />
+                        <div className="flex flex-row items-center gap-2 text-xs">
+                          <HardDrive className="h-4 w-4" />
                           {machine.gpu}
                         </div>
-                        <div className="flex flex-row gap-2 items-center text-xs">
-                          <MemoryStick className="w-4 h-4" />
+                        <div className="flex flex-row items-center gap-2 text-xs">
+                          <MemoryStick className="h-4 w-4" />
                           {machine.gpu ? CPU_MEMORY_MAP[machine.gpu] : ""}
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-medium">Custom Nodes</h3>
+                      <h3 className="font-medium text-xs">Custom Nodes</h3>
                       <CustomNodeList machine={machine} />
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-medium">Workflows</h3>
+                      <h3 className="font-medium text-xs">Workflows</h3>
                       <MachineListItemWorkflows machine={machine} />
                     </div>
 
                     <div>
-                      <h3 className="text-xs font-medium">Deployments</h3>
+                      <h3 className="font-medium text-xs">Deployments</h3>
                       <MachineListItemDeployments machine={machine} />
                     </div>
 
@@ -382,17 +382,17 @@ export function MachineListItem({
                       <div>
                         <Alert
                           variant="warning"
-                          className="py-2 px-3 rounded-sm max-w-[500px] mt-2"
+                          className="mt-2 max-w-[500px] rounded-sm px-3 py-2"
                         >
-                          <div className="flex flex-row gap-2 items-center">
+                          <div className="flex flex-row items-center gap-2">
                             <div className="flex items-center justify-center">
                               <AlertCircleIcon className="h-3 w-3" />
                             </div>
-                            <AlertTitle className="text-xs mb-0">
+                            <AlertTitle className="mb-0 text-xs">
                               Deprecated Machine
                             </AlertTitle>
                           </div>
-                          <AlertDescription className="text-2xs ml-5">
+                          <AlertDescription className="ml-5 text-2xs">
                             This machine is running an{" "}
                             <span className="font-semibold">
                               outdated version
@@ -420,8 +420,8 @@ export function MachineListItem({
                 </div>
               </div>
               {/* footer */}
-              <div className="flex flex-row justify-between items-center">
-                <div className="flex flex-col lg:flex-row gap-2 items-start lg:items-center">
+              <div className="flex flex-row items-center justify-between">
+                <div className="flex flex-col items-start gap-2 lg:flex-row lg:items-center">
                   {machine.machine_version && (
                     <Badge
                       variant={"outline"}
@@ -438,7 +438,7 @@ export function MachineListItem({
                       {machine.type}
                     </Badge>
                   )}
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-muted-foreground text-xs">
                     {getRelativeTime(machine.updated_at)}
                   </span>
                 </div>
@@ -456,7 +456,7 @@ export function MachineListItem({
   return hasActiveEvents ? (
     <ShineBorder
       color="green"
-      className="p-0 w-full"
+      className="w-full p-0"
       borderRadius={10}
       borderWidth={2}
     >
@@ -481,11 +481,11 @@ const MachineListActionBar = ({
       <Link href={`/machines/${machine.id}`}>
         <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
           {isExpanded && (
-            <span className="text-muted-foreground mr-2 font-normal text-xs">
+            <span className="mr-2 font-normal text-muted-foreground text-xs">
               Dashboard
             </span>
           )}
-          <LineChart className="w-4 h-4 text-muted-foreground" />
+          <LineChart className="h-4 w-4 text-muted-foreground" />
         </Button>
       </Link>
       <Separator orientation="vertical" className="h-4" />
@@ -494,11 +494,11 @@ const MachineListActionBar = ({
           <Link href={`/machines/${machine.id}?view=settings`}>
             <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
               {isExpanded && (
-                <span className="text-muted-foreground mr-2 font-normal text-xs">
+                <span className="mr-2 font-normal text-muted-foreground text-xs">
                   Edit
                 </span>
               )}
-              <Settings className="w-4 h-4 text-muted-foreground" />
+              <Settings className="h-4 w-4 text-muted-foreground" />
             </Button>
           </Link>
           <Separator orientation="vertical" className="h-4" />
@@ -507,14 +507,48 @@ const MachineListActionBar = ({
       <Link href={`/machines/${machine.id}?view=logs`}>
         <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
           {isExpanded && (
-            <span className="text-muted-foreground mr-2 font-normal text-xs">
+            <span className="mr-2 font-normal text-muted-foreground text-xs">
               Logs
             </span>
           )}
-          <FileClock className="w-4 h-4 text-muted-foreground" />
+          <FileClock className="h-4 w-4 text-muted-foreground" />
         </Button>
       </Link>
     </>
+  );
+};
+
+const BuildProgressWrapper = ({
+  machine,
+  modalBuilderEndpoint,
+  isStale,
+}: {
+  machine: any;
+  modalBuilderEndpoint: string | undefined;
+  isStale: boolean;
+}) => {
+  if (
+    !modalBuilderEndpoint ||
+    !machine.build_machine_instance_id ||
+    machine.type !== "comfy-deploy-serverless" ||
+    isStale ||
+    machine.status !== "building"
+  ) {
+    return null;
+  }
+
+  const progress = getMachineBuildProgress({
+    machine_id: machine.id,
+    endpoint: modalBuilderEndpoint,
+    instance_id: machine.build_machine_instance_id,
+    machine,
+  });
+
+  return (
+    <div
+      className="absolute inset-0 z-[1] bg-orange-300/50 transition-[width] duration-1000 ease-in-out"
+      style={{ width: `${progress}%` }}
+    />
   );
 };
 
@@ -587,7 +621,7 @@ export function MachineListItemEvents({
   return (
     <div>
       {isExpanded && (
-        <h3 className="text-xs font-medium mb-2">24hrs Activity</h3>
+        <h3 className="mb-2 font-medium text-xs">24hrs Activity</h3>
       )}
       <ChartContainer
         config={chartConfig}
@@ -661,8 +695,8 @@ function MachineListItemWorkflows({ machine }: { machine: any }) {
   return (
     <>
       {isWorkflowsLoading ? (
-        <div className="flex items-center text-xs text-muted-foreground">
-          <Skeleton className="w-20 h-4" />
+        <div className="flex items-center text-muted-foreground text-xs">
+          <Skeleton className="h-4 w-20" />
         </div>
       ) : (
         <div className="flex flex-row flex-wrap gap-2">
@@ -680,10 +714,10 @@ function MachineListItemWorkflows({ machine }: { machine: any }) {
                 href={`/workflows/${workflow.id}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 text-2xs bg-gray-50 py-0.5 px-2 rounded-sm w-fit"
+                className="flex w-fit items-center gap-2 rounded-sm bg-gray-50 px-2 py-0.5 text-2xs"
               >
                 <span className="truncate">{workflow.name}</span>
-                <ExternalLink className="w-3 h-3" />
+                <ExternalLink className="h-3 w-3" />
               </Link>
             ))}
         </div>
@@ -707,8 +741,8 @@ function MachineListItemDeployments({
     <>
       {isDeploymentsLoading ? (
         isExpanded ? (
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Skeleton className="w-20 h-4" />
+          <div className="flex items-center text-muted-foreground text-xs">
+            <Skeleton className="h-4 w-20" />
           </div>
         ) : (
           <></>
@@ -731,7 +765,7 @@ function MachineListItemDeployments({
             .map((deployment) => (
               <div
                 key={deployment.id}
-                className="flex items-center justify-between gap-2 text-2xs bg-gray-50 py-0.5 px-2 rounded-sm w-fit"
+                className="flex w-fit items-center justify-between gap-2 rounded-sm bg-gray-50 px-2 py-0.5 text-2xs"
               >
                 <Link
                   href={`/workflows/${deployment.workflow_id}?view=deployment`}
@@ -750,7 +784,7 @@ function MachineListItemDeployments({
                   >
                     {deployment.environment}
                   </Badge>
-                  <ExternalLink className="w-3 h-3" />
+                  <ExternalLink className="h-3 w-3" />
                 </Link>
               </div>
             ))}
