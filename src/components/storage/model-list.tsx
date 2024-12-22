@@ -28,7 +28,6 @@ import {
   useTree,
 } from "@/components/ui/tree-view-api";
 import { sendEventToCD } from "@/components/workspace/sendEventToCD";
-// import { addModel } from "@/db/storage";
 // import {
 //   type EnhancedFileEntry,
 //   deleteFileFromVolume,
@@ -75,6 +74,7 @@ import { useDebounceValue } from "usehooks-ts";
 import { z } from "zod";
 import { create } from "zustand";
 import { formatFileSize } from "./FileTable";
+import { addModel } from "./addModel";
 
 const schema = z.object({
   // path: z.string(),
@@ -1534,13 +1534,13 @@ export function AnyModelRegistry(props: {
                 throw new Error("Invalid data");
               }
 
-              // const result = await addModel({
-              //   custom_path: data.customPath,
-              //   filename: data.filename,
-              //   url: data.url,
-              // });
+              const result = await addModel({
+                custom_path: data.customPath,
+                filename: data.filename,
+                url: data.url,
+              });
 
-              // toast.success(result.message);
+              toast.success(result.message);
               refetchDownloadingModels();
               refetchPrivateVolume();
 
