@@ -124,6 +124,9 @@ export function useModels() {
       setIsPrivateModelRefreshing(true);
       const contents = await api({
         url: queryKey.join("/"),
+        params: {
+          disable_cache: disableCacheRef.current,
+        },
       });
       setIsPrivateModelRefreshing(false);
       disableCacheRef.current = false;
