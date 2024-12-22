@@ -2,24 +2,15 @@
 
 import type { ImgView } from "@/components/SDInputs/SDImageInput";
 import { DrawerMenu } from "@/components/SDInputs/SDMaskDrawer/DrawerMenu";
-// const SDDrawerCanvas = dynamic(
-//   () =>
-//     import("@/components/SDInputs/SDMaskDrawer/SDDrawerCanvas").then((mod) => ({
-//       default: mod.SDDrawerCanvas,
-//     })),
-//   {
-//     ssr: false,
-//   },
-// );
-import { SDDrawerCanvas } from "@/components/SDInputs/SDMaskDrawer/SDDrawerCanvas";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useRef } from "react";
+import { Suspense, lazy, useRef } from "react";
+import { Button } from "../ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
+
+const SDDrawerCanvas = lazy(() =>
+  import("@/components/SDInputs/SDMaskDrawer/SDDrawerCanvas").then((mod) => ({
+    default: mod.SDDrawerCanvas,
+  })),
+);
 
 type SDMaskDrawerProps = {
   image: ImgView;
@@ -66,11 +57,13 @@ export function SDMaskDrawer({
           className="h-[100%] self-center overflow-hidden"
           style={{ aspectRatio: (image?.width || 1) / (image?.height || 1) }}
         >
-          <SDDrawerCanvas
-            image={image}
-            getCanvasURL={getCanvasURL}
-            ref={childRef}
-          />
+          <Suspense fallback={<div>Loading canvas...</div>}>
+            <SDDrawerCanvas
+              image={image}
+              getCanvasURL={getCanvasURL}
+              ref={childRef}
+            />
+          </Suspense>
         </div>
         <div className="flex gap-4 self-center">
           <DrawerMenu />

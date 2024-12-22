@@ -1,6 +1,7 @@
 import path from "node:path";
 import { defineConfig, rspack } from "@rsbuild/core";
 import { pluginReact } from "@rsbuild/plugin-react";
+import { RsdoctorRspackPlugin } from "@rsdoctor/rspack-plugin";
 import { TanStackRouterRspack } from "@tanstack/router-plugin/rspack";
 
 export default defineConfig({
@@ -57,7 +58,11 @@ export default defineConfig({
           "COMFY_DEPLOY_SHARED_MACHINE_API_URL",
         ]),
         TanStackRouterRspack(),
-      ],
+        process.env.RSDOCTOR &&
+          new RsdoctorRspackPlugin({
+            // plugin options
+          }),
+      ].filter(Boolean),
     },
   },
 });
