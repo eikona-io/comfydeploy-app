@@ -5,6 +5,7 @@ import AutoFormDockerSteps from "./custom/docker-steps-ui";
 import ExtraDockerCommands from "./custom/extra-docker-commands";
 import AutoFormMaxAlwaysOnPicker from "./custom/max-always-on-picker";
 import AutoFormMaxGPUPicker from "./custom/max-gpu-picker";
+import AutoFormSelectInput from "./custom/select-custom-input";
 import AutoFormTimeoutPicker from "./custom/timeout-picker";
 import AutoFormCheckbox from "./fields/checkbox";
 import AutoFormDate from "./fields/date";
@@ -63,7 +64,7 @@ export const INPUT_COMPONENTS = {
   comfyuiVersion: AutoFormComfyUIVersion,
   // newWorkflowFromJson: AutoFormNewWorkflowFromJson,
 
-  // "select-custom-input": AutoFormSelectInput,
+  "select-custom-input": AutoFormSelectInput,
 };
 
 /**

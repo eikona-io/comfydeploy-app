@@ -1387,6 +1387,8 @@ export function AnyModelRegistry(props: {
     };
   }, [data]);
 
+  console.log(selected);
+
   return (
     <motion.div className="flex flex-col gap-2" layout="position">
       <ModelSelector
@@ -1498,7 +1500,10 @@ export function AnyModelRegistry(props: {
               selected[0].provider === "civitai"
                 ? selected[0].reference_url
                 : selected[0].download_url,
-            customPath: props.insertModalPath ?? selected[0].save_path,
+            customPath:
+              props.insertModalPath && props.insertModalPath.length > 0
+                ? props.insertModalPath
+                : selected[0].save_path,
           }}
           formSchema={z.object({
             filename: z.string(),
@@ -1519,7 +1524,7 @@ export function AnyModelRegistry(props: {
               },
             },
             customPath: {
-              // fieldType: "select-custom-input",
+              fieldType: "select-custom-input",
             },
           }}
           buttonTitle="Install"
