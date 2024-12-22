@@ -690,6 +690,10 @@ export function MachineListItemEvents({
 function MachineListItemWorkflows({ machine }: { machine: any }) {
   const { data: workflows, isLoading: isWorkflowsLoading } = useQuery({
     queryKey: ["workflows", "all"],
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 5,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   return (
@@ -735,6 +739,10 @@ function MachineListItemDeployments({
 }) {
   const { data: deployments, isLoading: isDeploymentsLoading } = useQuery({
     queryKey: ["deployments"],
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 5,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   return (

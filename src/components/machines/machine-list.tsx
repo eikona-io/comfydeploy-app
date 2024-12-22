@@ -1,3 +1,4 @@
+import { MachineListItem } from "@/components/machines/machine-list-item";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
@@ -6,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { useDebounce } from "use-debounce";
-import { MachineListItem } from "./machine-list-item";
+
 export function MachineList() {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
