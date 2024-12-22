@@ -1,30 +1,57 @@
 "use client";
 
-import { useAuth } from "@clerk/nextjs";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
 import {
   InlineAutoForm,
   InsertModal,
   useUpdateServerActionDialog,
-} from "@repo/components/ui/auto-form/auto-form-dialog";
-import { useConfirmServerActionDialog } from "@repo/components/ui/auto-form/auto-form-dialog";
-import { Badge } from "@repo/components/ui/badge";
+} from "@/components/auto-form/auto-form-dialog";
+import { useConfirmServerActionDialog } from "@/components/auto-form/auto-form-dialog";
+import {
+  AutoFormInputComponentProps,
+  DependencyType,
+} from "@/components/auto-form/types";
+import { generateFinalPath } from "@/components/storage/ModelUtils";
+import {
+  CustomModelFilenameError,
+  CustomModelFilenameRegex,
+  IsValidFolderPath,
+  IsValidFolderPathError,
+} from "@/components/storage/customModels";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@repo/components/ui/tooltip";
+} from "@/components/ui/tooltip";
 import {
   File,
   Folder,
   Tree,
-  TreeViewElement,
+  type TreeViewElement,
   useTree,
-} from "@repo/components/ui/tree-view-api";
-import { addModel } from "@repo/db/storage";
-import { generateFinalPath } from "@repo/lib/ModelUtils";
-import { sendEventToCD } from "@repo/lib/sendEventToCD";
-import { uploadFile } from "@repo/lib/uploadFile";
+} from "@/components/ui/tree-view-api";
+import { sendEventToCD } from "@/components/workspace/sendEventToCD";
+// import { addModel } from "@/db/storage";
+// import {
+//   type EnhancedFileEntry,
+//   deleteFileFromVolume,
+//   deleteFileFromVolumePromise,
+//   renameFileInVolumePromise,
+// } from "@/db/volume/index";
+import { getRelativeTime } from "@/lib/get-relative-time";
+// import { uploadFile } from "@/lib/uploadFile";
+import { useAuth } from "@clerk/clerk-react";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { UseQueryResult, useQuery } from "@tanstack/react-query";
 import { FileIcon, Link, Pen, Plus, Trash } from "lucide-react";
 import React, {
   forwardRef,
@@ -37,51 +64,32 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 import { mutate } from "swr";
-import { z } from "zod";
-import {
-  AutoFormInputComponentProps,
-  DependencyType,
-} from "../../auto-form/types";
 import {
   JSON_TEMPLATES,
-  Model,
+  type Model,
   // RefreshModels,
   generateJsonDefinition,
   useModelBrowser,
   useModelRerfresher,
-  useModels,
 } from "./model-list-view";
+
+import { useModels } from "@/hooks/use-model";
+
+import { ModelSelector } from "@/components/storage/ModelSelector";
 import {
-  deleteFileFromVolume,
-  deleteFileFromVolumePromise,
-  EnhancedFileEntry,
-  renameFileInVolumePromise,
-  // renameFDropdownMenu,
-  // ileInVolumePromise,
-} from "@repo/db/volume/index";
-import { useCDStore } from "../workspace/useMachineStore";
-import { WorkspaceContext } from "@repo/components/ui/custom/workspace/WorkspaceContext";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
-import { modelRelations } from "@/repo/db/schema";
-import { getAllUserModels } from "@/server/getAllUserModel";
-import { Button } from "@/repo/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/repo/components/ui/dropdown-menu";
-import { getRelativeTime } from "@/repo/lib/getRelativeTime";
-import { formatFileSize } from "@/components/StorageTable/FileTable";
-import { useQueryState } from "next-usequerystate";
-import {
-  CustomModelFilenameRegex,
-  CustomModelFilenameError,
-  IsValidFolderPath,
-  IsValidFolderPathError,
-} from "@/utils/customModels";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { motion } from "framer-motion";
+import { useDebouncedCallback } from "use-debounce";
+import { useDebounceValue } from "usehooks-ts";
+import { z } from "zod";
+import { create } from "zustand";
+import { formatFileSize } from "./FileTable";
 
 const schema = z.object({
   // path: z.string(),
@@ -99,7 +107,7 @@ const schema = z.object({
 
 function generateFileTree(path: string) {
   const parts = path.split("/").filter(Boolean);
-  let tree: any[] = [];
+  const tree: any[] = [];
   let currentLevel = tree;
   let id = 0;
 
@@ -127,7 +135,7 @@ function generateFileTree(path: string) {
 function renderFileTree(path: string) {
   const parts = path.split("/").filter(Boolean);
 
-  const renderTreeItems = (items: string[], currentPath: string = "") => {
+  const renderTreeItems = (items: string[], currentPath = "") => {
     if (items.length === 0) return null;
 
     const [current, ...rest] = items;
@@ -189,10 +197,7 @@ export const SmartCollapseButton = forwardRef<
       (elements: TreeViewElement[]) => {
         const newExpendedItems: string[] = [];
 
-        const traverse = (
-          element: TreeViewElement,
-          parentPath: string = "",
-        ) => {
+        const traverse = (element: TreeViewElement, parentPath = "") => {
           const currentPath = parentPath
             ? `${parentPath}/${element.name}`
             : element.name;
@@ -296,8 +301,8 @@ function ModelItemHoverDetails(props: { model: Model }) {
     <>
       <div className="flex flex-col space-y-2">
         <span className="font-semibold text-base">{model.name}</span>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">Status:</span>
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-sm">Status:</span>
           <div className="flex items-center gap-2">
             {/* {model.status === "failed" && (
               <Button
@@ -329,43 +334,30 @@ function ModelItemHoverDetails(props: { model: Model }) {
             </Badge>
           </div>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">Installed:</span>
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-sm">Installed:</span>
           <span className="text-sm">{getRelativeTime(model.created_at)}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">Path:</span>
-          <span className="text-sm truncate max-w-[200px]">
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-sm">Path:</span>
+          <span className="max-w-[200px] truncate text-sm">
             {model.path?.endsWith("/") ? model.path : `${model.path}/`}
           </span>
         </div>
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium">Size:</span>
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-sm">Size:</span>
           <span className="text-sm">{formatFileSize(model.size)}</span>
         </div>
         {model.error_log && (
-          <div className="mt-2 p-2 bg-red-100 rounded-md">
-            <span className="text-sm font-medium text-red-800">Error:</span>
-            <p className="text-xs text-red-700 mt-1">{model.error_log}</p>
+          <div className="mt-2 rounded-md bg-red-100 p-2">
+            <span className="font-medium text-red-800 text-sm">Error:</span>
+            <p className="mt-1 text-red-700 text-xs">{model.error_log}</p>
           </div>
         )}
       </div>
     </>
   );
 }
-
-import { create } from "zustand";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/repo/components/ui/dialog";
-import { useDebouncedCallback } from "use-debounce";
-import { useDebounceValue } from "usehooks-ts";
-import { ModelSelector } from "@/repo/components/ui/auto-form/custom/ModelSelector";
-import { motion } from "framer-motion";
 
 interface SelectedModelState {
   selectedModel: Model | null;
@@ -395,7 +387,9 @@ export function ModelList(props: { apiEndpoint: string }) {
     setSelectedCategories,
   } = useModelBrowser();
 
-  const { workflowId } = use(WorkspaceContext);
+  // const { workflowId } = use(WorkspaceContext);
+
+  const workflowId = useWorkflowIdInWorkflowPage();
 
   const {
     flattenedModels,
@@ -571,7 +565,12 @@ export function ModelList(props: { apiEndpoint: string }) {
   } = useUpdateServerActionDialog({
     title: "Rename",
     description: "Rename this model",
-    serverAction: renameFileInVolumePromise,
+    // serverAction: renameFileInVolumePromise,
+    // TODO: reimplment rename file
+    serverAction: async (data) => {
+      // console.log(data);
+      // return await renameFileInVolumePromise(data);
+    },
     mutateFn: () => refetchPrivateVolume(),
     formSchema: z.object({
       newFilename: z.string().min(1),
@@ -595,7 +594,7 @@ export function ModelList(props: { apiEndpoint: string }) {
 
   const renderTreeElements = (elements: ModelItem[]) => {
     return elements.map((element) => {
-      if (element.type == "folder" && element.children) {
+      if (element.type === "folder" && element.children) {
         return (
           <Folder
             className="group"
@@ -604,7 +603,7 @@ export function ModelList(props: { apiEndpoint: string }) {
             value={element.dir}
             tail={
               <div
-                className="transition-all opacity-0 group-hover:opacity-100 p-1 h-fit min-h-0"
+                className="h-fit min-h-0 p-1 opacity-0 transition-all group-hover:opacity-100"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -613,7 +612,7 @@ export function ModelList(props: { apiEndpoint: string }) {
                   setInsertModalPath(element.dir);
                 }}
               >
-                <Plus className="w-4 h-4 "></Plus>
+                <Plus className="h-4 w-4 " />
               </div>
               // <DropdownMenu>
               //   <DropdownMenuTrigger asChild>
@@ -706,7 +705,7 @@ export function ModelList(props: { apiEndpoint: string }) {
               <TooltipTrigger>
                 <File
                   value={element.dir}
-                  className="text-ellipsis truncate @container"
+                  className="@container truncate text-ellipsis"
                   handleSelect={() => {
                     handleModelClick(element as any);
                   }}
@@ -714,12 +713,12 @@ export function ModelList(props: { apiEndpoint: string }) {
                     <div className="flex items-center gap-1">
                       {/* NOTE: currently not returning size on initial*/}
                       {element.model.size && (
-                        <span className="@lg:flex hidden text-xs text-muted-foreground">
+                        <span className="@lg:flex hidden text-muted-foreground text-xs">
                           {formatFileSize(element.model.size)}
                         </span>
                       )}
                       {element.isPrivate && (
-                        <div className="flex items-center gap-1 w-0 group-hover:w-[60px] transition-all opacity-0 group-hover:opacity-100 p-1 h-fit min-h-0">
+                        <div className="flex h-fit min-h-0 w-0 items-center gap-1 p-1 opacity-0 transition-all group-hover:w-[60px] group-hover:opacity-100">
                           <div
                             onClick={(e) => {
                               e.preventDefault();
@@ -737,9 +736,9 @@ export function ModelList(props: { apiEndpoint: string }) {
                                 },
                               });
                             }}
-                            className="transition-all opacity-0 group-hover:opacity-100 p-1 h-fit min-h-0"
+                            className="h-fit min-h-0 p-1 opacity-0 transition-all group-hover:opacity-100"
                           >
-                            <Pen className="w-4 h-4 "></Pen>
+                            <Pen className="h-4 w-4 " />
                           </div>
                           <div
                             onClick={(e) => {
@@ -756,9 +755,9 @@ export function ModelList(props: { apiEndpoint: string }) {
                                 },
                               });
                             }}
-                            className="transition-all opacity-0 group-hover:opacity-100 p-1 h-fit min-h-0 text-red-500"
+                            className="h-fit min-h-0 p-1 text-red-500 opacity-0 transition-all group-hover:opacity-100"
                           >
-                            <Trash className="w-4 h-4 "></Trash>
+                            <Trash className="h-4 w-4 " />
                           </div>
                         </div>
                       )}
@@ -766,7 +765,7 @@ export function ModelList(props: { apiEndpoint: string }) {
                         {element.isPrivate && (
                           <Badge
                             variant={"outline"}
-                            className="!text-[10px] px-1 py-0 bg-orange-500 hover:bg-orange-600 text-white"
+                            className="!text-[10px] bg-orange-500 px-1 py-0 text-white hover:bg-orange-600"
                           >
                             Private
                           </Badge>
@@ -774,7 +773,7 @@ export function ModelList(props: { apiEndpoint: string }) {
                         {element.isPublic && (
                           <Badge
                             variant={"outline"}
-                            className="!text-[10px] px-1 py-0 bg-green-500 hover:bg-green-600 text-white"
+                            className="!text-[10px] bg-green-500 px-1 py-0 text-white hover:bg-green-600"
                           >
                             Public
                           </Badge>
@@ -783,7 +782,7 @@ export function ModelList(props: { apiEndpoint: string }) {
                     </div>
                   }
                 >
-                  <p className="flex-1 text-left overflow-ellipsis overflow-hidden">
+                  <p className="flex-1 overflow-hidden overflow-ellipsis text-left">
                     {element.name || "Unnamed File"}
                   </p>
                 </File>
@@ -833,7 +832,7 @@ export function ModelList(props: { apiEndpoint: string }) {
       {/* <RefreshModels /> */}
 
       <Tree
-        className="rounded-md h-full overflow-hidden p-2"
+        className="h-full overflow-hidden rounded-md p-2"
         // initialSelectedId="21"
         elements={fileTree}
         // initialExpendedItems={initialExpendedItems}
@@ -848,12 +847,12 @@ export function ModelList(props: { apiEndpoint: string }) {
 
       <InsertModal
         trigger={<></>}
-        open={insertModalSource == "local"}
+        open={insertModalSource === "local"}
         setOpen={() => setInsertModalSource(undefined)}
         values={values}
         setValues={setValues}
         title={
-          <p className="text-lg font-medium flex items-center gap-2">
+          <p className="flex items-center gap-2 font-medium text-lg">
             Upload file to <Badge>{insertModalPath}</Badge>
           </p>
         }
@@ -955,12 +954,12 @@ export function ModelList(props: { apiEndpoint: string }) {
 
       <InsertModal
         trigger={<></>}
-        open={insertModalSource == "civitai"}
+        open={insertModalSource === "civitai"}
         setOpen={() => setInsertModalSource(undefined)}
         values={values}
         setValues={setValues}
         title={
-          <p className="text-lg font-medium flex items-center gap-2">
+          <p className="flex items-center gap-2 font-medium text-lg">
             Add Model from CivitAI to <Badge>{insertModalPath}</Badge>
           </p>
         }
@@ -1034,12 +1033,12 @@ export function ModelList(props: { apiEndpoint: string }) {
 
       <InsertModal
         trigger={<></>}
-        open={insertModalSource == "huggingface"}
+        open={insertModalSource === "huggingface"}
         setOpen={() => setInsertModalSource(undefined)}
         values={values}
         setValues={setValues}
         title={
-          <p className="text-lg font-medium flex items-center gap-2">
+          <p className="flex items-center gap-2 font-medium text-lg">
             Add Model from Hugging Face to <Badge>{insertModalPath}</Badge>
           </p>
         }
@@ -1110,12 +1109,12 @@ export function ModelList(props: { apiEndpoint: string }) {
 
       <InsertModal
         trigger={<></>}
-        open={insertModalSource == "link"}
+        open={insertModalSource === "link"}
         setOpen={() => setInsertModalSource(undefined)}
         values={values}
         setValues={setValues}
         title={
-          <p className="text-lg font-medium flex items-center gap-2">
+          <p className="flex items-center gap-2 font-medium text-lg">
             Add Model from Link to <Badge>{insertModalPath}</Badge>
           </p>
         }
@@ -1189,12 +1188,12 @@ export function ModelList(props: { apiEndpoint: string }) {
 
       <InsertModal
         trigger={<></>}
-        open={insertModalSource == "comfymanager"}
+        open={insertModalSource === "comfymanager"}
         setOpen={() => setInsertModalSource(undefined)}
         values={values}
         setValues={setValues}
         title={
-          <p className="text-lg font-medium flex items-center gap-2">
+          <p className="flex items-center gap-2 font-medium text-lg">
             Add Model from Link to <Badge>{insertModalPath}</Badge>
           </p>
         }
@@ -1397,17 +1396,14 @@ export function AnyModelRegistry(props: {
         shouldFilter={false}
         isLoading={isLoading}
       />
-      <>
+      {/* <>
         {!selected ||
-          (selected.length == 0 && (
+          (selected.length === 0 && (
             <>
-              {/* <div className="text-sm text-muted-foreground text-center w-full">
-                Can't find model?
-              </div> */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    className="transition-all opacity-100 p-1 min-h-0 text-xs px-2"
+                    className="min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
                     size="default"
                     variant="outline"
                     Icon={Plus}
@@ -1428,8 +1424,8 @@ export function AnyModelRegistry(props: {
                   >
                     <img
                       src="https://huggingface.co/favicon.ico"
-                      className="w-4 h-4 mr-2"
-                    ></img>
+                      className="mr-2 h-4 w-4"
+                    />
                     <span>Hugging Face</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1442,8 +1438,8 @@ export function AnyModelRegistry(props: {
                   >
                     <img
                       src="https://civitai.com/favicon.ico"
-                      className="w-4 h-4 mr-2"
-                    ></img>
+                      className="mr-2 h-4 w-4"
+                    />
                     <span>CivitAI</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1456,8 +1452,8 @@ export function AnyModelRegistry(props: {
                   >
                     <img
                       src="https://storage.googleapis.com/comfy-assets/favicon.ico"
-                      className="w-4 h-4 mr-2"
-                    ></img>
+                      className="mr-2 h-4 w-4"
+                    />
                     <span>ComfyUI Manager</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1468,7 +1464,7 @@ export function AnyModelRegistry(props: {
                       setInsertModalSource("link");
                     }}
                   >
-                    <Link className="w-4 h-4 mr-2"></Link>
+                    <Link className="mr-2 h-4 w-4" />
                     <span>Link</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
@@ -1479,22 +1475,22 @@ export function AnyModelRegistry(props: {
                       setInsertModalSource("local");
                     }}
                   >
-                    <FileIcon className="w-4 h-4 mr-2"></FileIcon>
+                    <FileIcon className="mr-2 h-4 w-4" />
                     <span>Local</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>
           ))}
-      </>
+      </> */}
       {/* {JSON.stringify(selected)} */}
       {selected && selected.length > 0 && (
         <InlineAutoForm
-          className="animate-in fade-in"
+          className="fade-in animate-in"
           data={{
             filename: selected[0].filename,
             url:
-              selected[0].provider == "civitai"
+              selected[0].provider === "civitai"
                 ? selected[0].reference_url
                 : selected[0].download_url,
             customPath: props.insertModalPath ?? selected[0].save_path,
@@ -1522,30 +1518,30 @@ export function AnyModelRegistry(props: {
             },
           }}
           buttonTitle="Install"
-          serverAction={async function (data: {
+          serverAction={async (data: {
             customPath: string;
             filename: string;
             url: string;
-          }): Promise<any> {
+          }): Promise<any> => {
             try {
               if (!data.customPath || !data.filename || !data.url) {
                 toast.error("Invalid data");
                 throw new Error("Invalid data");
               }
 
-              const result = await addModel({
-                custom_path: data.customPath,
-                filename: data.filename,
-                url: data.url,
-              });
+              // const result = await addModel({
+              //   custom_path: data.customPath,
+              //   filename: data.filename,
+              //   url: data.url,
+              // });
 
-              toast.success(result.message);
+              // toast.success(result.message);
               refetchDownloadingModels();
               refetchPrivateVolume();
 
               props.close();
 
-              console.log(result.message);
+              // console.log(result.message);
             } catch (error) {
               toast.error(`Error adding model: ${error}`);
               console.error("Error adding model:", error);

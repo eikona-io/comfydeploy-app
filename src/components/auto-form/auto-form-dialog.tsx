@@ -121,7 +121,7 @@ export function useUpdateServerActionDialog<
           setData(undefined);
         }
       }}
-    ></UpdateModal>
+    />
   );
 
   return { open: !!data, setOpen: setData, ui };

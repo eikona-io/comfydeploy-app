@@ -53,6 +53,8 @@ export default defineConfig({
           "NEXT_PUBLIC_CD_API_URL",
 
           "COMFYUI_FRONTEND_URL",
+
+          "COMFY_DEPLOY_SHARED_MACHINE_API_URL",
         ]),
         TanStackRouterRspack(),
       ],
