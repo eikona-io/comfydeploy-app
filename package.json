@@ -54,6 +54,7 @@
     "@tanstack/react-virtual": "^3.11.1",
     "@tanstack/router-devtools": "^1.89.2",
     "@types/lodash": "^4.17.13",
+    "class-variance-authority": "^0.7.1",
     "comfyui-json": "^0.1.31",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
