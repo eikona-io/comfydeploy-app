@@ -3,6 +3,7 @@ import {
   MachineBuildLog,
 } from "@/components/machine/machine-build-log";
 import { MachineOverview } from "@/components/machine/machine-overview";
+import { MachineSettings } from "@/components/machine/machine-settings";
 import { Portal } from "@/components/ui/custom/portal";
 import {
   SidebarMenuSub,
@@ -118,7 +119,7 @@ export default function MachinePage({
         {(() => {
           switch (view) {
             case "settings":
-              return <div>Settings</div>;
+              return <MachineSettings machine={machine} setView={setView} />;
             case "overview":
               return <MachineOverview machine={machine} setView={setView} />;
             case "logs":

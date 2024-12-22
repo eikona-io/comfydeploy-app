@@ -41,7 +41,6 @@ const useDialogStore = create<DialogState>((set) => ({
 
 export const MemoizedStepsUI = memo(StepsUI);
 const MemoizedLogsViewer = memo(LogsViewer);
-// export const MemoizedInlineSettings = memo(InlineSettings);
 
 export function BuildStepsUI({
   machine,
