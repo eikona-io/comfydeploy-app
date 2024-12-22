@@ -335,10 +335,8 @@ function CloneMachineDialog({
   return (
     <InsertModal
       hideButton
+      keepDialogWhenSubmit={true}
       open={dialogOpen && !sub?.features.machineLimited}
-      mutateFn={async () => {
-        await refetch();
-      }}
       setOpen={setDialogOpen}
       disabled={sub?.features.machineLimited}
       dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
@@ -369,6 +367,19 @@ function CloneMachineDialog({
       title="Clone Machine"
       description="Clone the selected machine with the same configuration."
       serverAction={async (data) => {
+        if (data.docker_command_steps?.steps) {
+          const duplicateNode = hasDuplicateCustomNodeURLs(
+            data.docker_command_steps.steps,
+          );
+          if (duplicateNode) {
+            toast.error(
+              `Duplicate custom-node (${duplicateNode}) is found. Please check your dependencies.`,
+            );
+            return;
+          }
+        }
+        setDialogOpen(false);
+
         try {
           const res = await callServerPromise(
             api({
@@ -383,7 +394,12 @@ function CloneMachineDialog({
             },
           );
 
+          if (!res) {
+            throw new Error("Failed to clone machine");
+          }
+
           await refetch();
+          setDialogOpen(false);
 
           toast.success("Cloned successfully!", {
             action: {
@@ -402,11 +418,29 @@ function CloneMachineDialog({
             },
           });
         } catch (error) {
-          toast.error("Failed to clone machine");
+          console.error("Clone error:", error);
+          throw error;
         }
       }}
       formSchema={serverlessFormSchema}
       fieldConfig={sharedMachineConfig}
     />
   );
+}
+
+// Helper function to check for duplicate URLs in docker_command_steps for custom-node types
+function hasDuplicateCustomNodeURLs(
+  steps: Array<{ type: string; data: { url: string; name: string } }>,
+): string | null {
+  const urlMap = new Map<string, string>(); // Map to store url -> node name
+  for (const step of steps) {
+    if (step.type === "custom-node") {
+      const url = step.data.url.toLowerCase();
+      if (urlMap.has(url)) {
+        return step.data.name;
+      }
+      urlMap.set(url, step.data.name);
+    }
+  }
+  return null; // No duplicates
 }
