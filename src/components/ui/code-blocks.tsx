@@ -1,46 +1,56 @@
 "use client";
 
-import { CopyButton } from "./copy-button";
-import { Skeleton } from "./skeleton";
-import oneDarkPro from "shiki/themes/min-light.mjs";
-import {
-	getHighlighterCore,
-	type StringLiteralUnion,
-	type HighlighterCore,
-} from "shiki/core";
-import ts from "shiki/langs/typescript.mjs";
-import js from "shiki/langs/javascript.mjs";
-import bash from "shiki/langs/bash.mjs";
-import docker from "shiki/langs/dockerfile.mjs";
-import json from "shiki/langs/json.mjs";
-import getWasm from "shiki/wasm.mjs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useEffect, useMemo } from "react";
 import React from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { CopyButton } from "./copy-button";
+import { Skeleton } from "./skeleton";
 // import Editor from "react-simple-code-editor";
 
+import type { HighlighterCore, StringLiteralUnion } from "shiki/core";
+
 async function getHighlighter() {
-	const highlighter = await getHighlighterCore({
-		themes: [oneDarkPro],
-		langs: [ts, js, bash, docker, json],
-		loadWasm: getWasm,
-	});
-	return highlighter;
+  const [
+    { getHighlighterCore },
+    { default: ts },
+    { default: js },
+    { default: bash },
+    { default: docker },
+    { default: json },
+    { default: oneDarkPro },
+    { default: getWasm },
+  ] = await Promise.all([
+    import("shiki/core"),
+    import("shiki/langs/typescript.mjs"),
+    import("shiki/langs/javascript.mjs"),
+    import("shiki/langs/bash.mjs"),
+    import("shiki/langs/dockerfile.mjs"),
+    import("shiki/langs/json.mjs"),
+    import("shiki/themes/min-light.mjs"),
+    import("shiki/wasm.mjs"),
+  ]);
+
+  const highlighter = await getHighlighterCore({
+    themes: [oneDarkPro],
+    langs: [ts, js, bash, docker, json],
+    loadWasm: getWasm,
+  });
+  return highlighter;
 }
 
-let highlighter: HighlighterCore | undefined = undefined;
+const highlighter: HighlighterCore | undefined = undefined;
 
-export function highlightCode(code: string, lang: StringLiteralUnion<string>) {
-	if (!highlighter) {
-		getHighlighter().then((e) => {
-			highlighter = e;
-		});
-	}
-	return highlighter?.codeToHtml(code, {
-		lang,
-		theme: "min-light",
-	});
-}
+// export function highlightCode(code: string, lang: StringLiteralUnion<string>) {
+//   if (!highlighter) {
+//     getHighlighter().then((e) => {
+//       highlighter = e;
+//     });
+//   }
+//   return highlighter?.codeToHtml(code, {
+//     lang,
+//     theme: "min-light",
+//   });
+// }
 
 // export function EditCodeBlock(props: {
 // 	code: string;
@@ -77,77 +87,77 @@ export function highlightCode(code: string, lang: StringLiteralUnion<string>) {
 // }
 
 export function CodeBlock(props: {
-	code: string;
-	lang: StringLiteralUnion<string>;
-	className?: string;
-	hideCopy?: boolean;
+  code: string;
+  lang: StringLiteralUnion<string>;
+  className?: string;
+  hideCopy?: boolean;
 }) {
-	const [_highlighter, setHighlighter] = React.useState<
-		HighlighterCore | undefined
-	>(highlighter);
+  const [_highlighter, setHighlighter] = React.useState<
+    HighlighterCore | undefined
+  >(highlighter);
 
-	useEffect(() => {
-		if (!highlighter) getHighlighter().then(setHighlighter);
-	}, []);
+  useEffect(() => {
+    if (!highlighter) getHighlighter().then(setHighlighter);
+  }, []);
 
-	const { codeLines, code } = useMemo(() => {
-		if (!props.code)
-			return {
-				code: undefined,
-				codeLines: 0,
-			};
+  const { codeLines, code } = useMemo(() => {
+    if (!props.code)
+      return {
+        code: undefined,
+        codeLines: 0,
+      };
 
-		const trim = props.code.trim();
-		const codeLines = trim.split("\n").length;
+    const trim = props.code.trim();
+    const codeLines = trim.split("\n").length;
 
-		if (!_highlighter) {
-			return {
-				code: undefined,
-				codeLines,
-			};
-		}
+    if (!_highlighter) {
+      return {
+        code: undefined,
+        codeLines,
+      };
+    }
 
-		const code = _highlighter.codeToHtml(trim, {
-			lang: props.lang,
-			theme: "min-light",
-		});
+    const code = _highlighter.codeToHtml(trim, {
+      lang: props.lang,
+      theme: "min-light",
+    });
 
-		return {
-			code,
-			codeLines,
-		};
-	}, [props.code, _highlighter]);
+    return {
+      code,
+      codeLines,
+    };
+  }, [props.code, _highlighter]);
 
-	const skeletonHeight = codeLines * 1.5 + 2; // Adjust the multiplier based on your design needs
+  const skeletonHeight = codeLines * 1.5 + 2; // Adjust the multiplier based on your design needs
 
-	return (
-		<ScrollArea className="rounded-lg relative w-full text-sm group transition-height">
-			{!code && (
-				<Skeleton
-					className="w-full"
-					style={{ height: `${skeletonHeight}rem` }}
-				/>
-			)}
+  return (
+    <ScrollArea className="group relative w-full rounded-lg text-sm transition-height">
+      {!code && (
+        <Skeleton
+          className="w-full"
+          style={{ height: `${skeletonHeight}rem` }}
+        />
+      )}
 
-			{code && (
-				<>
-					<p
-						className={`[&>pre]:!bg-gray-100 [&>pre]:p-4 rounded-lg max-h-96 overflow-visible min-w-full w-fit ${props.className}`}
-						style={{
-							overflowWrap: "break-word",
-						}}
-						dangerouslySetInnerHTML={{
-							__html: code,
-						}}
-					/>
-					{!props.hideCopy && (
-						<CopyButton
-							className="transition-opacity opacity-0 group-hover:opacity-100 absolute right-2 top-2"
-							text={props.code}
-						/>
-					)}
-				</>
-			)}
-		</ScrollArea>
-	);
+      {code && (
+        <>
+          <p
+            className={`[&>pre]:!bg-gray-100 max-h-96 w-fit min-w-full overflow-visible rounded-lg [&>pre]:p-4 ${props.className}`}
+            style={{
+              overflowWrap: "break-word",
+            }}
+            dangerouslySetInnerHTML={{
+              __html: code,
+            }}
+          />
+          {!props.hideCopy && (
+            <CopyButton
+              className="absolute top-2 right-2 opacity-0 transition-opacity group-hover:opacity-100"
+              text={props.code}
+            />
+          )}
+        </>
+      )}
+    </ScrollArea>
+  );
 }

@@ -63,7 +63,6 @@ import React, {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { mutate } from "swr";
 import {
   JSON_TEMPLATES,
   type Model,

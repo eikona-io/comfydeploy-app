@@ -4,7 +4,6 @@ import type {
   UseInfiniteQueryResult,
 } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import debounce from "lodash/debounce";
 import type React from "react";
 import {
   useCallback,
@@ -15,6 +14,17 @@ import {
   useState,
 } from "react";
 import useResizeObserver from "use-resize-observer";
+
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  wait: number,
+): (...args: Parameters<T>) => void {
+  let timeoutId: ReturnType<typeof setTimeout>;
+  return function (this: any, ...args: Parameters<T>) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(this, args), wait);
+  };
+}
 
 interface VirtualizedInfiniteGridProps<T> {
   queryResult: UseInfiniteQueryResult<InfiniteData<T[], unknown>, unknown>;

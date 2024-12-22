@@ -20,6 +20,16 @@ export default defineConfig({
   },
   tools: {
     rspack: {
+      optimization: {
+        minimizer: [
+          new rspack.SwcJsMinimizerRspackPlugin({
+            // JS minimizer configuration
+          }),
+          new rspack.LightningCssMinimizerRspackPlugin({
+            // CSS minimizer configuration
+          }),
+        ],
+      },
       // experiments: {
       //   css: true,
       // },

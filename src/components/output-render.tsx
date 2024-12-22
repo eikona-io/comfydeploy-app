@@ -4,7 +4,6 @@ import { DownloadButton } from "@/components/download-button";
 // @ts-ignore
 // @ts-ignore
 import { cn } from "@/lib/utils";
-import useSWR from "swr";
 
 type fileURLRenderProps = {
   url: string;
@@ -71,16 +70,7 @@ export function OutputRender(props: {
   filename: string;
   url: string;
 }) {
-  const { data: url } = useSWR(
-    `run-outputs+${props.run_id}${props.filename}`,
-    async () => {
-      return props.url;
-      //  ||
-      // (await getFileDownloadUrl(
-      // 	`outputs/runs/${props.run_id}/${props.filename}`,
-      // ))
-    },
-  );
+  const url = props.url;
 
   if (!url) return <></>;
 
