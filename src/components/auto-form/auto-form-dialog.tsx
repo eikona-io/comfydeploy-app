@@ -23,7 +23,7 @@ type DataModalProps<
   Y extends UnknownKeysParam,
   Z extends ZodObject<K, Y>,
 > = {
-  // hideButton?: boolean;
+  hideButton?: boolean;
   trigger?: React.ReactNode;
   open?: boolean;
   setOpen?: (open: boolean) => void;
@@ -46,6 +46,7 @@ type DataModalProps<
   extraUI?: React.ReactNode;
   keepDialogWhenSubmit?: boolean;
   children?: React.ReactNode;
+  containerClassName?: string;
 };
 
 export function useConfirmServerActionDialog<T>(props: {
@@ -225,7 +226,7 @@ export function InsertModal<
     </Button>
   );
 
-  const ui = (
+  const ui = !props.hideButton ? (
     <>
       {props.tooltip ? (
         <Tooltip>
@@ -238,6 +239,8 @@ export function InsertModal<
         trigger
       )}
     </>
+  ) : (
+    <></>
   );
 
   // const router = useRouter()
@@ -257,6 +260,7 @@ export function InsertModal<
         </DialogHeader>
         {/* <ScrollArea> */}
         <AutoForm
+          containerClassName={props.containerClassName}
           dependencies={props.dependencies}
           values={props.data}
           fieldConfig={props.fieldConfig}

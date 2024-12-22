@@ -529,7 +529,6 @@ const BuildProgressWrapper = ({
 }) => {
   if (
     !modalBuilderEndpoint ||
-    !machine.build_machine_instance_id ||
     machine.type !== "comfy-deploy-serverless" ||
     isStale ||
     machine.status !== "building"

@@ -54,7 +54,7 @@ export const serverlessFormSchema = z.object({
     .nullable()
     .default("4")
     .describe("Builder Version"),
-  keep_warm: z.number().default(0).describe("Keep always on"),
+  keep_warm: z.number().default(0).describe("Keep always on").optional(),
   base_docker_image: z
     .string()
     .nullable()
