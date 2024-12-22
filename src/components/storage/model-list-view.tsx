@@ -896,17 +896,15 @@ export function ModelListView(props: {
             ))}
           </div>
 
-          <>
-            <Button
-              className="h-6 min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
-              size="sm"
-              Icon={Plus}
-              onClick={() => setAddModelModalOpen(true)}
-              iconPlacement="right"
-            >
-              Add
-            </Button>
-          </>
+          <Button
+            className="h-6 min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
+            size="sm"
+            Icon={Plus}
+            onClick={() => setAddModelModalOpen(true)}
+            iconPlacement="right"
+          >
+            Add
+          </Button>
         </div>
 
         <div className="relative">

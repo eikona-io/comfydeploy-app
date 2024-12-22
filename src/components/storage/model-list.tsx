@@ -6,10 +6,7 @@ import {
   useUpdateServerActionDialog,
 } from "@/components/auto-form/auto-form-dialog";
 import { useConfirmServerActionDialog } from "@/components/auto-form/auto-form-dialog";
-import {
-  AutoFormInputComponentProps,
-  DependencyType,
-} from "@/components/auto-form/types";
+import { DependencyType } from "@/components/auto-form/types";
 import { generateFinalPath } from "@/components/storage/ModelUtils";
 import {
   CustomModelFilenameError,
@@ -18,15 +15,6 @@ import {
   IsValidFolderPathError,
 } from "@/components/storage/customModels";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -51,11 +39,10 @@ import { getRelativeTime } from "@/lib/get-relative-time";
 // import { uploadFile } from "@/lib/uploadFile";
 import { useAuth } from "@clerk/clerk-react";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { UseQueryResult, useQuery } from "@tanstack/react-query";
-import { FileIcon, Link, Pen, Plus, Trash } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Pen, Plus, Trash } from "lucide-react";
 import React, {
   forwardRef,
-  use,
   useCallback,
   useDeferredValue,
   useEffect,
@@ -69,7 +56,6 @@ import {
   // RefreshModels,
   generateJsonDefinition,
   useModelBrowser,
-  useModelRerfresher,
 } from "./model-list-view";
 
 import { useModels } from "@/hooks/use-model";
@@ -78,13 +64,13 @@ import { ModelSelector } from "@/components/storage/ModelSelector";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { motion } from "framer-motion";
-import { useDebouncedCallback } from "use-debounce";
 import { useDebounceValue } from "usehooks-ts";
 import { z } from "zod";
 import { create } from "zustand";
@@ -399,7 +385,7 @@ export function ModelList(props: { apiEndpoint: string }) {
   } = useModels();
 
   const { orgId, userId } = useAuth();
-  const volumeName = "models_" + (orgId || userId);
+  const volumeName = `models_${orgId || userId}`;
 
   // const [selectedModel, setSelectedModel] = useQueryState("selectedModel");
   const { selectedModel, setSelectedModel } = useSelectedModel();
@@ -547,12 +533,22 @@ export function ModelList(props: { apiEndpoint: string }) {
   }, [filteredModels]);
 
   const { open, setOpen, dialog } = useConfirmServerActionDialog<{
-    fileEntry: EnhancedFileEntry;
+    fileEntry: any;
   }>({
     title: "Delete Model",
     description: "Are you sure you want to delete this model?",
     action: async (data) => {
-      return await deleteFileFromVolumePromise(data);
+      return await callServerPromise(
+        api({
+          url: `/file/${data.fileEntry.model.id}`,
+          init: {
+            method: "DELETE",
+          },
+        }),
+        {
+          loadingText: "Deleting model...",
+        },
+      );
     },
     mutateFn: () => refetchPrivateVolume(),
   });
@@ -564,11 +560,21 @@ export function ModelList(props: { apiEndpoint: string }) {
   } = useUpdateServerActionDialog({
     title: "Rename",
     description: "Rename this model",
-    // serverAction: renameFileInVolumePromise,
-    // TODO: reimplment rename file
     serverAction: async (data) => {
-      // console.log(data);
-      // return await renameFileInVolumePromise(data);
+      return callServerPromise(
+        api({
+          url: `/file/${data.fileEntry.model.id}/rename`,
+          init: {
+            method: "POST",
+          },
+          params: {
+            filename: data.newFilename,
+          },
+        }),
+        {
+          loadingText: "Renaming file...",
+        },
+      );
     },
     mutateFn: () => refetchPrivateVolume(),
     formSchema: z.object({
@@ -1513,7 +1519,7 @@ export function AnyModelRegistry(props: {
               },
             },
             customPath: {
-              fieldType: "select-custom-input",
+              // fieldType: "select-custom-input",
             },
           }}
           buttonTitle="Install"
