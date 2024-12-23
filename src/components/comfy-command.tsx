@@ -7,7 +7,6 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
-import { api } from "@/lib/api";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
@@ -15,13 +14,16 @@ import { CommandLoading } from "cmdk";
 import {
   ArrowRight,
   Box,
+  CircleGauge,
+  CreditCard,
   Database,
+  Key,
   Plus,
   Server,
+  Settings,
   Workflow,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useDebounce } from "use-debounce";
 import { LoadingIcon } from "./ui/custom/loading-icon";
 
 // ------------------Props-------------------
@@ -134,6 +136,50 @@ export function ComfyCommand() {
             <Database className="!h-4 !w-4 mr-2" />
             <span>Storage</span>
           </CommandItem>
+          {/* <CommandItem
+            onSelect={() => {
+              navigate({
+                to: "/settings",
+              });
+              setOpen(false);
+            }}
+          >
+            <Settings className="!h-4 !w-4 mr-2" />
+            <span>Settings</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              navigate({
+                to: "/api-keys",
+              });
+              setOpen(false);
+            }}
+          >
+            <Key className="!h-4 !w-4 mr-2" />
+            <span>API Keys</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              navigate({
+                to: "/usage",
+              });
+              setOpen(false);
+            }}
+          >
+            <CircleGauge className="!h-4 !w-4 mr-2" />
+            <span>Usage</span>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => {
+              navigate({
+                to: "/pricing",
+              });
+              setOpen(false);
+            }}
+          >
+            <CreditCard className="!h-4 !w-4 mr-2" />
+            <span>Plan</span>
+          </CommandItem> */}
         </CommandGroup>
 
         {!isDetailPage() && (
@@ -273,7 +319,6 @@ function MachineActionCommand({ navigate, setOpen }: ComfyCommandProps) {
 }
 
 function WorkflowPartCommand({ navigate, setOpen, search }: ComfyCommandProps) {
-  // const [debouncedSearch] = useDebounce(search, 300);
   const { data: workflows, isLoading } = useQuery<workflowSchema[]>({
     queryKey: ["workflows", "all"],
     staleTime: 5 * 60 * 1000, // 5 minutes in milliseconds
@@ -359,7 +404,16 @@ function MachinePartCommand({ navigate, setOpen }: ComfyCommandProps) {
       )}
       {machines?.slice(0, 5).map((machine) => {
         return (
-          <CommandItem key={machine.id}>
+          <CommandItem
+            key={machine.id}
+            onSelect={() => {
+              navigate({
+                to: `/machines/${machine.id}`,
+                search: { view: "overview" },
+              });
+              setOpen(false);
+            }}
+          >
             <Server className="!h-4 !w-4 mr-2" />
             <div className="flex flex-col leading-snug">
               <span>{machine.name}</span>
