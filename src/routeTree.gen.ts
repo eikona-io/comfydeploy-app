@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as StorageImport } from './routes/storage'
 import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowsIndexImport } from './routes/workflows/index'
+import { Route as SettingsIndexImport } from './routes/settings/index'
 import { Route as MachinesIndexImport } from './routes/machines/index'
 import { Route as MachinesMachineIdImport } from './routes/machines/$machineId'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
@@ -41,6 +42,12 @@ const WorkflowsIndexRoute = WorkflowsIndexImport.update({
 } as any).lazy(() =>
   import('./routes/workflows/index.lazy').then((d) => d.Route),
 )
+
+const SettingsIndexRoute = SettingsIndexImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const MachinesIndexRoute = MachinesIndexImport.update({
   id: '/machines/',
@@ -122,6 +129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MachinesIndexImport
       parentRoute: typeof rootRoute
     }
+    '/settings/': {
+      id: '/settings/'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/workflows/': {
       id: '/workflows/'
       path: '/workflows'
@@ -148,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
   '/machines': typeof MachinesIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
@@ -159,6 +174,7 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
   '/machines': typeof MachinesIndexRoute
+  '/settings': typeof SettingsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
@@ -171,6 +187,7 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
   '/machines/': typeof MachinesIndexRoute
+  '/settings/': typeof SettingsIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
@@ -184,6 +201,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/machines/$machineId'
     | '/machines'
+    | '/settings'
     | '/workflows'
     | '/workflows/$workflowId/$view'
   fileRoutesByTo: FileRoutesByTo
@@ -194,6 +212,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/machines/$machineId'
     | '/machines'
+    | '/settings'
     | '/workflows'
     | '/workflows/$workflowId/$view'
   id:
@@ -204,6 +223,7 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/machines/$machineId'
     | '/machines/'
+    | '/settings/'
     | '/workflows/'
     | '/workflows/$workflowId/$view'
   fileRoutesById: FileRoutesById
@@ -216,6 +236,7 @@ export interface RootRouteChildren {
   AuthSignUpRoute: typeof AuthSignUpRoute
   MachinesMachineIdRoute: typeof MachinesMachineIdRoute
   MachinesIndexRoute: typeof MachinesIndexRoute
+  SettingsIndexRoute: typeof SettingsIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
 }
@@ -227,6 +248,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignUpRoute: AuthSignUpRoute,
   MachinesMachineIdRoute: MachinesMachineIdRoute,
   MachinesIndexRoute: MachinesIndexRoute,
+  SettingsIndexRoute: SettingsIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
 }
@@ -247,6 +269,7 @@ export const routeTree = rootRoute
         "/auth/sign-up",
         "/machines/$machineId",
         "/machines/",
+        "/settings/",
         "/workflows/",
         "/workflows/$workflowId/$view"
       ]
@@ -268,6 +291,9 @@ export const routeTree = rootRoute
     },
     "/machines/": {
       "filePath": "machines/index.tsx"
+    },
+    "/settings/": {
+      "filePath": "settings/index.tsx"
     },
     "/workflows/": {
       "filePath": "workflows/index.tsx"
