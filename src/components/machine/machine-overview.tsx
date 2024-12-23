@@ -211,7 +211,7 @@ export function MachineOverview({
                     init: {
                       method: "PATCH",
                       body: JSON.stringify({
-                        isTriggerRebuild: true,
+                        is_trigger_rebuild: true,
                       }),
                     },
                   }),
