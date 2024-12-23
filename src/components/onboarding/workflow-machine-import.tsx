@@ -7,13 +7,13 @@ import { CustomNodeList } from "@/components/machines/custom-node-list";
 import { analyzeWorkflowJson } from "@/components/onboarding/workflow-analyze";
 import {
   AccordionOption,
-  type StepProps,
   type StepValidation,
 } from "@/components/onboarding/workflow-import";
 import {
   type SnapshotImportData,
   SnapshotImportZoneLite,
 } from "@/components/snapshot-import-zone";
+import type { StepComponentProps } from "@/components/step-form";
 import { Accordion } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -182,7 +182,7 @@ export function convertToDockerSteps(
 export function WorkflowImportMachine({
   validation,
   setValidation,
-}: StepProps) {
+}: StepComponentProps<StepValidation>) {
   const sub = useCurrentPlan();
 
   return (
@@ -247,7 +247,10 @@ export function WorkflowImportMachine({
   );
 }
 
-function ExistingMachine({ validation, setValidation }: StepProps) {
+function ExistingMachine({
+  validation,
+  setValidation,
+}: StepComponentProps<StepValidation>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchValue] = useDebounce(searchTerm, 250);
   const query = useMachines(debouncedSearchValue);
@@ -370,7 +373,7 @@ function ExistingMachine({ validation, setValidation }: StepProps) {
 export function WorkflowImportNewMachineSetup({
   validation,
   setValidation,
-}: StepProps) {
+}: StepComponentProps<StepValidation>) {
   const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
     "https://github.com/comfyanonymous/ComfyUI",
   );
@@ -534,7 +537,7 @@ export function WorkflowImportNewMachineSetup({
 export function WorkflowImportCustomNodeSetup({
   validation,
   setValidation,
-}: StepProps) {
+}: StepComponentProps<StepValidation>) {
   const [editingHashes, setEditingHashes] = useState<Record<string, boolean>>(
     {},
   );
@@ -1099,7 +1102,7 @@ export function WorkflowImportCustomNodeSetup({
   );
 }
 
-function AdvanceSettings({ validation }: StepProps) {
+function AdvanceSettings({ validation }: StepComponentProps<StepValidation>) {
   const [openAdvanceSettings, setOpenAdvanceSettings] = useState(false);
   const navigate = useNavigate();
   const query = useMachines();
