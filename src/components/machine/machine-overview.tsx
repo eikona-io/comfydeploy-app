@@ -32,7 +32,7 @@ import { useMachineEvents } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { differenceInMilliseconds, max } from "date-fns";
 import {
   Activity,
@@ -68,6 +68,9 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { toast } from "sonner";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -168,6 +171,7 @@ export function MachineOverview({
     return savedLayout || defaultLayout;
   });
   const [isEditingLayout, setIsEditingLayout] = useState(false);
+  const navigate = useNavigate();
 
   const handleLayoutChange = (newLayout: any) => {
     if (!isEditingLayout) return;
@@ -199,7 +203,34 @@ export function MachineOverview({
               machine.type !== "comfy-deploy-serverless" ||
               isDockerCommandStepsNull
             }
-            onClick={async () => {}}
+            onClick={async () => {
+              try {
+                await callServerPromise(
+                  api({
+                    url: `machine/serverless/${machine.id}`,
+                    init: {
+                      method: "PATCH",
+                      body: JSON.stringify({
+                        isTriggerRebuild: true,
+                      }),
+                    },
+                  }),
+                  {
+                    loadingText: "Rebuilding machine",
+                  },
+                );
+                toast.success("Rebuild machine successfully");
+                toast.info("Redirecting to machine page...");
+                await new Promise((resolve) => setTimeout(resolve, 1000));
+                navigate({
+                  to: "/machines/$machineId",
+                  params: { machineId: machine.id },
+                  search: { view: "logs" },
+                });
+              } catch {
+                toast.error("Failed to rebuild machine");
+              }
+            }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
             Rebuild

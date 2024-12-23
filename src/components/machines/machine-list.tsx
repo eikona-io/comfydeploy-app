@@ -28,6 +28,7 @@ import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
@@ -40,6 +41,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import semver from "semver";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 
@@ -305,6 +307,7 @@ function MachineItemActionList({
 }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [cloneModalOpen, setCloneModalOpen] = useState(false);
+  const [rebuildModalOpen, setRebuildModalOpen] = useState(false);
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
   const isDockerCommandStepsNull =
@@ -321,7 +324,7 @@ function MachineItemActionList({
                 variant="ghost"
                 size="icon"
                 disabled={isDockerCommandStepsNull}
-                // onClick={() => setOpen2(true)}
+                onClick={() => setRebuildModalOpen(true)}
               >
                 <RefreshCcw className="h-[14px] w-[14px]" />
               </Button>
@@ -371,6 +374,12 @@ function MachineItemActionList({
         dialogOpen={cloneModalOpen}
         setDialogOpen={setCloneModalOpen}
         sub={sub}
+      />
+      <RebuildMachineDialog
+        machine={machine}
+        refetch={refetch}
+        dialogOpen={rebuildModalOpen}
+        setDialogOpen={setRebuildModalOpen}
       />
     </div>
   );
@@ -582,6 +591,115 @@ function CloneMachineDialog({
       formSchema={serverlessFormSchema}
       fieldConfig={sharedMachineConfig}
     />
+  );
+}
+
+function RebuildMachineDialog({
+  machine,
+  refetch,
+  dialogOpen,
+  setDialogOpen,
+}: MachineDialogProps) {
+  const navigate = useNavigate();
+  const { data } = useQuery<{
+    version: string;
+    changelog: string;
+  }>({
+    queryKey: ["modal", "version"],
+  });
+
+  const isNewerVersion = semver.gt(
+    data?.version ?? "0.0.0",
+    machine.machine_version ?? "0.0.0",
+  );
+
+  return (
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogContent className={cn("sm:max-w-[425px]")}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {"Rebuild"} <Badge variant={"secondary"}>{machine.name}</Badge>
+          </DialogTitle>
+          <DialogDescription className="text-primary">
+            Rebuild the machine to get the latest version of the machine builder
+            or resolve any build issues.
+            {isNewerVersion && (
+              <div className="mt-2 border-t bg-gray-50 p-2 text-sm opacity-80">
+                New version available{" "}
+                <Badge variant={"green"}>v{data?.version}</Badge>, rebuilding
+                will upgrade your machine version{" "}
+                {machine.machine_version && (
+                  <>
+                    from{" "}
+                    <Badge variant={"rose"}>v{machine.machine_version}</Badge>
+                  </>
+                )}
+                , suggest creating a new machine for experimentation
+                <div className="prose mt-2 text-xs">
+                  Changelog
+                  <ul>
+                    {data?.changelog?.split("\n").map((change, index) => (
+                      <li key={index}>{change}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex w-full justify-end gap-2">
+          <div className="flex gap-2">
+            <Button
+              className="w-fit"
+              variant={"outline"}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setDialogOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-fit"
+              onClick={async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                try {
+                  await callServerPromise(
+                    api({
+                      url: `machine/serverless/${machine.id}`,
+                      init: {
+                        method: "PATCH",
+                        body: JSON.stringify({
+                          isTriggerRebuild: true,
+                        }),
+                      },
+                    }),
+                    {
+                      loadingText: "Rebuilding machine",
+                    },
+                  );
+                  toast.success("Rebuild machine successfully");
+                  toast.info("Redirecting to machine page...");
+                  await new Promise((resolve) => setTimeout(resolve, 1000));
+                  navigate({
+                    to: "/machines/$machineId",
+                    params: { machineId: machine.id },
+                    search: { view: "logs" },
+                  });
+                } catch {
+                  toast.error("Failed to rebuild machine");
+                }
+                setDialogOpen(false);
+              }}
+            >
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
