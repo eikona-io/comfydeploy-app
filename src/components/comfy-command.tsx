@@ -5,22 +5,50 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  CommandShortcut,
 } from "@/components/ui/command";
+import { api } from "@/lib/api";
+import { getRelativeTime } from "@/lib/get-relative-time";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
-import { ArrowRight, Database, Plus, Server, Workflow } from "lucide-react";
+import { CommandLoading } from "cmdk";
+import {
+  ArrowRight,
+  Box,
+  Database,
+  Plus,
+  Server,
+  Workflow,
+} from "lucide-react";
 import { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
+import { LoadingIcon } from "./ui/custom/loading-icon";
 
 // ------------------Props-------------------
 
 interface ComfyCommandProps {
   navigate: (args: any) => void;
   setOpen: (open: boolean) => void;
+  search?: string;
+}
+
+interface workflowSchema {
+  id: string;
+  name: string;
+  created_at: string;
+}
+
+interface machineSchema {
+  id: string;
+  name: string;
+  updated_at: string;
 }
 
 // ------------------Component-------------------
 
 export function ComfyCommand() {
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
   const router = useRouter();
 
@@ -57,7 +85,11 @@ export function ComfyCommand() {
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput
+        placeholder="Type a command or search..."
+        value={search}
+        onValueChange={(value) => setSearch(value)}
+      />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
@@ -105,7 +137,15 @@ export function ComfyCommand() {
         </CommandGroup>
 
         {!isDetailPage() && (
-          <CreatePartCommand navigate={navigate} setOpen={setOpen} />
+          <WorkflowPartCommand
+            navigate={navigate}
+            setOpen={setOpen}
+            search={search}
+          />
+        )}
+
+        {!isDetailPage() && (
+          <MachinePartCommand navigate={navigate} setOpen={setOpen} />
         )}
       </CommandList>
     </CommandDialog>
@@ -232,38 +272,105 @@ function MachineActionCommand({ navigate, setOpen }: ComfyCommandProps) {
   );
 }
 
-function CreatePartCommand({ navigate, setOpen }: ComfyCommandProps) {
-  return (
-    <>
-      <CommandGroup heading="Workflows">
-        <CommandItem
-          onSelect={() => {
-            navigate({
-              to: "/workflows",
-              search: { view: "import" },
-            });
-            setOpen(false);
-          }}
-        >
-          <Plus className="!h-4 !w-4 mr-2" />
-          <span>Create New Workflow...</span>
-        </CommandItem>
-      </CommandGroup>
+function WorkflowPartCommand({ navigate, setOpen, search }: ComfyCommandProps) {
+  // const [debouncedSearch] = useDebounce(search, 300);
+  const { data: workflows, isLoading } = useQuery<workflowSchema[]>({
+    queryKey: ["workflows", "all"],
+    staleTime: 5 * 60 * 1000, // 5 minutes in milliseconds
+    gcTime: 5 * 60 * 1000, // 5 minutes in milliseconds
+    refetchOnWindowFocus: false,
+  });
 
-      <CommandGroup heading="Machines">
-        <CommandItem
-          onSelect={() => {
-            navigate({
-              to: "/machines",
-              search: { view: "create" },
-            });
-            setOpen(false);
-          }}
-        >
-          <Plus className="!h-4 !w-4 mr-2" />
-          <span>Create Serverless Machine...</span>
-        </CommandItem>
-      </CommandGroup>
-    </>
+  return (
+    <CommandGroup heading="Workflows">
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/workflows",
+            search: { view: "import" },
+          });
+          setOpen(false);
+        }}
+      >
+        <Plus className="!h-4 !w-4 mr-2" />
+        <span>Create New Workflow...</span>
+      </CommandItem>
+      {isLoading && (
+        <CommandLoading>
+          <div className="flex h-10 items-center justify-center text-muted-foreground">
+            <LoadingIcon />
+          </div>
+        </CommandLoading>
+      )}
+      {workflows?.slice(0, 5).map((workflow) => {
+        return (
+          <CommandItem
+            key={workflow.id}
+            onSelect={() => {
+              navigate({
+                to: `/workflows/${workflow.id}/workspace`,
+              });
+              setOpen(false);
+            }}
+          >
+            <Box className="!h-4 !w-4 mr-2" />
+            <div className="flex flex-col leading-snug">
+              <span>{workflow.name}</span>
+              <span className="font-mono text-[9px]">{workflow.id}</span>
+            </div>
+            <CommandShortcut className="text-2xs tracking-normal">
+              {getRelativeTime(workflow.created_at)}
+            </CommandShortcut>
+          </CommandItem>
+        );
+      })}
+    </CommandGroup>
+  );
+}
+
+function MachinePartCommand({ navigate, setOpen }: ComfyCommandProps) {
+  const { data: machines, isLoading } = useQuery<machineSchema[]>({
+    queryKey: ["machines", "all"],
+    staleTime: 5 * 60 * 1000, // 5 minutes in milliseconds
+    gcTime: 5 * 60 * 1000, // 5 minutes in milliseconds
+    refetchOnWindowFocus: false,
+  });
+
+  return (
+    <CommandGroup heading="Machines">
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/machines",
+            search: { view: "create" },
+          });
+          setOpen(false);
+        }}
+      >
+        <Plus className="!h-4 !w-4 mr-2" />
+        <span>Create Serverless Machine...</span>
+      </CommandItem>
+      {isLoading && (
+        <CommandLoading>
+          <div className="flex h-10 items-center justify-center text-muted-foreground">
+            <LoadingIcon />
+          </div>
+        </CommandLoading>
+      )}
+      {machines?.slice(0, 5).map((machine) => {
+        return (
+          <CommandItem key={machine.id}>
+            <Server className="!h-4 !w-4 mr-2" />
+            <div className="flex flex-col leading-snug">
+              <span>{machine.name}</span>
+              <span className="font-mono text-[9px]">{machine.id}</span>
+            </div>
+            <CommandShortcut className="text-2xs tracking-normal">
+              {getRelativeTime(machine.updated_at)}
+            </CommandShortcut>
+          </CommandItem>
+        );
+      })}
+    </CommandGroup>
   );
 }
