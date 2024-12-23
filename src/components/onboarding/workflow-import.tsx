@@ -11,27 +11,24 @@ import {
 } from "@/components/onboarding/workflow-machine-import";
 import { WorkflowModelCheck } from "@/components/onboarding/workflow-model-check";
 import {
+  type Step,
+  type StepComponentProps,
+  StepForm,
+} from "@/components/step-form";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { defaultWorkflowTemplates } from "@/utils/default-workflow";
-import { useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Circle,
-  CircleCheckBig,
-} from "lucide-react";
+import { Circle, CircleCheckBig } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -55,30 +52,6 @@ export interface StepValidation {
   selectedConflictingNodes?: {
     [nodeName: string]: ConflictingNodeInfo[];
   };
-}
-
-// Add a new interface for step actions
-interface StepActions {
-  onNext: (validation: StepValidation) => Promise<boolean> | boolean;
-}
-
-// Update Step interface
-interface Step {
-  id: number;
-  title: string;
-  component: React.ComponentType<StepProps>;
-  validate: (validation: StepValidation) => {
-    isValid: boolean;
-    error?: string;
-  };
-  actions: StepActions;
-}
-
-export interface StepProps {
-  validation: StepValidation;
-  setValidation: (
-    validation: StepValidation | ((prev: StepValidation) => StepValidation),
-  ) => void;
 }
 
 interface StepNavigation {
@@ -140,10 +113,7 @@ function getStepNavigation(
 }
 
 export default function WorkflowImport() {
-  // const router = useRouter();
   const navigate = useNavigate();
-  const [step, setStep] = useState(0);
-  const { getToken } = useAuth();
   const [validation, setValidation] = useState<StepValidation>({
     workflowName: "Untitled Workflow",
     importOption:
@@ -166,7 +136,6 @@ export default function WorkflowImport() {
     dependencies: undefined,
     selectedConflictingNodes: {},
   });
-  const [isNavigating, setIsNavigating] = useState(false);
 
   const createWorkflow = async (machineId?: string) => {
     const requestBody = {
@@ -179,28 +148,19 @@ export default function WorkflowImport() {
       ...(machineId && { machine_id: machineId }),
     };
 
-    const result = await fetch(
-      `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow`,
-      {
+    const result = await api({
+      url: "workflow",
+      init: {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(requestBody),
       },
-    );
+    });
 
-    if (!result.ok) {
-      const error = await result.json();
-      throw new Error(error.message || "Failed to create workflow");
-    }
-
-    return result.json();
+    return result;
   };
 
   // Define steps configuration
-  const STEPS: Step[] = [
+  const STEPS: Step<StepValidation>[] = [
     {
       id: 1,
       title: "Create Workflow",
@@ -408,14 +368,10 @@ export default function WorkflowImport() {
               validation.selectedConflictingNodes,
             );
 
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine/serverless`,
-              {
+            const response = await api({
+              url: "machine/serverless",
+              init: {
                 method: "POST",
-                headers: {
-                  Authorization: `Bearer ${await getToken()}`,
-                  "Content-Type": "application/json",
-                },
                 body: JSON.stringify({
                   name: validation.machineName,
                   comfyui_version: validation.comfyUiHash,
@@ -426,15 +382,10 @@ export default function WorkflowImport() {
                   docker_command_steps: docker_commands,
                 }),
               },
-            );
+            });
 
-            if (!response.ok) {
-              throw new Error("Failed to create machine");
-            }
-
-            const data = await response.json();
             toast.success(`${validation.machineName} created successfully!`);
-            const machineId = data.id;
+            const machineId = response.id;
 
             // Create workflow with the new machine ID
             const workflowResult = await createWorkflow(machineId);
@@ -466,173 +417,22 @@ export default function WorkflowImport() {
     },
   ];
 
-  const handleNavigation = async (direction: "next" | "prev") => {
-    if (isNavigating) return;
-
-    setIsNavigating(true);
-    const navigation = getStepNavigation(step, validation);
-    const nextStep = direction === "next" ? navigation.next : navigation.prev;
-
-    if (direction === "next") {
-      const validationResult = STEPS[step].validate(validation);
-      if (!validationResult.isValid) {
-        if (validationResult.error) {
-          toast.error(validationResult.error);
-        }
-        setIsNavigating(false);
-        return;
-      }
-
-      const actionResult = await STEPS[step].actions.onNext(validation);
-      if (!actionResult) {
-        setIsNavigating(false);
-        return;
-      }
-    }
-
-    if (nextStep === null) {
-      if (direction === "prev") {
-        navigate({
-          to: "/workflows",
-          search: { view: undefined },
-        });
-      }
-      setIsNavigating(false);
-      return;
-    }
-
-    // Update step immediately
-    setStep(nextStep);
-
-    // Keep buttons disabled during animation
-    setTimeout(() => {
-      setIsNavigating(false);
-    }, 300);
-  };
-
-  const CurrentStepComponent = STEPS[step].component;
-
-  // Calculate progress percentage based on current step and total steps
-  const calculateProgress = () => {
-    const navigation = getStepNavigation(step, validation);
-    const totalSteps = STEPS.length - 1;
-    const currentStepNumber = step;
-
-    // If this is the last step (navigation.next is null), show 100%
-    if (navigation.next === null) {
-      return 100;
-    }
-
-    return Math.round((currentStepNumber / totalSteps) * 100);
-  };
-
   return (
-    <div className="relative flex min-h-screen w-full flex-col gap-4">
-      <div className="sticky top-0 left-0 z-50 w-full">
-        <div className="relative">
-          <Progress value={calculateProgress()} className="h-2 rounded-none" />
-
-          {/* Add background steps */}
-          <div className="-bottom-10 absolute hidden w-full justify-between px-4 md:flex">
-            {STEPS.map((stepItem, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs transition-all duration-300",
-                  index === step
-                    ? "opacity-0" // Hide the background step that matches current step
-                    : "bg-muted text-muted-foreground opacity-30",
-                )}
-              >
-                {stepItem.title}
-              </div>
-            ))}
-          </div>
-
-          {/* Current step indicator (existing code) */}
-          <div
-            className="-bottom-10 absolute z-10 transform transition-all duration-300 ease-out"
-            style={{
-              left:
-                calculateProgress() === 100
-                  ? "auto"
-                  : `${calculateProgress()}%`,
-              right: calculateProgress() === 100 ? "0" : "auto",
-              transform:
-                calculateProgress() === 100
-                  ? "translateX(-5%)"
-                  : calculateProgress() === 0
-                    ? "translateX(5%)"
-                    : "translateX(-50%)",
-              maxWidth: "90%",
-              minWidth: "max-content",
-            }}
-          >
-            <div className="relative">
-              <div
-                className={cn(
-                  "-top-2 -translate-x-1/2 -translate-y-full absolute left-1/2 transform",
-                  calculateProgress() === 0 && "hidden",
-                )}
-              >
-                <div className="border-x-[8px] border-x-transparent border-b-[8px] border-b-primary" />
-              </div>
-              <div className="rounded-full bg-primary px-3 py-1 text-primary-foreground text-xs">
-                {STEPS[step].title}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-center px-4 py-14 md:py-0">
-        <div className="w-full max-w-5xl py-12">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step}
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -100 }}
-              transition={{ duration: 0.3 }}
-            >
-              <h1 className="mb-4 font-medium text-xl">{STEPS[step].title}</h1>
-              <CurrentStepComponent
-                validation={validation}
-                setValidation={setValidation}
-              />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </div>
-
-      <div className="fixed right-8 bottom-12 flex flex-row gap-2">
-        <Button
-          variant={"expandIconOutline"}
-          Icon={ChevronLeft}
-          iconPlacement="left"
-          onClick={() => handleNavigation("prev")}
-          className="drop-shadow-md"
-        >
-          Back
-        </Button>
-        <Button
-          variant={"expandIcon"}
-          Icon={ChevronRight}
-          iconPlacement="right"
-          onClick={() => handleNavigation("next")}
-          className="drop-shadow-md"
-        >
-          {getStepNavigation(step, validation).next === null
-            ? "Finish"
-            : "Next"}
-        </Button>
-      </div>
-    </div>
+    <StepForm
+      steps={STEPS}
+      validation={validation}
+      setValidation={setValidation}
+      getStepNavigation={getStepNavigation}
+      onExit={() => navigate({ to: "/workflows", search: { view: undefined } })}
+    />
   );
 }
 
 // Update component props
-function Import({ validation, setValidation }: StepProps) {
+function Import({
+  validation,
+  setValidation,
+}: StepComponentProps<StepValidation>) {
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -790,10 +590,7 @@ function InnerAccordionOption({
 function DefaultOption({
   validation,
   setValidation,
-}: {
-  validation: StepValidation;
-  setValidation: (validation: StepValidation) => void;
-}) {
+}: StepComponentProps<StepValidation>) {
   // Initialize innerSelected from validation if it exists, otherwise use default
   const [innerSelected, setInnerSelected] = useState<string>(
     validation.workflowJson
@@ -874,10 +671,7 @@ function DefaultOption({
 function ImportOptions({
   validation,
   setValidation,
-}: {
-  validation: StepValidation;
-  setValidation: (v: StepValidation) => void;
-}) {
+}: StepComponentProps<StepValidation>) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

@@ -1,4 +1,5 @@
-import type { StepProps } from "@/components/onboarding/workflow-import";
+import type { StepValidation } from "@/components/onboarding/workflow-import";
+import type { StepComponentProps } from "@/components/step-form";
 import {
   Accordion,
   AccordionContent,
@@ -177,7 +178,10 @@ export const NodeToBeFocus: NodeCategories = {
 
 // -----------------------components------------------------
 
-export function WorkflowModelCheck({ validation, setValidation }: StepProps) {
+export function WorkflowModelCheck({
+  validation,
+  setValidation,
+}: StepComponentProps<StepValidation>) {
   const [workflow, setWorkflow] = useState<string>(
     (validation.importOption === "import"
       ? validation.importJson

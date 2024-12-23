@@ -1,3 +1,10 @@
+import { InsertModal } from "@/components/auto-form/auto-form-dialog";
+import { Fab } from "@/components/fab";
+import {
+  customFormSchema,
+  serverlessFormSchema,
+  sharedMachineConfig,
+} from "@/components/machine/machine-schema";
 import { MachineListItem } from "@/components/machines/machine-list-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,24 +27,35 @@ import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
+import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Copy, RefreshCcw, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Cloud,
+  CloudCog,
+  Copy,
+  Plus,
+  RefreshCcw,
+  Server,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
+import semver from "semver";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
-import { InsertModal } from "../auto-form/auto-form-dialog";
-import {
-  serverlessFormSchema,
-  sharedMachineConfig,
-} from "../machine/machine-schema";
 
 export function MachineList() {
   const [searchValue, setSearchValue] = useState("");
+  const [openCustomDialog, setOpenCustomDialog] = useState(false);
+  const [openServerlessDialog, setOpenServerlessDialog] = useState(false);
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
   const [expandedMachineId, setExpandedMachineId] = useState<string | null>(
     null,
   );
   const sub = useCurrentPlan();
+  const hasActiveSub = !sub || !!sub?.sub;
+  const navigate = useNavigate({ from: "/machines" });
 
   const query = useMachines(debouncedSearchValue);
 
@@ -76,7 +94,7 @@ export function MachineList() {
         </Tooltip>
       </div>
       <VirtualizedInfiniteList
-        className="!h-full w-full"
+        className="!h-full fab-machine-list w-full"
         queryResult={query}
         renderItem={(machine) => (
           <MachineListItem
@@ -133,6 +151,147 @@ export function MachineList() {
         }}
         estimateSize={90}
       />
+
+      <InsertModal
+        hideButton
+        open={openCustomDialog}
+        mutateFn={query.refetch}
+        setOpen={setOpenCustomDialog}
+        title="Custom Machine"
+        disabled={!hasActiveSub}
+        tooltip={!hasActiveSub ? "Upgrade in pricing tab!" : ""}
+        description="Add custom comfyui machines to your account."
+        serverAction={async (data) => {
+          console.log("custom machine", data);
+          try {
+            const machine = await api({
+              url: "machine/custom",
+              init: {
+                method: "POST",
+                body: JSON.stringify(data),
+              },
+            });
+            console.log("machine", machine);
+            toast.success(`${data.name} created successfully!`);
+            toast.info("Redirecting to machine page...");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId: machine.id },
+              search: { view: "overview" },
+            });
+            return {}; // Return empty object since we're handling navigation manually
+          } catch (error) {
+            toast.error(`Failed to create: ${error}`);
+            throw error;
+          }
+        }}
+        formSchema={customFormSchema}
+      />
+
+      <InsertModal
+        hideButton
+        open={openServerlessDialog}
+        mutateFn={query.refetch}
+        setOpen={setOpenServerlessDialog}
+        disabled={sub?.features.machineLimited}
+        dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
+        containerClassName="lg:flex-row lg:gap-14"
+        tooltip={
+          sub?.features.machineLimited
+            ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
+        }
+        title="Create New Machine"
+        description="Create a new serverless ComfyUI machine based on the analyzed workflow."
+        serverAction={async (data: any) => {
+          try {
+            const machine = await api({
+              url: "machine/serverless",
+              init: {
+                method: "POST",
+                body: JSON.stringify(data),
+              },
+            });
+
+            toast.success(`${data.name} created successfully!`);
+            toast.info("Redirecting to machine page...");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId: machine.id },
+              search: { view: "logs" },
+            });
+
+            return {}; // Return empty object since we're handling navigation manually
+          } catch (error) {
+            toast.error(`Failed to create: ${error}`);
+            throw error;
+          }
+        }}
+        formSchema={serverlessFormSchema}
+        fieldConfig={sharedMachineConfig}
+        data={{
+          name: "My Machine",
+          gpu: "A10G",
+          comfyui_version: comfyui_hash,
+          machine_builder_version: "4",
+          docker_command_steps: {
+            steps: [],
+          },
+
+          // default values
+          allow_concurrent_inputs: 1,
+          concurrency_limit: 2,
+          run_timeout: 300,
+          idle_timeout: 60,
+          ws_timeout: 2,
+          python_version: "3.11",
+        }}
+      />
+
+      <Fab
+        refScrollingContainerKey="fab-machine-list"
+        mainItem={{
+          name: "Create Machine",
+          icon: Plus,
+        }}
+        disabled={{
+          disabled: sub?.features.machineLimited,
+          disabledText: "Max Machines Exceeded. ",
+        }}
+        subItems={[
+          {
+            name: "Serverless Machine",
+            icon: Cloud,
+            onClick: () => {
+              if (!sub?.features.machineLimited) {
+                navigate({
+                  search: { view: "create" },
+                });
+              }
+            },
+          },
+          {
+            name: "Serverless Machine (Custom)",
+            icon: CloudCog,
+            onClick: () => {
+              if (!sub?.features.machineLimited) {
+                setOpenServerlessDialog(true);
+              }
+            },
+          },
+          {
+            name: "Custom Machine",
+            icon: Server,
+            onClick: () => {
+              if (!sub?.features.machineLimited) {
+                setOpenCustomDialog(true);
+              }
+            },
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -148,6 +307,7 @@ function MachineItemActionList({
 }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [cloneModalOpen, setCloneModalOpen] = useState(false);
+  const [rebuildModalOpen, setRebuildModalOpen] = useState(false);
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
   const isDockerCommandStepsNull =
@@ -164,7 +324,7 @@ function MachineItemActionList({
                 variant="ghost"
                 size="icon"
                 disabled={isDockerCommandStepsNull}
-                // onClick={() => setOpen2(true)}
+                onClick={() => setRebuildModalOpen(true)}
               >
                 <RefreshCcw className="h-[14px] w-[14px]" />
               </Button>
@@ -214,6 +374,12 @@ function MachineItemActionList({
         dialogOpen={cloneModalOpen}
         setDialogOpen={setCloneModalOpen}
         sub={sub}
+      />
+      <RebuildMachineDialog
+        machine={machine}
+        refetch={refetch}
+        dialogOpen={rebuildModalOpen}
+        setDialogOpen={setRebuildModalOpen}
       />
     </div>
   );
@@ -425,6 +591,115 @@ function CloneMachineDialog({
       formSchema={serverlessFormSchema}
       fieldConfig={sharedMachineConfig}
     />
+  );
+}
+
+function RebuildMachineDialog({
+  machine,
+  refetch,
+  dialogOpen,
+  setDialogOpen,
+}: MachineDialogProps) {
+  const navigate = useNavigate();
+  const { data } = useQuery<{
+    version: string;
+    changelog: string;
+  }>({
+    queryKey: ["modal", "version"],
+  });
+
+  const isNewerVersion = semver.gt(
+    data?.version ?? "0.0.0",
+    machine.machine_version ?? "0.0.0",
+  );
+
+  return (
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <DialogContent className={cn("sm:max-w-[425px]")}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            {"Rebuild"} <Badge variant={"secondary"}>{machine.name}</Badge>
+          </DialogTitle>
+          <DialogDescription className="text-primary">
+            Rebuild the machine to get the latest version of the machine builder
+            or resolve any build issues.
+            {isNewerVersion && (
+              <div className="mt-2 border-t bg-gray-50 p-2 text-sm opacity-80">
+                New version available{" "}
+                <Badge variant={"green"}>v{data?.version}</Badge>, rebuilding
+                will upgrade your machine version{" "}
+                {machine.machine_version && (
+                  <>
+                    from{" "}
+                    <Badge variant={"rose"}>v{machine.machine_version}</Badge>
+                  </>
+                )}
+                , suggest creating a new machine for experimentation
+                <div className="prose mt-2 text-xs">
+                  Changelog
+                  <ul>
+                    {data?.changelog?.split("\n").map((change, index) => (
+                      <li key={index}>{change}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex w-full justify-end gap-2">
+          <div className="flex gap-2">
+            <Button
+              className="w-fit"
+              variant={"outline"}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                setDialogOpen(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-fit"
+              onClick={async (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                try {
+                  await callServerPromise(
+                    api({
+                      url: `machine/serverless/${machine.id}`,
+                      init: {
+                        method: "PATCH",
+                        body: JSON.stringify({
+                          isTriggerRebuild: true,
+                        }),
+                      },
+                    }),
+                    {
+                      loadingText: "Rebuilding machine",
+                    },
+                  );
+                  toast.success("Rebuild machine successfully");
+                  toast.info("Redirecting to machine page...");
+                  await new Promise((resolve) => setTimeout(resolve, 1000));
+                  navigate({
+                    to: "/machines/$machineId",
+                    params: { machineId: machine.id },
+                    search: { view: "logs" },
+                  });
+                } catch {
+                  toast.error("Failed to rebuild machine");
+                }
+                setDialogOpen(false);
+              }}
+            >
+              Confirm
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 

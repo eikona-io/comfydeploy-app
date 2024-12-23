@@ -1,14 +1,19 @@
+import { InsertModal } from "@/components/auto-form/auto-form-dialog";
+import {
+  serverlessFormSchema,
+  sharedMachineConfig,
+} from "@/components/machine/machine-schema";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
 import { analyzeWorkflowJson } from "@/components/onboarding/workflow-analyze";
 import {
   AccordionOption,
-  type StepProps,
   type StepValidation,
 } from "@/components/onboarding/workflow-import";
 import {
   type SnapshotImportData,
   SnapshotImportZoneLite,
 } from "@/components/snapshot-import-zone";
+import type { StepComponentProps } from "@/components/step-form";
 import { Accordion } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,10 +27,11 @@ import {
   useGithubBranchInfo,
 } from "@/hooks/use-github-branch-info";
 import { useMachines } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
   ChevronUp,
@@ -34,6 +40,7 @@ import {
   Lock,
   Pencil,
   Search,
+  Settings2,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -175,7 +182,7 @@ export function convertToDockerSteps(
 export function WorkflowImportMachine({
   validation,
   setValidation,
-}: StepProps) {
+}: StepComponentProps<StepValidation>) {
   const sub = useCurrentPlan();
 
   return (
@@ -240,7 +247,10 @@ export function WorkflowImportMachine({
   );
 }
 
-function ExistingMachine({ validation, setValidation }: StepProps) {
+function ExistingMachine({
+  validation,
+  setValidation,
+}: StepComponentProps<StepValidation>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchValue] = useDebounce(searchTerm, 250);
   const query = useMachines(debouncedSearchValue);
@@ -363,7 +373,7 @@ function ExistingMachine({ validation, setValidation }: StepProps) {
 export function WorkflowImportNewMachineSetup({
   validation,
   setValidation,
-}: StepProps) {
+}: StepComponentProps<any>) {
   const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
     "https://github.com/comfyanonymous/ComfyUI",
   );
@@ -389,7 +399,7 @@ export function WorkflowImportNewMachineSetup({
 
   return (
     <div className="relative flex flex-col gap-4">
-      {/* <AdvanceSettings validation={validation} setValidation={setValidation} /> */}
+      <AdvanceSettings validation={validation} setValidation={setValidation} />
       <div>
         <div className="mb-2">
           <span className="font-medium text-sm">Machine Name </span>
@@ -527,7 +537,7 @@ export function WorkflowImportNewMachineSetup({
 export function WorkflowImportCustomNodeSetup({
   validation,
   setValidation,
-}: StepProps) {
+}: StepComponentProps<StepValidation>) {
   const [editingHashes, setEditingHashes] = useState<Record<string, boolean>>(
     {},
   );
@@ -1092,162 +1102,153 @@ export function WorkflowImportCustomNodeSetup({
   );
 }
 
-// function AdvanceSettings({ validation }: StepProps) {
-//   const [openAdvanceSettings, setOpenAdvanceSettings] = useState(false);
-//   const router = useRouter();
-//   const { mutate } = useSWR("machines", getUserMachines);
-//   const sub = useCurrentPlan();
-//   const [missingDockerSteps, setMissingDockerSteps] = useState<
-//     z.infer<typeof dockerStepsSchema>
-//   >({
-//     steps: [],
-//   });
+function AdvanceSettings({ validation }: StepComponentProps<StepValidation>) {
+  const [openAdvanceSettings, setOpenAdvanceSettings] = useState(false);
+  const navigate = useNavigate();
+  const query = useMachines();
+  const sub = useCurrentPlan();
+  const [missingDockerSteps, setMissingDockerSteps] = useState<any>({
+    steps: [],
+  });
 
-//   const createWorkflow = async (machineId?: string) => {
-//     const result = await addWorkflowJsonWithoutMachine(
-//       {
-//         workflowName: validation.workflowName,
-//         ...(validation.importOption === "import"
-//           ? { workflowJson: validation.importJson }
-//           : {
-//               ...(validation.workflowJson && {
-//                 workflowJson: validation.workflowJson,
-//               }),
-//               ...(validation.workflowApi && {
-//                 workflowApi: validation.workflowApi,
-//               }),
-//             }),
-//       },
-//       machineId,
-//     );
+  const createWorkflow = async (machineId?: string) => {
+    const requestBody = {
+      name: validation.workflowName,
+      workflow_json:
+        validation.importOption === "import"
+          ? validation.importJson
+          : validation.workflowJson,
+      ...(validation.workflowApi && { workflow_api: validation.workflowApi }),
+      ...(machineId && { machine_id: machineId }),
+    };
 
-//     if (result.error) {
-//       throw new Error(result.error);
-//     }
+    const result = await api({
+      url: "workflow",
+      init: {
+        method: "POST",
+        body: JSON.stringify(requestBody),
+      },
+    });
 
-//     return result;
-//   };
+    return result;
+  };
 
-//   useEffect(() => {
-//     const dockerSteps = convertToDockerSteps(
-//       validation.dependencies?.custom_nodes,
-//       validation.selectedConflictingNodes,
-//     );
-//     setMissingDockerSteps(dockerSteps);
-//   }, [
-//     validation.dependencies?.custom_nodes,
-//     validation.selectedConflictingNodes,
-//   ]);
+  useEffect(() => {
+    const dockerSteps = convertToDockerSteps(
+      validation.dependencies?.custom_nodes,
+      validation.selectedConflictingNodes,
+    );
+    setMissingDockerSteps(dockerSteps);
+  }, [
+    validation.dependencies?.custom_nodes,
+    validation.selectedConflictingNodes,
+  ]);
 
-//   return (
-//     <>
-//       <div className="-top-10 absolute right-0 hidden md:block">
-//         <Button
-//           variant={"expandIcon"}
-//           iconPlacement="right"
-//           Icon={Settings2}
-//           className={`${
-//             sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-//           }`}
-//           onClick={() => {
-//             if (sub?.plans?.plans) {
-//               setOpenAdvanceSettings(true);
-//             }
-//           }}
-//         >
-//           Advance Settings
-//         </Button>
-//       </div>
-//       <div className="-top-10 absolute right-0 block md:hidden">
-//         <Button
-//           size={"icon"}
-//           variant={"outline"}
-//           className={`${
-//             sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-//           }`}
-//           onClick={() => {
-//             if (sub?.plans?.plans) {
-//               setOpenAdvanceSettings(true);
-//             }
-//           }}
-//         >
-//           <Settings2 className="h-4 w-4" />
-//         </Button>
-//       </div>
+  return (
+    <>
+      <div className="-top-10 absolute right-0 hidden md:block">
+        <Button
+          variant={"expandIcon"}
+          iconPlacement="right"
+          Icon={Settings2}
+          className={`${
+            sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
+          }`}
+          onClick={() => {
+            if (sub?.plans?.plans) {
+              setOpenAdvanceSettings(true);
+            }
+          }}
+        >
+          Advance Settings
+        </Button>
+      </div>
+      <div className="-top-10 absolute right-0 block md:hidden">
+        <Button
+          size={"icon"}
+          variant={"outline"}
+          className={`${
+            sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
+          }`}
+          onClick={() => {
+            if (sub?.plans?.plans) {
+              setOpenAdvanceSettings(true);
+            }
+          }}
+        >
+          <Settings2 className="h-4 w-4" />
+        </Button>
+      </div>
 
-//       <InsertModal
-//         hideButton
-//         open={openAdvanceSettings && !sub?.features.machineLimited}
-//         mutateFn={mutate}
-//         setOpen={setOpenAdvanceSettings}
-//         disabled={sub?.features.machineLimited}
-//         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
-//         containerClassName="lg:flex-row lg:gap-14"
-//         tooltip={
-//           sub?.features.machineLimited
-//             ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
-//             : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
-//         }
-//         title="Create New Machine"
-//         description="Create a new serverless ComfyUI machine based on the analyzed workflow."
-//         serverAction={async (data) => {
-//           try {
-//             const machine = await addCustomMachine(data);
+      <InsertModal
+        hideButton
+        open={openAdvanceSettings && !sub?.features.machineLimited}
+        mutateFn={query.refetch}
+        setOpen={setOpenAdvanceSettings}
+        disabled={sub?.features.machineLimited}
+        dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
+        containerClassName="lg:flex-row lg:gap-14"
+        tooltip={
+          sub?.features.machineLimited
+            ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
+        }
+        title="Create New Machine"
+        description="Create a new serverless ComfyUI machine based on the analyzed workflow."
+        serverAction={async (data: any) => {
+          try {
+            const machine = await api({
+              url: "machine/serverless",
+              init: {
+                method: "POST",
+                body: JSON.stringify(data),
+              },
+            });
 
-//             // Extract machine ID from the redirect URL
-//             if ("redirect" in machine && machine.redirect) {
-//               const machineId = machine.redirect.split("/").pop();
+            toast.success(`${data.name} created successfully!`);
+            const workflowResult = await createWorkflow(machine.id);
+            toast.success(
+              `Workflow "${validation.workflowName}" created successfully!`,
+            );
+            window.open(
+              `/workflows/${workflowResult.data.workflow_id}?view=workspace`,
+              "_blank",
+            );
+            toast.info("Redirecting to machine page...");
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId: machine.id },
+              search: { view: "logs" },
+            });
 
-//               // Create workflow with the extracted machine ID
-//               const workflowResult = await createWorkflow(machineId);
+            return {}; // Return empty object since we're handling navigation manually
+          } catch (error) {
+            toast.error(`Failed to create: ${error}`);
+            throw error;
+          }
+        }}
+        formSchema={serverlessFormSchema}
+        fieldConfig={sharedMachineConfig}
+        // dependencies={sharedMachineConfigDeps}
+        data={{
+          name: validation.machineName || "",
+          gpu: validation.gpuType?.toUpperCase() as "T4" | "A10G" | "A100",
+          comfyui_version: validation.comfyUiHash || "",
+          machine_builder_version: "4",
+          docker_command_steps: missingDockerSteps,
 
-//               if ("data" in workflowResult && workflowResult.data) {
-//                 toast.success(
-//                   `Workflow "${validation.workflowName}" created successfully!`,
-//                 );
-//                 window.open(
-//                   `/workflows/${workflowResult.data.workflow_id}?view=workspace`,
-//                   "_blank",
-//                 );
-//               }
-
-//               toast.info("Redirecting to machine page...");
-//               router.push(`/machines/${machineId}`);
-//             }
-
-//             return {}; // Return empty object since we're handling navigation manually
-//           } catch (error) {
-//             toast.error("Failed to create: " + error);
-//             throw error;
-//           }
-//         }}
-//         formSchema={addCustomMachineSchemaWithEmptyDockerSteps.extend({
-//           docker_command_steps:
-//             addCustomMachineSchemaWithEmptyDockerSteps.shape.docker_command_steps.default(
-//               missingDockerSteps,
-//             ),
-//         })}
-//         fieldConfig={sharedMachineConfig}
-//         dependencies={sharedMachineConfigDeps}
-//         data={{
-//           name: validation.machineName || "",
-//           gpu: validation.gpuType?.toUpperCase() as "T4" | "A10G" | "A100",
-//           comfyui_version: validation.comfyUiHash || "",
-//           machine_builder_version: "4",
-//           docker_command_steps: missingDockerSteps,
-
-//           // default values
-//           allow_concurrent_inputs: 1,
-//           concurrency_limit: 2,
-//           run_timeout: 300,
-//           idle_timeout: 60,
-//           ws_timeout: 2,
-//           python_version: "3.11",
-//         }}
-//       />
-//     </>
-//   );
-// }
+          // default values
+          allow_concurrent_inputs: 1,
+          concurrency_limit: 2,
+          run_timeout: 300,
+          idle_timeout: 60,
+          ws_timeout: 2,
+          python_version: "3.11",
+        }}
+      />
+    </>
+  );
+}
 
 interface NodeConflict {
   url: string;
