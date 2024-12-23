@@ -1,3 +1,10 @@
+import { InsertModal } from "@/components/auto-form/auto-form-dialog";
+import { Fab } from "@/components/fab";
+import {
+  customFormSchema,
+  serverlessFormSchema,
+  sharedMachineConfig,
+} from "@/components/machine/machine-schema";
 import { MachineListItem } from "@/components/machines/machine-list-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,23 +28,29 @@ import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
-import { ChevronDown, Copy, RefreshCcw, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  Cloud,
+  Copy,
+  Plus,
+  RefreshCcw,
+  Server,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
-import { InsertModal } from "../auto-form/auto-form-dialog";
-import {
-  serverlessFormSchema,
-  sharedMachineConfig,
-} from "../machine/machine-schema";
 
 export function MachineList() {
   const [searchValue, setSearchValue] = useState("");
+  const [openCustomDialog, setOpenCustomDialog] = useState(false);
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
   const [expandedMachineId, setExpandedMachineId] = useState<string | null>(
     null,
   );
   const sub = useCurrentPlan();
+  const hasActiveSub = !sub || !!sub?.sub;
+  const navigate = useNavigate({ from: "/machines" });
 
   const query = useMachines(debouncedSearchValue);
 
@@ -76,7 +89,7 @@ export function MachineList() {
         </Tooltip>
       </div>
       <VirtualizedInfiniteList
-        className="!h-full w-full"
+        className="!h-full fab-machine-list w-full"
         queryResult={query}
         renderItem={(machine) => (
           <MachineListItem
@@ -132,6 +145,55 @@ export function MachineList() {
           ));
         }}
         estimateSize={90}
+      />
+
+      <InsertModal
+        hideButton
+        open={openCustomDialog}
+        mutateFn={query.refetch}
+        setOpen={setOpenCustomDialog}
+        title="Custom Machine"
+        disabled={!hasActiveSub}
+        tooltip={!hasActiveSub ? "Upgrade in pricing tab!" : ""}
+        description="Add custom comfyui machines to your account."
+        serverAction={async (data) => {
+          console.log(data);
+        }}
+        formSchema={customFormSchema}
+      />
+
+      <Fab
+        refScrollingContainerKey="fab-machine-list"
+        mainItem={{
+          name: "Create Machine",
+          icon: Plus,
+        }}
+        disabled={{
+          disabled: sub?.features.machineLimited,
+          disabledText: "Max Machines Exceeded. ",
+        }}
+        subItems={[
+          {
+            name: "Serverless Machine",
+            icon: Cloud,
+            onClick: () => {
+              if (!sub?.features.machineLimited) {
+                navigate({
+                  search: { view: "create" },
+                });
+              }
+            },
+          },
+          {
+            name: "Custom Machine",
+            icon: Server,
+            onClick: () => {
+              if (!sub?.features.machineLimited) {
+                setOpenCustomDialog(true);
+              }
+            },
+          },
+        ]}
       />
     </div>
   );

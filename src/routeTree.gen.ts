@@ -46,7 +46,9 @@ const MachinesIndexRoute = MachinesIndexImport.update({
   id: '/machines/',
   path: '/machines/',
   getParentRoute: () => rootRoute,
-} as any)
+} as any).lazy(() =>
+  import('./routes/machines/index.lazy').then((d) => d.Route),
+)
 
 const MachinesMachineIdRoute = MachinesMachineIdImport.update({
   id: '/machines/$machineId',

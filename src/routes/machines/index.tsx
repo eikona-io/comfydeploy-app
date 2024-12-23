@@ -1,10 +1,9 @@
-import { MachineList } from "@/components/machines/machine-list";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/machines/")({
-  component: RouteComponent,
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      view: search.view === "create" ? "create" : undefined,
+    };
+  },
 });
-
-function RouteComponent() {
-  return <MachineList />;
-}

@@ -168,7 +168,7 @@ export function WorkflowList() {
           </div>
         </AdminAndMember>
       </div>
-      <ScrollArea className="flex-grow" ref={parentRef}>
+      <ScrollArea className="fab-workflow-list flex-grow" ref={parentRef}>
         {isLoading ? (
           <div className="mx-auto grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }, (_, index) => (
