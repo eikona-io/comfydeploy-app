@@ -160,7 +160,29 @@ export function MachineList() {
         tooltip={!hasActiveSub ? "Upgrade in pricing tab!" : ""}
         description="Add custom comfyui machines to your account."
         serverAction={async (data) => {
-          console.log(data);
+          console.log("custom machine", data);
+          try {
+            const machine = await api({
+              url: "machine/custom",
+              init: {
+                method: "POST",
+                body: JSON.stringify(data),
+              },
+            });
+            console.log("machine", machine);
+            toast.success(`${data.name} created successfully!`);
+            toast.info("Redirecting to machine page...");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId: machine.id },
+              search: { view: "overview" },
+            });
+            return {}; // Return empty object since we're handling navigation manually
+          } catch (error) {
+            toast.error(`Failed to create: ${error}`);
+            throw error;
+          }
         }}
         formSchema={customFormSchema}
       />
