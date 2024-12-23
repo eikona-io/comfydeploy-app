@@ -1,4 +1,3 @@
-import { Console } from "console";
 import { api } from "@/lib/api";
 
 type updateUserSettings = {
