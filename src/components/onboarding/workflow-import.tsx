@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Textarea } from "@/components/ui/textarea";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { defaultWorkflowTemplates } from "@/utils/default-workflow";
@@ -140,10 +141,8 @@ function getStepNavigation(
 }
 
 export default function WorkflowImport() {
-  // const router = useRouter();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const { getToken } = useAuth();
   const [validation, setValidation] = useState<StepValidation>({
     workflowName: "Untitled Workflow",
     importOption:
@@ -179,24 +178,15 @@ export default function WorkflowImport() {
       ...(machineId && { machine_id: machineId }),
     };
 
-    const result = await fetch(
-      `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow`,
-      {
+    const result = await api({
+      url: "workflow",
+      init: {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${await getToken()}`,
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(requestBody),
       },
-    );
+    });
 
-    if (!result.ok) {
-      const error = await result.json();
-      throw new Error(error.message || "Failed to create workflow");
-    }
-
-    return result.json();
+    return result;
   };
 
   // Define steps configuration
@@ -408,14 +398,10 @@ export default function WorkflowImport() {
               validation.selectedConflictingNodes,
             );
 
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine/serverless`,
-              {
+            const response = await api({
+              url: "machine/serverless",
+              init: {
                 method: "POST",
-                headers: {
-                  Authorization: `Bearer ${await getToken()}`,
-                  "Content-Type": "application/json",
-                },
                 body: JSON.stringify({
                   name: validation.machineName,
                   comfyui_version: validation.comfyUiHash,
@@ -426,15 +412,10 @@ export default function WorkflowImport() {
                   docker_command_steps: docker_commands,
                 }),
               },
-            );
+            });
 
-            if (!response.ok) {
-              throw new Error("Failed to create machine");
-            }
-
-            const data = await response.json();
             toast.success(`${validation.machineName} created successfully!`);
-            const machineId = data.id;
+            const machineId = response.id;
 
             // Create workflow with the new machine ID
             const workflowResult = await createWorkflow(machineId);
