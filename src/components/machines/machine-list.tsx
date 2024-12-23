@@ -27,10 +27,12 @@ import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
+import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { useNavigate } from "@tanstack/react-router";
 import {
   ChevronDown,
   Cloud,
+  CloudCog,
   Copy,
   Plus,
   RefreshCcw,
@@ -44,6 +46,7 @@ import { useDebounce } from "use-debounce";
 export function MachineList() {
   const [searchValue, setSearchValue] = useState("");
   const [openCustomDialog, setOpenCustomDialog] = useState(false);
+  const [openServerlessDialog, setOpenServerlessDialog] = useState(false);
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
   const [expandedMachineId, setExpandedMachineId] = useState<string | null>(
     null,
@@ -162,6 +165,67 @@ export function MachineList() {
         formSchema={customFormSchema}
       />
 
+      <InsertModal
+        hideButton
+        open={openServerlessDialog}
+        mutateFn={query.refetch}
+        setOpen={setOpenServerlessDialog}
+        disabled={sub?.features.machineLimited}
+        dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
+        containerClassName="lg:flex-row lg:gap-14"
+        tooltip={
+          sub?.features.machineLimited
+            ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
+        }
+        title="Create New Machine"
+        description="Create a new serverless ComfyUI machine based on the analyzed workflow."
+        serverAction={async (data: any) => {
+          try {
+            const machine = await api({
+              url: "machine/serverless",
+              init: {
+                method: "POST",
+                body: JSON.stringify(data),
+              },
+            });
+
+            toast.success(`${data.name} created successfully!`);
+            toast.info("Redirecting to machine page...");
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId: machine.id },
+              search: { view: "logs" },
+            });
+
+            return {}; // Return empty object since we're handling navigation manually
+          } catch (error) {
+            toast.error(`Failed to create: ${error}`);
+            throw error;
+          }
+        }}
+        formSchema={serverlessFormSchema}
+        fieldConfig={sharedMachineConfig}
+        data={{
+          name: "My Machine",
+          gpu: "A10G",
+          comfyui_version: comfyui_hash,
+          machine_builder_version: "4",
+          docker_command_steps: {
+            steps: [],
+          },
+
+          // default values
+          allow_concurrent_inputs: 1,
+          concurrency_limit: 2,
+          run_timeout: 300,
+          idle_timeout: 60,
+          ws_timeout: 2,
+          python_version: "3.11",
+        }}
+      />
+
       <Fab
         refScrollingContainerKey="fab-machine-list"
         mainItem={{
@@ -181,6 +245,15 @@ export function MachineList() {
                 navigate({
                   search: { view: "create" },
                 });
+              }
+            },
+          },
+          {
+            name: "Serverless Machine (Custom)",
+            icon: CloudCog,
+            onClick: () => {
+              if (!sub?.features.machineLimited) {
+                setOpenServerlessDialog(true);
               }
             },
           },

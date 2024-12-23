@@ -373,7 +373,7 @@ function ExistingMachine({
 export function WorkflowImportNewMachineSetup({
   validation,
   setValidation,
-}: StepComponentProps<StepValidation>) {
+}: StepComponentProps<any>) {
   const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
     "https://github.com/comfyanonymous/ComfyUI",
   );
