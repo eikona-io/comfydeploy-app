@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { InlineAutoForm } from "./auto-form/auto-form-dialog";
 import { DependencyType } from "./auto-form/types";
+import { updateUser } from "./user-api";
 
 export function UserSettings() {
   const sub = useCurrentPlan();
@@ -70,11 +71,10 @@ export function UserSettings() {
             .nullable(),
         })}
         data={userSettings}
-        serverAction={async (data): Promise<any> => {
-          console.log("data", data);
+        serverAction={async (data) => {
           if (!sub?.plans) {
             toast.error("Settings are disabled for free tier users.");
-            return;
+            return userSettings;
           }
 
           if (
@@ -89,8 +89,7 @@ export function UserSettings() {
             );
             return;
           }
-          console.log("data", data);
-          // await updateUserSettings(data);
+          await updateUser(data);
         }}
         dependencies={[
           {
