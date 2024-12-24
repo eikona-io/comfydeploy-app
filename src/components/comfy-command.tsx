@@ -24,7 +24,9 @@ import {
   Workflow,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useDebounce } from "use-debounce";
 import { LoadingIcon } from "./ui/custom/loading-icon";
+import { Skeleton } from "./ui/skeleton";
 
 // ------------------Props-------------------
 
@@ -32,6 +34,7 @@ interface ComfyCommandProps {
   navigate: (args: any) => void;
   setOpen: (open: boolean) => void;
   search?: string;
+  onRefetchingChange?: (isRefetching: boolean) => void;
 }
 
 interface workflowSchema {
@@ -51,6 +54,7 @@ interface machineSchema {
 export function ComfyCommand() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [isAnyRefetching, setIsAnyRefetching] = useState(false);
   const navigate = useNavigate();
   const router = useRouter();
 
@@ -85,15 +89,38 @@ export function ComfyCommand() {
     return path.match(/^\/machines\/[^/]+/);
   };
 
+  // Create a combined state handler
+  const handleRefetchingState = (isRefetching: boolean) => {
+    setIsAnyRefetching(isRefetching);
+  };
+
   return (
-    <CommandDialog open={open} onOpenChange={setOpen}>
+    <CommandDialog
+      open={open}
+      onOpenChange={setOpen}
+      shouldFilter={!isAnyRefetching}
+    >
       <CommandInput
         placeholder="Type a command or search..."
         value={search}
         onValueChange={(value) => setSearch(value)}
       />
       <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+        <CommandEmpty>
+          {!isAnyRefetching ? (
+            <div className="flex flex-col gap-1 px-2">
+              {[...Array(3)].map((_, i) => (
+                <Skeleton
+                  key={`skeleton-${i}`}
+                  className="h-[47px]"
+                  style={{ animationDelay: `${i * 150}ms` }}
+                />
+              ))}
+            </div>
+          ) : (
+            "No results found."
+          )}
+        </CommandEmpty>
 
         {isWorkflowDetailPage() && (
           <WorkflowActionCommand navigate={navigate} setOpen={setOpen} />
@@ -187,11 +214,17 @@ export function ComfyCommand() {
             navigate={navigate}
             setOpen={setOpen}
             search={search}
+            onRefetchingChange={handleRefetchingState}
           />
         )}
 
         {!isDetailPage() && (
-          <MachinePartCommand navigate={navigate} setOpen={setOpen} />
+          <MachinePartCommand
+            navigate={navigate}
+            setOpen={setOpen}
+            search={search}
+            onRefetchingChange={handleRefetchingState}
+          />
         )}
       </CommandList>
     </CommandDialog>
@@ -318,13 +351,40 @@ function MachineActionCommand({ navigate, setOpen }: ComfyCommandProps) {
   );
 }
 
-function WorkflowPartCommand({ navigate, setOpen, search }: ComfyCommandProps) {
-  const { data: workflows, isLoading } = useQuery<workflowSchema[]>({
+function WorkflowPartCommand({
+  navigate,
+  setOpen,
+  search,
+  onRefetchingChange,
+}: ComfyCommandProps) {
+  const [debouncedSearch] = useDebounce(search, 500);
+  const {
+    data: workflows,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery<workflowSchema[]>({
     queryKey: ["workflows", "all"],
+    meta: {
+      params: {
+        limit: 5,
+        search: debouncedSearch ?? "",
+      },
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes in milliseconds
     gcTime: 5 * 60 * 1000, // 5 minutes in milliseconds
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    if (onRefetchingChange) {
+      onRefetchingChange(isRefetching);
+    }
+  }, [isRefetching, onRefetchingChange]);
+
+  useEffect(() => {
+    refetch();
+  }, [debouncedSearch]);
 
   return (
     <CommandGroup heading="Workflows">
@@ -347,7 +407,7 @@ function WorkflowPartCommand({ navigate, setOpen, search }: ComfyCommandProps) {
           </div>
         </CommandLoading>
       )}
-      {workflows?.slice(0, 5).map((workflow) => {
+      {workflows?.map((workflow) => {
         return (
           <CommandItem
             key={workflow.id}
@@ -361,7 +421,9 @@ function WorkflowPartCommand({ navigate, setOpen, search }: ComfyCommandProps) {
             <Box className="!h-4 !w-4 mr-2" />
             <div className="flex flex-col leading-snug">
               <span>{workflow.name}</span>
-              <span className="font-mono text-[9px]">{workflow.id}</span>
+              <span className="font-mono text-[9px] text-muted-foreground">
+                {workflow.id}
+              </span>
             </div>
             <CommandShortcut className="text-2xs tracking-normal">
               {getRelativeTime(workflow.created_at)}
@@ -373,13 +435,40 @@ function WorkflowPartCommand({ navigate, setOpen, search }: ComfyCommandProps) {
   );
 }
 
-function MachinePartCommand({ navigate, setOpen }: ComfyCommandProps) {
-  const { data: machines, isLoading } = useQuery<machineSchema[]>({
+function MachinePartCommand({
+  navigate,
+  setOpen,
+  search,
+  onRefetchingChange,
+}: ComfyCommandProps) {
+  const [debouncedSearch] = useDebounce(search, 500);
+  const {
+    data: machines,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery<machineSchema[]>({
     queryKey: ["machines", "all"],
+    meta: {
+      params: {
+        limit: 5,
+        search: debouncedSearch ?? "",
+      },
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes in milliseconds
     gcTime: 5 * 60 * 1000, // 5 minutes in milliseconds
     refetchOnWindowFocus: false,
   });
+
+  useEffect(() => {
+    if (onRefetchingChange) {
+      onRefetchingChange(isRefetching);
+    }
+  }, [isRefetching, onRefetchingChange]);
+
+  useEffect(() => {
+    refetch();
+  }, [debouncedSearch]);
 
   return (
     <CommandGroup heading="Machines">
@@ -402,7 +491,7 @@ function MachinePartCommand({ navigate, setOpen }: ComfyCommandProps) {
           </div>
         </CommandLoading>
       )}
-      {machines?.slice(0, 5).map((machine) => {
+      {machines?.map((machine) => {
         return (
           <CommandItem
             key={machine.id}
@@ -417,7 +506,9 @@ function MachinePartCommand({ navigate, setOpen }: ComfyCommandProps) {
             <Server className="!h-4 !w-4 mr-2" />
             <div className="flex flex-col leading-snug">
               <span>{machine.name}</span>
-              <span className="font-mono text-[9px]">{machine.id}</span>
+              <span className="font-mono text-[9px] text-muted-foreground">
+                {machine.id}
+              </span>
             </div>
             <CommandShortcut className="text-2xs tracking-normal">
               {getRelativeTime(machine.updated_at)}
