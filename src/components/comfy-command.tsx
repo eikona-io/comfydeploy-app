@@ -32,7 +32,7 @@ import {
   Settings,
   Workflow,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type ReactElement, useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
 import { openAddModelModal, useModelBrowser } from "./storage/model-list-view";
 
@@ -176,22 +176,38 @@ export function ComfyCommand() {
           ]
             .sort((a, b) => {
               const currentPath = router.state.location.pathname;
-              // Current path component gets priority 0 (shows first), others get priority 1
-              const priorityA = currentPath.startsWith(a.path) ? 0 : 1;
-              const priorityB = currentPath.startsWith(b.path) ? 0 : 1;
-              return priorityA - priorityB;
+              return (
+                (currentPath.startsWith(a.path) ? 0 : 1) -
+                (currentPath.startsWith(b.path) ? 0 : 1)
+              );
             })
-            .map(({ Component }) => (
-              <Component
-                key={Component.name}
-                navigate={navigate}
-                setOpen={setOpen}
-                search={search}
-                onRefetchingChange={handleRefetchingState}
-              />
-            ))}
+            .reduce((acc: ReactElement[], { Component }, index) => {
+              const componentEl = (
+                <Component
+                  key={Component.name}
+                  navigate={navigate}
+                  setOpen={setOpen}
+                  search={search}
+                  onRefetchingChange={handleRefetchingState}
+                />
+              );
 
-        <NavigationPartCommand navigate={navigate} setOpen={setOpen} />
+              if (index === 1) {
+                acc.push(
+                  <NavigationPartCommand
+                    key="nav"
+                    navigate={navigate}
+                    setOpen={setOpen}
+                  />,
+                );
+              }
+              acc.push(componentEl);
+              return acc;
+            }, [])}
+
+        {isDetailPage() && (
+          <NavigationPartCommand navigate={navigate} setOpen={setOpen} />
+        )}
         <AccountPartCommand navigate={navigate} setOpen={setOpen} />
         <LinkPartCommand navigate={navigate} setOpen={setOpen} />
       </CommandList>
