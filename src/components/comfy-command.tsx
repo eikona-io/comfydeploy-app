@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
+import { useModelBrowser } from "./storage/model-list-view";
 
 // ------------------Props-------------------
 
@@ -162,18 +163,24 @@ export function ComfyCommand() {
           [
             {
               Component: WorkflowPartCommand,
-              priority: router.state.location.pathname.startsWith("/machines")
-                ? 1
-                : 0,
+              path: "/workflows",
             },
             {
               Component: MachinePartCommand,
-              priority: router.state.location.pathname.startsWith("/machines")
-                ? 0
-                : 1,
+              path: "/machines",
+            },
+            {
+              Component: StoragePartCommand,
+              path: "/storage",
             },
           ]
-            .sort((a, b) => a.priority - b.priority)
+            .sort((a, b) => {
+              const currentPath = router.state.location.pathname;
+              // Current path component gets priority 0 (shows first), others get priority 1
+              const priorityA = currentPath.startsWith(a.path) ? 0 : 1;
+              const priorityB = currentPath.startsWith(b.path) ? 0 : 1;
+              return priorityA - priorityB;
+            })
             .map(({ Component }) => (
               <Component
                 key={Component.name}
@@ -666,6 +673,27 @@ function MachinePartCommand({
           </CommandItem>
         );
       })}
+    </CommandGroup>
+  );
+}
+
+function StoragePartCommand({ navigate, setOpen }: ComfyCommandProps) {
+  const { setAddModelModalOpen } = useModelBrowser();
+
+  return (
+    <CommandGroup heading="Storage">
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/storage",
+          });
+          setOpen(false);
+          setAddModelModalOpen(true);
+        }}
+      >
+        <Plus className="!h-4 !w-4 mr-2" />
+        <span>Add New Model...</span>
+      </CommandItem>
     </CommandGroup>
   );
 }
