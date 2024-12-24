@@ -7,6 +7,8 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
@@ -37,6 +39,7 @@ import { Skeleton } from "./ui/skeleton";
 interface ComfyCommandProps {
   navigate: (args: any) => void;
   setOpen: (open: boolean) => void;
+  setCurrentPageName?: (currentPageName: string) => void;
   search?: string;
   onRefetchingChange?: (isRefetching: boolean) => void;
 }
@@ -58,6 +61,7 @@ interface machineSchema {
 export function ComfyCommand() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [currentPageName, setCurrentPageName] = useState<string | null>(null);
   const [isAnyRefetching, setIsAnyRefetching] = useState(false);
   const navigate = useNavigate();
   const router = useRouter();
@@ -72,6 +76,12 @@ export function ComfyCommand() {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
+
+  useEffect(() => {
+    if (!isDetailPage()) {
+      setCurrentPageName?.(null);
+    }
+  }, [router.state.location.pathname]);
 
   // Helper function to check if we're in a detail page
   const isDetailPage = () => {
@@ -104,6 +114,11 @@ export function ComfyCommand() {
       onOpenChange={setOpen}
       shouldFilter={!isAnyRefetching}
     >
+      {currentPageName && (
+        <div className="mx-4 mt-4 mb-2 w-fit rounded-sm bg-gray-100 px-2 py-1 text-xs">
+          {currentPageName}
+        </div>
+      )}
       <CommandInput
         placeholder="Type a command or search..."
         value={search}
@@ -127,11 +142,19 @@ export function ComfyCommand() {
         </CommandEmpty>
 
         {isWorkflowDetailPage() && (
-          <WorkflowActionCommand navigate={navigate} setOpen={setOpen} />
+          <WorkflowActionCommand
+            navigate={navigate}
+            setOpen={setOpen}
+            setCurrentPageName={setCurrentPageName}
+          />
         )}
 
         {isMachineDetailPage() && (
-          <MachineActionCommand navigate={navigate} setOpen={setOpen} />
+          <MachineActionCommand
+            navigate={navigate}
+            setOpen={setOpen}
+            setCurrentPageName={setCurrentPageName}
+          />
         )}
 
         <CommandGroup heading="Navigation">
@@ -297,10 +320,23 @@ function LinkPartCommand({ navigate, setOpen }: ComfyCommandProps) {
   );
 }
 
-function WorkflowActionCommand({ navigate, setOpen }: ComfyCommandProps) {
+function WorkflowActionCommand({
+  navigate,
+  setOpen,
+  setCurrentPageName,
+}: ComfyCommandProps) {
   // Get the current workflow ID from the URL
   const router = useRouter();
   const workflowId = router.state.location.pathname.split("/")[2];
+  const { workflow } = useCurrentWorkflow(workflowId);
+
+  useEffect(() => {
+    if (workflow?.name && workflow?.versions?.[0]?.version) {
+      setCurrentPageName?.(
+        `${workflow?.name} - v${workflow?.versions?.[0]?.version}`,
+      );
+    }
+  }, [workflow, setCurrentPageName]);
 
   return (
     <>
@@ -364,10 +400,21 @@ function WorkflowActionCommand({ navigate, setOpen }: ComfyCommandProps) {
   );
 }
 
-function MachineActionCommand({ navigate, setOpen }: ComfyCommandProps) {
+function MachineActionCommand({
+  navigate,
+  setOpen,
+  setCurrentPageName,
+}: ComfyCommandProps) {
   // Get the current machine ID from the URL
   const router = useRouter();
   const machineId = router.state.location.pathname.split("/")[2];
+  const { data: machine } = useMachine(machineId);
+
+  useEffect(() => {
+    if (machine?.name) {
+      setCurrentPageName?.(machine?.name);
+    }
+  }, [machine, setCurrentPageName]);
 
   return (
     <>
