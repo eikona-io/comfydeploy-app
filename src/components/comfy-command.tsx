@@ -13,12 +13,16 @@ import { useNavigate, useRouter } from "@tanstack/react-router";
 import { CommandLoading } from "cmdk";
 import {
   ArrowRight,
+  Book,
   Box,
   CircleGauge,
   CreditCard,
   Database,
+  Github,
   Key,
+  MessageCircle,
   Plus,
+  Rss,
   Server,
   Settings,
   Workflow,
@@ -163,50 +167,6 @@ export function ComfyCommand() {
             <Database className="!h-4 !w-4 mr-2" />
             <span>Storage</span>
           </CommandItem>
-          {/* <CommandItem
-            onSelect={() => {
-              navigate({
-                to: "/settings",
-              });
-              setOpen(false);
-            }}
-          >
-            <Settings className="!h-4 !w-4 mr-2" />
-            <span>Settings</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              navigate({
-                to: "/api-keys",
-              });
-              setOpen(false);
-            }}
-          >
-            <Key className="!h-4 !w-4 mr-2" />
-            <span>API Keys</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              navigate({
-                to: "/usage",
-              });
-              setOpen(false);
-            }}
-          >
-            <CircleGauge className="!h-4 !w-4 mr-2" />
-            <span>Usage</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              navigate({
-                to: "/pricing",
-              });
-              setOpen(false);
-            }}
-          >
-            <CreditCard className="!h-4 !w-4 mr-2" />
-            <span>Plan</span>
-          </CommandItem> */}
         </CommandGroup>
 
         {!isDetailPage() && (
@@ -226,14 +186,116 @@ export function ComfyCommand() {
             onRefetchingChange={handleRefetchingState}
           />
         )}
+
+        <AccountPartCommand navigate={navigate} setOpen={setOpen} />
+        <LinkPartCommand navigate={navigate} setOpen={setOpen} />
       </CommandList>
     </CommandDialog>
   );
 }
 
-// ------------------functions-------------------
+function AccountPartCommand({ navigate, setOpen }: ComfyCommandProps) {
+  return (
+    <CommandGroup heading="Account">
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/settings",
+          });
+          setOpen(false);
+        }}
+      >
+        <Settings className="!h-4 !w-4 mr-2" />
+        <span>Settings</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/api-keys",
+          });
+          setOpen(false);
+        }}
+      >
+        <Key className="!h-4 !w-4 mr-2" />
+        <span>API Keys</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/usage",
+          });
+          setOpen(false);
+        }}
+      >
+        <CircleGauge className="!h-4 !w-4 mr-2" />
+        <span>Usage</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/pricing",
+          });
+          setOpen(false);
+        }}
+      >
+        <CreditCard className="!h-4 !w-4 mr-2" />
+        <span>Plan</span>
+      </CommandItem>
+    </CommandGroup>
+  );
+}
 
-// -------------------Commands-------------------
+function LinkPartCommand({ navigate, setOpen }: ComfyCommandProps) {
+  return (
+    <CommandGroup heading="Links">
+      <CommandItem
+        onSelect={() => {
+          window.open("https://docs.comfydeploy.com", "_blank");
+          setOpen(false);
+        }}
+      >
+        <Book className="!h-4 !w-4 mr-2" />
+        <span>Documentation</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          window.open("https://discord.com/invite/c222Cwyget", "_blank");
+          setOpen(false);
+        }}
+      >
+        <MessageCircle className="!h-4 !w-4 mr-2" />
+        <span>Discord</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          window.open("https://demo2.comfydeploy.com", "_blank");
+          setOpen(false);
+        }}
+      >
+        <Box className="!h-4 !w-4 mr-2" />
+        <span>NextJS Demo</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          window.open("https://github.com/BennyKok/comfyui-deploy", "_blank");
+          setOpen(false);
+        }}
+      >
+        <Github className="!h-4 !w-4 mr-2" />
+        <span>GitHub</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          navigate({ to: "/blog" });
+          setOpen(false);
+        }}
+      >
+        <Rss className="!h-4 !w-4 mr-2" />
+        <span>Blog</span>
+      </CommandItem>
+    </CommandGroup>
+  );
+}
 
 function WorkflowActionCommand({ navigate, setOpen }: ComfyCommandProps) {
   // Get the current workflow ID from the URL
