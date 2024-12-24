@@ -7,6 +7,8 @@ import {
   CommandList,
   CommandShortcut,
 } from "@/components/ui/command";
+import { LoadingIcon } from "@/components/ui/custom/loading-icon";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
@@ -14,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useRouter } from "@tanstack/react-router";
 import { CommandLoading } from "cmdk";
 import {
+  ArrowLeft,
   ArrowRight,
   Book,
   Box,
@@ -31,8 +34,6 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
-import { LoadingIcon } from "./ui/custom/loading-icon";
-import { Skeleton } from "./ui/skeleton";
 
 // ------------------Props-------------------
 
@@ -157,63 +158,83 @@ export function ComfyCommand() {
           />
         )}
 
-        <CommandGroup heading="Navigation">
-          <CommandItem
-            onSelect={() => {
-              navigate({ to: "/workflows" });
-              setOpen(false);
-            }}
-          >
-            <Workflow className="!h-4 !w-4 mr-2" />
-            <span>Workflows</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              navigate({
-                to: "/machines",
-                search: { view: undefined },
-              });
-              setOpen(false);
-            }}
-          >
-            <Server className="!h-4 !w-4 mr-2" />
-            <span>Machines</span>
-          </CommandItem>
-          <CommandItem
-            onSelect={() => {
-              navigate({
-                to: "/storage",
-              });
-              setOpen(false);
-            }}
-          >
-            <Database className="!h-4 !w-4 mr-2" />
-            <span>Storage</span>
-          </CommandItem>
-        </CommandGroup>
+        {!isDetailPage() &&
+          [
+            {
+              Component: WorkflowPartCommand,
+              priority: router.state.location.pathname.startsWith("/machines")
+                ? 1
+                : 0,
+            },
+            {
+              Component: MachinePartCommand,
+              priority: router.state.location.pathname.startsWith("/machines")
+                ? 0
+                : 1,
+            },
+          ]
+            .sort((a, b) => a.priority - b.priority)
+            .map(({ Component }) => (
+              <Component
+                key={Component.name}
+                navigate={navigate}
+                setOpen={setOpen}
+                search={search}
+                onRefetchingChange={handleRefetchingState}
+              />
+            ))}
 
-        {!isDetailPage() && (
-          <WorkflowPartCommand
-            navigate={navigate}
-            setOpen={setOpen}
-            search={search}
-            onRefetchingChange={handleRefetchingState}
-          />
-        )}
-
-        {!isDetailPage() && (
-          <MachinePartCommand
-            navigate={navigate}
-            setOpen={setOpen}
-            search={search}
-            onRefetchingChange={handleRefetchingState}
-          />
-        )}
-
+        <NavigationPartCommand navigate={navigate} setOpen={setOpen} />
         <AccountPartCommand navigate={navigate} setOpen={setOpen} />
         <LinkPartCommand navigate={navigate} setOpen={setOpen} />
       </CommandList>
     </CommandDialog>
+  );
+}
+
+function NavigationPartCommand({ navigate, setOpen }: ComfyCommandProps) {
+  const router = useRouter();
+  const currentPath = router.state.location.pathname;
+
+  return (
+    <CommandGroup heading="Navigation">
+      {!currentPath.startsWith("/workflows/") && (
+        <CommandItem
+          onSelect={() => {
+            navigate({ to: "/workflows" });
+            setOpen(false);
+          }}
+        >
+          <Workflow className="!h-4 !w-4 mr-2" />
+          <span>Workflows</span>
+        </CommandItem>
+      )}
+      {!currentPath.startsWith("/machines/") && (
+        <CommandItem
+          onSelect={() => {
+            navigate({
+              to: "/machines",
+              search: { view: undefined },
+            });
+            setOpen(false);
+          }}
+        >
+          <Server className="!h-4 !w-4 mr-2" />
+          <span>Machines</span>
+        </CommandItem>
+      )}
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/storage",
+          });
+          setOpen(false);
+        }}
+      >
+        <Database className="!h-4 !w-4 mr-2" />
+        <span>Storage</span>
+      </CommandItem>
+    </CommandGroup>
   );
 }
 
@@ -395,6 +416,15 @@ function WorkflowActionCommand({
           <ArrowRight className="!h-4 !w-4 mr-2" />
           <span>To Gallery...</span>
         </CommandItem>
+        <CommandItem
+          onSelect={() => {
+            navigate({ to: "/workflows" });
+            setOpen(false);
+          }}
+        >
+          <ArrowLeft className="!h-4 !w-4 mr-2" />
+          <span>Back to Workflows...</span>
+        </CommandItem>
       </CommandGroup>
     </>
   );
@@ -455,6 +485,17 @@ function MachineActionCommand({
           <ArrowRight className="!h-4 !w-4 mr-2" />
           <span>To Logs...</span>
         </CommandItem>
+        <CommandItem
+          onSelect={() => {
+            navigate({
+              to: "/machines",
+            });
+            setOpen(false);
+          }}
+        >
+          <ArrowLeft className="!h-4 !w-4 mr-2" />
+          <span>Back to Machines...</span>
+        </CommandItem>
       </CommandGroup>
     </>
   );
@@ -466,7 +507,7 @@ function WorkflowPartCommand({
   search,
   onRefetchingChange,
 }: ComfyCommandProps) {
-  const [debouncedSearch] = useDebounce(search, 500);
+  const [debouncedSearch] = useDebounce(search, 250);
   const {
     data: workflows,
     isLoading,
@@ -550,7 +591,7 @@ function MachinePartCommand({
   search,
   onRefetchingChange,
 }: ComfyCommandProps) {
-  const [debouncedSearch] = useDebounce(search, 500);
+  const [debouncedSearch] = useDebounce(search, 250);
   const {
     data: machines,
     isLoading,
