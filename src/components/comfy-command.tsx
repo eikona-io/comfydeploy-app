@@ -107,7 +107,7 @@ export function ComfyCommand() {
       />
       <CommandList>
         <CommandEmpty>
-          {!isAnyRefetching ? (
+          {isAnyRefetching ? (
             <div className="flex flex-col gap-1 px-2">
               {[...Array(3)].map((_, i) => (
                 <Skeleton
