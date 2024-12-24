@@ -913,7 +913,11 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
                 .map((workflow, index) => (
                   <Link
                     key={workflow.id}
-                    href={`/workflows/${workflow.id}`}
+                    to="/workflows/$workflowId/$view"
+                    params={{
+                      workflowId: workflow.id,
+                      view: "workspace",
+                    }}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={cn(
@@ -950,7 +954,11 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
                     )}
                   >
                     <Link
-                      href={`/workflows/${deployment.workflow_id}?view=deployment`}
+                      to="/workflows/$workflowId/$view"
+                      params={{
+                        workflowId: deployment.workflow_id,
+                        view: "deployment",
+                      }}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex flex-row items-center gap-2 rounded-[4px] text-xs"

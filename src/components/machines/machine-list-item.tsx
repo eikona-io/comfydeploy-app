@@ -203,7 +203,13 @@ export function MachineListItem({
                     return null;
                 }
               })()}
-              <Link href={`/machines/${machine.id}`}>
+              <Link
+                to="/machines/$machineId"
+                params={{
+                  machineId: machine.id,
+                }}
+                search={{ view: "overview" }}
+              >
                 <h2 className="whitespace-nowrap font-medium text-base">
                   {machine.name}
                 </h2>
@@ -714,7 +720,11 @@ function MachineListItemWorkflows({ machine }: { machine: any }) {
             .map((workflow) => (
               <Link
                 key={workflow.id}
-                href={`/workflows/${workflow.id}`}
+                to="/workflows/$workflowId/$view"
+                params={{
+                  workflowId: workflow.id,
+                  view: "workspace",
+                }}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex w-fit items-center gap-2 rounded-sm bg-gray-50 px-2 py-0.5 text-2xs"
@@ -775,7 +785,11 @@ function MachineListItemDeployments({
                 className="flex w-fit items-center justify-between gap-2 rounded-sm bg-gray-50 px-2 py-0.5 text-2xs"
               >
                 <Link
-                  href={`/workflows/${deployment.workflow_id}?view=deployment`}
+                  to="/workflows/$workflowId/$view"
+                  params={{
+                    workflowId: deployment.workflow_id,
+                    view: "deployment",
+                  }}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2"
