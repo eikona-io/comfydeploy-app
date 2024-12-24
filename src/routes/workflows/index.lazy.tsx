@@ -2,6 +2,7 @@ import { Fab } from "@/components/fab";
 import WorkflowImport from "@/components/onboarding/workflow-import";
 import { WorkflowList } from "@/components/workflow-list";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 
@@ -13,6 +14,20 @@ function RouteComponent() {
   const navigate = useNavigate({ from: "/workflows" });
   const { view } = Route.useSearch();
   const sub = useCurrentPlan();
+
+  useKeyboardShortcut(
+    "c",
+    () => {
+      if (!sub?.features.workflowLimited) {
+        navigate({
+          search: { view: "import" },
+        });
+      }
+    },
+    {
+      exactPath: "/workflows",
+    },
+  );
 
   return (
     <>

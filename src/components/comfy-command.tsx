@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
-import { useModelBrowser } from "./storage/model-list-view";
+import { openAddModelModal, useModelBrowser } from "./storage/model-list-view";
 
 // ------------------Props-------------------
 
@@ -532,6 +532,8 @@ function WorkflowPartCommand({
     gcTime: 5 * 60 * 1000, // 5 minutes in milliseconds
     refetchOnWindowFocus: false,
   });
+  const router = useRouter();
+  const isWorkflowsPage = router.state.location.pathname === "/workflows";
 
   useEffect(() => {
     if (onRefetchingChange) {
@@ -556,6 +558,13 @@ function WorkflowPartCommand({
       >
         <Plus className="!h-4 !w-4 mr-2" />
         <span>Create New Workflow...</span>
+        {isWorkflowsPage && (
+          <CommandShortcut>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+              C
+            </kbd>
+          </CommandShortcut>
+        )}
       </CommandItem>
       {isLoading && (
         <CommandLoading>
@@ -616,6 +625,8 @@ function MachinePartCommand({
     gcTime: 5 * 60 * 1000, // 5 minutes in milliseconds
     refetchOnWindowFocus: false,
   });
+  const router = useRouter();
+  const isMachinesPage = router.state.location.pathname === "/machines";
 
   useEffect(() => {
     if (onRefetchingChange) {
@@ -640,6 +651,13 @@ function MachinePartCommand({
       >
         <Plus className="!h-4 !w-4 mr-2" />
         <span>Create Serverless Machine...</span>
+        {isMachinesPage && (
+          <CommandShortcut>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+              C
+            </kbd>
+          </CommandShortcut>
+        )}
       </CommandItem>
       {isLoading && (
         <CommandLoading>
@@ -678,7 +696,8 @@ function MachinePartCommand({
 }
 
 function StoragePartCommand({ navigate, setOpen }: ComfyCommandProps) {
-  const { setAddModelModalOpen } = useModelBrowser();
+  const router = useRouter();
+  const isStoragePage = router.state.location.pathname === "/storage";
 
   return (
     <CommandGroup heading="Storage">
@@ -688,11 +707,18 @@ function StoragePartCommand({ navigate, setOpen }: ComfyCommandProps) {
             to: "/storage",
           });
           setOpen(false);
-          setAddModelModalOpen(true);
+          openAddModelModal();
         }}
       >
         <Plus className="!h-4 !w-4 mr-2" />
         <span>Add New Model...</span>
+        {isStoragePage && (
+          <CommandShortcut>
+            <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+              C
+            </kbd>
+          </CommandShortcut>
+        )}
       </CommandItem>
     </CommandGroup>
   );

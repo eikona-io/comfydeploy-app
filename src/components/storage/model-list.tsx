@@ -67,6 +67,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { motion } from "framer-motion";
@@ -371,6 +372,17 @@ export function ModelList(props: { apiEndpoint: string }) {
     setAddModelModalOpen,
     setSelectedCategories,
   } = useModelBrowser();
+
+  useKeyboardShortcut(
+    "c",
+    () => {
+      setAddModelModalOpen(true);
+    },
+    {
+      exactPath: "/storage",
+      preventDefault: true,
+    },
+  );
 
   // const { workflowId } = use(WorkspaceContext);
 
