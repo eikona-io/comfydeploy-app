@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as UsageImport } from './routes/usage'
 import { Route as StorageImport } from './routes/storage'
 import { Route as PricingImport } from './routes/pricing'
 import { Route as IndexImport } from './routes/index'
@@ -23,6 +24,12 @@ import { Route as AuthSignInImport } from './routes/auth/sign-in'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
 
 // Create/Update Routes
+
+const UsageRoute = UsageImport.update({
+  id: '/usage',
+  path: '/usage',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const StorageRoute = StorageImport.update({
   id: '/storage',
@@ -115,6 +122,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StorageImport
       parentRoute: typeof rootRoute
     }
+    '/usage': {
+      id: '/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof UsageImport
+      parentRoute: typeof rootRoute
+    }
     '/auth/sign-in': {
       id: '/auth/sign-in'
       path: '/auth/sign-in'
@@ -173,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/storage': typeof StorageRoute
+  '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
@@ -186,6 +201,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/storage': typeof StorageRoute
+  '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
@@ -200,6 +216,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/storage': typeof StorageRoute
+  '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
@@ -215,6 +232,7 @@ export interface FileRouteTypes {
     | '/'
     | '/pricing'
     | '/storage'
+    | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
@@ -227,6 +245,7 @@ export interface FileRouteTypes {
     | '/'
     | '/pricing'
     | '/storage'
+    | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
@@ -239,6 +258,7 @@ export interface FileRouteTypes {
     | '/'
     | '/pricing'
     | '/storage'
+    | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
@@ -253,6 +273,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PricingRoute: typeof PricingRoute
   StorageRoute: typeof StorageRoute
+  UsageRoute: typeof UsageRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   MachinesMachineIdRoute: typeof MachinesMachineIdRoute
@@ -266,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PricingRoute: PricingRoute,
   StorageRoute: StorageRoute,
+  UsageRoute: UsageRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   MachinesMachineIdRoute: MachinesMachineIdRoute,
@@ -288,6 +310,7 @@ export const routeTree = rootRoute
         "/",
         "/pricing",
         "/storage",
+        "/usage",
         "/auth/sign-in",
         "/auth/sign-up",
         "/machines/$machineId",
@@ -305,6 +328,9 @@ export const routeTree = rootRoute
     },
     "/storage": {
       "filePath": "storage.tsx"
+    },
+    "/usage": {
+      "filePath": "usage.tsx"
     },
     "/auth/sign-in": {
       "filePath": "auth/sign-in.tsx"
