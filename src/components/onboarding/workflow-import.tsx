@@ -3,6 +3,7 @@ import type {
   WorkflowDependencies,
 } from "@/components/onboarding/workflow-analyze";
 import {
+  type GpuTypes,
   WorkflowImportCustomNodeSetup,
   WorkflowImportMachine,
   WorkflowImportNewMachineSetup,
@@ -44,9 +45,10 @@ export interface StepValidation {
   // Add more fields as needed for future steps
 
   machineName?: string;
-  gpuType?: "t4" | "a10g" | "a100";
+  gpuType?: GpuTypes;
   comfyUiHash?: string;
   selectedComfyOption?: "recommended" | "latest" | "custom";
+  firstTimeSelectGPU?: boolean;
 
   dependencies?: WorkflowDependencies;
   selectedConflictingNodes?: {

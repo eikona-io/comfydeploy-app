@@ -1,3 +1,4 @@
+import { openAddModelModal } from "@/components/storage/model-list-view";
 import {
   CommandDialog,
   CommandEmpty,
@@ -34,7 +35,6 @@ import {
 } from "lucide-react";
 import { type ReactElement, useEffect, useState } from "react";
 import { useDebounce } from "use-debounce";
-import { openAddModelModal, useModelBrowser } from "./storage/model-list-view";
 
 // ------------------Props-------------------
 
