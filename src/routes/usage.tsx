@@ -21,7 +21,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
-import { type ReactNode, Suspense } from "react";
+import { type ReactNode, Suspense, useMemo } from "react";
 
 export const Route = createFileRoute("/usage")({
   component: RouteComponent,
@@ -107,20 +107,23 @@ function RouteComponent() {
 }
 
 export function UsageBreakdown() {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 180);
+  const { startDate, endDate } = useMemo(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 180);
+    return {
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
+    };
+  }, []);
+
   const { data: usageInfo } = useSuspenseQuery<any>({
     queryKey: ["platform", "usage-details"],
-    queryKeyHashFn: (queryKey) =>
-      [
-        ...queryKey,
-        thirtyDaysAgo.toISOString(),
-        new Date().toISOString(),
-      ].toString(),
+    queryKeyHashFn: (queryKey) => [...queryKey, startDate, endDate].toString(),
     meta: {
       params: {
-        start_time: thirtyDaysAgo.toISOString(),
-        end_time: new Date().toISOString(),
+        start_time: startDate,
+        end_time: endDate,
       },
     },
   });
