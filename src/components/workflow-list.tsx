@@ -292,8 +292,9 @@ function WorkflowCard({
         onCancel={() => setModalOpen(undefined)}
         onConfirm={async () => {
           setModalOpen(undefined);
-          await callServerPromise(renameWorkflow(renameValue, workflow.id), {
+          await callServerPromise(renameWorkflow(workflow.id, renameValue), {
             loadingText: "Renaming workflow",
+            successMessage: `${workflow.name} renamed successfully`,
           });
           mutate();
         }}
