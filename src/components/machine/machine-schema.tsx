@@ -21,7 +21,7 @@ export const customFormSchema = z.object({
   auth_token: z.string().default("").describe("Auth token").optional(),
 });
 
-const machineGPUOptions = [
+export const machineGPUOptions = [
   "CPU",
   "T4",
   "L4",

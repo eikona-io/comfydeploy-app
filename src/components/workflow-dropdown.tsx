@@ -124,8 +124,9 @@ export function WorkflowDropdown({
         onCancel={() => setRenameModalOpen(false)}
         onConfirm={async () => {
           setRenameModalOpen(false);
-          await callServerPromise(renameWorkflow(renameValue, workflow_id), {
+          await callServerPromise(renameWorkflow(workflow_id, renameValue), {
             loadingText: "Renaming workflow",
+            successMessage: `${workflow?.name} renamed successfully`,
           });
           query.refetch();
         }}

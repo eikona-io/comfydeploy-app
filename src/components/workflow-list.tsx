@@ -22,7 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
   Code,
@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useCurrentPlan, useCurrentPlanQuery } from "@/hooks/use-current-plan";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { toast } from "sonner";
 import { useWorkflowList } from "../hooks/use-workflow-list";
 
 export function useWorkflowVersion(
@@ -265,6 +266,7 @@ function WorkflowCard({
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState<string>();
   const [renameValue, setRenameValue] = React.useState("");
+  const navigate = useNavigate();
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
 
@@ -297,8 +299,9 @@ function WorkflowCard({
         onCancel={() => setModalOpen(undefined)}
         onConfirm={async () => {
           setModalOpen(undefined);
-          await callServerPromise(renameWorkflow(renameValue, workflow.id), {
+          await callServerPromise(renameWorkflow(workflow.id, renameValue), {
             loadingText: "Renaming workflow",
+            successMessage: `${workflow.name} renamed successfully`,
           });
           mutate();
         }}
@@ -354,6 +357,7 @@ function WorkflowCard({
               onClick={async () => {
                 await callServerPromise(deleteWorkflow(workflow.id), {
                   loadingText: "Deleting workflow",
+                  successMessage: `${workflow.name} deleted successfully`,
                 });
                 await refetchPlan();
                 mutate();
@@ -449,10 +453,18 @@ function WorkflowCard({
                     onClick={async (e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      await callServerPromise(cloneWorkflow(workflow.id), {
-                        loadingText: "Cloning workflow",
-                      });
+                      const newWorkflow = await callServerPromise(
+                        cloneWorkflow(workflow.id),
+                        {
+                          loadingText: "Cloning workflow",
+                          successMessage: `${workflow.name} cloned successfully`,
+                        },
+                      );
                       mutate();
+                      toast.info(`Redirecting to ${newWorkflow.name}...`);
+                      navigate({
+                        to: `/workflows/${newWorkflow.id}/workspace`,
+                      });
                     }}
                   >
                     Clone
@@ -469,10 +481,19 @@ function WorkflowCard({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      callServerPromise(pinWorkflow(workflow.id, true));
+                      const newPinnedState = !workflow.pinned;
+                      await callServerPromise(
+                        pinWorkflow(workflow.id, newPinnedState),
+                        {
+                          loadingText: newPinnedState
+                            ? "Pinning workflow"
+                            : "Unpinning workflow",
+                          successMessage: `${workflow.name} ${newPinnedState ? "pinned" : "unpinned"} successfully`,
+                        },
+                      );
                       mutate();
                     }}
                   >
