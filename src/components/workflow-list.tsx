@@ -466,10 +466,19 @@ function WorkflowCard({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      callServerPromise(pinWorkflow(workflow.id, true));
+                      const newPinnedState = !workflow.pinned;
+                      await callServerPromise(
+                        pinWorkflow(workflow.id, newPinnedState),
+                        {
+                          loadingText: newPinnedState
+                            ? "Pinning workflow"
+                            : "Unpinning workflow",
+                          successMessage: `${workflow.name} ${newPinnedState ? "pinned" : "unpinned"} successfully`,
+                        },
+                      );
                       mutate();
                     }}
                   >
