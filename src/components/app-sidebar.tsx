@@ -340,13 +340,13 @@ export function AppSidebar() {
               {links.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url} target="_blank">
+                    <a href={item.url} target="_blank" rel="noreferrer">
                       <item.icon />
                       <span className="flex w-full flex-row items-center justify-between gap-2 pr-2">
                         <span>{item.title}</span>
                         <ExternalLink size={14} />
                       </span>
-                    </Link>
+                    </a>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}

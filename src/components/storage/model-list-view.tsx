@@ -466,6 +466,10 @@ const modelBrowserState = create<{
     set({ addModelModalOpen }),
 }));
 
+export function openAddModelModal() {
+  modelBrowserState.getState().setAddModelModalOpen(true);
+}
+
 export function useModelBrowser() {
   const { public_volume, private_volume } = useModels();
   const [isMinimized, setIsMinimized] = useLocalStorage<boolean>(

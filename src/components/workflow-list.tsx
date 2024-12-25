@@ -128,18 +128,23 @@ export function WorkflowList() {
   return (
     <div className="flex h-full w-full flex-col">
       <div className="flex w-full flex-row items-center gap-2 px-4 py-4">
-        <Input
-          placeholder="Filter workflows..."
-          value={searchValue ?? ""}
-          onChange={(event) => {
-            if (event.target.value === "") {
-              setSearchValue(null);
-            } else {
-              setSearchValue(event.target.value);
-            }
-          }}
-          className="max-w-sm"
-        />
+        <div className="relative max-w-sm flex-1">
+          <Input
+            placeholder="Filter workflows..."
+            value={searchValue ?? ""}
+            onChange={(event) => {
+              if (event.target.value === "") {
+                setSearchValue(null);
+              } else {
+                setSearchValue(event.target.value);
+              }
+            }}
+            className="pr-12" // Add padding to prevent text overlap with kbd
+          />
+          <kbd className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </div>
         <AdminAndMember>
           <div className="ml-auto flex gap-2">
             <Tooltip>

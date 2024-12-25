@@ -62,12 +62,17 @@ export function MachineList() {
   return (
     <div className="mx-auto h-[calc(100vh-60px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-10">
       <div className="flex items-center justify-between gap-2 pb-4">
-        <Input
-          placeholder="Filter machines..."
-          value={searchValue}
-          onChange={(event) => setSearchValue(event.target.value)}
-          className="max-w-sm"
-        />
+        <div className="relative max-w-sm flex-1">
+          <Input
+            placeholder="Filter machines..."
+            value={searchValue}
+            onChange={(event) => setSearchValue(event.target.value)}
+            className="pr-12" // Add padding to prevent text overlap with kbd
+          />
+          <kbd className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </div>
         <Tooltip>
           <TooltipTrigger>
             {sub && (
@@ -93,6 +98,31 @@ export function MachineList() {
           </TooltipContent>
         </Tooltip>
       </div>
+      {query.isLoading &&
+        [...Array(8)].map((_, i) => (
+          <div
+            key={i}
+            className="mb-2 flex h-[80px] w-full animate-pulse items-center justify-between rounded-md border bg-white p-4"
+          >
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-row items-center gap-2">
+                  <div className="h-[10px] w-[10px] rounded-full bg-gray-200" />
+                  <div className="h-4 w-60 rounded bg-gray-200" />
+                </div>
+                <div className="h-3 w-32 rounded bg-gray-200" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-12 rounded-md bg-gray-200" />
+              <div className="h-5 w-20 rounded-md bg-gray-200" />
+              <div className="h-5 w-12 rounded-md bg-gray-200" />
+              <Button variant="ghost" size="icon">
+                <ChevronDown className={"h-4 w-4"} />
+              </Button>
+            </div>
+          </div>
+        ))}
       <VirtualizedInfiniteList
         className="!h-full fab-machine-list w-full"
         queryResult={query}

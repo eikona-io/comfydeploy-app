@@ -15,6 +15,7 @@ const TanStackRouterDevtools =
         })),
       );
 import { AppSidebar } from "@/components/app-sidebar";
+import { ComfyCommand } from "@/components/comfy-command";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { SignedIn, type useAuth } from "@clerk/clerk-react";
 import { RedirectToSignIn, SignedOut } from "@clerk/clerk-react";
@@ -76,6 +77,7 @@ function RootComponent() {
           </div>
           <SidebarTrigger className="fixed top-4 left-2 z-50 h-8 w-8 rounded-full bg-secondary p-2 md:hidden" />
           <Outlet />
+          <ComfyCommand />
           <Toaster richColors closeButton={true} />
         </div>
       </Providers>
