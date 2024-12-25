@@ -2,43 +2,43 @@
 import { api } from "@/lib/api";
 
 export async function renameWorkflow(workflow_id: string, new_name: string) {
-	await api({
-		url: `/workflow/${workflow_id}`,
-		init: {
-			method: "PATCH",
-			body: JSON.stringify({
-				name: new_name,
-			}),
-		},
-	});
+  await api({
+    url: `workflow/${workflow_id}`,
+    init: {
+      method: "PATCH",
+      body: JSON.stringify({
+        name: new_name,
+      }),
+    },
+  });
 }
 
 export async function cloneWorkflow(workflow_id: string) {
-	await api({
-		url: `/workflow/${workflow_id}/clone`,
-		init: {
-			method: "POST",
-		},
-	});
+  await api({
+    url: `workflow/${workflow_id}/clone`,
+    init: {
+      method: "POST",
+    },
+  });
 }
 
 export async function deleteWorkflow(workflow_id: string) {
-	await api({
-		url: `/workflow/${workflow_id}`,
-		init: {
-			method: "DELETE",
-		},
-	});
+  await api({
+    url: `workflow/${workflow_id}`,
+    init: {
+      method: "DELETE",
+    },
+  });
 }
 
 export async function pinWorkflow(workflow_id: string, pinned: boolean) {
-	await api({
-		url: `/workflow/${workflow_id}`,
-		init: {
-			method: "PATCH",
-			body: JSON.stringify({
-				pinned,
-			}),
-		},
-	});
+  await api({
+    url: `workflow/${workflow_id}`,
+    init: {
+      method: "PATCH",
+      body: JSON.stringify({
+        pinned,
+      }),
+    },
+  });
 }

@@ -349,6 +349,7 @@ function WorkflowCard({
               onClick={async () => {
                 await callServerPromise(deleteWorkflow(workflow.id), {
                   loadingText: "Deleting workflow",
+                  successMessage: `${workflow.name} deleted successfully`,
                 });
                 await refetchPlan();
                 mutate();
