@@ -26,6 +26,8 @@ import { useQueryState } from "nuqs";
 import { useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ModelList } from "../storage/model-list";
+import { ModelListView } from "../storage/model-list-view";
 import { App } from "./App";
 import { useLogStore } from "./LogContext";
 import { LogDisplay } from "./LogDisplay";
@@ -80,7 +82,7 @@ export function ModelsButton(props: {
           </Popover>
         </>
       )}
-      {/* <Popover>
+      <Popover>
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -93,11 +95,13 @@ export function ModelsButton(props: {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-fit p-2">
-          <ModelsListLayout
-            apiEndpoint={props.comfyDeploySharedMachineAPIUrl!}
-          />
+          <ModelListView className="h-[400px] w-[400px]">
+            <ModelList
+              apiEndpoint={process.env.COMFY_DEPLOY_SHARED_MACHINE_API_URL}
+            />
+          </ModelListView>
         </PopoverContent>
-      </Popover> */}
+      </Popover>
     </>
   );
 }

@@ -937,9 +937,9 @@ export function ModelListView(props: {
           ))}
         </div>
       </>
-      <ScrollArea className="h-full pr-2">
+      <div className="h-full overflow-y-auto pr-2 scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent">
         <ul className="space-y-1">{props.children}</ul>
-      </ScrollArea>
+      </div>
 
       {!ctx.features.priavteModels && (
         <div className="absolute top-0 left-0 z-50 flex h-full w-full items-center justify-center bg-white/60 text-center text-muted-foreground text-sm">

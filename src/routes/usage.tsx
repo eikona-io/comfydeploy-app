@@ -21,7 +21,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
-import { type ReactNode, Suspense, useMemo } from "react";
+import { type ReactNode, Suspense, memo, useMemo } from "react";
 
 export const Route = createFileRoute("/usage")({
   component: RouteComponent,
@@ -83,7 +83,7 @@ function RouteComponent() {
         </CardHeader>
         <CardContent className="text-sm flex flex-col gap-4">
           <Suspense fallback={<Skeleton className="w-full h-[200px]" />}>
-            <UsageBreakdown />
+            <UsageBreakdownMemo />
           </Suspense>
         </CardContent>
       </Card>
@@ -112,8 +112,8 @@ export function UsageBreakdown() {
     const start = new Date();
     start.setDate(start.getDate() - 180);
     return {
-      startDate: start.toISOString(),
-      endDate: end.toISOString(),
+      startDate: start.toISOString().split("T")[0],
+      endDate: end.toISOString().split("T")[0],
     };
   }, []);
 
@@ -129,6 +129,8 @@ export function UsageBreakdown() {
   });
   return <UsageGraph chartData={usageInfo} />;
 }
+
+const UsageBreakdownMemo = memo(UsageBreakdown);
 
 async function Credit() {
   const { data: userSettings, isLoading } = useSuspenseQuery<any>({
