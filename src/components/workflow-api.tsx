@@ -14,12 +14,13 @@ export async function renameWorkflow(workflow_id: string, new_name: string) {
 }
 
 export async function cloneWorkflow(workflow_id: string) {
-  await api({
+  const response = await api({
     url: `workflow/${workflow_id}/clone`,
     init: {
       method: "POST",
     },
   });
+  return response;
 }
 
 export async function deleteWorkflow(workflow_id: string) {

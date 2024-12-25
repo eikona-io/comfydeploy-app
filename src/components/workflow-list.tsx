@@ -22,7 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
   Code,
@@ -60,6 +60,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useCurrentPlan, useCurrentPlanQuery } from "@/hooks/use-current-plan";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { toast } from "sonner";
 import { useWorkflowList } from "../hooks/use-workflow-list";
 
 export function useWorkflowVersion(
@@ -260,6 +261,7 @@ function WorkflowCard({
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState<string>();
   const [renameValue, setRenameValue] = React.useState("");
+  const navigate = useNavigate();
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
 
@@ -446,10 +448,18 @@ function WorkflowCard({
                     onClick={async (e) => {
                       e.stopPropagation();
                       e.preventDefault();
-                      await callServerPromise(cloneWorkflow(workflow.id), {
-                        loadingText: "Cloning workflow",
-                      });
+                      const newWorkflow = await callServerPromise(
+                        cloneWorkflow(workflow.id),
+                        {
+                          loadingText: "Cloning workflow",
+                          successMessage: `${workflow.name} cloned successfully`,
+                        },
+                      );
                       mutate();
+                      toast.info(`Redirecting to ${newWorkflow.name}...`);
+                      navigate({
+                        to: `/workflows/${newWorkflow.id}/workspace`,
+                      });
                     }}
                   >
                     Clone
