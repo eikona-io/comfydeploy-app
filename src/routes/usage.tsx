@@ -111,6 +111,12 @@ export function UsageBreakdown() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 180);
   const { data: usageInfo } = useSuspenseQuery<any>({
     queryKey: ["platform", "usage-details"],
+    queryKeyHashFn: (queryKey) =>
+      [
+        ...queryKey,
+        thirtyDaysAgo.toISOString(),
+        new Date().toISOString(),
+      ].toString(),
     meta: {
       params: {
         start_time: thirtyDaysAgo.toISOString(),
