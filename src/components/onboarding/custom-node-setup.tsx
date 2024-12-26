@@ -3,7 +3,6 @@ import type {
   DockerCommandStep,
   MachineStepValidation,
 } from "@/components/machines/machine-create";
-import type { StepValidation } from "@/components/onboarding/workflow-import";
 import type { StepComponentProps } from "@/components/step-form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
