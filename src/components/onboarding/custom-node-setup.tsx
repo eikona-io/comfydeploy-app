@@ -1,4 +1,5 @@
 import type {
+  CustomNodeData,
   DockerCommandStep,
   MachineStepValidation,
 } from "@/components/machines/machine-create";
@@ -40,6 +41,7 @@ import {
   ExternalLink,
   Minus,
   Pencil,
+  Plus,
   Save,
   Search,
   Star,
@@ -68,6 +70,12 @@ const BLACKLIST = [
   "https://github.com/mrhan1993/ComfyUI-Fooocus",
 ];
 
+function isCustomNodeData(
+  step: DockerCommandStep,
+): step is DockerCommandStep & { data: CustomNodeData } {
+  return step.type === "custom-node";
+}
+
 export function CustomNodeSetup({
   validation,
   setValidation,
@@ -93,7 +101,9 @@ export function CustomNodeSetup({
     const nodeRefLower = node.reference.toLowerCase();
     if (
       validation.docker_command_steps.steps.some(
-        (step) => step.data.url.toLowerCase() === nodeRefLower,
+        (step) =>
+          isCustomNodeData(step) &&
+          step.data.url.toLowerCase() === nodeRefLower,
       )
     ) {
       return;
@@ -136,12 +146,18 @@ export function CustomNodeSetup({
   };
 
   const handleRemoveNode = (node: DockerCommandStep) => {
+    if (!isCustomNodeData(node)) {
+      return;
+    }
+
     const nodeRefLower = node.data.url.toLowerCase();
     setValidation((prev) => ({
       ...prev,
       docker_command_steps: {
         steps: prev.docker_command_steps.steps.filter(
-          (step) => step.data.url.toLowerCase() !== nodeRefLower,
+          (step) =>
+            isCustomNodeData(step) &&
+            step.data.url.toLowerCase() !== nodeRefLower,
         ),
       },
     }));
@@ -267,6 +283,7 @@ export function CustomNodeSetup({
                                 "w-full px-2",
                                 validation.docker_command_steps.steps.some(
                                   (n) =>
+                                    isCustomNodeData(n) &&
                                     n.data.url.toLowerCase() === nodeRefLower,
                                 ) && "opacity-30",
                               )}
@@ -300,8 +317,9 @@ export function CustomNodeSetup({
                                     }}
                                     disabled={validation.docker_command_steps.steps.some(
                                       (n) =>
+                                        isCustomNodeData(n) &&
                                         n.data.url.toLowerCase() ===
-                                        nodeRefLower,
+                                          nodeRefLower,
                                     )}
                                   >
                                     <ChevronRight size={12} />
@@ -340,6 +358,8 @@ function SelectedNodeList({
 }) {
   const [editingHash, setEditingHash] = useState<string | null>(null);
   const [scriptMode, setScriptMode] = useState(false);
+  const [showNewCommand, setShowNewCommand] = useState(false);
+  const [commandText, setCommandText] = useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -381,10 +401,18 @@ function SelectedNodeList({
   };
 
   const handleStartEdit = (node: DockerCommandStep) => {
+    if (!isCustomNodeData(node)) {
+      return;
+    }
+
     setEditingHash(node.data.url);
   };
 
   const handleSaveHash = (node: DockerCommandStep, value: string) => {
+    if (!isCustomNodeData(node)) {
+      return;
+    }
+
     // Early return if value is empty or unchanged
     if (value === node.data.hash) {
       setEditingHash(null);
@@ -395,11 +423,11 @@ function SelectedNodeList({
       ...prev,
       docker_command_steps: {
         steps: prev.docker_command_steps.steps.map((step) =>
-          step.data.url === node.data.url
+          isCustomNodeData(step) && step.data.url === node.data.url
             ? {
                 ...step,
                 data: {
-                  ...step.data,
+                  ...(step.data as CustomNodeData),
                   hash: value || node.data.meta?.latest_hash,
                 },
               }
@@ -411,24 +439,100 @@ function SelectedNodeList({
     setEditingHash(null);
   };
 
+  const handleSaveCommand = () => {
+    // Skip if empty
+    if (!commandText.trim()) {
+      setShowNewCommand(false);
+      return;
+    }
+
+    // Create new command step
+    const newCommand: DockerCommandStep = {
+      id: crypto.randomUUID().slice(0, 10),
+      type: "commands",
+      data: commandText.replace(/\r?\n/g, "\n"), // Normalize line endings
+    };
+
+    // Add to steps
+    setValidation((prev) => ({
+      ...prev,
+      docker_command_steps: {
+        steps: [...prev.docker_command_steps.steps, newCommand],
+      },
+    }));
+
+    // Reset and close
+    setCommandText("");
+    setShowNewCommand(false);
+  };
+
   return (
     <div className="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
       <div className="flex flex-row items-center justify-between">
         <h2 className="font-medium text-md">
           Selected Nodes ({validation.docker_command_steps.steps.length})
         </h2>
-        <Button
-          variant={scriptMode ? "default" : "outline"}
-          onClick={() => setScriptMode(!scriptMode)}
-        >
-          Edit Script
-          {scriptMode ? (
-            <ToggleRight className="ml-2 h-4 w-4" />
-          ) : (
-            <ToggleLeft className="ml-2 h-4 w-4" />
+        <div className="flex flex-row items-center gap-2">
+          {!scriptMode && (
+            <Button
+              size={"xs"}
+              variant={"outline"}
+              onClick={() => setShowNewCommand(true)}
+            >
+              Commands
+              <Plus size={12} className="ml-2" />
+            </Button>
           )}
-        </Button>
+          <Button
+            size={"xs"}
+            variant={scriptMode ? "default" : "outline"}
+            onClick={() => setScriptMode(!scriptMode)}
+          >
+            View JSON
+            {scriptMode ? (
+              <ToggleRight className="ml-2 h-4 w-4" />
+            ) : (
+              <ToggleLeft className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        </div>
       </div>
+
+      {showNewCommand && (
+        <div className="flex flex-col gap-2 rounded-[6px] border border-gray-200 bg-gray-50 p-2">
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-sm">New Custom Command</span>
+            <div className="flex">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-gray-500 hover:text-gray-700"
+                onClick={handleSaveCommand}
+              >
+                <Save size={14} />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-red-500 hover:text-red-600"
+                onClick={() => {
+                  setCommandText("");
+                  setShowNewCommand(false);
+                }}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+          </div>
+          <Textarea
+            value={commandText}
+            onChange={(e) => setCommandText(e.target.value)}
+            placeholder="RUN cd some_folder..."
+            className="min-h-[100px] font-mono text-sm"
+          />
+        </div>
+      )}
+
       {scriptMode ? (
         <Textarea
           placeholder="Enter your script here..."
@@ -492,11 +596,12 @@ function SortableCustomNodeCard(props: {
     isDragging,
   } = useSortable({
     id: props.node.id,
-    disabled: props.editingHash === props.node.data.url,
+    disabled:
+      isCustomNodeData(props.node) && props.editingHash === props.node.data.url,
   });
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: CSS.Translate.toString(transform),
     transition,
     zIndex: isDragging ? 50 : "auto",
     scale: isDragging ? 1.02 : 1,
@@ -534,6 +639,37 @@ function CustomNodeCard({
   handleStartEdit: (node: DockerCommandStep) => void;
   handleRemoveNode: (node: DockerCommandStep) => void;
 }) {
+  // Handle command type
+  if (node.type === "commands") {
+    return (
+      <div className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span className="font-medium">Custom Command</span>
+            <div className="mt-2 rounded bg-gray-100 p-2">
+              <pre className="whitespace-pre-wrap font-mono text-gray-600 text-xs">
+                {node.data as string}
+              </pre>
+            </div>
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
+            onClick={() => handleRemoveNode(node)}
+          >
+            <Minus size={14} />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Existing custom node rendering
+  if (!isCustomNodeData(node)) {
+    return null;
+  }
+
   const isHashChanged = node.data.hash !== node.data.meta?.latest_hash;
 
   return (

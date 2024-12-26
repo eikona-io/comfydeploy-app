@@ -20,25 +20,25 @@ export interface MachineStepValidation {
 
 export interface DockerCommandStep {
   id: string;
-  type: "custom-node";
-  data: {
-    name: string;
-    hash?: string;
-    url: string;
-    files: string[];
-    install_type: "git-clone";
-    pip?: string[];
-    meta?: {
-      message: string;
-      latest_hash?: string;
-      committer?: {
-        name: string;
-        // email: string;
-        // date: string;
-      };
-      // commit_url: string;
-      stargazers_count?: number;
+  type: "custom-node" | "commands";
+  data: CustomNodeData | string;
+}
+
+// Separate interface for custom node data
+export interface CustomNodeData {
+  name: string;
+  hash?: string;
+  url: string;
+  files: string[];
+  install_type: "git-clone";
+  pip?: string[];
+  meta?: {
+    message: string;
+    latest_hash?: string;
+    committer?: {
+      name: string;
     };
+    stargazers_count?: number;
   };
 }
 
