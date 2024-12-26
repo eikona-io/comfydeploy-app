@@ -70,6 +70,14 @@ const BLACKLIST = [
   "https://github.com/mrhan1993/ComfyUI-Fooocus",
 ];
 
+const POPULAR_NODES = [
+  "https://github.com/WASasquatch/was-node-suite-comfyui",
+  "https://github.com/ltdrdata/ComfyUI-Impact-Pack",
+  "https://github.com/cubiq/ComfyUI_IPAdapter_plus",
+  "https://github.com/cubiq/ComfyUI_essentials",
+  "https://github.com/kijai/ComfyUI-KJNodes",
+];
+
 function isCustomNodeData(
   step: DockerCommandStep,
 ): step is DockerCommandStep & { data: CustomNodeData } {
@@ -163,8 +171,26 @@ export function CustomNodeSetup({
     }));
   };
 
-  const filteredNodes = useMemo(() => {
+  const nonBlacklistedNodes = useMemo(() => {
     if (!data) return [];
+
+    const lowerCaseBlacklist = new Set(BLACKLIST.map((x) => x.toLowerCase()));
+    const lowerCasePopular = new Set(POPULAR_NODES.map((x) => x.toLowerCase()));
+
+    // Filter out blacklisted nodes and sort popular ones to the top
+    return data
+      .filter((node) => !lowerCaseBlacklist.has(node.reference.toLowerCase()))
+      .sort((a, b) => {
+        const aIsPopular = lowerCasePopular.has(a.reference.toLowerCase());
+        const bIsPopular = lowerCasePopular.has(b.reference.toLowerCase());
+        if (aIsPopular && !bIsPopular) return -1;
+        if (!aIsPopular && bIsPopular) return 1;
+        return 0;
+      });
+  }, [data]); // Only recompute when data changes
+
+  const filteredNodes = useMemo(() => {
+    if (!searchTerm) return nonBlacklistedNodes;
 
     const searchWords = searchTerm
       .toLowerCase()
@@ -172,19 +198,14 @@ export function CustomNodeSetup({
       .split(" ")
       .filter(Boolean);
 
-    const lowerCaseBlacklist = new Set(BLACKLIST.map((x) => x.toLowerCase()));
-
-    return data.filter((node) => {
+    return nonBlacklistedNodes.filter((node) => {
       const nodeText = `${node.title} ${node.author} ${node.reference}`
         .toLowerCase()
         .replace(/[^a-z0-9]/g, " ");
 
-      return (
-        searchWords.every((word) => nodeText.includes(word)) &&
-        !lowerCaseBlacklist.has(node.reference.toLowerCase())
-      );
+      return searchWords.every((word) => nodeText.includes(word));
     });
-  }, [data, searchTerm]);
+  }, [nonBlacklistedNodes, searchTerm]);
 
   const rowVirtualizer = useVirtualizer({
     count: filteredNodes.length,
@@ -291,10 +312,15 @@ export function CustomNodeSetup({
                               <div className="flex flex-row items-center justify-between">
                                 <div className="flex min-w-0 flex-1 flex-col">
                                   <span className="truncate font-medium">
+                                    {POPULAR_NODES.some(
+                                      (p) =>
+                                        p.toLowerCase() ===
+                                        node.reference.toLowerCase(),
+                                    ) && "🔥 "}
                                     {node.title}
                                   </span>
                                   <div className="flex items-center">
-                                    <span className="text-gray-500 text-xs">
+                                    <span className="text-2xs text-gray-500 leading-snug">
                                       {node.author}
                                     </span>
                                     <Link

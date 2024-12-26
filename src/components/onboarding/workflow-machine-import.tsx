@@ -43,7 +43,7 @@ import { useDebounce } from "use-debounce";
 import type { MachineStepValidation } from "../machines/machine-create";
 
 // Add this type
-type ComfyUIOption = {
+export type ComfyUIOption = {
   id: "recommended" | "latest" | "custom";
   name: string;
   hash: string | null;
@@ -70,7 +70,7 @@ type GpuOption = {
   isHidden: boolean;
 };
 
-const gpuOptions: GpuOption[] = [
+export const gpuOptions: GpuOption[] = [
   {
     id: "CPU",
     name: "CPU",
