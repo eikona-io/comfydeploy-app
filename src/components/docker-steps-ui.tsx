@@ -29,7 +29,7 @@ import { z } from "zod";
 import { InsertModal } from "./auto-form/auto-form-dialog";
 import { CopyButton } from "./copy-button";
 import { CustomNodeItem } from "./custom-node-item";
-import { useCustomNodeSelector } from "./custom-nodes-selector";
+import { useCustomNodeSelector } from "./custom-nodes-selector-legacy";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Card } from "./ui/card";

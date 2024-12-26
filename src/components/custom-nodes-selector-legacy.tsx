@@ -109,7 +109,7 @@ export function useCustomNodeSelector({
     count: filteredNodes.length,
     getScrollElement: () => parentRef,
     estimateSize: () => 35, // Adjust this value based on your row height
-    overscan: 15,
+    overscan: 30,
   });
 
   useEffect(() => {
