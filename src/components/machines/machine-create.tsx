@@ -1,4 +1,7 @@
-import { WorkflowImportNewMachineSetup } from "@/components/onboarding/workflow-machine-import";
+import {
+  type GpuTypes,
+  WorkflowImportNewMachineSetup,
+} from "@/components/onboarding/workflow-machine-import";
 import { type Step, StepForm } from "@/components/step-form";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
@@ -7,11 +10,40 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-interface MachineStepValidation {
+export interface MachineStepValidation {
   machineName: string;
-  gpuType: "t4" | "a10g" | "a100";
+  gpuType: GpuTypes;
   comfyUiHash: string;
   selectedComfyOption: "recommended" | "latest" | "custom";
+  docker_command_steps: DockerCommandSteps;
+}
+
+export interface DockerCommandStep {
+  id: string;
+  type: "custom-node";
+  data: {
+    name: string;
+    hash?: string;
+    url: string;
+    files: string[];
+    install_type: "git-clone";
+    pip?: string[];
+    meta?: {
+      message: string;
+      latest_hash?: string;
+      committer?: {
+        name: string;
+        // email: string;
+        // date: string;
+      };
+      // commit_url: string;
+      stargazers_count?: number;
+    };
+  };
+}
+
+interface DockerCommandSteps {
+  steps: DockerCommandStep[];
 }
 
 interface MachineStepNavigation {
@@ -37,9 +69,12 @@ export function MachineCreate() {
   const navigate = useNavigate({ from: "/machines" });
   const [validation, setValidation] = useState<MachineStepValidation>({
     machineName: "My Machine",
-    gpuType: "a10g",
+    gpuType: "A10G",
     comfyUiHash: comfyui_hash,
     selectedComfyOption: "recommended",
+    docker_command_steps: {
+      steps: [],
+    },
   });
 
   const STEPS: Step<MachineStepValidation>[] = [
@@ -48,14 +83,18 @@ export function MachineCreate() {
       title: "Create Machine",
       component: WorkflowImportNewMachineSetup,
       validate: (validation) => {
-        if (!validation.machineName?.trim()) {
+        const { machineName, comfyUiHash, gpuType, selectedComfyOption } =
+          validation;
+
+        if (!machineName?.trim()) {
           return { isValid: false, error: "Please enter a machine name" };
         }
 
-        if (
-          validation.selectedComfyOption === "custom" &&
-          !validation.comfyUiHash?.trim()
-        ) {
+        if (!gpuType) {
+          return { isValid: false, error: "Please select a GPU type" };
+        }
+
+        if (selectedComfyOption === "custom" && !comfyUiHash?.trim()) {
           return {
             isValid: false,
             error: "Please enter a ComfyUI commit hash",
@@ -67,15 +106,6 @@ export function MachineCreate() {
       actions: {
         onNext: async () => {
           try {
-            // Type guard to ensure required fields exist
-            if (
-              !validation.machineName ||
-              !validation.comfyUiHash ||
-              !validation.gpuType
-            ) {
-              throw new Error("Missing required fields");
-            }
-
             const response = await api({
               url: "machine/serverless",
               init: {
@@ -83,10 +113,8 @@ export function MachineCreate() {
                 body: JSON.stringify({
                   name: validation.machineName,
                   comfyui_version: validation.comfyUiHash,
-                  gpu: validation.gpuType.toUpperCase() as
-                    | "T4"
-                    | "A10G"
-                    | "A100",
+                  gpu: validation.gpuType,
+                  docker_command_steps: validation.docker_command_steps,
                 }),
               },
             });

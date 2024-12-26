@@ -132,7 +132,7 @@ export default function WorkflowImport() {
     selectedMachineId: "",
     machineOption: "existing",
     machineName: "Untitled Machine",
-    gpuType: "a10g",
+    gpuType: "A10G",
     comfyUiHash: comfyui_hash,
     selectedComfyOption: "recommended",
     dependencies: undefined,
@@ -377,10 +377,7 @@ export default function WorkflowImport() {
                 body: JSON.stringify({
                   name: validation.machineName,
                   comfyui_version: validation.comfyUiHash,
-                  gpu: validation.gpuType.toUpperCase() as
-                    | "T4"
-                    | "A10G"
-                    | "A100",
+                  gpu: validation.gpuType,
                   docker_command_steps: docker_commands,
                 }),
               },
