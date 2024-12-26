@@ -23,11 +23,12 @@ import { Folder, List, Plus, Wrench } from "lucide-react";
 import { Info } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ModelList } from "../storage/model-list";
-import { ModelListView } from "../storage/model-list-view";
+import { ModelListHeader, ModelListView } from "../storage/model-list-view";
+import { Skeleton } from "../ui/skeleton";
 import { App } from "./App";
 import { useLogStore } from "./LogContext";
 import { LogDisplay } from "./LogDisplay";
@@ -95,11 +96,26 @@ export function ModelsButton(props: {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-fit p-2">
-          <ModelListView className="h-[400px] w-[400px]">
-            <ModelList
-              apiEndpoint={process.env.COMFY_DEPLOY_SHARED_MACHINE_API_URL}
-            />
-          </ModelListView>
+          <Suspense
+            fallback={
+              <div className="h-[540px] w-[300px]">
+                <div className="flex items-center justify-start gap-2 pb-2 font-semibold">
+                  <ModelListHeader />
+                </div>
+                <div className="flex h-full w-full flex-col gap-3">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <Skeleton key={i} className="h-[18px] w-full" />
+                  ))}
+                </div>
+              </div>
+            }
+          >
+            <ModelListView className="h-[540px] w-[300px]">
+              <ModelList
+                apiEndpoint={process.env.COMFY_DEPLOY_SHARED_MACHINE_API_URL}
+              />
+            </ModelListView>
+          </Suspense>
         </PopoverContent>
       </Popover>
     </>

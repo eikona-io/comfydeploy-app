@@ -30,6 +30,7 @@ const formatTime = (time: number) => {
   return `${minutes}:${seconds}`;
 };
 
+import { useModelRerfresher } from "../storage/model-list-view";
 // import { useModelRerfresher } from "@/repo/components/ui/custom/storage/model-list-view";
 import { useCDStore } from "./Workspace";
 import { WorkspaceStatusBar } from "./WorkspaceStatusBar";
@@ -41,13 +42,13 @@ export function App({
   endpoint: string;
   children?: React.ReactNode;
 }) {
-  // const refreshModels = useModelRerfresher();
+  const refreshModels = useModelRerfresher();
 
   const { cdSetup, setCDSetup } = useCDStore();
 
-  // useEffect(() => {
-  //   if (cdSetup) refreshModels();
-  // }, [refreshModels, cdSetup]);
+  useEffect(() => {
+    if (cdSetup) refreshModels();
+  }, [refreshModels, cdSetup]);
 
   const { userId, orgId } = useAuth();
 

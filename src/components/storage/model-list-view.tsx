@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import {
   CheckCircle,
   Download,
@@ -878,9 +878,11 @@ export function ModelListView(props: {
     setFilter(debouncedInputValue);
   }, [debouncedInputValue, setFilter]);
 
-  const ctx = useCurrentPlan();
+  const { data: ctx } = useSuspenseQuery<any>({
+    queryKey: ["platform", "plan"],
+  });
 
-  if (!ctx) return null;
+  // if (!ctx) return null;
 
   return (
     <div className={cn("relative flex h-full flex-col gap-2", props.className)}>
