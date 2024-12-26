@@ -15,6 +15,23 @@ import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { getBranchInfo } from "@/hooks/use-github-branch-info";
 import { cn } from "@/lib/utils";
+import {
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -324,6 +341,45 @@ function SelectedNodeList({
   const [editingHash, setEditingHash] = useState<string | null>(null);
   const [scriptMode, setScriptMode] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = validation.docker_command_steps.steps.findIndex(
+        (step) => step.id === active.id,
+      );
+      const newIndex = validation.docker_command_steps.steps.findIndex(
+        (step) => step.id === over.id,
+      );
+
+      setValidation((prev) => {
+        const newSteps = [...prev.docker_command_steps.steps];
+        const [removed] = newSteps.splice(oldIndex, 1);
+        newSteps.splice(newIndex, 0, removed);
+
+        return {
+          ...prev,
+          docker_command_steps: {
+            ...prev.docker_command_steps,
+            steps: newSteps,
+          },
+        };
+      });
+    }
+  };
+
   const handleStartEdit = (node: DockerCommandStep) => {
     setEditingHash(node.data.url);
   };
@@ -381,140 +437,217 @@ function SelectedNodeList({
           readOnly
         />
       ) : (
-        <div className="flex flex-col gap-2">
-          {validation.docker_command_steps.steps.length === 0 ? (
-            <div className="text-gray-500 text-sm">No nodes selected.</div>
-          ) : (
-            validation.docker_command_steps.steps.map((node) => {
-              const isHashChanged =
-                node.data.hash !== node.data.meta?.latest_hash;
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
+        >
+          <SortableContext
+            items={validation.docker_command_steps.steps.map((node) => node.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {validation.docker_command_steps.steps.length > 1 && (
+              <span className="text-gray-500 text-xs">
+                <span className="text-red-500">* </span>Long press and drag to
+                reorder the nodes.
+              </span>
+            )}
+            <div className="flex flex-col gap-2">
+              {validation.docker_command_steps.steps.length === 0 ? (
+                <div className="text-gray-500 text-sm">No nodes selected.</div>
+              ) : (
+                validation.docker_command_steps.steps.map((node) => (
+                  <SortableCustomNodeCard
+                    key={node.id}
+                    node={node}
+                    editingHash={editingHash}
+                    handleSaveHash={handleSaveHash}
+                    handleStartEdit={handleStartEdit}
+                    handleRemoveNode={handleRemoveNode}
+                  />
+                ))
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+    </div>
+  );
+}
 
-              return (
-                <div
-                  key={node.data.url}
-                  className="group flex flex-col rounded-[6px] bg-gray-50 p-2 text-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate font-medium">
-                        {node.data.name}
-                      </span>
-                      <div className="flex items-center">
-                        <span className="text-gray-500 text-xs">
-                          {node.data.meta?.committer?.name}
-                        </span>
-                        <Link
-                          to={node.data.url}
-                          target="_blank"
-                          className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-700"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink size={12} />
-                        </Link>
-                      </div>
-                    </div>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
-                      onClick={() => handleRemoveNode(node)}
-                    >
-                      <Minus size={14} />
-                    </Button>
+function SortableCustomNodeCard(props: {
+  node: DockerCommandStep;
+  editingHash: string | null;
+  handleSaveHash: (node: DockerCommandStep, value: string) => void;
+  handleStartEdit: (node: DockerCommandStep) => void;
+  handleRemoveNode: (node: DockerCommandStep) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: props.node.id,
+    disabled: props.editingHash === props.node.data.url,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : "auto",
+    scale: isDragging ? 1.02 : 1,
+    borderRadius: isDragging ? "10px" : "6px",
+    boxShadow: isDragging
+      ? "rgba(0, 0, 0, 0.15) 0px 10px 20px, rgba(0, 0, 0, 0.1) 0px 3px 6px"
+      : "none",
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="group cursor-auto active:cursor-grabbing"
+    >
+      <div onClick={(e) => e.stopPropagation()}>
+        <CustomNodeCard {...props} />
+      </div>
+    </div>
+  );
+}
+
+function CustomNodeCard({
+  node,
+  editingHash,
+  handleSaveHash,
+  handleStartEdit,
+  handleRemoveNode,
+}: {
+  node: DockerCommandStep;
+  editingHash: string | null;
+  handleSaveHash: (node: DockerCommandStep, value: string) => void;
+  handleStartEdit: (node: DockerCommandStep) => void;
+  handleRemoveNode: (node: DockerCommandStep) => void;
+}) {
+  const isHashChanged = node.data.hash !== node.data.meta?.latest_hash;
+
+  return (
+    <div
+      key={node.data.url}
+      className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate font-medium">{node.data.name}</span>
+          <div className="flex items-center">
+            <span className="text-gray-500 text-xs">
+              {node.data.meta?.committer?.name}
+            </span>
+            <Link
+              to={node.data.url}
+              target="_blank"
+              className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-700"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink size={12} />
+            </Link>
+          </div>
+        </div>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
+          onClick={() => handleRemoveNode(node)}
+        >
+          <Minus size={14} />
+        </Button>
+      </div>
+
+      <Separator className="my-2" />
+
+      {node.data.meta && (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex w-full flex-col text-gray-500 text-xs leading-snug">
+            <div className="flex w-full items-center gap-2">
+              <span className="whitespace-nowrap font-medium">
+                {isHashChanged || editingHash === node.data.url
+                  ? "Custom hash"
+                  : "Latest commit"}
+                :
+              </span>
+              {editingHash === node.data.url ? (
+                <Input
+                  autoFocus
+                  defaultValue={node.data.hash}
+                  placeholder="commit hash..."
+                  className="h-7 max-w-96 rounded-[6px] px-2 py-0 font-mono text-xs"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleSaveHash(node, e.currentTarget.value);
+                    }
+                  }}
+                />
+              ) : (
+                <code className="rounded bg-gray-100 px-1 py-0.5 text-2xs">
+                  <span className={cn(isHashChanged && "text-amber-600")}>
+                    {node.data.hash?.slice(0, 7)}
+                  </span>
+                </code>
+              )}
+              {!isHashChanged && !editingHash && (
+                <>
+                  <span className="text-gray-300">•</span>
+                  <div className="flex items-center gap-1">
+                    <Star
+                      size={12}
+                      className="fill-yellow-400 text-yellow-400"
+                    />
+                    <span>
+                      {node.data.meta.stargazers_count?.toLocaleString()}
+                    </span>
                   </div>
-
-                  <Separator className="my-2" />
-
-                  {node.data.meta && (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex w-full flex-col text-gray-500 text-xs leading-snug">
-                        <div className="flex w-full items-center gap-2">
-                          <span className="whitespace-nowrap font-medium">
-                            {isHashChanged || editingHash === node.data.url
-                              ? "Custom hash"
-                              : "Latest commit"}
-                            :
-                          </span>
-                          {editingHash === node.data.url ? (
-                            <Input
-                              autoFocus
-                              defaultValue={node.data.hash}
-                              placeholder="commit hash..."
-                              className="h-7 max-w-96 rounded-[6px] px-2 py-0 font-mono text-xs"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  handleSaveHash(node, e.currentTarget.value);
-                                }
-                              }}
-                            />
-                          ) : (
-                            <code className="rounded bg-gray-100 px-1 py-0.5 text-2xs">
-                              <span
-                                className={cn(
-                                  isHashChanged && "text-amber-600",
-                                )}
-                              >
-                                {node.data.hash?.slice(0, 7)}
-                              </span>
-                            </code>
-                          )}
-                          {isHashChanged && (
-                            <>
-                              <span className="text-gray-300">•</span>
-                              <div className="flex items-center gap-1">
-                                <Star
-                                  size={12}
-                                  className="fill-yellow-400 text-yellow-400"
-                                />
-                                <span>
-                                  {node.data.meta.stargazers_count?.toLocaleString()}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                        {!isHashChanged && editingHash !== node.data.url ? (
-                          <div className="line-clamp-1">
-                            <span className="font-medium">Message:</span>{" "}
-                            {node.data.meta?.message}
-                          </div>
-                        ) : null}
-                      </div>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className={cn(
-                          "shrink-0 text-gray-500",
-                          editingHash !== node.data.url &&
-                            "opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100",
-                        )}
-                        onClick={(e) => {
-                          if (editingHash === node.data.url) {
-                            // Find the input element and get its value
-                            const input =
-                              e.currentTarget.parentElement?.querySelector(
-                                "input",
-                              );
-                            if (input) {
-                              handleSaveHash(node, input.value);
-                            }
-                          } else {
-                            handleStartEdit(node);
-                          }
-                        }}
-                      >
-                        {editingHash === node.data.url ? (
-                          <Save size={12} />
-                        ) : (
-                          <Pencil size={12} />
-                        )}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
+                </>
+              )}
+            </div>
+            {!isHashChanged && editingHash !== node.data.url ? (
+              <div className="line-clamp-1">
+                <span className="font-medium">Message:</span>{" "}
+                {node.data.meta?.message}
+              </div>
+            ) : null}
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className={cn(
+              "shrink-0 text-gray-500",
+              editingHash !== node.data.url &&
+                "opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100",
+            )}
+            onClick={(e) => {
+              if (editingHash === node.data.url) {
+                // Find the input element and get its value
+                const input =
+                  e.currentTarget.parentElement?.querySelector("input");
+                if (input) {
+                  handleSaveHash(node, input.value);
+                }
+              } else {
+                handleStartEdit(node);
+              }
+            }}
+          >
+            {editingHash === node.data.url ? (
+              <Save size={12} />
+            ) : (
+              <Pencil size={12} />
+            )}
+          </Button>
         </div>
       )}
     </div>
