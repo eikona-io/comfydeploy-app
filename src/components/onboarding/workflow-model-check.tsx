@@ -1,5 +1,10 @@
 import type { StepValidation } from "@/components/onboarding/workflow-import";
 import type { StepComponentProps } from "@/components/step-form";
+import { ModelList } from "@/components/storage/model-list";
+import {
+  ModelListHeader,
+  ModelListView,
+} from "@/components/storage/model-list-view";
 import {
   Accordion,
   AccordionContent,
@@ -263,18 +268,16 @@ export function WorkflowModelCheck({
       <div className="relative hidden md:block">
         {isModelBrowserExpanded && (
           <div className="w-[500px] rounded-xl border bg-white p-4 drop-shadow-lg">
-            {/* <div className="flex items-center justify-between font-bold">
+            <div className="flex items-center justify-between font-bold">
               <ModelListHeader />
             </div>
             <div className="mt-2">
               <ModelListView className="h-[calc(70vh)]">
                 <ModelList
-                  apiEndpoint={
-                    process.env.NEXT_PUBLIC_COMFY_DEPLOY_SHARED_MACHINE_API_URL!
-                  }
+                  apiEndpoint={process.env.COMFY_DEPLOY_SHARED_MACHINE_API_URL!}
                 />
               </ModelListView>
-            </div> */}
+            </div>
           </div>
         )}
         <div className="-translate-y-1/2 -left-5 absolute top-[50%] hidden md:block">
