@@ -193,29 +193,29 @@ export function SessionCreator(props: {
       ),
     },
     fieldConfig: {
-      // gpu: {
-      //   fieldType: "timeoutPicker",
-      //   inputProps: {
-      //     optionsForTier: [
-      //       ["CPU", , "CPU"],
-      //       ["T4", , "T4 (16GB)"],
-      //       ["A10G", , "A10G (24GB)"],
-      //       ["L4", , "L4 (24GB)"],
-      //       ["A100", "business", "A100 (40GB)"],
-      //       ["A100-80GB", "business", "A100-80GB (80GB)"],
-      //       ["H100", "business", "H100 (80GB)"],
-      //     ],
-      //   },
-      // },
-      // timeout: {
-      //   inputProps: {
-      //     value: 15,
-      //     min: 1,
-      //     max: 60,
-      //   },
-      //   fieldType: "slider",
-      //   description: "Set the timeout for the session",
-      // },
+      gpu: {
+        fieldType: "timeoutPicker",
+        inputProps: {
+          optionsForTier: [
+            ["CPU", , "CPU"],
+            ["T4", , "T4 (16GB)"],
+            ["A10G", , "A10G (24GB)"],
+            ["L4", , "L4 (24GB)"],
+            ["A100", "business", "A100 (40GB)"],
+            ["A100-80GB", "business", "A100-80GB (80GB)"],
+            ["H100", "business", "H100 (80GB)"],
+          ],
+        },
+      },
+      timeout: {
+        inputProps: {
+          value: 15,
+          min: 1,
+          max: 60,
+        },
+        fieldType: "slider",
+        description: "Set the timeout for the session",
+      },
     },
     serverAction: async (data) => {
       try {

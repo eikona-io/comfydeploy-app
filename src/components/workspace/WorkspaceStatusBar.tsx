@@ -14,6 +14,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Diff, RefreshCcw, Save } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
+import { WorkflowCommitVersion } from "./WorkflowCommitVersion";
+import { WorkflowDiff } from "./WorkflowDiff";
 
 type WorkspaceStatusBarProps = {
   endpoint: string;
@@ -25,17 +27,18 @@ export function WorkspaceStatusBar({ endpoint }: WorkspaceStatusBarProps) {
   const readonly = false;
   const { value: selectedVersion } = useSelectedVersion(workflowId);
   const hasChanged = useWorkflowStore((state) => state.hasChanged);
+  const setHasChanged = useWorkflowStore((state) => state.setHasChanged);
 
   const [displayDiff, setDisplayDiff] = useState(false);
   const [displayCommit, setDisplayCommit] = useState(false);
 
   return (
     <>
-      {/* {displayCommit && !readonly && (
+      {displayCommit && !readonly && (
         <WorkflowCommitVersion setOpen={setDisplayCommit} endpoint={endpoint} />
-      )} */}
+      )}
 
-      {/* {displayDiff && !readonly && (
+      {displayDiff && !readonly && (
         <WorkflowDiff
           workflowId={workflowId}
           onClose={() => setDisplayDiff(false)}
@@ -44,7 +47,7 @@ export function WorkspaceStatusBar({ endpoint }: WorkspaceStatusBarProps) {
             setDisplayCommit(true);
           }}
         />
-      )} */}
+      )}
       <AnimatePresence>
         {hasChanged && (
           <motion.div
@@ -68,6 +71,7 @@ export function WorkspaceStatusBar({ endpoint }: WorkspaceStatusBarProps) {
                   size="xs"
                   onClick={() => {
                     sendWorkflow(selectedVersion.workflow);
+                    setHasChanged(false);
                     toast.success("Discarded changes");
                   }}
                   Icon={RefreshCcw}
