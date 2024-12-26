@@ -140,6 +140,7 @@ export function VersionSelectV2({
     action: async (value) => {
       sendWorkflow(value.workflow);
       setVersion(value.version);
+      // setHasChanged(false);
     },
   });
 
@@ -147,6 +148,8 @@ export function VersionSelectV2({
 
   const isAdminOnly = useIsAdminOnly();
   const isAdminAndMember = useIsAdminAndMember();
+
+  const setHasChanged = useWorkflowStore((state) => state.setHasChanged);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -196,6 +199,7 @@ export function VersionSelectV2({
                   } else {
                     setVersion(item.version);
                     sendWorkflow(item.workflow);
+                    // setHasChanged(false);
                   }
                 }
               }}

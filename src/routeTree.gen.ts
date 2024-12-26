@@ -18,6 +18,7 @@ import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowsIndexImport } from './routes/workflows/index'
 import { Route as SettingsIndexImport } from './routes/settings/index'
 import { Route as MachinesIndexImport } from './routes/machines/index'
+import { Route as ApiKeysIndexImport } from './routes/api-keys/index'
 import { Route as MachinesMachineIdImport } from './routes/machines/$machineId'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
 import { Route as AuthSignInImport } from './routes/auth/sign-in'
@@ -70,6 +71,12 @@ const MachinesIndexRoute = MachinesIndexImport.update({
 } as any).lazy(() =>
   import('./routes/machines/index.lazy').then((d) => d.Route),
 )
+
+const ApiKeysIndexRoute = ApiKeysIndexImport.update({
+  id: '/api-keys/',
+  path: '/api-keys/',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const MachinesMachineIdRoute = MachinesMachineIdImport.update({
   id: '/machines/$machineId',
@@ -150,6 +157,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MachinesMachineIdImport
       parentRoute: typeof rootRoute
     }
+    '/api-keys/': {
+      id: '/api-keys/'
+      path: '/api-keys'
+      fullPath: '/api-keys'
+      preLoaderRoute: typeof ApiKeysIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/machines/': {
       id: '/machines/'
       path: '/machines'
@@ -191,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
+  '/api-keys': typeof ApiKeysIndexRoute
   '/machines': typeof MachinesIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
@@ -205,6 +220,7 @@ export interface FileRoutesByTo {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
+  '/api-keys': typeof ApiKeysIndexRoute
   '/machines': typeof MachinesIndexRoute
   '/settings': typeof SettingsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
@@ -220,6 +236,7 @@ export interface FileRoutesById {
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
+  '/api-keys/': typeof ApiKeysIndexRoute
   '/machines/': typeof MachinesIndexRoute
   '/settings/': typeof SettingsIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
@@ -236,6 +253,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
+    | '/api-keys'
     | '/machines'
     | '/settings'
     | '/workflows'
@@ -249,6 +267,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
+    | '/api-keys'
     | '/machines'
     | '/settings'
     | '/workflows'
@@ -262,6 +281,7 @@ export interface FileRouteTypes {
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
+    | '/api-keys/'
     | '/machines/'
     | '/settings/'
     | '/workflows/'
@@ -277,6 +297,7 @@ export interface RootRouteChildren {
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   MachinesMachineIdRoute: typeof MachinesMachineIdRoute
+  ApiKeysIndexRoute: typeof ApiKeysIndexRoute
   MachinesIndexRoute: typeof MachinesIndexRoute
   SettingsIndexRoute: typeof SettingsIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
@@ -291,6 +312,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   MachinesMachineIdRoute: MachinesMachineIdRoute,
+  ApiKeysIndexRoute: ApiKeysIndexRoute,
   MachinesIndexRoute: MachinesIndexRoute,
   SettingsIndexRoute: SettingsIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
@@ -314,6 +336,7 @@ export const routeTree = rootRoute
         "/auth/sign-in",
         "/auth/sign-up",
         "/machines/$machineId",
+        "/api-keys/",
         "/machines/",
         "/settings/",
         "/workflows/",
@@ -340,6 +363,9 @@ export const routeTree = rootRoute
     },
     "/machines/$machineId": {
       "filePath": "machines/$machineId.tsx"
+    },
+    "/api-keys/": {
+      "filePath": "api-keys/index.tsx"
     },
     "/machines/": {
       "filePath": "machines/index.tsx"

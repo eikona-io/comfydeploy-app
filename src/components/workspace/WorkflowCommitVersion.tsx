@@ -1,50 +1,75 @@
 "use client";
 
-import { useWorkflowVersion } from "@/components/WorkflowList";
-import { InsertModal } from "@/repo/components/ui/auto-form/auto-form-dialog";
-import { useTurboStore } from "@/repo/components/ui/custom/workspace/App";
-import { WorkspaceContext } from "@/repo/components/ui/custom/workspace/WorkspaceContext";
-import { createNewWorkflowVersion } from "@/repo/db/createNewWorkflow";
-import { callServerPromise } from "@/repo/lib/callServerPromise";
-import { sendEventToCD } from "@/repo/lib/sendEventToCD";
-import { useAuth } from "@clerk/nextjs";
-import { parseAsInteger, useQueryState } from "next-usequerystate";
+// import { useWorkflowVersion } from "@/components/WorkflowList";
+import { InsertModal } from "@/components/auto-form/auto-form-dialog";
+// import { useTurboStore } from "@/components/workspace/App";
+// import { WorkspaceContext } from "@/components/workspace/WorkspaceContext";
+import { sendEventToCD } from "@/components/workspace/sendEventToCD";
+import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { useAuth } from "@clerk/clerk-react";
+import { parseAsInteger, useQueryState } from "nuqs";
 import { use, useCallback } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useWorkflowVersion } from "../workflow-list";
 
 type WorkflowCommitVersionProps = {
   setOpen: (b: boolean) => void;
   endpoint: string;
 };
 
+async function createNewWorkflowVersion(data: {
+  workflow_data: {
+    workflow: string;
+    workflow_api: string;
+  };
+  user_id: string;
+  workflow_id: string;
+  comment: string;
+}) {
+  return api({
+    url: `workflow/${data.workflow_id}/version`,
+    init: {
+      method: "POST",
+      body: JSON.stringify({
+        workflow: data.workflow_data.workflow,
+        workflow_api: data.workflow_data.workflow_api,
+        comment: data.comment,
+      }),
+    },
+  });
+}
+
 export function WorkflowCommitVersion({
   setOpen,
   endpoint: _endpoint,
 }: WorkflowCommitVersionProps) {
   const { userId } = useAuth();
-  const { turbo } = useTurboStore();
+  // const { turbo } = useTurboStore();
 
-  const { workflowId, machineAPIEndPoint, readonly } = use(WorkspaceContext);
+  // const { workflowId, machineAPIEndPoint, readonly } = use(WorkspaceContext);
 
-  const query = useWorkflowVersion(workflowId);
+  const workflowId = useWorkflowIdInWorkflowPage();
+
+  const query = useWorkflowVersion(workflowId ?? undefined);
   const [, setVersion] = useQueryState("version", {
     defaultValue: 1,
     ...parseAsInteger,
   });
 
-  let endpoint = _endpoint;
-  if (turbo) {
-    endpoint = machineAPIEndPoint.replace("comfyui-api", "workspace");
-    console.log("turbo", endpoint);
-  }
+  const endpoint = _endpoint;
+  // if (turbo) {
+  //   endpoint = machineAPIEndPoint.replace("comfyui-api", "workspace");
+  //   console.log("turbo", endpoint);
+  // }
 
   const getPromptWithTimeout = useCallback(
-    async (timeoutMs: number = 5000) => {
+    async (timeoutMs = 5000) => {
       const getPrompt = new Promise<any>(async (resolve, reject) => {
         const eventListener = (event: any) => {
           console.log(event.origin, endpoint, event.data);
-          debugger;
           if (event.origin !== endpoint) return;
           console.log("TRYING TO RUN THE TRY CATCH");
           try {
@@ -95,7 +120,7 @@ export function WorkflowCommitVersion({
           const prompt = await getPromptWithTimeout();
           console.log("prompt", prompt);
 
-          let dependencies = {
+          const dependencies = {
             comfyui: "",
             custom_nodes: {},
             missing_nodes: [],
@@ -108,15 +133,9 @@ export function WorkflowCommitVersion({
               user_id: userId,
               workflow_id: workflowId,
               comment: data.comment,
-              workflowData: {
+              workflow_data: {
                 workflow: prompt.workflow,
                 workflow_api: prompt.output,
-                // snapshot,
-                snapshot: {
-                  comfyui: "",
-                  git_custom_nodes: {},
-                  file_custom_nodes: [],
-                },
               },
             }),
             {
@@ -127,7 +146,7 @@ export function WorkflowCommitVersion({
           await query.refetch();
 
           // await mutate(workflowId + "-version");
-          if (result?.version != undefined) {
+          if (result?.version !== undefined) {
             setTimeout(() => {
               setVersion(result.version);
               console.log("set version", result.version);
@@ -140,7 +159,7 @@ export function WorkflowCommitVersion({
         }
       }}
       formSchema={z.object({
-        comment: z.string().min(1),
+        comment: z.string().optional(),
       })}
     />
   );

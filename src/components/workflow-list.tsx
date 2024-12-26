@@ -64,12 +64,13 @@ import { toast } from "sonner";
 import { useWorkflowList } from "../hooks/use-workflow-list";
 
 export function useWorkflowVersion(
-  workflow_id: string,
+  workflow_id?: string,
   debouncedSearchValue?: string,
 ) {
   const BATCH_SIZE = 5;
   return useInfiniteQuery<any[]>({
     queryKey: ["workflow", workflow_id, "versions"],
+    enabled: !!workflow_id,
     queryKeyHashFn: (queryKey) =>
       [...queryKey, "versions", debouncedSearchValue].toString(),
     meta: {

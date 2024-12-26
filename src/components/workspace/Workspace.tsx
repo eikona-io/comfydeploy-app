@@ -140,12 +140,12 @@ export default function Workspace({
 
     setDifferences(differences);
 
-    console.log(
-      "differences",
-      differences,
-      selectedVersion?.workflow,
-      currentWorkflow,
-    );
+    // console.log(
+    //   "differences",
+    //   differences,
+    //   selectedVersion?.workflow,
+    //   currentWorkflow,
+    // );
 
     return Object.keys(differences).length > 0;
   }, [selectedVersion?.version, currentWorkflow]);

@@ -37,6 +37,8 @@ import {
 } from "@/components/ui/sidebar";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { OrganizationSwitcher, UserButton } from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
@@ -65,10 +67,22 @@ function UserMenu() {
       >
         <UserButton.MenuItems>
           {isAdminAndMember && (
-            <UserButton.Link
+            <UserButton.Action
               label="Billing"
               labelIcon={<Receipt size={14} />}
-              href="/api/stripe/dashboard"
+              onClick={async () => {
+                const res = await callServerPromise(
+                  api({
+                    url: `platform/stripe/dashboard?redirect_url=${encodeURIComponent(
+                      window.location.href,
+                    )}`,
+                  }),
+                  {
+                    loadingText: "Redirecting to Stripe...",
+                  },
+                );
+                window.open(res.url, "_blank");
+              }}
             />
           )}
           {/* 

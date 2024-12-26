@@ -1,5 +1,7 @@
 // import { useWorkflowStore } from "@/repo/components/ui/custom/workspace/Workspace";
 
+import { useWorkflowStore } from "./Workspace";
+
 export function reloadIframe() {
   const iframe = document.getElementById(
     "workspace-iframe",
@@ -33,8 +35,8 @@ export function sendInetrnalEventToCD(data?: any) {
 }
 
 export function sendWorkflow(workflow_json: any) {
-  // const state = useWorkflowStore.getState();
-  // state.setHasChanged(false);
-  // state.setWorkflow(workflow_json);
+  const state = useWorkflowStore.getState();
   sendEventToCD("graph_load", workflow_json);
+  state.setWorkflow(workflow_json);
+  state.setHasChanged(false);
 }

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import {
   CheckCircle,
   Download,
@@ -878,9 +878,11 @@ export function ModelListView(props: {
     setFilter(debouncedInputValue);
   }, [debouncedInputValue, setFilter]);
 
-  const ctx = useCurrentPlan();
+  const { data: ctx } = useSuspenseQuery<any>({
+    queryKey: ["platform", "plan"],
+  });
 
-  if (!ctx) return null;
+  // if (!ctx) return null;
 
   return (
     <div className={cn("relative flex h-full flex-col gap-2", props.className)}>
@@ -937,9 +939,9 @@ export function ModelListView(props: {
           ))}
         </div>
       </>
-      <ScrollArea className="h-full pr-2">
+      <div className="h-full overflow-y-auto pr-2 scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent">
         <ul className="space-y-1">{props.children}</ul>
-      </ScrollArea>
+      </div>
 
       {!ctx.features.priavteModels && (
         <div className="absolute top-0 left-0 z-50 flex h-full w-full items-center justify-center bg-white/60 text-center text-muted-foreground text-sm">
