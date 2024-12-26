@@ -20,6 +20,7 @@ import {
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { mutate } from "swr";
 import { useDebounce } from "use-debounce";
 import { z } from "zod";
@@ -75,78 +76,6 @@ export type APIKey = {
   updated_at: Date;
 };
 
-export const columns: ColumnDef<APIKey>[] = [
-  {
-    accessorKey: "name",
-    header: ({ column }) => {
-      return (
-        <button type="button" className="flex items-center ">
-          Name
-        </button>
-      );
-    },
-    cell: ({ row }) => {
-      return <span className="ml-3">{row.getValue("name")}</span>;
-    },
-    enableSorting: false,
-  },
-  {
-    accessorKey: "endpoint",
-    header: () => <div className="text-left">Key</div>,
-    cell: ({ row }) => {
-      return <div className="text-left font-medium">{row.original.key}</div>;
-    },
-  },
-  {
-    accessorKey: "date",
-    enableSorting: false,
-    header: ({ column }) => {
-      return (
-        <button type="button" className="flex w-full items-center justify-end ">
-          Update Date
-        </button>
-      );
-    },
-    cell: ({ row }) => (
-      <div className="text-right capitalize">
-        {getRelativeTime(row.original.updated_at)}
-      </div>
-    ),
-  },
-
-  {
-    id: "actions",
-    enableHiding: false,
-    cell: ({ row }) => {
-      const workflow = row.original;
-      // const key = usePaginationMutateKey("api-keys");
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              className="text-destructive"
-              onClick={async () => {
-                // await callServerPromise(deleteAPIKey(workflow.id));
-                // mutate(key);
-              }}
-            >
-              Delete API Key
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-  },
-];
-
 export function APIKeyList() {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -165,6 +94,84 @@ export function APIKeyList() {
   useEffect(() => {
     refetch();
   }, [debouncedSearchValue]);
+
+  const columns = useMemo<ColumnDef<APIKey>[]>(() => {
+    return [
+      {
+        accessorKey: "name",
+        header: ({ column }) => {
+          return (
+            <button type="button" className="flex items-center ">
+              Name
+            </button>
+          );
+        },
+        cell: ({ row }) => {
+          return <span className="ml-3">{row.getValue("name")}</span>;
+        },
+        enableSorting: false,
+      },
+      {
+        accessorKey: "endpoint",
+        header: () => <div className="text-left">Key</div>,
+        cell: ({ row }) => {
+          return (
+            <div className="text-left font-medium">{row.original.key}</div>
+          );
+        },
+      },
+      {
+        accessorKey: "date",
+        enableSorting: false,
+        header: ({ column }) => {
+          return (
+            <button
+              type="button"
+              className="flex w-full items-center justify-end "
+            >
+              Update Date
+            </button>
+          );
+        },
+        cell: ({ row }) => (
+          <div className="text-right capitalize">
+            {getRelativeTime(row.original.updated_at)}
+          </div>
+        ),
+      },
+
+      {
+        id: "actions",
+        enableHiding: false,
+        cell: ({ row }) => {
+          const apiKey = row.original;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={async () => {
+                    await deleteAPIKey(apiKey.id);
+                    toast.success("API Key deleted");
+                    refetch();
+                  }}
+                >
+                  Delete API Key
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ];
+  }, [refetch]);
 
   console.log(data);
   const table = useReactTable({
@@ -391,3 +398,13 @@ const formSchema = z.object({
 //   });
 //   return response;
 // }
+
+async function deleteAPIKey(id: string) {
+  const response = await api({
+    url: `platform/api-keys/${id}`,
+    init: {
+      method: "DELETE",
+    },
+  });
+  return response;
+}
