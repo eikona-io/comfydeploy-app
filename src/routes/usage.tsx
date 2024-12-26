@@ -132,12 +132,10 @@ export function UsageBreakdown() {
 
 const UsageBreakdownMemo = memo(UsageBreakdown);
 
-async function Credit() {
+function Credit() {
   const { data: userSettings, isLoading } = useSuspenseQuery<any>({
     queryKey: ["platform", "user-settings"],
   });
-
-  if (isLoading) return null;
 
   return (
     <Card className="flex flex-col gap-2 p-4">
@@ -154,7 +152,7 @@ export function DevelopmentOnly(props: { children: ReactNode }) {
   return <></>;
 }
 
-async function GPUTotalChargeCard() {
+function GPUTotalChargeCard() {
   const { data: usage } = useSuspenseQuery<any>({
     queryKey: ["platform", "usage"],
   });
@@ -364,8 +362,6 @@ function PlanTotal() {
     queryKey: ["platform", "plan"],
   });
 
-  if (!sub || !pricingPlanNameMapping) return null;
-
   return (
     <>
       {sub ? (
@@ -373,13 +369,26 @@ function PlanTotal() {
           <Card key={i} className="flex flex-col gap-2 p-4">
             <div className="flex flex-wrap justify-between gap-2">
               <Badge className="w-fit px-3 capitalize hover:underline">
-                <Link
-                  href={"/api/stripe/dashboard"}
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await callServerPromise(
+                      api({
+                        url: `platform/stripe/dashboard?redirect_url=${encodeURIComponent(
+                          window.location.href,
+                        )}`,
+                      }),
+                      {
+                        loadingText: "Redirecting to Stripe...",
+                      },
+                    );
+                    window.open(res.url, "_blank");
+                  }}
                   className="flex items-center gap-2"
                 >
                   {pricingPlanNameMapping[x]} Plan
                   <ExternalLink size={16} />
-                </Link>
+                </button>
               </Badge>
               <div className="flex gap-2">
                 {sub.plans.charges?.[i] !== undefined &&
@@ -411,7 +420,7 @@ function PlanTotal() {
   );
 }
 
-export async function InvoiceTable() {
+export function InvoiceTable() {
   const { data: invoices } = useSuspenseQuery<any>({
     queryKey: ["platform", "invoices"],
   });
@@ -465,6 +474,9 @@ export async function InvoiceTable() {
   );
 }
 
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
