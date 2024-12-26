@@ -51,7 +51,10 @@ export interface CustomNodeData {
     latest_hash?: string;
     committer?: {
       name: string;
+      email: string;
+      date: string;
     };
+    commit_url?: string;
     stargazers_count?: number;
   };
 }

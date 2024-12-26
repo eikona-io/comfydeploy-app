@@ -136,11 +136,10 @@ export function CustomNodeSetup({
                 hash: branchInfo?.commit.sha, // Optional hash
                 meta: {
                   message: branchInfo?.commit.commit.message,
-                  committer: {
-                    name: node.author,
-                  },
+                  committer: (branchInfo?.commit.commit as any).committer,
                   latest_hash: branchInfo?.commit.sha,
                   stargazers_count: branchInfo?.stargazers_count,
+                  commit_url: (branchInfo?.commit as any).html_url,
                 },
               },
             },
