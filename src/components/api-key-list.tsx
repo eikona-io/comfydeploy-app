@@ -58,7 +58,6 @@ export function APIKeyList() {
   useInfiniteScroll(parentRef, fetchNextPage, hasNextPage, isFetchingNextPage);
 
   const flatData = useMemo(() => data?.pages.flat() ?? [], [data]);
-  console.log(flatData);
 
   useEffect(() => {
     refetch();
@@ -142,7 +141,6 @@ export function APIKeyList() {
     ];
   }, [refetch]);
 
-  console.log(data);
   const table = useReactTable({
     data: flatData,
     columns,
@@ -200,7 +198,6 @@ export function APIKeyList() {
             <TableBody>
               {table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => {
-                  console.log(row.getVisibleCells());
                   return (
                     <TableRow
                       key={row.id}

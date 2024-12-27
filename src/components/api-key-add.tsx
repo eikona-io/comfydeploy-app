@@ -1,4 +1,3 @@
-import { api } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -78,7 +77,6 @@ export function ApiKeyAdd({ onKeyCreated }: ApiKeyAddProps) {
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              {/* <div className="grid grid-cols-4 items-center gap-4"> */}
               <FormField
                 control={form.control}
                 name="name"
