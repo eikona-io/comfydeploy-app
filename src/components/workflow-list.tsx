@@ -286,6 +286,7 @@ function WorkflowCard({
   });
 
   const latest_output = latest_runs?.[0]?.outputs?.[0]?.data;
+  const lastest_run_at = latest_runs?.[0]?.created_at;
   const status = latest_runs?.[0]?.status;
 
   return (
@@ -528,9 +529,11 @@ function WorkflowCard({
               {workflow.user_name || "Unknown"}
             </div>
             <div className="shrink-0 text-xs">
-              {workflow.latest_run_at
-                ? getRelativeTime(workflow.latest_run_at)
-                : getRelativeTime(workflow.updated_at)}
+              {lastest_run_at ? (
+                getRelativeTime(lastest_run_at)
+              ) : (
+                <Skeleton className="h-4 w-16" />
+              )}
             </div>
           </div>
         </div>
