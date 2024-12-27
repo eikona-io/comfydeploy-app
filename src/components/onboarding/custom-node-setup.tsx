@@ -152,18 +152,11 @@ export function CustomNodeSetup({
   };
 
   const handleRemoveNode = (node: DockerCommandStep) => {
-    if (!isCustomNodeData(node)) {
-      return;
-    }
-
-    const nodeRefLower = node.data.url.toLowerCase();
     setValidation((prev) => ({
       ...prev,
       docker_command_steps: {
         steps: prev.docker_command_steps.steps.filter(
-          (step) =>
-            isCustomNodeData(step) &&
-            step.data.url.toLowerCase() !== nodeRefLower,
+          (step) => step.id !== node.id,
         ),
       },
     }));
