@@ -39,6 +39,7 @@ import { WorkflowDropdown } from "@/components/workflow-dropdown";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { OrganizationSwitcher, UserButton } from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
@@ -265,6 +266,7 @@ export function AppSidebar() {
 
         {workflow_id && parentPath === "workflows" && (
           <>
+            <WorkflowsBreadcrumb />
             <div className="flex w-full flex-row gap-2 rounded-md border bg-gray-100 p-2">
               <WorkflowDropdown
                 workflow_id={workflow_id}
@@ -283,90 +285,95 @@ export function AppSidebar() {
         {/* </SidebarMenu> */}
       </SidebarHeader>
       <SidebarContent>
-        {/* <div id="sidebar-panel"></div> */}
+        <div id="sidebar-panel" />
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {`/${parentPath}` === item.url && (
-                    <motion.div
-                      className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+        {(!workflow_id || parentPath !== "workflows") && (
+          <>
+            <SidebarGroup>
+              <SidebarGroupLabel>Application</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {items.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {`/${parentPath}` === item.url && (
+                        <motion.div
+                          className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      <SidebarMenuButton asChild>
+                        <Link href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
 
-                  {item.url === "/workflows" && <div id="sidebar-panel" />}
-                  {item.url === "/models" && <div id="sidebar-panel-models" />}
-                  {item.url === "/machines" && (
-                    <div id="sidebar-panel-machines" />
-                  )}
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                      {item.url === "/models" && (
+                        <div id="sidebar-panel-models" />
+                      )}
+                      {item.url === "/machines" && (
+                        <div id="sidebar-panel-machines" />
+                      )}
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Account</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {metaItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {`/${parentPath}` === item.url && (
-                    <motion.div
-                      className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                  <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Account</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {metaItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {`/${parentPath}` === item.url && (
+                        <motion.div
+                          className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      <SidebarMenuButton asChild>
+                        <Link href={item.url}>
+                          <item.icon />
+                          <span>{item.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Links</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {links.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a href={item.url} target="_blank" rel="noreferrer">
-                      <item.icon />
-                      <span className="flex w-full flex-row items-center justify-between gap-2 pr-2">
-                        <span>{item.title}</span>
-                        <ExternalLink size={14} />
-                      </span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+            <SidebarGroup>
+              <SidebarGroupLabel>Links</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {links.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton asChild>
+                        <a href={item.url} target="_blank" rel="noreferrer">
+                          <item.icon />
+                          <span className="flex w-full flex-row items-center justify-between gap-2 pr-2">
+                            <span>{item.title}</span>
+                            <ExternalLink size={14} />
+                          </span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
       <SidebarFooter className="flex w-full flex-col justify-center gap-2">
         {workflow_id && parentPath === "workflows" && isAdminAndMember && (

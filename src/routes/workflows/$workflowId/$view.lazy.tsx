@@ -4,8 +4,26 @@ import { LoadingWrapper } from "@/components/loading-wrapper";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { SharePageComponent } from "@/components/run/SharePageComponent";
 import { SessionItem } from "@/components/sessions/SessionItem";
+import {
+  Breadcrumb,
+  BreadcrumbEllipsis,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Portal } from "@/components/ui/custom/portal";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
@@ -27,11 +45,12 @@ import {
 } from "@/lib/getInputsFromWorkflow";
 import { cn } from "@/lib/utils";
 import {
+  Link,
   createLazyFileRoute,
   notFound,
   useRouter,
 } from "@tanstack/react-router";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 
@@ -141,62 +160,68 @@ function WorkflowPageComponent() {
   return (
     <div className="relative flex h-full w-full flex-col">
       <Portal targetId="sidebar-panel" trigger={isMobileSidebarOpen}>
-        <SidebarMenuSub>
-          {tabs.map((tab) => (
-            <SidebarMenuSubItem key={tab}>
-              <SidebarMenuSubButton
-                onClick={() => {
-                  router.navigate({
-                    to: "/workflows/$workflowId/$view",
-                    params: { workflowId, view: tab },
-                  });
-                }}
-                className={cn(
-                  currentView === tab && "bg-gray-200 text-gray-900",
-                  "transition-colors",
-                )}
-                asChild
-                // role="button"
-              >
-                <button className="w-full capitalize" type="button">
-                  {tab}
-                </button>
-              </SidebarMenuSubButton>
+        <AnimatePresence>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+          >
+            <SidebarMenu className="px-2">
+              {tabs.map((tab) => (
+                <SidebarMenuItem key={tab}>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      router.navigate({
+                        to: "/workflows/$workflowId/$view",
+                        params: { workflowId, view: tab },
+                      });
+                    }}
+                    className={cn(
+                      currentView === tab && "bg-gray-200 text-gray-900",
+                      "transition-colors",
+                    )}
+                    asChild
+                    // role="button"
+                  >
+                    <button className="w-full capitalize" type="button">
+                      {tab}
+                    </button>
+                  </SidebarMenuButton>
 
-              {tab === "workspace" && sessions && sessions.length > 0 && (
-                <SidebarMenuSub>
-                  {sessions?.map((session, index) => (
-                    <SidebarMenuSubItem key={session.id}>
-                      <SidebarMenuSubButton className="w-44">
-                        <SessionItem
-                          key={session.id}
-                          session={session}
-                          index={index}
-                          isActive={sessionId === session.session_id}
-                          onSelect={(selectedSessionId) => {
-                            setSessionId(selectedSessionId);
-                            // setView("workspace"); // Switch to workspace view
-                            // setActiveTabIndex(tabs.indexOf("workspace")); // Update active tab
-                            router.navigate({
-                              to: "/workflows/$workflowId/$view",
-                              params: { workflowId, view: "workspace" },
-                            });
-                          }}
-                          onDelete={async (sessionIdToDelete) => {
-                            setSessionId(null);
-                            await deleteSession.mutateAsync({
-                              sessionId: sessionIdToDelete,
-                            });
-                          }}
-                        />
-                      </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                  ))}
-                </SidebarMenuSub>
-              )}
+                  {tab === "workspace" && sessions && sessions.length > 0 && (
+                    <SidebarMenuSub>
+                      {sessions?.map((session, index) => (
+                        <SidebarMenuSubItem key={session.id}>
+                          <SidebarMenuSubButton className="w-44">
+                            <SessionItem
+                              key={session.id}
+                              session={session}
+                              index={index}
+                              isActive={sessionId === session.session_id}
+                              onSelect={(selectedSessionId) => {
+                                setSessionId(selectedSessionId);
+                                // setView("workspace"); // Switch to workspace view
+                                // setActiveTabIndex(tabs.indexOf("workspace")); // Update active tab
+                                router.navigate({
+                                  to: "/workflows/$workflowId/$view",
+                                  params: { workflowId, view: "workspace" },
+                                });
+                              }}
+                              onDelete={async (sessionIdToDelete) => {
+                                setSessionId(null);
+                                await deleteSession.mutateAsync({
+                                  sessionId: sessionIdToDelete,
+                                });
+                              }}
+                            />
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  )}
 
-              {/* TODO: Add share options */}
-              {/* {tab === "playground" && isAdminAndMember && (
+                  {/* TODO: Add share options */}
+                  {/* {tab === "playground" && isAdminAndMember && (
                 <DropdownMenu>
                   {dialog}
                   {privateDialog}
@@ -213,14 +238,18 @@ function WorkflowPageComponent() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               )} */}
-            </SidebarMenuSubItem>
-          ))}
-        </SidebarMenuSub>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </motion.div>
+        </AnimatePresence>
       </Portal>
       {mountedViews.has("workspace") ? (
         <div
           className="h-full w-full"
-          style={{ display: currentView === "workspace" ? "block" : "none" }}
+          style={{
+            display: currentView === "workspace" ? "block" : "none",
+          }}
         >
           <WorkspaceClientWrapper workflow_id={workflowId} />
         </div>
@@ -245,5 +274,33 @@ function RequestPage() {
         </RealtimeWorkflowProvider>
       </motion.div>
     </>
+  );
+}
+
+export function WorkflowsBreadcrumb() {
+  return (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <Link href="/">Home</Link>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="flex items-center gap-1">
+              <span>Workflows</span>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem>
+                <Link href="/machines">Machines</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <Link href="/storage">Storage</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
   );
 }
