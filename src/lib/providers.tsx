@@ -60,7 +60,7 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
   bootstrap: bootstrapData,
 });
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: (count: number, error: Error) => {

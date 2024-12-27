@@ -1,39 +1,49 @@
 import { api } from "@/lib/api";
+import { queryClient } from "@/lib/providers";
 import { QueryClient, useQueries, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 
-const githubQueryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 60, // 1 hour
-      gcTime: 1000 * 60 * 60 * 24, // 24 hours
-      retry: 2,
-    },
-  },
-});
+// const githubQueryClient = new QueryClient({
+//   defaultOptions: {
+//     queries: {
+//       staleTime: 1000 * 60 * 60, // 1 hour
+//       gcTime: 1000 * 60 * 60 * 24, // 24 hours
+//       retry: 2,
+//     },
+//   },
+// });
 
-function fetchBranchInfo(gitUrl: string) {
-  return api({
-    url: "branch-info",
-    params: { git_url: gitUrl },
-  });
-}
+// function fetchBranchInfo(gitUrl: string) {
+//   return api({
+//     url: "branch-info",
+//     params: { git_url: gitUrl },
+//   });
+// }
 
 // Helper function for non-hook usage with the dedicated client
 export async function getBranchInfo(gitUrl: string) {
-  return githubQueryClient.fetchQuery({
-    queryKey: ["branch-info", gitUrl],
-    queryFn: () => fetchBranchInfo(gitUrl),
+  return queryClient.fetchQuery({
+    queryKey: ["branch-info"],
+    queryKeyHashFn: (queryKey) => [...queryKey, gitUrl].toString(),
+    meta: {
+      params: { git_url: gitUrl },
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+    retry: 2,
   });
 }
 
 // Hook version
 export function useGithubBranchInfo(gitUrl: string) {
   return useQuery({
-    queryKey: ["branch-info", gitUrl],
-    queryFn: () => fetchBranchInfo(gitUrl),
+    queryKey: ["branch-info"],
+    queryKeyHashFn: (queryKey) => [...queryKey, gitUrl].toString(),
+    meta: {
+      params: { git_url: gitUrl },
+    },
     staleTime: 1000 * 60 * 60, // 1 hour
     gcTime: 1000 * 60 * 60 * 24, // 24 hours
     retry: 2,
