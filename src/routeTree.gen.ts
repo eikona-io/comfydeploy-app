@@ -13,12 +13,12 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as UsageImport } from './routes/usage'
 import { Route as StorageImport } from './routes/storage'
+import { Route as SettingsImport } from './routes/settings'
 import { Route as PricingImport } from './routes/pricing'
+import { Route as ApiKeysImport } from './routes/api-keys'
 import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowsIndexImport } from './routes/workflows/index'
-import { Route as SettingsIndexImport } from './routes/settings/index'
 import { Route as MachinesIndexImport } from './routes/machines/index'
-import { Route as ApiKeysIndexImport } from './routes/api-keys/index'
 import { Route as MachinesMachineIdImport } from './routes/machines/$machineId'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
 import { Route as AuthSignInImport } from './routes/auth/sign-in'
@@ -38,9 +38,21 @@ const StorageRoute = StorageImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const SettingsRoute = SettingsImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const PricingRoute = PricingImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ApiKeysRoute = ApiKeysImport.update({
+  id: '/api-keys',
+  path: '/api-keys',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -58,12 +70,6 @@ const WorkflowsIndexRoute = WorkflowsIndexImport.update({
   import('./routes/workflows/index.lazy').then((d) => d.Route),
 )
 
-const SettingsIndexRoute = SettingsIndexImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const MachinesIndexRoute = MachinesIndexImport.update({
   id: '/machines/',
   path: '/machines/',
@@ -71,12 +77,6 @@ const MachinesIndexRoute = MachinesIndexImport.update({
 } as any).lazy(() =>
   import('./routes/machines/index.lazy').then((d) => d.Route),
 )
-
-const ApiKeysIndexRoute = ApiKeysIndexImport.update({
-  id: '/api-keys/',
-  path: '/api-keys/',
-  getParentRoute: () => rootRoute,
-} as any)
 
 const MachinesMachineIdRoute = MachinesMachineIdImport.update({
   id: '/machines/$machineId',
@@ -115,11 +115,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
+    '/api-keys': {
+      id: '/api-keys'
+      path: '/api-keys'
+      fullPath: '/api-keys'
+      preLoaderRoute: typeof ApiKeysImport
+      parentRoute: typeof rootRoute
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
       parentRoute: typeof rootRoute
     }
     '/storage': {
@@ -157,25 +171,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MachinesMachineIdImport
       parentRoute: typeof rootRoute
     }
-    '/api-keys/': {
-      id: '/api-keys/'
-      path: '/api-keys'
-      fullPath: '/api-keys'
-      preLoaderRoute: typeof ApiKeysIndexImport
-      parentRoute: typeof rootRoute
-    }
     '/machines/': {
       id: '/machines/'
       path: '/machines'
       fullPath: '/machines'
       preLoaderRoute: typeof MachinesIndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/settings/': {
-      id: '/settings/'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsIndexImport
       parentRoute: typeof rootRoute
     }
     '/workflows/': {
@@ -199,30 +199,30 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api-keys': typeof ApiKeysRoute
   '/pricing': typeof PricingRoute
+  '/settings': typeof SettingsRoute
   '/storage': typeof StorageRoute
   '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
-  '/api-keys': typeof ApiKeysIndexRoute
   '/machines': typeof MachinesIndexRoute
-  '/settings': typeof SettingsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api-keys': typeof ApiKeysRoute
   '/pricing': typeof PricingRoute
+  '/settings': typeof SettingsRoute
   '/storage': typeof StorageRoute
   '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
-  '/api-keys': typeof ApiKeysIndexRoute
   '/machines': typeof MachinesIndexRoute
-  '/settings': typeof SettingsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
@@ -230,15 +230,15 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/api-keys': typeof ApiKeysRoute
   '/pricing': typeof PricingRoute
+  '/settings': typeof SettingsRoute
   '/storage': typeof StorageRoute
   '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
-  '/api-keys/': typeof ApiKeysIndexRoute
   '/machines/': typeof MachinesIndexRoute
-  '/settings/': typeof SettingsIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
 }
@@ -247,43 +247,43 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/api-keys'
     | '/pricing'
+    | '/settings'
     | '/storage'
     | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
-    | '/api-keys'
     | '/machines'
-    | '/settings'
     | '/workflows'
     | '/workflows/$workflowId/$view'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/api-keys'
     | '/pricing'
+    | '/settings'
     | '/storage'
     | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
-    | '/api-keys'
     | '/machines'
-    | '/settings'
     | '/workflows'
     | '/workflows/$workflowId/$view'
   id:
     | '__root__'
     | '/'
+    | '/api-keys'
     | '/pricing'
+    | '/settings'
     | '/storage'
     | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
     | '/machines/$machineId'
-    | '/api-keys/'
     | '/machines/'
-    | '/settings/'
     | '/workflows/'
     | '/workflows/$workflowId/$view'
   fileRoutesById: FileRoutesById
@@ -291,30 +291,30 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiKeysRoute: typeof ApiKeysRoute
   PricingRoute: typeof PricingRoute
+  SettingsRoute: typeof SettingsRoute
   StorageRoute: typeof StorageRoute
   UsageRoute: typeof UsageRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
   MachinesMachineIdRoute: typeof MachinesMachineIdRoute
-  ApiKeysIndexRoute: typeof ApiKeysIndexRoute
   MachinesIndexRoute: typeof MachinesIndexRoute
-  SettingsIndexRoute: typeof SettingsIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiKeysRoute: ApiKeysRoute,
   PricingRoute: PricingRoute,
+  SettingsRoute: SettingsRoute,
   StorageRoute: StorageRoute,
   UsageRoute: UsageRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
   MachinesMachineIdRoute: MachinesMachineIdRoute,
-  ApiKeysIndexRoute: ApiKeysIndexRoute,
   MachinesIndexRoute: MachinesIndexRoute,
-  SettingsIndexRoute: SettingsIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
 }
@@ -330,15 +330,15 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/api-keys",
         "/pricing",
+        "/settings",
         "/storage",
         "/usage",
         "/auth/sign-in",
         "/auth/sign-up",
         "/machines/$machineId",
-        "/api-keys/",
         "/machines/",
-        "/settings/",
         "/workflows/",
         "/workflows/$workflowId/$view"
       ]
@@ -346,8 +346,14 @@ export const routeTree = rootRoute
     "/": {
       "filePath": "index.tsx"
     },
+    "/api-keys": {
+      "filePath": "api-keys.tsx"
+    },
     "/pricing": {
       "filePath": "pricing.tsx"
+    },
+    "/settings": {
+      "filePath": "settings.tsx"
     },
     "/storage": {
       "filePath": "storage.tsx"
@@ -364,14 +370,8 @@ export const routeTree = rootRoute
     "/machines/$machineId": {
       "filePath": "machines/$machineId.tsx"
     },
-    "/api-keys/": {
-      "filePath": "api-keys/index.tsx"
-    },
     "/machines/": {
       "filePath": "machines/index.tsx"
-    },
-    "/settings/": {
-      "filePath": "settings/index.tsx"
     },
     "/workflows/": {
       "filePath": "workflows/index.tsx"
