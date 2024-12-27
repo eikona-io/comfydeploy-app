@@ -171,7 +171,7 @@ export function APIKeyList() {
             className="max-w-sm"
           />
           <div className="ml-auto flex gap-2">
-            <ApiKeyAdd />
+            <ApiKeyAdd onKeyCreated={() => refetch()} />
           </div>
         </div>
         <ScrollArea

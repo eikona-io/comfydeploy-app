@@ -30,7 +30,11 @@ const formSchema = z.object({
   name: z.string().min(1),
 });
 
-export function ApiKeyAdd() {
+type ApiKeyAddProps = {
+  onKeyCreated?: (key: string) => void;
+};
+
+export function ApiKeyAdd({ onKeyCreated }: ApiKeyAddProps) {
   const [open, setOpen] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,9 +66,9 @@ export function ApiKeyAdd() {
             onSubmit={form.handleSubmit(async (data) => {
               const response = await addNewAPIKey(data.name);
               setAPIKey(response.key);
-              // if (apiKey) setAPIKey(apiKey);
-              // mutate(key);
-              // setOpen(false);
+              if (onKeyCreated) {
+                onKeyCreated(response.key);
+              }
             })}
           >
             <DialogHeader>
