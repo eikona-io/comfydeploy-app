@@ -1,4 +1,4 @@
-import { useBranchInfo } from "@/hooks/use-github-branch-info";
+import { getBranchInfo, useBranchInfo } from "@/hooks/use-github-branch-info";
 import { useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { DependencyGraphType } from "comfyui-json";
@@ -97,14 +97,6 @@ export function useCustomNodeSelector({
     return selectedNodes.map((node) => node.reference);
   }, [selectedNodes, submit]);
 
-  const {
-    data: branchInfos,
-    isLoading: isBranchInfoLoading,
-    error,
-  } = useBranchInfo<string[]>({
-    gitUrl: selectedNodesUrl,
-  });
-
   const rowVirtualizer = useVirtualizer({
     count: filteredNodes.length,
     getScrollElement: () => parentRef,
@@ -142,56 +134,63 @@ export function useCustomNodeSelector({
     });
   };
 
+  const [isUpdating, setIsUpdating] = useState(false);
+
   const handleAddSelectedNodes = async () => {
-    const newNodes = selectedNodes.reduce((acc, node, index) => {
-      // If node already exists in customNodeList, keep its existing hash
-      if (customNodeList[node.title]) {
+    setIsUpdating(true);
+    try {
+      const newNodes = await selectedNodes.reduce(async (promise, node) => {
+        const acc = await promise;
+
+        if (customNodeList[node.title]) {
+          return {
+            ...acc,
+            [node.title]: customNodeList[node.title],
+          };
+        }
+
+        const branchInfo = await getBranchInfo(node.reference);
+        if (!branchInfo) return acc;
+
+        const value: z.infer<typeof DependencyGraphType>["custom_nodes"][0] = {
+          name: node.title,
+          hash: branchInfo.commit.sha,
+          url: node.reference,
+          files: node.files,
+          install_type: node.install_type,
+        };
+
+        (value as any).meta = {
+          message: branchInfo.commit.commit.message,
+          committer: (branchInfo.commit.commit as any).committer,
+          commit_url: (branchInfo.commit as any).html_url,
+        };
+
+        if (node.pip) value.pip = node.pip;
+
         return {
           ...acc,
-          [node.title]: customNodeList[node.title],
+          [node.title]: value,
         };
+      }, Promise.resolve(customNodeList));
+
+      const updatedNodes = { ...customNodeList, ...newNodes } as Record<
+        string,
+        z.infer<typeof DependencyGraphType>["custom_nodes"][0]
+      >;
+
+      // Handle deletion of nodes
+      for (const nodeTitle of Object.keys(customNodeList)) {
+        if (!selectedNodes.some((node) => node.title === nodeTitle)) {
+          delete updatedNodes[nodeTitle];
+        }
       }
 
-      // For new nodes, get branch info
-      const branchInfo = branchInfos?.[index];
-      if (!branchInfo) return acc;
-
-      const value: z.infer<typeof DependencyGraphType>["custom_nodes"][0] = {
-        name: node.title,
-        hash: branchInfo.commit.sha,
-        url: node.reference,
-        files: node.files,
-        install_type: node.install_type,
-      };
-
-      (value as any).meta = {
-        message: branchInfo.commit.commit.message,
-        committer: (branchInfo.commit.commit as any).committer,
-        commit_url: (branchInfo.commit as any).html_url,
-      };
-
-      if (node.pip) value.pip = node.pip;
-
-      return {
-        ...acc,
-        [node.title]: value,
-      };
-    }, customNodeList);
-
-    const updatedNodes = { ...customNodeList, ...newNodes } as Record<
-      string,
-      z.infer<typeof DependencyGraphType>["custom_nodes"][0]
-    >;
-
-    // Handle deletion of nodes
-    for (const nodeTitle of Object.keys(customNodeList)) {
-      if (!selectedNodes.some((node) => node.title === nodeTitle)) {
-        delete updatedNodes[nodeTitle];
-      }
+      onEdit(updatedNodes);
+    } finally {
+      setIsUpdating(false);
+      setSubmit(false);
     }
-
-    onEdit(updatedNodes);
-    setSubmit(false);
   };
 
   return {
@@ -263,9 +262,11 @@ export function useCustomNodeSelector({
             setSubmit(true);
             handleAddSelectedNodes();
           }}
-          disabled={selectedNodes.length === 0 || isBranchInfoLoading}
+          disabled={selectedNodes.length === 0 || isUpdating}
         >
-          Add Selected Nodes ({selectedNodes.length})
+          {isUpdating
+            ? "Updating..."
+            : `Add Selected Nodes (${selectedNodes.length})`}
         </Button>
       </div>
     ),
