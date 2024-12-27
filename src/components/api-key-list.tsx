@@ -1,43 +1,20 @@
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useAPIKeyList } from "@/hooks/use-user-settings";
-import { api } from "@/lib/api";
 import { getRelativeTime } from "@/lib/get-relative-time";
-import { zodResolver } from "@hookform/resolvers/zod";
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-} from "@tanstack/react-table";
+import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import {
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { mutate } from "swr";
 import { useDebounce } from "use-debounce";
-import { z } from "zod";
-import { CopyButton } from "./copy-button";
-import { LoadingIcon } from "./loading-icon";
-import { PaginationControl } from "./paginations-control";
+import { ApiKeyAdd } from "./api-key-add";
+import { deleteAPIKey } from "./api-key-api";
 import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "./ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -45,14 +22,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "./ui/form";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Skeleton } from "./ui/skeleton";
@@ -201,7 +170,9 @@ export function APIKeyList() {
             }}
             className="max-w-sm"
           />
-          <div className="ml-auto flex gap-2">{/* <AddAPIKeyDialog /> */}</div>
+          <div className="ml-auto flex gap-2">
+            <ApiKeyAdd />
+          </div>
         </div>
         <ScrollArea
           className="w-full overflow-x-auto rounded-md border"
@@ -275,136 +246,4 @@ export function APIKeyList() {
       </div>
     </div>
   );
-}
-
-const formSchema = z.object({
-  name: z.string().min(1),
-});
-
-// function AddAPIKeyDialog() {
-//   const [open, setOpen] = useState(false);
-//   const form = useForm<z.infer<typeof formSchema>>({
-//     resolver: zodResolver(formSchema),
-//     defaultValues: {
-//       name: "My API Key",
-//     },
-//   });
-
-//   const [apiKey, setAPIKey] = useState<Awaited<
-//     ReturnType<typeof addNewAPIKey>
-//   > | null>(null);
-
-//   const key = usePaginationMutateKey("api-keys");
-
-//   const handleOpenChange = (open: boolean) => {
-//     setOpen(open);
-//     if (!open) {
-//       setAPIKey(null);
-//       form.reset({ name: "My API Key" });
-//     }
-//   };
-
-//   return (
-//     <Dialog open={open} onOpenChange={handleOpenChange}>
-//       <DialogTrigger asChild>
-//         <Button variant="default" className="">
-//           Create API Key
-//         </Button>
-//       </DialogTrigger>
-//       <DialogContent className="sm:max-w-[425px]">
-//         <Form {...form}>
-//           <form
-//             onSubmit={form.handleSubmit(async (data) => {
-//               const apiKey = await callServerPromise(addNewAPIKey(data.name));
-//               if (apiKey) setAPIKey(apiKey);
-//               mutate(key);
-//               // setOpen(false);
-//             })}
-//           >
-//             <DialogHeader>
-//               <DialogTitle>Create API Key</DialogTitle>
-//               <DialogDescription>
-//                 Create API Key for workflow upload
-//               </DialogDescription>
-//             </DialogHeader>
-//             <div className="grid gap-4 py-4">
-//               {/* <div className="grid grid-cols-4 items-center gap-4"> */}
-//               <FormField
-//                 control={form.control}
-//                 name="name"
-//                 render={({ field }) => (
-//                   <FormItem>
-//                     <FormLabel>Name</FormLabel>
-//                     <FormControl>
-//                       <Input {...field} />
-//                     </FormControl>
-//                     <FormMessage />
-//                   </FormItem>
-//                 )}
-//               />
-//               {apiKey && (
-//                 <FormItem>
-//                   <FormLabel>API Key (Copy the API key now)</FormLabel>
-//                   <div className="flex gap-2">
-//                     <FormControl>
-//                       <Input readOnly value={apiKey.key} />
-//                     </FormControl>
-//                     <CopyButton text={apiKey.key} className="" />
-//                   </div>
-//                 </FormItem>
-//               )}
-//             </div>
-//             <DialogFooter>
-//               {apiKey ? (
-//                 <Button
-//                   className="flex gap-2"
-//                   type="button"
-//                   onClick={(e) => {
-//                     e.preventDefault();
-//                     setOpen(false);
-//                     setAPIKey(null);
-//                     form.reset({ name: "My API Key" });
-//                   }}
-//                 >
-//                   Close {form.formState.isSubmitting && <LoadingIcon />}
-//                 </Button>
-//               ) : (
-//                 <Button
-//                   className="flex gap-2"
-//                   type="submit"
-//                   disabled={form.formState.isSubmitting}
-//                 >
-//                   Create {form.formState.isSubmitting && <LoadingIcon />}
-//                 </Button>
-//               )}
-//             </DialogFooter>
-//           </form>
-//         </Form>
-//       </DialogContent>
-//     </Dialog>
-//   );
-// }
-
-// type GetAPIKeysParams = {
-//   search?: string;
-//   limit?: number;
-//   offset?: number;
-// };
-
-// async function getAPIKeys(params: Partial<GetAPIKeysParams>) {
-//   const response = await api({
-//     url: "platform/api-keys",
-//     params,
-//   });
-//   return response;
-// }
-
-async function deleteAPIKey(id: string) {
-  const response = await api({
-    url: `platform/api-keys/${id}`,
-    init: {
-      method: "DELETE",
-    },
-  });
-  return response;
 }
