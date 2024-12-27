@@ -371,7 +371,7 @@ export function SessionCreator(props: {
         <Workspace
           nativeMode={true}
           endpoint={url}
-          workflowJson={props.workflowLatestVersion.workflowJson}
+          workflowJson={props.workflowLatestVersion.workflow}
         />
         <App endpoint={url}>
           <ModelsButton isPreview={false} />
