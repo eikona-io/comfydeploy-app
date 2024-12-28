@@ -13,6 +13,8 @@ export function UserSettings() {
   const DEFAULT_MAX_SPEND_LIMIT = sub?.plans ? 1000 : 5;
   const { data: userSettings } = useUserSettings();
 
+  const enableStorage = userSettings?.enable_custom_output_bucket;
+
   return (
     <div className={cn("mx-auto max-w-lg py-10")}>
       {!sub?.plans && (
@@ -122,9 +124,7 @@ export function UserSettings() {
               return (
                 <div
                   className={
-                    sub?.sub?.plan !== "enterprise"
-                      ? "pointer-events-none opacity-50"
-                      : ""
+                    !enableStorage ? "pointer-events-none opacity-50" : ""
                   }
                 >
                   {props.children}
@@ -173,9 +173,7 @@ export function UserSettings() {
               return (
                 <div
                   className={
-                    sub?.sub?.plan !== "enterprise"
-                      ? "pointer-events-none opacity-50"
-                      : ""
+                    !enableStorage ? "pointer-events-none opacity-50" : ""
                   }
                 >
                   {props.children}
