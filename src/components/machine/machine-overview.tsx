@@ -45,17 +45,13 @@ import {
   FileClock,
   GitBranch,
   HardDrive,
-  Info,
   Layers,
   Library,
   LineChart,
-  ListRestart,
   Loader2,
   MemoryStick,
   Pause,
-  Pencil,
   RefreshCw,
-  Save,
   Table as TableIcon,
   Thermometer,
   Ticket,
@@ -68,6 +64,7 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
+import { BuildStepsUI } from "@/components/machine/machine-build-log";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { toast } from "sonner";
@@ -1114,12 +1111,16 @@ function MachineBuildLog({ machine }: { machine: any }) {
         <CardDescription>Machine build logs</CardDescription>
       </CardHeader>
       <CardContent>
-        {/* {machine.build_log && (
-          <MemoizedStepsUI
+        {machine.build_log ? (
+          <BuildStepsUI
             logs={JSON.parse(machine.build_log ?? "")}
             machine={machine}
           />
-        )} */}
+        ) : (
+          <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+            No logs
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -33,7 +33,7 @@ export default function MachinePage({
   });
 
   useEffect(() => {
-    if (machine?.status === "building" && view !== "logs") {
+    if (machine?.status === "building" && view === "overview") {
       navigate({
         to: "/machines/$machineId",
         params: { machineId: params.machine_id },
