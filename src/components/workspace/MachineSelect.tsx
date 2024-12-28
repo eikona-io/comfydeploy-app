@@ -23,6 +23,7 @@ import { ChevronDown, ExternalLink, Search, Settings } from "lucide-react";
 import * as React from "react";
 import { useDebounce } from "use-debounce";
 import { VirtualizedInfiniteList } from "../virtualized-infinite-list";
+import { MachineBuildSettingsDialog } from "./MachineBuildSettingsDialog";
 // import { MachineBuildSettingsDialog } from "./MachineBuildSettingsDialog";
 
 export function MachineSelect({
@@ -126,7 +127,7 @@ export function MachineSelect({
                   onSelect={async (value) => {
                     await callServerPromise(
                       api({
-                        url: `/workflows/${workflow_id}`,
+                        url: `workflow/${workflow_id}`,
                         init: {
                           method: "PATCH",
                           body: JSON.stringify({
@@ -148,12 +149,11 @@ export function MachineSelect({
       </div>
       <Separator orientation="vertical" className="z-10 h-[40px] flex-none" />
       {value ? (
-        // <MachineBuildSettingsDialog
-        //   machine={value}
-        //   buttonVariant={"ghost"}
-        //   className="flex-none border-none bg-transparent"
-        // />
-        <></>
+        <MachineBuildSettingsDialog
+          machineId={value.id}
+          buttonVariant={"ghost"}
+          className="flex-none border-none bg-transparent"
+        />
       ) : (
         <Button
           variant={"ghost"}
