@@ -70,11 +70,10 @@ export function LiveStatus({
       if (run.modal_function_call_id) {
         try {
           const res = await api({
-            url: "machine/modal/cancel-function-serverless",
+            url: `run/${run.id}/cancel`,
             init: {
               method: "POST",
               body: JSON.stringify({
-                run_id: run.id,
                 function_id: run.modal_function_call_id,
               }),
             },
