@@ -10,6 +10,7 @@ import {
 } from "@/components/workspace/Workspace";
 import { sendWorkflow } from "@/components/workspace/sendEventToCD";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Diff, RefreshCcw, Save } from "lucide-react";
 import { use, useState } from "react";
@@ -19,9 +20,15 @@ import { WorkflowDiff } from "./WorkflowDiff";
 
 type WorkspaceStatusBarProps = {
   endpoint: string;
+  className?: string;
+  btnsClassName?: string;
 };
 
-export function WorkspaceStatusBar({ endpoint }: WorkspaceStatusBarProps) {
+export function WorkspaceStatusBar({
+  endpoint,
+  className,
+  btnsClassName,
+}: WorkspaceStatusBarProps) {
   // const { workflowId, readonly } = use(WorkspaceContext);
   const workflowId = useWorkflowIdInWorkflowPage();
   const readonly = false;
@@ -51,11 +58,11 @@ export function WorkspaceStatusBar({ endpoint }: WorkspaceStatusBarProps) {
       <AnimatePresence>
         {hasChanged && (
           <motion.div
-            initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-            animate={{ opacity: 1, height: "auto", marginBottom: 8 }}
-            exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="overflow-hidden"
+            className={cn("overflow-hidden", className)}
           >
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-yellow-100/80 px-2 py-1 text-xs">
               <div className="flex items-center gap-2">
@@ -63,7 +70,7 @@ export function WorkspaceStatusBar({ endpoint }: WorkspaceStatusBarProps) {
                 <span className="text-yellow-800">Unsaved changes</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className={cn("flex items-center gap-2", btnsClassName)}>
                 <Button
                   className="pointer-events-auto"
                   disabled={readonly}
