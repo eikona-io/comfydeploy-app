@@ -208,7 +208,11 @@ function RunRow({
   onSelect: () => void;
   setInputValues: (values: any) => void;
 }) {
-  const { data: run, isLoading } = useQuery<any>({
+  const {
+    data: run,
+    isLoading,
+    refetch,
+  } = useQuery<any>({
     queryKey: ["run", _run?.id],
     queryKeyHashFn: (queryKey) => [...queryKey, "outputs"].toString(),
   });
@@ -402,7 +406,7 @@ function RunRow({
                   </div>
                 </ScrollArea>
               </div>
-              <LiveStatus run={run} isForRunPage />
+              <LiveStatus run={run} isForRunPage refetch={refetch} />
             </div>
             {run.status === "success" && (
               <div className="absolute top-2 left-2 flex gap-1 opacity-0 transition-all group-hover:opacity-100">

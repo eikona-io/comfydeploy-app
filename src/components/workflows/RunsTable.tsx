@@ -345,6 +345,7 @@ export function RunsTableVirtualized(props: {
                       onSelect={() => {
                         setRunId(run.id);
                       }}
+                      refetch={refetch}
                     />
                   )
                 ) : hasNextPage ? (
@@ -386,10 +387,12 @@ function RunRow({
   run,
   isSelected,
   onSelect,
+  refetch,
 }: {
   run: any | null;
   isSelected: boolean;
   onSelect: () => void;
+  refetch: () => void;
 }) {
   if (!run) {
     return <LoadingRow />;
@@ -420,7 +423,7 @@ function RunRow({
           {getRelativeTime(run.created_at)}
         </span>
         <div className="col-span-4 flex items-center justify-end gap-2">
-          <LiveStatus run={run} />
+          <LiveStatus run={run} refetch={refetch} />
         </div>
       </div>
     </div>
