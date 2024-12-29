@@ -67,11 +67,10 @@ export function WorkflowCommitVersion({
 
   const getPromptWithTimeout = useCallback(
     async (timeoutMs = 5000) => {
-      const getPrompt = new Promise<any>(async (resolve, reject) => {
+      const getPrompt = new Promise<any>((resolve, reject) => {
         const eventListener = (event: any) => {
-          console.log(event.origin, endpoint, event.data);
+          // console.log(event.origin, endpoint, event.data);
           if (event.origin !== endpoint) return;
-          console.log("TRYING TO RUN THE TRY CATCH");
           try {
             const data = JSON.parse(event.data);
             if (data.type === "cd_plugin_onGetPrompt") {
@@ -81,7 +80,6 @@ export function WorkflowCommitVersion({
               resolve(data.data);
             }
           } catch (error) {
-            debugger;
             console.error("Error parsing prompt:", error);
             reject(error);
           }
@@ -116,7 +114,6 @@ export function WorkflowCommitVersion({
         if (!userId) return;
 
         try {
-          console.log("getting prompt");
           const prompt = await getPromptWithTimeout();
           console.log("prompt", prompt);
 
@@ -149,7 +146,6 @@ export function WorkflowCommitVersion({
           if (result?.version !== undefined) {
             setTimeout(() => {
               setVersion(result.version);
-              console.log("set version", result.version);
             }, 100);
           }
         } catch (error) {
