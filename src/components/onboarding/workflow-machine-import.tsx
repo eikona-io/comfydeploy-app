@@ -20,6 +20,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import {
@@ -285,10 +291,22 @@ export function WorkflowImportMachine({
           value="new"
           selected={validation.machineOption}
           label={
-            <>
-              <span className="mr-1">New Machine</span>
-              {sub?.features.machineLimited && <Lock className="h-3 w-3" />}
-            </>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger className="flex items-center gap-1">
+                  <span className="mr-1">New Machine</span>
+                  {sub?.features.machineLimited && <Lock className="h-3 w-3" />}
+                </TooltipTrigger>
+                {sub?.features.machineLimited && (
+                  <TooltipContent side="right">
+                    <p>
+                      You reached the limit of creating machines. Upgrade to
+                      create more.
+                    </p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           }
           disabled={sub?.features.machineLimited}
           content={

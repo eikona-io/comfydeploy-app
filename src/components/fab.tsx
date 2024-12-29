@@ -163,6 +163,8 @@ export function Fab(props: FinalFabProps) {
                     props.disabled?.disabled && "cursor-not-allowed opacity-80",
                   )}
                   onClick={() => {
+                    if (props.disabled?.disabled) return;
+
                     if (props.subItems) {
                       setIsSubMenuOpen(!isSubMenuOpen);
                     } else {
