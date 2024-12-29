@@ -73,7 +73,6 @@ export function App({
         className="pointer-events-none absolute bottom-0 z-10 mx-auto mb-2 flex w-full flex-col items-center gap-2 md:bottom-2"
       >
         <Card className="pointer-events-auto w-fit rounded-2xl p-1 shadow-lg">
-          <WorkspaceStatusBar endpoint={endpoint} />
           <div className="flex items-center justify-center gap-2">
             {children}
             <DropdownMenu>

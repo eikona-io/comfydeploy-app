@@ -13,6 +13,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import { Portal } from "@/components/ui/custom/portal";
 import {
   DropdownMenu,
@@ -21,7 +22,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -34,9 +41,13 @@ import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
 import { ContainersTable } from "@/components/workspace/ContainersTable";
 import { APIDocs } from "@/components/workspace/DeploymentDisplay";
+import { LogDisplay } from "@/components/workspace/LogDisplay";
 import { MachineSelect } from "@/components/workspace/MachineSelect";
 import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
+import { WorkspaceStatusBar } from "@/components/workspace/WorkspaceStatusBar";
+import { SessionCreate } from "@/components/workspace/session-create";
+import { WorkspaceSubmenuActions } from "@/components/workspace/workspace-submenu-actions";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import {
@@ -51,6 +62,7 @@ import {
   useRouter,
 } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
+import { Plus, Terminal } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 
@@ -156,6 +168,9 @@ function WorkflowPageComponent() {
   const router = useRouter();
 
   const [sessionId, setSessionId] = useQueryState("sessionId");
+  const sessionSelected = sessions?.find(
+    (session) => session.session_id === sessionId,
+  );
 
   return (
     <div className="relative flex h-full w-full flex-col">
@@ -188,11 +203,67 @@ function WorkflowPageComponent() {
                     </button>
                   </SidebarMenuButton>
 
+                  {/* Only render if the current view is workspace */}
+                  <AnimatePresence>
+                    {tab === "workspace" && currentView === "workspace" && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <WorkspaceStatusBar
+                          endpoint={
+                            sessionSelected?.tunnel_url ||
+                            process.env.COMFYUI_FRONTEND_URL
+                          }
+                          className="mt-2"
+                          btnsClassName="gap-1"
+                        />
+                        <SidebarMenu className="mt-2">
+                          <SidebarMenuItem>
+                            <div className="flex items-center gap-0.5">
+                              <SidebarMenuButton>
+                                <SessionCreate
+                                  workflowId={workflowId}
+                                  setSessionId={setSessionId}
+                                  asChild={true}
+                                >
+                                  <div className="flex items-center gap-0.5">
+                                    <Plus /> Create Session
+                                  </div>
+                                </SessionCreate>
+                              </SidebarMenuButton>
+                              {currentView === "workspace" &&
+                                tab === "workspace" &&
+                                sessionSelected && (
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 "
+                                      >
+                                        <Terminal className="mr-2 h-4 " /> Logs
+                                      </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-fit p-2">
+                                      <LogDisplay />
+                                    </PopoverContent>
+                                  </Popover>
+                                )}
+                            </div>
+                          </SidebarMenuItem>
+                        </SidebarMenu>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   {tab === "workspace" && sessions && sessions.length > 0 && (
-                    <SidebarMenuSub>
+                    <SidebarMenuSub className="mt-2 mr-0 pr-0">
                       {sessions?.map((session, index) => (
                         <SidebarMenuSubItem key={session.id}>
-                          <SidebarMenuSubButton className="w-44">
+                          <SidebarMenuSubButton>
                             <SessionItem
                               key={session.id}
                               session={session}

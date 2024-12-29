@@ -228,29 +228,10 @@ export function SessionCreator(props: {
         await listSession.refetch();
         setSessionId(response.session_id);
       } catch (e) {
-        toast.error("Failed to create session: " + e);
+        toast.error(`Failed to create session: ${e}`);
       }
     },
   });
-
-  const create = (
-    <Button
-      onClick={() =>
-        setOpen({
-          gpu: (localStorage.getItem("lastGPUSelection") ||
-            "A10G") as (typeof machineGPUOptions)[number],
-          timeout: Number.parseInt(
-            localStorage.getItem("lastTimeoutSelection") || "15",
-          ),
-        })
-      }
-      variant="outline"
-      size="lg"
-      className="flex h-[160px] w-[300px] items-center justify-center gap-2 border-dashed"
-    >
-      Create New Session <Plus className="h-4 w-4" />
-    </Button>
-  );
 
   const session = sessions?.find((session) => session.session_id === sessionId);
   const url = session?.tunnel_url;
@@ -308,24 +289,25 @@ export function SessionCreator(props: {
           workflowJson={props.workflowLatestVersion.workflow}
         />
         <App endpoint={staticUrl}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="mx-2 flex cursor-help items-center gap-1">
-                  <span className="text-gray-600 text-sm">Preview Mode</span>
-                  <Info className="h-4 w-4 text-gray-400" />
-                </div>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-xs">
-                <p>
-                  You're currently viewing a edit-only preview of this workflow.
-                  To run the workflow, you'll need to create a new ComfyUI
-                  session.
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          {/* <Popover>
+          <div className="flex w-full justify-between">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="mx-2 flex cursor-help items-center gap-1">
+                    <span className="text-gray-600 text-sm">Preview Mode</span>
+                    <Info className="h-4 w-4 text-gray-400" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs">
+                  <p>
+                    You're currently viewing a edit-only preview of this
+                    workflow. To run the workflow, you'll need to create a new
+                    ComfyUI session.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            {/* <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="default"
@@ -341,25 +323,26 @@ export function SessionCreator(props: {
               <div className="flex flex-col gap-2">{sessionUI}</div>
             </PopoverContent>
           </Popover> */}
-          <Button
-            variant="default"
-            size="sm"
-            className="flex items-center gap-1"
-            Icon={Plus}
-            iconPlacement="left"
-            onClick={() => {
-              setOpen({
-                gpu: (localStorage.getItem("lastGPUSelection") ||
-                  "A10G") as (typeof machineGPUOptions)[number],
-                timeout: Number.parseInt(
-                  localStorage.getItem("lastTimeoutSelection") || "15",
-                ),
-              });
-            }}
-          >
-            Session
-          </Button>
-          <ModelsButton isPreview={true} />
+            <Button
+              variant="default"
+              size="sm"
+              className="flex items-center gap-1"
+              Icon={Plus}
+              iconPlacement="left"
+              onClick={() => {
+                setOpen({
+                  gpu: (localStorage.getItem("lastGPUSelection") ||
+                    "A10G") as (typeof machineGPUOptions)[number],
+                  timeout: Number.parseInt(
+                    localStorage.getItem("lastTimeoutSelection") || "15",
+                  ),
+                });
+              }}
+            >
+              Session
+            </Button>
+            <ModelsButton isPreview={true} />
+          </div>
         </App>
       </>
     );
@@ -373,9 +356,6 @@ export function SessionCreator(props: {
           endpoint={url}
           workflowJson={props.workflowLatestVersion.workflow}
         />
-        <App endpoint={url}>
-          <ModelsButton isPreview={false} />
-        </App>
         {ui}
       </>
     );
