@@ -117,8 +117,8 @@ export function ComfyCommand() {
       shouldFilter={!isAnyRefetching || Boolean(isDetailPage())}
     >
       {currentPageName && (
-        <div className="mx-4 mt-4 mb-2 w-fit rounded-sm bg-gray-100 px-2 py-1 text-xs">
-          {currentPageName}
+        <div className="mx-4 mt-4 mb-2 w-fit max-w-[calc(100%-2rem)] rounded-sm bg-gray-100 px-2 py-1 text-xs">
+          <span className="block truncate">{currentPageName}</span>
         </div>
       )}
       <CommandInput
