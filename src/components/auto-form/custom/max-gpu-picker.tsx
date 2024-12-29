@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/form";
 import { Slider } from "@/components/ui/slider";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useUserSettings } from "@/hooks/use-user-settings";
 
 export default function AutoFormMaxGPUPicker({
   label,
@@ -18,6 +19,7 @@ export default function AutoFormMaxGPUPicker({
   //   const { maxGPU: maxGPUFlag } = useFeatureFlags();
 
   const sub = useCurrentPlan();
+  const { data: userSettings } = useUserSettings();
   const plan = sub?.plans?.plans.filter(
     (plan: string) => !plan.includes("ws"),
   )?.[0];
@@ -33,7 +35,10 @@ export default function AutoFormMaxGPUPicker({
     creator: { max: 10 },
   };
 
-  const maxGPU = planHierarchy[plan as keyof typeof planHierarchy]?.max || 1;
+  let maxGPU = planHierarchy[plan as keyof typeof planHierarchy]?.max || 1;
+  if (userSettings?.max_gpu) {
+    maxGPU = Math.max(maxGPU, userSettings.max_gpu);
+  }
   const minGPU = 1;
 
   return (

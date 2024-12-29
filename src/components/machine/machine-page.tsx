@@ -33,14 +33,14 @@ export default function MachinePage({
   });
 
   useEffect(() => {
-    if (machine?.status === "building" && view !== "logs") {
+    if (machine?.status === "building") {
       navigate({
         to: "/machines/$machineId",
         params: { machineId: params.machine_id },
         search: { view: "logs" },
       });
     }
-  }, [machine?.status, view, navigate, params.machine_id]);
+  }, [machine?.status, navigate, params.machine_id]);
 
   const setView = (newView: View) => {
     navigate({

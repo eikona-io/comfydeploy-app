@@ -252,7 +252,7 @@ export function CustomNodeSetup({
             ) : (
               <div
                 ref={setParentRef}
-                className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent mx-1 h-[400px] overflow-auto"
+                className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent mx-1 h-[500px] overflow-auto"
               >
                 {filteredNodes.length === 0 ? (
                   <div className="flex justify-center text-gray-500 text-sm">

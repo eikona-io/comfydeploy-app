@@ -12,19 +12,23 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { api } from "@/lib/api";
 import { getDuration } from "@/lib/get-relative-time";
 // import { cancelFunction } from "@/server/curdMachine";
 import { CircleX, Zap } from "lucide-react";
 import { type ReactNode, useCallback, useMemo } from "react";
+import { toast } from "sonner";
 
 export function LiveStatus({
   run,
   minimal = false,
   isForRunPage = false,
+  refetch,
 }: {
   run: any;
   minimal?: boolean;
   isForRunPage?: boolean;
+  refetch?: () => void;
 }) {
   const { workflow_api, workflow_inputs, run_log, ...rest } = run;
 
@@ -64,13 +68,25 @@ export function LiveStatus({
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       if (run.modal_function_call_id) {
-        // TODO: implement the api
-        // await callServerPromise(
-        //   cancelFunction(run.id, run.modal_function_call_id),
-        // );
+        try {
+          const res = await api({
+            url: `run/${run.id}/cancel`,
+            init: {
+              method: "POST",
+              body: JSON.stringify({
+                function_id: run.modal_function_call_id,
+              }),
+            },
+          });
+
+          toast.success(res.message);
+          refetch?.();
+        } catch (error: any) {
+          toast.error(`Failed to cancel: ${error.message}`);
+        }
       }
     },
-    [run.id, run.modal_function_call_id],
+    [run.id, run.modal_function_call_id, refetch],
   );
 
   if (isForRunPage) {

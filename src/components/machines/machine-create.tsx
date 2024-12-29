@@ -235,7 +235,7 @@ export function WorkflowImportNewMachineSetup({
   const scrollToNextSection = (ref: React.RefObject<HTMLDivElement | null>) => {
     setTimeout(() => {
       ref.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 100);
+    }, 250);
   };
 
   return (
@@ -328,7 +328,7 @@ export function WorkflowImportNewMachineSetup({
               >
                 <Button
                   variant="ghost"
-                  className="mt-2 w-full text-muted-foreground text-xs hover:text-primary"
+                  className="w-full text-muted-foreground text-xs hover:text-primary"
                   onClick={() => setShowAllGpu(!showAllGpu)}
                 >
                   <div className="flex items-center gap-2">
@@ -430,6 +430,8 @@ export function WorkflowImportNewMachineSetup({
             setValidation={setValidation}
           />
         </div>
+
+        <div />
       </div>
     </SnapshotImportZoneSteps>
   );
