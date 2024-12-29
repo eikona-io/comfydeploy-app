@@ -601,13 +601,13 @@ function WorkflowPartCommand({
             }}
           >
             <Box className="!h-4 !w-4 mr-2" />
-            <div className="flex flex-col leading-snug">
-              <span>{workflow.name}</span>
+            <div className="flex flex-col leading-snug flex-1 min-w-0">
+              <span className="truncate">{workflow.name}</span>
               <span className="font-mono text-[9px] text-muted-foreground">
                 {workflow.id}
               </span>
             </div>
-            <CommandShortcut className="text-2xs tracking-normal">
+            <CommandShortcut className="text-2xs tracking-normal ml-2 flex-shrink-0">
               {getRelativeTime(workflow.created_at)}
             </CommandShortcut>
           </CommandItem>
@@ -695,13 +695,13 @@ function MachinePartCommand({
             }}
           >
             <Server className="!h-4 !w-4 mr-2" />
-            <div className="flex flex-col leading-snug">
-              <span>{machine.name}</span>
+            <div className="flex flex-col leading-snug flex-1 min-w-0">
+              <span className="truncate">{machine.name}</span>
               <span className="font-mono text-[9px] text-muted-foreground">
                 {machine.id}
               </span>
             </div>
-            <CommandShortcut className="text-2xs tracking-normal">
+            <CommandShortcut className="text-2xs tracking-normal ml-2 flex-shrink-0">
               {getRelativeTime(machine.updated_at)}
             </CommandShortcut>
           </CommandItem>
