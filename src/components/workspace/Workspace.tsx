@@ -128,6 +128,10 @@ export default function Workspace({
 
   const { value: selectedVersion } = useSelectedVersion(workflowId);
 
+  const [sessionId] = useQueryState("sessionId", {
+    defaultValue: "preview",
+  });
+
   const isDraftDifferent = useMemo(() => {
     if (!selectedVersion || !currentWorkflow) return false;
 
@@ -316,7 +320,7 @@ export default function Workspace({
                 newPythonEndpoint,
               ).toString(),
               cd_token: x,
-              gpu_event_id: useGPUStore.getState().gpuEventId,
+              gpu_event_id: sessionId,
             };
             // console.log("sending workflow info", info);
             sendEventToCD("workflow_info", info);
