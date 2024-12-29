@@ -457,6 +457,11 @@ function SelectedNodeList({
   };
 
   const handleSaveCommand = () => {
+    setValidation((prev) => ({
+      ...prev,
+      isEditingHashOrAddingCommands: false,
+    }));
+
     // Skip if empty
     if (!commandText.trim()) {
       setShowNewCommand(false);
@@ -494,7 +499,13 @@ function SelectedNodeList({
             <Button
               size={"xs"}
               variant={"outline"}
-              onClick={() => setShowNewCommand(true)}
+              onClick={() => {
+                setShowNewCommand(true);
+                setValidation((prev) => ({
+                  ...prev,
+                  isEditingHashOrAddingCommands: true,
+                }));
+              }}
             >
               Commands
               <Plus size={12} className="ml-2" />
@@ -535,6 +546,10 @@ function SelectedNodeList({
                 onClick={() => {
                   setCommandText("");
                   setShowNewCommand(false);
+                  setValidation((prev) => ({
+                    ...prev,
+                    isEditingHashOrAddingCommands: false,
+                  }));
                 }}
               >
                 <X size={14} />
@@ -586,6 +601,8 @@ function SelectedNodeList({
                     handleSaveHash={handleSaveHash}
                     handleStartEdit={handleStartEdit}
                     handleRemoveNode={handleRemoveNode}
+                    setValidation={setValidation}
+                    validation={validation}
                   />
                 ))
               )}
@@ -603,6 +620,8 @@ function SortableCustomNodeCard(props: {
   handleSaveHash: (node: DockerCommandStep, value: string) => void;
   handleStartEdit: (node: DockerCommandStep) => void;
   handleRemoveNode: (node: DockerCommandStep) => void;
+  setValidation: (validation: MachineStepValidation) => void;
+  validation: MachineStepValidation;
 }) {
   const {
     attributes,
@@ -649,12 +668,16 @@ function CustomNodeCard({
   handleSaveHash,
   handleStartEdit,
   handleRemoveNode,
+  setValidation,
+  validation,
 }: {
   node: DockerCommandStep;
   editingHash: string | null;
   handleSaveHash: (node: DockerCommandStep, value: string) => void;
   handleStartEdit: (node: DockerCommandStep) => void;
   handleRemoveNode: (node: DockerCommandStep) => void;
+  setValidation: (validation: MachineStepValidation) => void;
+  validation: MachineStepValidation;
 }) {
   // Handle command type
   if (node.type === "commands") {
@@ -742,6 +765,10 @@ function CustomNodeCard({
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
                       handleSaveHash(node, e.currentTarget.value);
+                      setValidation({
+                        ...validation,
+                        isEditingHashOrAddingCommands: false,
+                      });
                     }
                   }}
                 />
@@ -789,9 +816,17 @@ function CustomNodeCard({
                   e.currentTarget.parentElement?.querySelector("input");
                 if (input) {
                   handleSaveHash(node, input.value);
+                  setValidation({
+                    ...validation,
+                    isEditingHashOrAddingCommands: false,
+                  });
                 }
               } else {
                 handleStartEdit(node);
+                setValidation({
+                  ...validation,
+                  isEditingHashOrAddingCommands: true,
+                });
               }
             }}
           >

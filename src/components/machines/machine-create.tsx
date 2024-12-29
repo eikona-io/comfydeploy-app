@@ -31,6 +31,7 @@ export interface MachineStepValidation {
   selectedComfyOption: "recommended" | "latest" | "custom";
   docker_command_steps: DockerCommandSteps;
   firstTimeSelectGPU?: boolean;
+  isEditingHashOrAddingCommands?: boolean;
 }
 
 export interface DockerCommandStep {
@@ -94,6 +95,7 @@ export function MachineCreate() {
     docker_command_steps: {
       steps: [],
     },
+    isEditingHashOrAddingCommands: false,
   });
 
   const STEPS: Step<MachineStepValidation>[] = [
@@ -102,8 +104,13 @@ export function MachineCreate() {
       title: "Create Machine",
       component: WorkflowImportNewMachineSetup,
       validate: (validation) => {
-        const { machineName, comfyUiHash, gpuType, selectedComfyOption } =
-          validation;
+        const {
+          machineName,
+          comfyUiHash,
+          gpuType,
+          selectedComfyOption,
+          isEditingHashOrAddingCommands,
+        } = validation;
 
         if (!machineName?.trim()) {
           return { isValid: false, error: "Please enter a machine name" };
@@ -118,6 +125,10 @@ export function MachineCreate() {
             isValid: false,
             error: "Please enter a ComfyUI commit hash",
           };
+        }
+
+        if (isEditingHashOrAddingCommands) {
+          return { isValid: false, error: "You have unsaved changes" };
         }
 
         return { isValid: true };
