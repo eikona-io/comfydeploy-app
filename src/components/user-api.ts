@@ -18,7 +18,7 @@ export async function updateUser(body: Partial<updateUserSettings>) {
   await api({
     url: "platform/user-settings",
     init: {
-      method: "PATCH",
+      method: "PUT",
       body: JSON.stringify(body),
     },
   });
