@@ -6,7 +6,7 @@ export async function addModel(props: {
   url: string;
 }) {
   return await api({
-    url: "/file",
+    url: "file",
     init: {
       method: "POST",
       body: JSON.stringify(props),

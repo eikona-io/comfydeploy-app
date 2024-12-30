@@ -552,7 +552,7 @@ export function ModelList(props: { apiEndpoint: string }) {
     action: async (data) => {
       return await callServerPromise(
         api({
-          url: `/file/${data.fileEntry.model.id}`,
+          url: `file/${data.fileEntry.model.id}`,
           init: {
             method: "DELETE",
           },
@@ -575,7 +575,7 @@ export function ModelList(props: { apiEndpoint: string }) {
     serverAction: async (data) => {
       return callServerPromise(
         api({
-          url: `/file/${data.fileEntry.model.id}/rename`,
+          url: `file/${data.fileEntry.model.id}/rename`,
           init: {
             method: "POST",
           },
