@@ -994,7 +994,7 @@ export function ModelList(props: { apiEndpoint: string }) {
 						}
 
 						const result = await addModel({
-							custom_path: data.customPath,
+							folder_path: data.customPath,
 							filename: data.filename,
 							url: data.url,
 						});
@@ -1073,7 +1073,7 @@ export function ModelList(props: { apiEndpoint: string }) {
 						}
 
 						const result = await addModel({
-							custom_path: data.customPath,
+							folder_path: data.customPath,
 							filename: data.filename,
 							url: data.url,
 						});
@@ -1149,7 +1149,7 @@ export function ModelList(props: { apiEndpoint: string }) {
 						}
 
 						const result = await addModel({
-							custom_path: data.customPath,
+							folder_path: data.customPath,
 							filename: data.filename,
 							url: data.url,
 						});
@@ -1228,7 +1228,7 @@ export function ModelList(props: { apiEndpoint: string }) {
 						}
 
 						const result = await addModel({
-							custom_path: data.customPath,
+							folder_path: data.customPath,
 							filename: data.filename,
 							url: data.url,
 						});
@@ -1552,7 +1552,7 @@ export function AnyModelRegistry(props: {
 							}
 
 							const result = await addModel({
-								custom_path: data.customPath,
+								folder_path: data.customPath,
 								filename: data.filename,
 								url: data.url,
 							});
