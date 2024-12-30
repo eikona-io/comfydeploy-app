@@ -19,10 +19,12 @@ import { Route as OnboardingCallImport } from './routes/onboarding-call'
 import { Route as ApiKeysImport } from './routes/api-keys'
 import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowsIndexImport } from './routes/workflows/index'
+import { Route as OrganizationProfileIndexImport } from './routes/organization-profile/index'
 import { Route as MachinesIndexImport } from './routes/machines/index'
 import { Route as MachinesMachineIdImport } from './routes/machines/$machineId'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
 import { Route as AuthSignInImport } from './routes/auth/sign-in'
+import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
 
 // Create/Update Routes
@@ -77,6 +79,12 @@ const WorkflowsIndexRoute = WorkflowsIndexImport.update({
   import('./routes/workflows/index.lazy').then((d) => d.Route),
 )
 
+const OrganizationProfileIndexRoute = OrganizationProfileIndexImport.update({
+  id: '/organization-profile/',
+  path: '/organization-profile/',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const MachinesIndexRoute = MachinesIndexImport.update({
   id: '/machines/',
   path: '/machines/',
@@ -102,6 +110,13 @@ const AuthSignInRoute = AuthSignInImport.update({
   path: '/auth/sign-in',
   getParentRoute: () => rootRoute,
 } as any)
+
+const OrganizationProfileOrganizationMembersIndexRoute =
+  OrganizationProfileOrganizationMembersIndexImport.update({
+    id: '/organization-profile/organization-members/',
+    path: '/organization-profile/organization-members/',
+    getParentRoute: () => rootRoute,
+  } as any)
 
 const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
   id: '/workflows/$workflowId/$view',
@@ -192,6 +207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MachinesIndexImport
       parentRoute: typeof rootRoute
     }
+    '/organization-profile/': {
+      id: '/organization-profile/'
+      path: '/organization-profile'
+      fullPath: '/organization-profile'
+      preLoaderRoute: typeof OrganizationProfileIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/workflows/': {
       id: '/workflows/'
       path: '/workflows'
@@ -204,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/workflows/$workflowId/$view'
       fullPath: '/workflows/$workflowId/$view'
       preLoaderRoute: typeof WorkflowsWorkflowIdViewImport
+      parentRoute: typeof rootRoute
+    }
+    '/organization-profile/organization-members/': {
+      id: '/organization-profile/organization-members/'
+      path: '/organization-profile/organization-members'
+      fullPath: '/organization-profile/organization-members'
+      preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -223,8 +252,10 @@ export interface FileRoutesByFullPath {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
   '/machines': typeof MachinesIndexRoute
+  '/organization-profile': typeof OrganizationProfileIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
+  '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -239,8 +270,10 @@ export interface FileRoutesByTo {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
   '/machines': typeof MachinesIndexRoute
+  '/organization-profile': typeof OrganizationProfileIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
+  '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 export interface FileRoutesById {
@@ -256,8 +289,10 @@ export interface FileRoutesById {
   '/auth/sign-up': typeof AuthSignUpRoute
   '/machines/$machineId': typeof MachinesMachineIdRoute
   '/machines/': typeof MachinesIndexRoute
+  '/organization-profile/': typeof OrganizationProfileIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
+  '/organization-profile/organization-members/': typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -274,8 +309,10 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/machines/$machineId'
     | '/machines'
+    | '/organization-profile'
     | '/workflows'
     | '/workflows/$workflowId/$view'
+    | '/organization-profile/organization-members'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -289,8 +326,10 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/machines/$machineId'
     | '/machines'
+    | '/organization-profile'
     | '/workflows'
     | '/workflows/$workflowId/$view'
+    | '/organization-profile/organization-members'
   id:
     | '__root__'
     | '/'
@@ -304,8 +343,10 @@ export interface FileRouteTypes {
     | '/auth/sign-up'
     | '/machines/$machineId'
     | '/machines/'
+    | '/organization-profile/'
     | '/workflows/'
     | '/workflows/$workflowId/$view'
+    | '/organization-profile/organization-members/'
   fileRoutesById: FileRoutesById
 }
 
@@ -321,8 +362,10 @@ export interface RootRouteChildren {
   AuthSignUpRoute: typeof AuthSignUpRoute
   MachinesMachineIdRoute: typeof MachinesMachineIdRoute
   MachinesIndexRoute: typeof MachinesIndexRoute
+  OrganizationProfileIndexRoute: typeof OrganizationProfileIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
+  OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -337,8 +380,11 @@ const rootRouteChildren: RootRouteChildren = {
   AuthSignUpRoute: AuthSignUpRoute,
   MachinesMachineIdRoute: MachinesMachineIdRoute,
   MachinesIndexRoute: MachinesIndexRoute,
+  OrganizationProfileIndexRoute: OrganizationProfileIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
+  OrganizationProfileOrganizationMembersIndexRoute:
+    OrganizationProfileOrganizationMembersIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -362,8 +408,10 @@ export const routeTree = rootRoute
         "/auth/sign-up",
         "/machines/$machineId",
         "/machines/",
+        "/organization-profile/",
         "/workflows/",
-        "/workflows/$workflowId/$view"
+        "/workflows/$workflowId/$view",
+        "/organization-profile/organization-members/"
       ]
     },
     "/": {
@@ -399,11 +447,17 @@ export const routeTree = rootRoute
     "/machines/": {
       "filePath": "machines/index.tsx"
     },
+    "/organization-profile/": {
+      "filePath": "organization-profile/index.tsx"
+    },
     "/workflows/": {
       "filePath": "workflows/index.tsx"
     },
     "/workflows/$workflowId/$view": {
       "filePath": "workflows/$workflowId/$view.tsx"
+    },
+    "/organization-profile/organization-members/": {
+      "filePath": "organization-profile/organization-members/index.tsx"
     }
   }
 }
