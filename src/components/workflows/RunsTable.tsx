@@ -143,7 +143,10 @@ export function useRuns(props: {
 }) {
   return useInfiniteQuery({
     queryKey: ["workflow", props.workflow_id, "runs"],
-    meta: { limit: BATCH_SIZE, params: { with_outputs: false } },
+    meta: {
+      limit: BATCH_SIZE,
+      params: { with_outputs: false, with_inputs: false },
+    },
     getNextPageParam: (lastPage, allPages) => {
       return lastPage?.length === BATCH_SIZE
         ? allPages?.length * BATCH_SIZE
