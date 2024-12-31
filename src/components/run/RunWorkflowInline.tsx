@@ -29,6 +29,7 @@ import {
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import type { z } from "zod";
+import { uploadFile } from "../files-api";
 import { publicRunStore } from "./VersionSelect";
 
 export async function parseFilesToImgURLs(
@@ -36,64 +37,15 @@ export async function parseFilesToImgURLs(
   toZip = false,
 ) {
   const processFile = async (file: File) => {
-    const getUploadURL = await callServerPromise(
-      HandleFileUpload({ fileSize: file.size, fileType: file.type }),
-    );
-    if (!getUploadURL || typeof getUploadURL === "string") {
-      throw new Error("Upload image failed");
-    }
-    if ("error" in getUploadURL) {
-      throw new Error(`Upload image failed: ${getUploadURL.error}`);
-    }
-
     const toastId = toast.loading(`Uploading ${file.name}...`);
-
-    return new Promise<string>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open("PUT", getUploadURL.uploadUrl);
-      xhr.setRequestHeader("Content-Type", file.type);
-      xhr.setRequestHeader("x-amz-acl", "public-read");
-      xhr.setRequestHeader("Content-Length", file.size.toString());
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = (event.loaded / event.total) * 100;
-          const uploadedSize = event.loaded;
-          const totalSize = event.total;
-          const elapsedTime = (Date.now() - startTime) / 1000;
-          const uploadSpeed = uploadedSize / elapsedTime;
-          const remainingSize = totalSize - uploadedSize;
-          const estimatedTime = remainingSize / uploadSpeed;
-
-          toast.loading(`Uploading ${file.name}: ${progress.toFixed(1)}%`, {
-            id: toastId,
-          });
-        }
-      };
-
-      const startTime = Date.now();
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          toast.success(`${file.name} uploaded successfully`, { id: toastId });
-          resolve(getFileDownloadUrlV2(getUploadURL.filePath));
-        } else {
-          toast.error(`Failed to upload ${file.name}: ${xhr.statusText}`, {
-            id: toastId,
-          });
-          reject(new Error(`Failed to upload file: ${xhr.statusText}`));
-        }
-      };
-
-      xhr.onerror = () => {
-        toast.error(`Network error occurred while uploading ${file.name}`, {
-          id: toastId,
-        });
-        reject(new Error("Network error occurred during file upload"));
-      };
-
-      xhr.send(file);
-    });
+    try {
+      const uploadFileResponse = await uploadFile(file);
+      toast.success(`${file.name} uploaded successfully`, { id: toastId });
+      return uploadFileResponse.file_url;
+    } catch (error) {
+      toast.error(`Failed to upload ${file.name}`, { id: toastId });
+      throw error;
+    }
   };
 
   const processValue = async (value: any): Promise<any> => {
