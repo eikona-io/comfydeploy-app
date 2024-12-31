@@ -230,7 +230,7 @@ function WorkflowPageComponent() {
                                   asChild={true}
                                 >
                                   <div className="flex items-center gap-0.5">
-                                    <Plus /> Create Session
+                                    <Plus size={16} /> Create Session
                                   </div>
                                 </SessionCreate>
                               </SidebarMenuButton>
