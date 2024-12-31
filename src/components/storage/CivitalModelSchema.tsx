@@ -58,7 +58,7 @@ export const CivitalModelSchema = z.object({
                 type: z.string().nullish(),
                 downloadUrl: z.string().nullish(),
               })
-              .nullish()
+              .nullish(),
           ),
           images: z.array(
             z.object({
@@ -77,12 +77,12 @@ export const CivitalModelSchema = z.object({
                 })
                 .nullish(),
               meta: z.any().nullish(),
-            })
+            }),
           ),
           downloadUrl: z.string(),
-        })
+        }),
       ),
-    })
+    }),
   ),
   metadata: z
     .object({

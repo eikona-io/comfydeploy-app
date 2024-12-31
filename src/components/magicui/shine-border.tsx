@@ -40,7 +40,7 @@ export function ShineBorder({
       }
       className={cn(
         "relative min-h-[60px] w-fit min-w-[300px] place-items-center rounded-[--border-radius] bg-white p-3 text-black dark:bg-black dark:text-white",
-        className
+        className,
       )}
     >
       <div

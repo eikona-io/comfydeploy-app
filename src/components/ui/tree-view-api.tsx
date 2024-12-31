@@ -7,12 +7,12 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion";
 import { FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
 import type React from "react";
 import {
-	createContext,
-	forwardRef,
-	useCallback,
-	useContext,
-	useEffect,
-	useState,
+  createContext,
+  forwardRef,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 
 type TreeViewElement = {
@@ -260,8 +260,8 @@ const Folder = forwardRef<
         >
           <div className="flex items-center gap-1">
             {expendedItems?.includes(value)
-              ? openIcon ?? <FolderOpenIcon className="h-4 w-4" />
-              : closeIcon ?? <FolderIcon className="h-4 w-4" />}
+              ? (openIcon ?? <FolderOpenIcon className="h-4 w-4" />)
+              : (closeIcon ?? <FolderIcon className="h-4 w-4" />)}
             <span>{element}</span>
           </div>
           {tail}

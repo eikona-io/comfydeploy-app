@@ -1,20 +1,20 @@
-import MachinePage from '@/components/machine/machine-page'
-import { createFileRoute } from '@tanstack/react-router'
+import MachinePage from "@/components/machine/machine-page";
+import { createFileRoute } from "@tanstack/react-router";
 
-type View = 'settings' | 'overview' | 'logs'
+type View = "settings" | "overview" | "logs";
 
-export const Route = createFileRoute('/machines/$machineId')({
+export const Route = createFileRoute("/machines/$machineId")({
   validateSearch: (search) => {
     // Define the allowed values and default
     return {
-      view: (search.view as View) ?? 'overview',
-    }
+      view: (search.view as View) ?? "overview",
+    };
   },
   component: MachineDetail,
-})
+});
 
 function MachineDetail() {
-  const { machineId } = Route.useParams()
+  const { machineId } = Route.useParams();
 
-  return <MachinePage params={{ machine_id: machineId }} />
+  return <MachinePage params={{ machine_id: machineId }} />;
 }

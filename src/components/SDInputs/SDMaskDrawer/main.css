@@ -1,7 +1,7 @@
-.canvas-container{
+.canvas-container {
   position: absolute !important;
 }
-#brush{
+#brush {
   background-color: transparent;
   outline: black dashed 1px;
   box-shadow: white 0px 0px 0px 1px;
@@ -14,4 +14,3 @@
   width: 100px;
   height: 100px;
 }
-

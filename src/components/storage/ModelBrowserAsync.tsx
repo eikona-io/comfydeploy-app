@@ -33,7 +33,10 @@ export default async function ModelBrowserAsync(props: {
       })
         .then((res) => res.json())
         .then((data) => data);
-      return { structure: contents.structure as VolFSStructure, models: contents.models };
+      return {
+        structure: contents.structure as VolFSStructure,
+        models: contents.models,
+      };
     },
   });
   await queryClient.prefetchQuery({
@@ -50,7 +53,10 @@ export default async function ModelBrowserAsync(props: {
       })
         .then((res) => res.json())
         .then((data) => data);
-      return { structure: contents.structure as VolFSStructure, models: contents.models };
+      return {
+        structure: contents.structure as VolFSStructure,
+        models: contents.models,
+      };
     },
   });
 
