@@ -764,11 +764,11 @@ function CustomNodeCard({
                   className="h-7 max-w-96 rounded-[6px] px-2 py-0 font-mono text-xs"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handleSaveHash(node, e.currentTarget.value);
                       setValidation({
                         ...validation,
                         isEditingHashOrAddingCommands: false,
                       });
+                      handleSaveHash(node, e.currentTarget.value);
                     }
                   }}
                 />
@@ -815,18 +815,18 @@ function CustomNodeCard({
                 const input =
                   e.currentTarget.parentElement?.querySelector("input");
                 if (input) {
-                  handleSaveHash(node, input.value);
                   setValidation({
                     ...validation,
                     isEditingHashOrAddingCommands: false,
                   });
+                  handleSaveHash(node, input.value);
                 }
               } else {
-                handleStartEdit(node);
                 setValidation({
                   ...validation,
                   isEditingHashOrAddingCommands: true,
                 });
+                handleStartEdit(node);
               }
             }}
           >
