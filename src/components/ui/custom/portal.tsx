@@ -28,7 +28,7 @@ export function Portal({
       timeoutId = setTimeout(() => {
         clearInterval(intervalId);
         console.warn(
-          `Element with id ${targetId} not found within timeout period.`
+          `Element with id ${targetId} not found within timeout period.`,
         );
       }, 1000);
 

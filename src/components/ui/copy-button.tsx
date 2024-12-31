@@ -15,7 +15,7 @@ export function CopyButton({
 }: {
   text: string;
   className?: string;
-  hideLabel?: boolean,
+  hideLabel?: boolean;
   children?: React.ReactNode;
   variant?: ButtonProps["variant"];
 }) {

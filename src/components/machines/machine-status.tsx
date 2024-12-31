@@ -9,7 +9,11 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
@@ -38,7 +42,7 @@ export function MachineStatus(props: {
     if (props.machine.status === "building") {
       const buildDuration = differenceInHours(
         new Date(),
-        new Date(props.machine.updated_at)
+        new Date(props.machine.updated_at),
       );
       return buildDuration >= 1;
     }
@@ -141,7 +145,7 @@ export function MachineStatus(props: {
                 }
                 className={cn(
                   "capitalize",
-                  isImportFailed && "cursor-pointer hover:opacity-80"
+                  isImportFailed && "cursor-pointer hover:opacity-80",
                 )}
                 onClick={() => {
                   if (isImportFailed) setShowImportFailedDialog(true);

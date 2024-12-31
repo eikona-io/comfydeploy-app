@@ -19,21 +19,21 @@ export const customInputNodes = {
 } as const;
 
 export type CustomInputNodesTypeMap = {
-  ComfyUIDeployExternalText: string,
-  ComfyUIDeployExternalTextAny: string,
-  ComfyUIDeployExternalTextSingleLine: string,
-  ComfyUIDeployExternalImage: string,
-  ComfyUIDeployExternalImageAlpha: string,
-  ComfyUIDeployExternalNumber: number,
-  ComfyUIDeployExternalNumberInt: number,
-  ComfyUIDeployExternalLora: string,
-  ComfyUIDeployExternalCheckpoint: string,
-  ComfyDeployWebscoketImageInput: ArrayBuffer,
-  ComfyUIDeployExternalImageBatch: string[],
-  ComfyUIDeployExternalVideo: string,
-  ComfyUIDeployExternalBoolean: boolean,
-  ComfyUIDeployExternalNumberSlider: number,
-  ComfyUIDeployExternalNumberSliderInt: number,
+  ComfyUIDeployExternalText: string;
+  ComfyUIDeployExternalTextAny: string;
+  ComfyUIDeployExternalTextSingleLine: string;
+  ComfyUIDeployExternalImage: string;
+  ComfyUIDeployExternalImageAlpha: string;
+  ComfyUIDeployExternalNumber: number;
+  ComfyUIDeployExternalNumberInt: number;
+  ComfyUIDeployExternalLora: string;
+  ComfyUIDeployExternalCheckpoint: string;
+  ComfyDeployWebscoketImageInput: ArrayBuffer;
+  ComfyUIDeployExternalImageBatch: string[];
+  ComfyUIDeployExternalVideo: string;
+  ComfyUIDeployExternalBoolean: boolean;
+  ComfyUIDeployExternalNumberSlider: number;
+  ComfyUIDeployExternalNumberSliderInt: number;
 };
 
 export type InputsType = keyof typeof customInputNodes;

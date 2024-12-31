@@ -4,28 +4,29 @@
 
 @layer base {
   :root {
-    --shiki-color-text: theme('colors.white');
-    --shiki-token-constant: theme('colors.emerald.300');
-    --shiki-token-string: theme('colors.emerald.300');
-    --shiki-token-comment: theme('colors.zinc.500');
-    --shiki-token-keyword: theme('colors.sky.300');
-    --shiki-token-parameter: theme('colors.pink.300');
-    --shiki-token-function: theme('colors.violet.300');
-    --shiki-token-string-expression: theme('colors.emerald.300');
-    --shiki-token-punctuation: theme('colors.zinc.200');
-
+    --shiki-color-text: theme("colors.white");
+    --shiki-token-constant: theme("colors.emerald.300");
+    --shiki-token-string: theme("colors.emerald.300");
+    --shiki-token-comment: theme("colors.zinc.500");
+    --shiki-token-keyword: theme("colors.sky.300");
+    --shiki-token-parameter: theme("colors.pink.300");
+    --shiki-token-function: theme("colors.violet.300");
+    --shiki-token-string-expression: theme("colors.emerald.300");
+    --shiki-token-punctuation: theme("colors.zinc.200");
 
     /* GPU Colors - matching machineGPUOptions */
-    --color-gpu-CPU: hsl(354, 65%, 45%);    /* Sophisticated red for CPU */
-    --color-gpu-T4: hsl(142, 55%, 45%);     /* Muted green for T4 */
-    --color-gpu-L4: hsl(187, 65%, 45%);     /* Ocean blue for L4 */
-    --color-gpu-A10G: hsl(230, 60%, 55%);   /* Royal blue for A10G */
-    --color-gpu-A100: hsl(270, 55%, 50%);   /* Deep purple for A100 */
+    --color-gpu-CPU: hsl(354, 65%, 45%); /* Sophisticated red for CPU */
+    --color-gpu-T4: hsl(142, 55%, 45%); /* Muted green for T4 */
+    --color-gpu-L4: hsl(187, 65%, 45%); /* Ocean blue for L4 */
+    --color-gpu-A10G: hsl(230, 60%, 55%); /* Royal blue for A10G */
+    --color-gpu-A100: hsl(270, 55%, 50%); /* Deep purple for A100 */
     --color-gpu-A100-80GB: hsl(290, 50%, 45%); /* Rich plum for A100-80GB */
-    --color-gpu-H100: hsl(320, 55%, 45%);   /* Deep rose for H100 */
+    --color-gpu-H100: hsl(320, 55%, 45%); /* Deep rose for H100 */
   }
 
-  .dolloar .tooltip-value::before { content:"$"; }
+  .dolloar .tooltip-value::before {
+    content: "$";
+  }
 
   [inert] ::-webkit-scrollbar {
     display: none;
@@ -54,7 +55,6 @@
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
     --radius: 1rem;
-
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -98,7 +98,7 @@
   }
 }
 
-.shiki>code>span {
+.shiki > code > span {
   /* text-wrap: wrap; */
   /* word-wrap: break-word; */
   /* @apply break-all ; */
@@ -109,7 +109,7 @@
   /* @apply rounded-lg p-2 overflow-x-scroll */
   /* @apply p-2 max-w-full w-full */
 }
-.vsc-controller{
+.vsc-controller {
   position: absolute;
 }
 @layer base {
@@ -122,7 +122,6 @@
 }
 
 @layer utilities {
-
   .scrollbar-stable {
     scrollbar-gutter: stable;
   }

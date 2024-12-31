@@ -40,13 +40,11 @@ export const useLogStore = create<LogStore>((set) => ({
   warningCount: 0,
   addLog: (log) =>
     set((state) => {
-      if (log.trim() === "")
-        return state;
+      if (log.trim() === "") return state;
 
       const logData = JSON.parse(log.slice(5).trim());
 
-      if (!logData.logs)
-        return state;
+      if (!logData.logs) return state;
 
       const logType = determineLogType(logData.logs);
       const logEntry: LogEntry = {
