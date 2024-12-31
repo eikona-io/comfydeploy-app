@@ -51,7 +51,8 @@ export async function parseFilesToImgURLs(
   const processValue = async (value: any): Promise<any> => {
     if (value instanceof File) {
       return processFile(value);
-    } else if (Array.isArray(value)) {
+    }
+    if (Array.isArray(value)) {
       if (toZip) {
         // Lazy load JSZip only when needed
         const JSZip = (await import("jszip")).default;
@@ -73,7 +74,8 @@ export async function parseFilesToImgURLs(
       return JSON.stringify(
         await Promise.all(value.map((item) => processValue(item))),
       );
-    } else if (value && typeof value === "object") {
+    }
+    if (value && typeof value === "object") {
       const entries = Object.entries(value);
       const processedEntries = await Promise.all(
         entries.map(async ([key, val]) => {
@@ -82,9 +84,8 @@ export async function parseFilesToImgURLs(
         }),
       );
       return Object.fromEntries(processedEntries);
-    } else {
-      return value;
     }
+    return value;
   };
 
   const newValues: Record<string, any> = {};
