@@ -4,6 +4,7 @@ import { useState } from "react";
 type ImageFallbackProps = {
   src: string;
   fallback: React.ReactNode;
+  loadingComponent?: React.ReactNode;
   className?: string;
   alt?: string;
   onError?: (e: Error) => void;
@@ -12,6 +13,7 @@ type ImageFallbackProps = {
 export function ImageFallback({
   src,
   fallback,
+  loadingComponent,
   className,
   alt,
   onError,
@@ -23,22 +25,25 @@ export function ImageFallback({
   }
 
   return (
-    <img
-      style={{
-        display: loading ? "none" : "block",
-      }}
-      src={src}
-      onError={() => {
-        if (onError) {
-          onError(new Error("Image failed to load"));
-        }
-        setError(true);
-      }}
-      onLoad={() => {
-        setLoading(false);
-      }}
-      className={cn("aspect-square w-[200px] object-contain", className)}
-      alt={alt || "image"}
-    />
+    <>
+      {loading && (loadingComponent ? loadingComponent : fallback)}
+      <img
+        style={{
+          display: loading ? "none" : "block",
+        }}
+        src={src}
+        onError={() => {
+          if (onError) {
+            onError(new Error("Image failed to load"));
+          }
+          setError(true);
+        }}
+        onLoad={() => {
+          setLoading(false);
+        }}
+        className={cn("aspect-square w-[200px] object-contain", className)}
+        alt={alt || "image"}
+      />
+    </>
   );
 }
