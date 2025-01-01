@@ -1,7 +1,7 @@
 import MachinePage from "@/components/machine/machine-page";
 import { createFileRoute } from "@tanstack/react-router";
 
-type View = "settings" | "overview" | "logs";
+type View = "settings" | "deployments" | "overview" | "logs";
 
 export const Route = createFileRoute("/machines/$machineId")({
   validateSearch: (search) => {

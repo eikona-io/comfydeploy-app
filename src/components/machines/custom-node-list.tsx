@@ -1,16 +1,16 @@
-import { ExternalLink } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { ExternalLink } from "lucide-react";
 
 export function CustomNodeList({ machine }: { machine: any }) {
   return (
     <>
       {machine.docker_command_steps?.steps?.length > 0 && (
-        <ScrollArea className="flex w-full justify-start mt-1" hideVertical>
+        <ScrollArea className="flex w-full justify-start" hideVertical>
           <span className="text-xs text-gray-400 whitespace-nowrap flex items-center">
             <>
               {machine.docker_command_steps.steps
@@ -22,6 +22,7 @@ export function CustomNodeList({ machine }: { machine: any }) {
                     href={node.data?.url ?? "#"}
                     target="_blank"
                     className="text-[11px] text-muted-foreground hover:text-primary inline-flex items-center gap-1 bg-secondary/50 px-1.5 rounded-sm mr-1"
+                    rel="noreferrer"
                   >
                     <span className="max-w-[100px] truncate inline-block">
                       {node.data?.name}
@@ -48,6 +49,7 @@ export function CustomNodeList({ machine }: { machine: any }) {
                             href={node.data?.url ?? "#"}
                             target="_blank"
                             className="text-[11px] text-muted-foreground hover:text-primary flex items-center justify-between w-full"
+                            rel="noreferrer"
                           >
                             <span className="truncate flex-1">
                               {node.data?.name}

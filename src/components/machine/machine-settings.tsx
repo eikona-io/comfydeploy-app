@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 import { memo, useState } from "react";
 import { toast } from "sonner";
 
-type View = "settings" | "overview" | "logs";
+type View = "settings" | "deployments" | "overview" | "logs";
 
 // -----------------------components-----------------------
 

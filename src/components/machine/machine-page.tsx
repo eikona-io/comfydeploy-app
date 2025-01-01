@@ -2,6 +2,7 @@ import {
   BuildStepsUI,
   MachineBuildLog,
 } from "@/components/machine/machine-build-log";
+import { MachineDeployment } from "@/components/machine/machine-deployment";
 import { MachineOverview } from "@/components/machine/machine-overview";
 import { MachineSettings } from "@/components/machine/machine-settings";
 import { Portal } from "@/components/ui/custom/portal";
@@ -16,7 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-type View = "settings" | "overview" | "logs";
+type View = "settings" | "deployments" | "overview" | "logs";
 
 export default function MachinePage({
   params,
@@ -54,7 +55,7 @@ export default function MachinePage({
     machine?.docker_command_steps === null &&
     machine?.type === "comfy-deploy-serverless";
 
-  const routes = ["Overview", "Settings", "Logs"]
+  const routes = ["Overview", "Settings", "Deployments", "Logs"]
     .filter((name) => !isDockerCommandStepsNull || name !== "Settings")
     .map((name) => ({
       name,
@@ -142,6 +143,8 @@ export default function MachinePage({
                   logs={JSON.parse(machine.build_log)}
                 />
               );
+            case "deployments":
+              return <MachineDeployment machine={machine} setView={setView} />;
           }
         })()}
       </div>

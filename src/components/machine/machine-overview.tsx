@@ -151,7 +151,7 @@ export function MachineOverview({
   setView,
 }: {
   machine: any;
-  setView: (view: "settings" | "overview" | "logs") => void;
+  setView: (view: "settings" | "deployments" | "overview" | "logs") => void;
 }) {
   const defaultLayout = [
     { i: "info", x: 0, y: 0, w: 1, h: 4, maxH: 4, minH: 4 },
