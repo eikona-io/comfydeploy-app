@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { ImageFallback } from "../image-fallback";
 
 export function RunInputs({
   run,
@@ -26,44 +27,16 @@ export function RunInputs({
           </TableHeader>
           <TableBody>
             {Object.entries(run.workflow_inputs).map(([key, data]) => {
-              let imageUrl: string | undefined;
-              try {
-                if (typeof data === "string") {
-                  if (data.startsWith("data:image/")) {
-                    imageUrl = data;
-                  } else {
-                    const url = new URL(data);
-                    if (url.pathname.endsWith(".png")) {
-                      imageUrl = data;
-                    }
-
-                    if (url.pathname.endsWith(".jpg")) {
-                      imageUrl = data;
-                    }
-
-                    if (url.pathname.endsWith(".jpeg")) {
-                      imageUrl = data;
-                    }
-                  }
-                } else if (typeof data === "boolean") {
-                  data = String(data);
-                }
-              } catch (_) {}
               return (
                 <TableRow key={key}>
                   <TableCell>{key}</TableCell>
-                  {imageUrl ? (
-                    <TableCell>
-                      <img
-                        className="aspect-square w-[200px] object-contain"
-                        src={imageUrl}
-                      />
-                    </TableCell>
-                  ) : (
-                    <TableCell>
-                      <ExpandableText text={String(data)} />
-                    </TableCell>
-                  )}
+                  <TableCell>
+                    <ImageFallback
+                      src={String(data)}
+                      alt={key}
+                      fallback={<ExpandableText text={String(data)} />}
+                    />
+                  </TableCell>
                 </TableRow>
               );
             })}
