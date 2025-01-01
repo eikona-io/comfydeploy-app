@@ -160,7 +160,6 @@ export function MachineOverview({
     { i: "workflowDeployment", x: 0, y: 2, w: 1, h: 6, maxH: 12, minH: 6 },
     { i: "containerGraph", x: 1, y: 1, w: 1, h: 7, maxH: 8, minH: 7 },
     { i: "containerTable", x: 1, y: 2, w: 2, h: 8, maxH: 16, minH: 8 },
-    { i: "buildLog", x: 0, y: 3, w: 2, h: 12, maxH: 12, minH: 12 },
   ];
 
   const [layout, setLayout] = useState(() => {
@@ -232,65 +231,7 @@ export function MachineOverview({
             <RefreshCw className="mr-2 h-4 w-4" />
             Rebuild
           </Button>
-          {/* {(process.env.NODE_ENV === "development" || showDevMode) &&
-            machine.type == "comfy-deploy-serverless" && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    window.open(
-                      "https://modal.com/comfy-deploy/main/logs/" +
-                        machine.modal_app_id,
-                      "_blank"
-                    );
-                  }}
-                >
-                  <Info size={14} className="mr-2" />
-                  Open Logs
-                </Button>
-              </>
-            )} */}
         </div>
-
-        {/* {(process.env.NODE_ENV === "development" || showDevMode) && (
-          <div className="hidden lg:flex flex-row gap-2">
-            {isEditingLayout && (
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  setIsEditingLayout(false);
-                  setLayout(defaultLayout);
-                  deleteFromLS(machine.id);
-                }}
-              >
-                <ListRestart className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
-            )}
-            <Button
-              variant={isEditingLayout ? "default" : "outline"}
-              onClick={() => {
-                if (isEditingLayout) {
-                  // Save the layout to local storage when saving
-                  saveToLS(machine.id, layout);
-                }
-                setIsEditingLayout(!isEditingLayout);
-              }}
-            >
-              {isEditingLayout ? (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </>
-              ) : (
-                <>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Layout
-                </>
-              )}
-            </Button>
-          </div>
-        )} */}
       </div>
 
       <div className="px-3 py-1">
@@ -336,12 +277,6 @@ export function MachineOverview({
           className={cn(isEditingLayout && "shake-animation")}
         >
           <MachineContainerTable machine={machine} />
-        </div>
-        <div
-          key="buildLog"
-          className={cn(isEditingLayout && "shake-animation")}
-        >
-          <MachineBuildLog machine={machine} />
         </div>
       </ResponsiveGridLayout>
     </div>
@@ -1093,34 +1028,6 @@ function MachineContainerTable({ machine }: { machine: any }) {
             </Table>
           </div>
         </ScrollArea>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MachineBuildLog({ machine }: { machine: any }) {
-  return (
-    <Card className="h-full rounded-[10px]">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between font-semibold text-xl">
-          Build Log
-          <div className="flex items-center">
-            <FileClock className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </CardTitle>
-        <CardDescription>Machine build logs</CardDescription>
-      </CardHeader>
-      <CardContent>
-        {machine.build_log ? (
-          <BuildStepsUI
-            logs={JSON.parse(machine.build_log ?? "")}
-            machine={machine}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-            No logs
-          </div>
-        )}
       </CardContent>
     </Card>
   );
