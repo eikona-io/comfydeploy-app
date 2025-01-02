@@ -1,9 +1,15 @@
 import { ClerkProvider, useAuth } from "@clerk/clerk-react";
-import { RouterProvider, createRouter } from "@tanstack/react-router";
+import {
+  RouterProvider,
+  createRouter,
+  redirect,
+  useRouter,
+} from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import "./globals.css";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
+import { useEffect } from "react";
 // Set up a Router instance
 const router = createRouter({
   routeTree,
@@ -33,14 +39,27 @@ if (!rootElement) {
 function InnerApp() {
   const auth = useAuth();
 
-  // We can use a loading state here to show a loading screen
-  if (!auth.isLoaded) {
-    return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <LoadingIcon />
-      </div>
-    );
-  }
+  // // We can use a loading state here to show a loading screen
+  // if (!auth.isLoaded) {
+  //   return (
+  //     <div className="flex h-screen w-screen items-center justify-center">
+  //       <LoadingIcon />
+  //     </div>
+  //   );
+  // }
+
+  // const router = useRouter();
+
+  // useEffect(() => {
+  //   if (auth.isLoaded) {
+  //     router.navigate({
+  //       to: "/workflows",
+  //       // search: {
+  //       // 	redirect: location.href,
+  //       // },
+  //     });
+  //   }
+  // }, [auth?.isLoaded]);
 
   return <RouterProvider router={router} context={{ auth }} />;
 }

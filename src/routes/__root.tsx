@@ -30,6 +30,10 @@ type Context = {
 export const Route = createRootRouteWithContext<Context>()({
   component: RootComponent,
   beforeLoad: ({ context, location }) => {
+    if (!context.auth?.isLoaded) {
+      return;
+    }
+
     if (
       context.auth &&
       !context.auth.isSignedIn &&
