@@ -377,7 +377,8 @@ function InstantRollback({
           <DropdownMenuItem
             disabled={
               machineVersion.id === machine.machine_version_id ||
-              machineVersion.status !== "ready"
+              machineVersion.status !== "ready" ||
+              machine.status === "building"
             }
             className="text-red-500"
             onClick={() => setRollbackAlertOpen(true)}
@@ -525,7 +526,7 @@ function DiffViewer({
   currentMachineVersion: any;
   machineVersion: any;
 }) {
-  const MachineDiff = diff(machineVersion, currentMachineVersion, {
+  const MachineDiff = diff(currentMachineVersion, machineVersion, {
     keysToSkip: [
       "version",
       "created_at",
@@ -559,11 +560,14 @@ function DiffViewer({
           currentMachineVersion.docker_command_steps?.steps,
         );
 
-        const removed = currentNodes.filter(
-          (node) => !previousNodes.includes(node),
-        );
-        const added = previousNodes.filter(
+        // REMOVED: nodes that were in the old version but are missing in the new
+        const removed = previousNodes.filter(
           (node) => !currentNodes.includes(node),
+        );
+
+        // ADDED: nodes that exist in the new version but weren’t in the old
+        const added = currentNodes.filter(
+          (node) => !previousNodes.includes(node),
         );
 
         if (removed.length || added.length) {
@@ -592,7 +596,7 @@ function DiffViewer({
 
   if (changes.length === 0) {
     return (
-      <div className="mt-4 flex items-center justify-center p-6 bg-gray-50 rounded-lg border border-gray-200">
+      <div className="mt-4 flex items-center justify-center p-6 bg-gray-50 rounded-[6px] border border-gray-200">
         <div className="text-sm text-gray-500 flex items-center gap-2">
           <CheckCircle className="h-4 w-4" />
           No significant changes detected
@@ -612,7 +616,7 @@ function DiffViewer({
         {changes.map((change, index) => (
           <div
             key={index}
-            className="bg-gray-50 rounded-lg p-4 border border-gray-200 transition-all hover:shadow-sm"
+            className="bg-gray-50 rounded-[6px] p-4 border border-gray-200 transition-all hover:shadow-sm"
           >
             {change.type === "custom-nodes" ? (
               <div className="space-y-3">

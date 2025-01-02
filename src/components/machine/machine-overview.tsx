@@ -39,6 +39,7 @@ import {
   AlertCircle,
   Box,
   CheckCircle2,
+  CircleArrowUp,
   Clock,
   Edit,
   ExternalLink,
@@ -230,6 +231,12 @@ export function MachineOverview({
             Rebuild
           </Button>
         </div>
+        {machine.machine_version_id && (
+          <div className="flex flex-row items-center gap-2 rounded-sm bg-green-500 px-3 py-2 text-green-50 text-xs">
+            <CircleArrowUp className="h-4 w-4" />
+            Current Version
+          </div>
+        )}
       </div>
 
       <div className="px-3 py-1">
