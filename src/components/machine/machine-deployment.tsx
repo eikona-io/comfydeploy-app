@@ -43,7 +43,7 @@ import { toast } from "sonner";
 
 type View = "settings" | "deployments" | "overview" | "logs";
 
-function formatExactTime(seconds: number): string {
+export function formatExactTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
@@ -52,7 +52,7 @@ function formatExactTime(seconds: number): string {
     : `${minutes}m`;
 }
 
-function formatShortDistanceToNow(date: Date): string {
+export function formatShortDistanceToNow(date: Date): string {
   const seconds = differenceInSeconds(new Date(), date);
   if (seconds < 60) return `${seconds}s ago`;
 
@@ -429,8 +429,4 @@ function InstantRollback({
       </AlertDialog>
     </>
   );
-}
-
-function MachineVersionDetails() {
-  return <div>MachineVersionDetails</div>;
 }

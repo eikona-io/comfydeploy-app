@@ -42,7 +42,6 @@ import {
   Clock,
   Edit,
   ExternalLink,
-  FileClock,
   GitBranch,
   HardDrive,
   Layers,
@@ -64,7 +63,6 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
-import { BuildStepsUI } from "@/components/machine/machine-build-log";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { toast } from "sonner";
@@ -678,8 +676,12 @@ function MachineCustomNodes({ machine }: { machine: any }) {
                       )}
                     >
                       <Link
-                        href={`${node.data.url}/commit/${node.data.hash}`}
-                        target="_blank"
+                        onClick={() => {
+                          window.open(
+                            `${node.data.url}/commit/${node.data.hash}`,
+                            "_blank",
+                          );
+                        }}
                         className="flex flex-row items-center gap-2 text-sm"
                       >
                         <span className="flex-1 truncate">
