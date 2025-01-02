@@ -17,7 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-type View = "settings" | "deployments" | "overview" | "logs";
+type View = "settings" | "deployments" | undefined;
 
 export default function MachinePage({
   params,
@@ -38,7 +38,7 @@ export default function MachinePage({
       navigate({
         to: "/machines/$machineId",
         params: { machineId: params.machine_id },
-        search: { view: "logs" },
+        search: { view: "deployments" },
       });
     }
   }, [machine?.status, navigate, params.machine_id]);
@@ -55,7 +55,7 @@ export default function MachinePage({
     machine?.docker_command_steps === null &&
     machine?.type === "comfy-deploy-serverless";
 
-  const routes = ["Overview", "Settings", "Deployments", "Logs"]
+  const routes = ["Overview", "Settings", "Deployments"]
     .filter((name) => !isDockerCommandStepsNull || name !== "Settings")
     .map((name) => ({
       name,
@@ -124,26 +124,6 @@ export default function MachinePage({
           switch (view) {
             case "settings":
               return <MachineSettings machine={machine} setView={setView} />;
-            case "logs":
-              if (machine?.status === "building") {
-                return (
-                  <MachineBuildLog
-                    machine={machine}
-                    instance_id={machine.build_machine_instance_id!}
-                    machine_id={params.machine_id}
-                    endpoint={machineEndpoint}
-                  />
-                );
-              }
-
-              if (!machine?.build_log) return <div>No logs</div>;
-
-              return (
-                <BuildStepsUI
-                  machine={machine}
-                  logs={JSON.parse(machine.build_log)}
-                />
-              );
             case "deployments":
               return <MachineDeployment machine={machine} />;
             default:

@@ -403,7 +403,7 @@ export default function WorkflowImport() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId },
-              search: { view: "logs" },
+              search: { view: "deployments" },
             });
 
             return true;

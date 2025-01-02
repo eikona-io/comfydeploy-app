@@ -1,3 +1,4 @@
+import { BuildStepsUI } from "@/components/machine/machine-build-log";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
 import {
   AlertDialog,
@@ -110,7 +111,7 @@ const UserInfoForDeployment = ({ machineVersion }: { machineVersion: any }) => {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm text-gray-500">
+      <span className="text-gray-500 text-sm">
         {formatShortDistanceToNow(new Date(machineVersion.created_at))} by{" "}
         {user.username ?? `${user.first_name} ${user.last_name}`}
       </span>
@@ -126,9 +127,9 @@ const UserInfoForDeployment = ({ machineVersion }: { machineVersion: any }) => {
 const MachineStatusBadge = ({ status }: { status: string }) => {
   return (
     <>
-      <div className="flex items-center justify-center shrink-0">
+      <div className="flex shrink-0 items-center justify-center">
         <div
-          className={`h-[9px] w-[9px] rounded-full animate-pulse ${
+          className={`h-[9px] w-[9px] animate-pulse rounded-full ${
             status === "ready"
               ? "bg-green-500"
               : status === "error"
@@ -139,7 +140,7 @@ const MachineStatusBadge = ({ status }: { status: string }) => {
           }`}
         />
       </div>
-      <span className="text-sm text-gray-600 truncate">
+      <span className="truncate text-gray-600 text-sm">
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     </>
@@ -156,9 +157,9 @@ export function MachineDeployment(props: { machine: any }) {
         {[...Array(5)].map((_, i) => (
           <div
             key={i}
-            className="border bg-white p-4 shadow-sm rounded-[8px] mb-4"
+            className="mb-4 rounded-[8px] border bg-white p-4 shadow-sm"
           >
-            <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-x-4 items-center">
+            <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] items-center gap-x-4">
               {/* ID and Version */}
               <div className="grid grid-cols-1 gap-y-1">
                 <Skeleton className="h-4 w-20" />
@@ -178,7 +179,7 @@ export function MachineDeployment(props: { machine: any }) {
               </div>
 
               {/* User Info */}
-              <div className="justify-self-end flex items-center gap-2">
+              <div className="flex items-center gap-2 justify-self-end">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-[22px] w-[22px] rounded-full" />
               </div>
@@ -186,6 +187,16 @@ export function MachineDeployment(props: { machine: any }) {
           </div>
         ))}
       </div>
+    );
+  }
+
+  if (!query.data?.pages[0]?.length) {
+    return !machine?.build_log ? (
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-gray-500">No deployments or logs found</span>
+      </div>
+    ) : (
+      <BuildStepsUI machine={machine} logs={JSON.parse(machine.build_log)} />
     );
   }
 
@@ -227,7 +238,10 @@ function MachineVersionList({
         <div
           className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer"
           onClick={() => {
-            if (machine.machine_version_id === machineVersion.id) {
+            if (
+              machine.machine_version_id === machineVersion.id &&
+              machine.status !== "building"
+            ) {
               navigate({
                 to: "/machines/$machineId",
                 params: {
@@ -390,7 +404,10 @@ function InstantRollback({
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
-              if (machine.machine_version_id === machineVersion.id) {
+              if (
+                machine.machine_version_id === machineVersion.id &&
+                machine.status !== "building"
+              ) {
                 navigate({
                   to: "/machines/$machineId",
                   params: {

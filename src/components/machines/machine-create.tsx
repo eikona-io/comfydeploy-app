@@ -157,7 +157,7 @@ export function MachineCreate() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId },
-              search: { view: "logs" },
+              search: { view: "deployments" },
             });
 
             return true;

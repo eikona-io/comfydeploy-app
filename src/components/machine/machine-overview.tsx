@@ -43,6 +43,7 @@ import {
   Clock,
   Edit,
   ExternalLink,
+  FileClock,
   GitBranch,
   HardDrive,
   Layers,
@@ -67,6 +68,7 @@ import "./machine-overview-style.css";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { toast } from "sonner";
+import { BuildStepsUI } from "./machine-build-log";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -150,7 +152,7 @@ export function MachineOverview({
   setView,
 }: {
   machine: any;
-  setView: (view: "settings" | "deployments" | "overview" | "logs") => void;
+  setView: (view: "settings" | "deployments" | undefined) => void;
 }) {
   const defaultLayout = [
     { i: "info", x: 0, y: 0, w: 1, h: 4, maxH: 4, minH: 4 },
@@ -159,6 +161,7 @@ export function MachineOverview({
     { i: "workflowDeployment", x: 0, y: 2, w: 1, h: 6, maxH: 12, minH: 6 },
     { i: "containerGraph", x: 1, y: 1, w: 1, h: 7, maxH: 8, minH: 7 },
     { i: "containerTable", x: 1, y: 2, w: 2, h: 8, maxH: 16, minH: 8 },
+    { i: "buildLog", x: 0, y: 3, w: 2, h: 12, maxH: 12, minH: 12 },
   ];
 
   const [layout, setLayout] = useState(() => {
@@ -220,7 +223,7 @@ export function MachineOverview({
                 navigate({
                   to: "/machines/$machineId",
                   params: { machineId: machine.id },
-                  search: { view: "logs" },
+                  search: { view: "deployments" },
                 });
               } catch {
                 toast.error("Failed to rebuild machine");
@@ -282,6 +285,12 @@ export function MachineOverview({
           className={cn(isEditingLayout && "shake-animation")}
         >
           <MachineContainerTable machine={machine} />
+        </div>
+        <div
+          key="buildLog"
+          className={cn(isEditingLayout && "shake-animation")}
+        >
+          <MachineBuildLog machine={machine} />
         </div>
       </ResponsiveGridLayout>
     </div>
@@ -1037,6 +1046,34 @@ function MachineContainerTable({ machine }: { machine: any }) {
             </Table>
           </div>
         </ScrollArea>
+      </CardContent>
+    </Card>
+  );
+}
+
+function MachineBuildLog({ machine }: { machine: any }) {
+  return (
+    <Card className="h-full rounded-[10px]">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
+          Build Log
+          <div className="flex items-center">
+            <FileClock className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </CardTitle>
+        <CardDescription>Machine build logs</CardDescription>
+      </CardHeader>
+      <CardContent className="max-h-[600px] overflow-y-auto">
+        {machine.build_log ? (
+          <BuildStepsUI
+            logs={JSON.parse(machine.build_log ?? "")}
+            machine={machine}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+            No logs
+          </div>
+        )}
       </CardContent>
     </Card>
   );
