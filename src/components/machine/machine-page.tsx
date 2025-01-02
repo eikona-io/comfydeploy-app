@@ -26,7 +26,7 @@ export default function MachinePage({
 }) {
   const navigate = useNavigate();
   const machineEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
-  const { view } = useSearch({ from: "/machines/$machineId" });
+  const { view } = useSearch({ from: "/machines/$machineId/" });
 
   const { data: machine, isLoading } = useQuery<any>({
     queryKey: ["machine", params.machine_id],
@@ -104,7 +104,10 @@ export default function MachinePage({
               <SidebarMenuSubButton
                 onClick={route.onClick}
                 className={
-                  view === route.name.toLowerCase() ? "" : "opacity-50"
+                  view === route.name.toLowerCase() ||
+                  (!view && route.name.toLowerCase() === "overview")
+                    ? ""
+                    : "opacity-50"
                 }
               >
                 <span>{route.name}</span>
@@ -121,8 +124,6 @@ export default function MachinePage({
           switch (view) {
             case "settings":
               return <MachineSettings machine={machine} setView={setView} />;
-            case "overview":
-              return <MachineOverview machine={machine} setView={setView} />;
             case "logs":
               if (machine?.status === "building") {
                 return (
@@ -145,6 +146,8 @@ export default function MachinePage({
               );
             case "deployments":
               return <MachineDeployment machine={machine} setView={setView} />;
+            default:
+              return <MachineOverview machine={machine} setView={setView} />;
           }
         })()}
       </div>

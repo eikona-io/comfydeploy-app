@@ -1,18 +1,45 @@
 import { CustomNodeList } from "@/components/machines/custom-node-list";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useMachineVersions } from "@/hooks/use-machine";
+import { useMachineVersion, useMachineVersions } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { differenceInSeconds } from "date-fns";
 import {
+  ChevronDown,
+  ChevronRight,
   CircleArrowUp,
+  CircleX,
   Ellipsis,
   ExternalLink,
   HardDrive,
   Library,
+  RotateCcw,
 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 type View = "settings" | "deployments" | "overview" | "logs";
 
@@ -76,6 +103,29 @@ const UserInfoForDeployment = ({ machineVersion }: { machineVersion: any }) => {
   );
 };
 
+const MachineStatusBadge = ({ status }: { status: string }) => {
+  return (
+    <>
+      <div className="flex items-center justify-center shrink-0">
+        <div
+          className={`h-[9px] w-[9px] rounded-full animate-pulse ${
+            status === "ready"
+              ? "bg-green-500"
+              : status === "error"
+                ? "bg-red-500"
+                : status === "building"
+                  ? "bg-yellow-500"
+                  : "bg-gray-500"
+          }`}
+        />
+      </div>
+      <span className="text-sm text-gray-600 truncate">
+        {status.charAt(0).toUpperCase() + status.slice(1)}
+      </span>
+    </>
+  );
+};
+
 export function MachineDeployment(props: {
   machine: any;
   setView: (view: View) => void;
@@ -83,116 +133,304 @@ export function MachineDeployment(props: {
   const { machine, setView } = props;
   const query = useMachineVersions(machine.id);
 
-  console.log(query.data?.pages.flat());
-
   return (
     <div className="mx-auto h-[calc(100vh-60px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
       <VirtualizedInfiniteList
         className="!h-full fab-machine-list w-full"
         queryResult={query}
         renderItem={(machineVersion) => (
-          <div
-            key={machineVersion.id}
-            className="border bg-white p-4 shadow-sm rounded-[8px]"
-          >
-            <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-x-4 items-center">
-              {/* ID and Version */}
-              <div className="grid grid-cols-1 gap-y-1 min-w-0">
-                <div className="font-medium font-mono text-2xs truncate">
-                  {machineVersion.id.slice(0, 8)}
-                </div>
-                <div className="flex flex-row gap-x-2 items-center">
-                  <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
-                    v{machineVersion.version}
-                  </div>
-                  {machineVersion.id === machine.machine_version_id && (
-                    <Badge
-                      variant="green"
-                      className="flex items-center gap-x-1 !text-2xs"
-                    >
-                      <CircleArrowUp className="h-3 w-3" />
-                      <span>Current</span>
-                    </Badge>
-                  )}
-                </div>
-              </div>
-
-              {/* Status and Time */}
-              <div className="grid grid-cols-[auto,1fr] gap-x-1.5 items-center min-w-0">
-                <div className="flex items-center justify-center shrink-0">
-                  <div
-                    className={`h-[9px] w-[9px] rounded-full animate-pulse ${
-                      machineVersion.status === "ready"
-                        ? "bg-green-500"
-                        : machineVersion.status === "error"
-                          ? "bg-red-500"
-                          : machineVersion.status === "building"
-                            ? "bg-yellow-500"
-                            : "bg-gray-500"
-                    }`}
-                  />
-                </div>
-                <span className="text-sm text-gray-600 truncate">
-                  {machineVersion.status.charAt(0).toUpperCase() +
-                    machineVersion.status.slice(1)}
-                </span>
-                {machineVersion.status === "building" ? (
-                  <LoadingIcon className="h-[14px] w-[14px] text-gray-600 shrink-0" />
-                ) : (
-                  <div className="w-[14px] shrink-0" />
-                )}
-                <span className="text-sm text-gray-500 truncate">
-                  {machineVersion.created_at === machineVersion.updated_at
-                    ? "-"
-                    : `${formatExactTime(
-                        differenceInSeconds(
-                          new Date(machineVersion.updated_at),
-                          new Date(machineVersion.created_at),
-                        ),
-                      )} (${formatShortDistanceToNow(
-                        new Date(machineVersion.updated_at),
-                      )})`}
-                </span>
-              </div>
-
-              {/* GPU and Nodes */}
-              <div className="grid grid-cols-[auto,1fr] items-center gap-x-2 min-w-0">
-                <HardDrive className="h-[14px] w-[14px] shrink-0" />
-                <div className="grid grid-cols-10 items-center">
-                  <span className="text-sm text-gray-600 truncate">
-                    {machineVersion.gpu}
-                  </span>
-
-                  <Badge
-                    variant="indigo"
-                    className="font-mono !text-[10px] w-fit whitespace-nowrap cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-                    onClick={() => {
-                      window.open(
-                        `https://github.com/comfyanonymous/ComfyUI/commit/${machineVersion.comfyui_version}`,
-                        "_blank",
-                      );
-                    }}
-                  >
-                    ComfyUI - {machineVersion.comfyui_version.slice(0, 10)}
-                    <ExternalLink className="h-3 w-3" />
-                  </Badge>
-                </div>
-                <Library className="h-[14px] w-[14px] shrink-0" />
-                <CustomNodeList machine={machineVersion} />
-              </div>
-
-              {/* User Info and Actions */}
-              <div className="justify-self-end flex flex-row gap-x-2 shrink-0">
-                <UserInfoForDeployment machineVersion={machineVersion} />
-                <Button variant="ghost" size="icon">
-                  <Ellipsis className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
+          <MachineVersionList
+            machineVersion={machineVersion}
+            machine={machine}
+          />
         )}
         estimateSize={90}
       />
     </div>
   );
+}
+
+function MachineVersionList({
+  machineVersion,
+  machine,
+}: {
+  machineVersion: any;
+  machine: any;
+}) {
+  const navigate = useNavigate({
+    from: "/machines/$machineId",
+  });
+
+  return (
+    <div
+      key={machineVersion.id}
+      className="border bg-white p-4 shadow-sm rounded-[8px]"
+    >
+      <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-x-4 items-center">
+        {/* ID and Version */}
+        <div
+          className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer"
+          onClick={() =>
+            navigate({
+              to: "/machines/$machineId/$machineVersionId",
+              params: {
+                machineVersionId: machineVersion.id,
+              },
+            })
+          }
+        >
+          <div className="font-medium font-mono text-2xs truncate">
+            {machineVersion.id.slice(0, 8)}
+          </div>
+          <div className="flex flex-row gap-x-2 items-center">
+            <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
+              v{machineVersion.version}
+            </div>
+            {machineVersion.id === machine.machine_version_id && (
+              <Badge
+                variant="green"
+                className="flex items-center gap-x-1 !text-2xs"
+              >
+                <CircleArrowUp className="h-3 w-3" />
+                <span>Current</span>
+              </Badge>
+            )}
+          </div>
+        </div>
+
+        {/* Status and Time */}
+        <div className="grid grid-cols-[auto,1fr] gap-x-1.5 items-center min-w-0">
+          <MachineStatusBadge status={machineVersion.status} />
+          {machineVersion.status === "building" ? (
+            <LoadingIcon className="h-[14px] w-[14px] text-gray-600 shrink-0" />
+          ) : (
+            <div className="w-[14px] shrink-0" />
+          )}
+          <span className="text-sm text-gray-500 truncate">
+            {machineVersion.created_at === machineVersion.updated_at
+              ? "-"
+              : `${formatExactTime(
+                  differenceInSeconds(
+                    new Date(machineVersion.updated_at),
+                    new Date(machineVersion.created_at),
+                  ),
+                )} (${formatShortDistanceToNow(
+                  new Date(machineVersion.updated_at),
+                )})`}
+          </span>
+        </div>
+
+        {/* GPU and Nodes */}
+        <div className="grid grid-cols-[auto,1fr] items-center gap-x-2 min-w-0">
+          <HardDrive className="h-[14px] w-[14px] shrink-0" />
+          <div className="grid grid-cols-10 items-center">
+            <span className="text-sm text-gray-600 truncate">
+              {machineVersion.gpu}
+            </span>
+
+            <Badge
+              variant="indigo"
+              className="font-mono !text-[10px] w-fit whitespace-nowrap cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
+              onClick={() => {
+                window.open(
+                  `https://github.com/comfyanonymous/ComfyUI/commit/${machineVersion.comfyui_version}`,
+                  "_blank",
+                );
+              }}
+            >
+              ComfyUI - {machineVersion.comfyui_version.slice(0, 10)}
+              <ExternalLink className="h-3 w-3" />
+            </Badge>
+          </div>
+          <Library className="h-[14px] w-[14px] shrink-0" />
+          <CustomNodeList machine={machineVersion} />
+        </div>
+
+        {/* User Info and Actions */}
+        <div className="justify-self-end flex flex-row gap-x-2 shrink-0">
+          <UserInfoForDeployment machineVersion={machineVersion} />
+          <InstantRollback machineVersion={machineVersion} machine={machine} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InstantRollback({
+  machineVersion,
+  machine,
+}: {
+  machineVersion: any;
+  machine: any;
+}) {
+  const [rollbackAlertOpen, setRollbackAlertOpen] = useState(false);
+  const { data: currentMachineVersion } = useMachineVersion(
+    machine.id,
+    machine.machine_version_id,
+  );
+  const navigate = useNavigate({
+    from: "/machines/$machineId",
+  });
+
+  const handleRollback = async () => {
+    try {
+      await api({
+        url: `machine/serverless/${machine.id}/rollback`,
+        init: {
+          method: "POST",
+          body: JSON.stringify({
+            machine_version_id: machineVersion.id,
+          }),
+        },
+      });
+      toast.success(`Rollback to v${machineVersion.version}`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to rollback. ");
+    }
+  };
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger>
+          <Button variant="ghost" size="icon">
+            <Ellipsis className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[180px]" align="end">
+          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={
+              machineVersion.id === machine.machine_version_id ||
+              machineVersion.status !== "ready"
+            }
+            className="text-red-500"
+            onClick={() => setRollbackAlertOpen(true)}
+          >
+            Instant Rollback
+            <DropdownMenuShortcut>
+              <RotateCcw className="w-4 h-4" />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => {
+              navigate({
+                to: "/machines/$machineId/$machineVersionId",
+                params: {
+                  machineVersionId: machineVersion.id,
+                },
+              });
+            }}
+          >
+            <span>Details</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={rollbackAlertOpen} onOpenChange={setRollbackAlertOpen}>
+        <AlertDialogContent className="w-[900px] max-w-full">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Instant Rollback</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="mb-4">
+                You are about to rollback from
+                <span className="bg-gray-100 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit mx-1">
+                  v{currentMachineVersion?.version}
+                </span>
+                to
+                <span className="bg-gray-100 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit mx-1">
+                  v{machineVersion.version}
+                </span>
+                .
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center gap-4">
+                {/* Current Version Card */}
+                <div className="flex-1 flex justify-between bg-gray-100 rounded-[6px] p-2 border border-gray-200 w-full md:w-auto">
+                  <div className="flex flex-row gap-x-4 items-center">
+                    <div>
+                      <CircleX className="h-4 w-4" />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="text-xs text-gray-600 font-medium font-mono flex flex-row gap-x-2 items-center">
+                        {currentMachineVersion?.id.slice(0, 8)}
+                        <span className="bg-gray-200 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit">
+                          v{currentMachineVersion?.version}
+                        </span>
+                      </div>
+                      <div className="flex flex-row gap-x-2 items-center">
+                        <MachineStatusBadge
+                          status={currentMachineVersion?.status}
+                        />
+                      </div>
+                      <UserInfoForDeployment
+                        machineVersion={currentMachineVersion}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Badge
+                      variant="green"
+                      className="!px-3 !py-1 rounded-[6px]"
+                    >
+                      Current
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="hidden md:block">
+                  <ChevronRight className="h-4 w-4 shrink-0" />
+                </div>
+
+                <div className="block md:hidden">
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                </div>
+
+                {/* Previous Version Card */}
+                <div className="flex-1 flex justify-between bg-white rounded-[6px] p-2 border border-gray-200 shadow-lg w-full md:w-auto">
+                  <div className="flex flex-row gap-x-4 items-center">
+                    <div>
+                      <RotateCcw className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="text-xs text-gray-600 font-medium font-mono flex flex-row gap-x-2 items-center">
+                        {machineVersion.id.slice(0, 8)}
+                        <span className="bg-gray-200 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit">
+                          v{machineVersion.version}
+                        </span>
+                      </div>
+                      <div className="flex flex-row gap-x-2 items-center">
+                        <MachineStatusBadge status={machineVersion.status} />
+                      </div>
+                      <UserInfoForDeployment machineVersion={machineVersion} />
+                    </div>
+                  </div>
+                  <div>
+                    <Badge
+                      variant="yellow"
+                      className="!px-3 !py-1 rounded-[6px]"
+                    >
+                      Previous
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRollback}>
+              Continue
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}
+
+function MachineVersionDetails() {
+  return <div>MachineVersionDetails</div>;
 }
