@@ -61,6 +61,13 @@ export function useMachineVersions(machine_id: string) {
   });
 }
 
+export function useMachineVersionsAll(machine_id: string) {
+  return useQuery<any[]>({
+    queryKey: ["machine", "serverless", machine_id, "versions", "all"],
+    refetchInterval: 5000,
+  });
+}
+
 export function useMachineVersion(
   machine_id: string,
   machine_version_id: string,

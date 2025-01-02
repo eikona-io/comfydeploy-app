@@ -22,6 +22,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
 import { useMachineVersion, useMachineVersions } from "@/hooks/use-machine";
@@ -46,9 +47,8 @@ import {
   RotateCcw,
   Settings,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ScrollArea } from "../ui/scroll-area";
 
 export function formatExactTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -126,6 +126,8 @@ const UserInfoForDeployment = ({ machineVersion }: { machineVersion: any }) => {
 };
 
 const MachineStatusBadge = ({ status }: { status: string }) => {
+  if (!status) return null;
+
   return (
     <>
       <div className="flex shrink-0 items-center justify-center">
@@ -229,6 +231,24 @@ function MachineVersionList({
     from: "/machines/$machineId",
   });
 
+  // Add state for the building time
+  const [buildingTime, setBuildingTime] = useState(
+    differenceInSeconds(new Date(), new Date(machineVersion.created_at)),
+  );
+
+  // Set up interval to update the time every second when building
+  useEffect(() => {
+    if (machineVersion.status === "building") {
+      const interval = setInterval(() => {
+        setBuildingTime(
+          differenceInSeconds(new Date(), new Date(machineVersion.created_at)),
+        );
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+  }, [machineVersion.status, machineVersion.created_at]);
+
   return (
     <div
       key={machineVersion.id}
@@ -289,12 +309,7 @@ function MachineVersionList({
           )}
           <span className="text-sm text-gray-500 truncate">
             {machineVersion.status === "building"
-              ? formatExactTime(
-                  differenceInSeconds(
-                    new Date(),
-                    new Date(machineVersion.created_at),
-                  ),
-                )
+              ? formatExactTime(buildingTime)
               : machineVersion.created_at === machineVersion.updated_at
                 ? "-"
                 : `${formatExactTime(
@@ -680,7 +695,7 @@ function DiffViewer({
                         {change.added.map((node, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium"
+                            className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 font-medium text-green-700 text-xs"
                           >
                             {node.name}
                             <span className="ml-1 text-green-500 opacity-75 font-mono">

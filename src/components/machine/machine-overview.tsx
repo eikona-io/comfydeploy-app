@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMachineEvents } from "@/hooks/use-machine";
+import { useMachineEvents, useMachineVersionsAll } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -170,7 +170,7 @@ export function MachineOverview({
   });
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const navigate = useNavigate();
-
+  const { data: machineVersionsAll } = useMachineVersionsAll(machine.id);
   const handleLayoutChange = (newLayout: any) => {
     if (!isEditingLayout) return;
     setLayout(newLayout);
@@ -180,6 +180,10 @@ export function MachineOverview({
   const isDockerCommandStepsNull =
     machine?.docker_command_steps === null &&
     machine.type === "comfy-deploy-serverless";
+
+  const isLatestVersion =
+    machine?.machine_version_id !== null &&
+    machineVersionsAll?.[0]?.id === machine.machine_version_id;
 
   return (
     <div className="w-full">
@@ -235,15 +239,33 @@ export function MachineOverview({
           </Button>
         </div>
         {machine.machine_version_id && (
-          <div className="flex flex-row items-center gap-2 rounded-sm bg-green-500 px-3 py-2 text-green-50 text-xs">
+          <div
+            className={cn(
+              "flex cursor-pointer flex-row items-center gap-2 rounded-sm px-3 py-2 text-xs transition-colors",
+              isLatestVersion
+                ? "bg-green-500 text-green-50 hover:bg-green-600"
+                : "bg-gray-500 text-gray-50 hover:bg-gray-600 line-through",
+            )}
+            onClick={() =>
+              navigate({
+                to: "/machines/$machineId",
+                params: { machineId: machine.id },
+                search: { view: "deployments" },
+              })
+            }
+          >
             <CircleArrowUp className="h-4 w-4" />
-            Current Version
+            Latest Version
           </div>
         )}
       </div>
 
       <div className="px-3 py-1">
-        <MachineAlert machine={machine} isDeprecated={isDeprecated} />
+        <MachineAlert
+          machine={machine}
+          isDeprecated={isDeprecated}
+          isLatestVersion={isLatestVersion}
+        />
       </div>
 
       <ResponsiveGridLayout
@@ -300,12 +322,15 @@ export function MachineOverview({
 function MachineAlert({
   machine,
   isDeprecated,
+  isLatestVersion,
 }: {
   machine: any;
   isDeprecated: boolean;
+  isLatestVersion: boolean;
 }) {
   const [showDeprecated, setShowDeprecated] = useState(true);
   const [showImportFailed, setShowImportFailed] = useState(true);
+  const [showRollback, setShowRollback] = useState(true);
 
   const hasImportFailedLogs = useMemo(() => {
     try {
@@ -380,6 +405,25 @@ function MachineAlert({
             <br /> Please upgrade to the latest version to ensure compatibility
             and access new features.
           </>,
+          "bg-yellow-50",
+        )}
+      {!isLatestVersion &&
+        machine.machine_version_id &&
+        renderAlert(
+          showRollback,
+          setShowRollback,
+          "warning",
+          "Rollback Version",
+          <div className="mt-2">
+            This machine is running a{" "}
+            <span className="font-semibold">rollback version</span>. You can
+            always switch back to the latest version when ready.
+            <br />
+            <Link className="inline-flex items-center text-yellow-600 hover:text-yellow-700">
+              Learn more about Instant Rollback
+              <ExternalLink className="ml-1 h-3 w-3" />
+            </Link>
+          </div>,
           "bg-yellow-50",
         )}
       {hasImportFailedLogs &&
