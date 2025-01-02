@@ -66,10 +66,10 @@ export function MachineVersionDetail({
   const navigate = useNavigate();
 
   const defaultLayout = [
-    { i: "info", x: 0, y: 0, w: 1, h: 4 },
-    { i: "customNodes", x: 1, y: 0, w: 1, h: 11 },
-    { i: "status", x: 0, y: 1, w: 1, h: 7 },
-    { i: "buildLog", x: 0, y: 2, w: 2, h: 12 },
+    { i: "buildLog", x: 0, y: 0, w: 2, h: 12 },
+    { i: "info", x: 0, y: 2, w: 1, h: 4 },
+    { i: "customNodes", x: 1, y: 2, w: 1, h: 11 },
+    { i: "status", x: 0, y: 3, w: 1, h: 7 },
   ];
 
   console.log("machine status", machine?.status);

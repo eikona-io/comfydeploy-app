@@ -28,7 +28,10 @@ import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { differenceInSeconds } from "date-fns";
+import { diff } from "json-diff-ts";
 import {
+  ArrowRight,
+  CheckCircle,
   ChevronDown,
   ChevronRight,
   CircleArrowUp,
@@ -36,8 +39,11 @@ import {
   Ellipsis,
   ExternalLink,
   HardDrive,
+  History,
   Library,
+  Puzzle,
   RotateCcw,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -494,6 +500,10 @@ function InstantRollback({
                   </div>
                 </div>
               </div>
+              <DiffViewer
+                currentMachineVersion={currentMachineVersion}
+                machineVersion={machineVersion}
+              />
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -506,4 +516,183 @@ function InstantRollback({
       </AlertDialog>
     </>
   );
+}
+
+function DiffViewer({
+  currentMachineVersion,
+  machineVersion,
+}: {
+  currentMachineVersion: any;
+  machineVersion: any;
+}) {
+  const MachineDiff = diff(machineVersion, currentMachineVersion, {
+    keysToSkip: [
+      "version",
+      "created_at",
+      "updated_at",
+      "status",
+      "build_log",
+      "id",
+      "user_id",
+    ],
+  });
+
+  console.log("MachineDiff", MachineDiff);
+
+  // Helper function to get custom node names from steps
+  const getCustomNodeNames = (steps: any[] = []) => {
+    return steps
+      .filter((step) => step.type === "custom-node")
+      .map((step) => step.data.name);
+  };
+
+  // Process the diff to create user-friendly changes with unique fields
+  const changes = MachineDiff.reduce((acc: any[], change: any) => {
+    if (change.key === "docker_command_steps") {
+      // Only add docker_command_steps change if we haven't seen it before
+      if (!acc.some((item) => item.type === "custom-nodes")) {
+        // Handle custom nodes changes
+        const currentNodes = getCustomNodeNames(
+          machineVersion.docker_command_steps?.steps,
+        );
+        const previousNodes = getCustomNodeNames(
+          currentMachineVersion.docker_command_steps?.steps,
+        );
+
+        const removed = currentNodes.filter(
+          (node) => !previousNodes.includes(node),
+        );
+        const added = previousNodes.filter(
+          (node) => !currentNodes.includes(node),
+        );
+
+        if (removed.length || added.length) {
+          acc.push({
+            type: "custom-nodes",
+            removed,
+            added,
+          });
+        }
+      }
+    } else {
+      // Only add field change if we haven't seen this field before
+      if (
+        !acc.some((item) => item.type === "field" && item.field === change.key)
+      ) {
+        acc.push({
+          type: "field",
+          field: change.key,
+          oldValue: currentMachineVersion[change.key],
+          newValue: machineVersion[change.key],
+        });
+      }
+    }
+    return acc;
+  }, []);
+
+  if (changes.length === 0) {
+    return (
+      <div className="mt-4 flex items-center justify-center p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="text-sm text-gray-500 flex items-center gap-2">
+          <CheckCircle className="h-4 w-4" />
+          No significant changes detected
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
+        <History className="h-4 w-4" />
+        Changes Summary
+      </div>
+
+      <div className="space-y-2">
+        {changes.map((change, index) => (
+          <div
+            key={index}
+            className="bg-gray-50 rounded-lg p-4 border border-gray-200 transition-all hover:shadow-sm"
+          >
+            {change.type === "custom-nodes" ? (
+              <div className="space-y-3">
+                <div className="font-medium text-sm flex items-center gap-2">
+                  <Puzzle className="h-4 w-4" />
+                  Custom Nodes Changes
+                </div>
+                <div className="space-y-2">
+                  {change.removed.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="destructive" className="h-5 px-1.5">
+                        Removed
+                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {change.removed.map((node, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium"
+                          >
+                            {node}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {change.added.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="success" className="h-5 px-1.5">
+                        Added
+                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {change.added.map((node, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium"
+                          >
+                            {node}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="font-medium text-sm flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-gray-500" />
+                  {change.field
+                    .replace(/_/g, " ")
+                    .replace(/\b\w/g, (l) => l.toUpperCase())}
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="px-2 py-1 rounded-md bg-red-50 text-red-700 font-mono">
+                    {formatValue(change.oldValue)}
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-gray-400" />
+                  <div className="px-2 py-1 rounded-md bg-green-50 text-green-700 font-mono">
+                    {formatValue(change.newValue)}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Helper function to format values nicely
+function formatValue(value: any): string {
+  if (typeof value === "boolean") {
+    return value ? "Enabled" : "Disabled";
+  }
+  if (typeof value === "number") {
+    return value.toString();
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  return JSON.stringify(value);
 }
