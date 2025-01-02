@@ -145,7 +145,7 @@ export default function MachinePage({
                 />
               );
             case "deployments":
-              return <MachineDeployment machine={machine} setView={setView} />;
+              return <MachineDeployment machine={machine} />;
             default:
               return <MachineOverview machine={machine} setView={setView} />;
           }

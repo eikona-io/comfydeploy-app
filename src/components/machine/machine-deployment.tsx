@@ -21,6 +21,7 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
 import { useMachineVersion, useMachineVersions } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
@@ -41,15 +42,28 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 
-type View = "settings" | "deployments" | "overview" | "logs";
-
 export function formatExactTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
+
   const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return remainingSeconds > 0
-    ? `${minutes}m ${remainingSeconds}s`
-    : `${minutes}m`;
+  if (minutes < 60) {
+    const remainingSeconds = seconds % 60;
+    return remainingSeconds > 0
+      ? `${minutes}m ${remainingSeconds}s`
+      : `${minutes}m`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}m`
+      : `${hours}h`;
+  }
+
+  const days = Math.floor(hours / 24);
+  const remainingHours = hours % 24;
+  return remainingHours > 0 ? `${days}d ${remainingHours}h` : `${days}d`;
 }
 
 export function formatShortDistanceToNow(date: Date): string {
@@ -126,12 +140,48 @@ const MachineStatusBadge = ({ status }: { status: string }) => {
   );
 };
 
-export function MachineDeployment(props: {
-  machine: any;
-  setView: (view: View) => void;
-}) {
-  const { machine, setView } = props;
+export function MachineDeployment(props: { machine: any }) {
+  const { machine } = props;
   const query = useMachineVersions(machine.id);
+
+  if (query.isLoading) {
+    return (
+      <div className="mx-auto h-[calc(100vh-60px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
+        {[...Array(5)].map((_, i) => (
+          <div
+            key={i}
+            className="border bg-white p-4 shadow-sm rounded-[8px] mb-4"
+          >
+            <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-x-4 items-center">
+              {/* ID and Version */}
+              <div className="grid grid-cols-1 gap-y-1">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-5 w-12" />
+              </div>
+
+              {/* Status and Time */}
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded-full" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+
+              {/* GPU and Nodes */}
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-5 w-40" />
+              </div>
+
+              {/* User Info */}
+              <div className="justify-self-end flex items-center gap-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-[22px] w-[22px] rounded-full" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto h-[calc(100vh-60px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
@@ -207,16 +257,23 @@ function MachineVersionList({
             <div className="w-[14px] shrink-0" />
           )}
           <span className="text-sm text-gray-500 truncate">
-            {machineVersion.created_at === machineVersion.updated_at
-              ? "-"
-              : `${formatExactTime(
+            {machineVersion.status === "building"
+              ? formatExactTime(
                   differenceInSeconds(
-                    new Date(machineVersion.updated_at),
+                    new Date(),
                     new Date(machineVersion.created_at),
                   ),
-                )} (${formatShortDistanceToNow(
-                  new Date(machineVersion.updated_at),
-                )})`}
+                )
+              : machineVersion.created_at === machineVersion.updated_at
+                ? "-"
+                : `${formatExactTime(
+                    differenceInSeconds(
+                      new Date(machineVersion.updated_at),
+                      new Date(machineVersion.created_at),
+                    ),
+                  )} (${formatShortDistanceToNow(
+                    new Date(machineVersion.updated_at),
+                  )})`}
           </span>
         </div>
 
@@ -243,7 +300,7 @@ function MachineVersionList({
             </Badge>
           </div>
           <Library className="h-[14px] w-[14px] shrink-0" />
-          <CustomNodeList machine={machineVersion} />
+          <CustomNodeList machine={machineVersion} numOfNodes={2} />
         </div>
 
         {/* User Info and Actions */}

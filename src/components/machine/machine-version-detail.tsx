@@ -1,4 +1,7 @@
-import { BuildStepsUI } from "@/components/machine/machine-build-log";
+import {
+  BuildStepsUI,
+  MachineBuildLog,
+} from "@/components/machine/machine-build-log";
 import {
   formatExactTime,
   formatShortDistanceToNow,
@@ -69,6 +72,8 @@ export function MachineVersionDetail({
     { i: "buildLog", x: 0, y: 2, w: 2, h: 12 },
   ];
 
+  console.log("machine status", machine?.status);
+
   if (isLoading || machineVersionLoading) return <div>Loading...</div>;
 
   return (
@@ -99,7 +104,7 @@ export function MachineVersionDetail({
       </Breadcrumb>
 
       <div className="flex flex-row items-center justify-between px-4 py-2">
-        <Button variant="outline" onClick={async () => {}}>
+        <Button variant="outline" disabled={true} onClick={async () => {}}>
           <RefreshCw className="mr-2 h-4 w-4" />
           Rollback
         </Button>
@@ -130,7 +135,10 @@ export function MachineVersionDetail({
           <MachineCustomNodes machineVersion={machineVersion} />
         </div>
         <div key="buildLog">
-          <MachineBuildLog machineVersion={machineVersion} />
+          <MachineVersionBuildLog
+            machine={machine}
+            machineVersion={machineVersion}
+          />
         </div>
       </ResponsiveGridLayout>
     </div>
@@ -426,7 +434,12 @@ function MachineCustomNodes({ machineVersion }: { machineVersion: any }) {
   }
 }
 
-function MachineBuildLog({ machineVersion }: { machineVersion: any }) {
+function MachineVersionBuildLog({
+  machine,
+  machineVersion,
+}: { machine: any; machineVersion: any }) {
+  const machineEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
+
   return (
     <Card className="h-full rounded-[10px]">
       <CardHeader className="pb-4">
@@ -439,18 +452,25 @@ function MachineBuildLog({ machineVersion }: { machineVersion: any }) {
         <CardDescription>Machine build logs</CardDescription>
       </CardHeader>
       <CardContent>
-        {machineVersion.build_log ? (
-          <ScrollArea className="h-[600px]">
+        <ScrollArea className="h-[600px]">
+          {machineVersion.status === "building" ? (
+            <MachineBuildLog
+              machine={machine}
+              instance_id={machine.build_machine_instance_id!}
+              machine_id={machine.id}
+              endpoint={machineEndpoint}
+            />
+          ) : machineVersion.build_log ? (
             <BuildStepsUI
               logs={JSON.parse(machineVersion.build_log ?? "")}
               machine={machineVersion}
             />
-          </ScrollArea>
-        ) : (
-          <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-            No logs
-          </div>
-        )}
+          ) : (
+            <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+              No logs
+            </div>
+          )}
+        </ScrollArea>
       </CardContent>
     </Card>
   );
