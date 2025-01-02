@@ -220,14 +220,24 @@ function MachineVersionList({
         {/* ID and Version */}
         <div
           className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer"
-          onClick={() =>
-            navigate({
-              to: "/machines/$machineId/$machineVersionId",
-              params: {
-                machineVersionId: machineVersion.id,
-              },
-            })
-          }
+          onClick={() => {
+            if (machine.machine_version_id === machineVersion.id) {
+              navigate({
+                to: "/machines/$machineId",
+                params: {
+                  machineId: machine.id,
+                },
+                search: { view: undefined },
+              });
+            } else {
+              navigate({
+                to: "/machines/$machineId/$machineVersionId",
+                params: {
+                  machineVersionId: machineVersion.id,
+                },
+              });
+            }
+          }}
         >
           <div className="font-medium font-mono text-2xs truncate">
             {machineVersion.id.slice(0, 8)}
@@ -373,12 +383,22 @@ function InstantRollback({
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => {
-              navigate({
-                to: "/machines/$machineId/$machineVersionId",
-                params: {
-                  machineVersionId: machineVersion.id,
-                },
-              });
+              if (machine.machine_version_id === machineVersion.id) {
+                navigate({
+                  to: "/machines/$machineId",
+                  params: {
+                    machineId: machine.id,
+                  },
+                  search: { view: undefined },
+                });
+              } else {
+                navigate({
+                  to: "/machines/$machineId/$machineVersionId",
+                  params: {
+                    machineVersionId: machineVersion.id,
+                  },
+                });
+              }
             }}
           >
             <span>Details</span>

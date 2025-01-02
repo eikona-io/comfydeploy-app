@@ -293,16 +293,23 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
 
           <p className="text-muted-foreground text-sm">
             <span className="text-sm text-gray-500 truncate">
-              {machineVersion.created_at === machineVersion.updated_at
-                ? "-"
-                : `${formatExactTime(
+              {machineVersion.status === "building"
+                ? formatExactTime(
                     differenceInSeconds(
-                      new Date(machineVersion.updated_at),
+                      new Date(),
                       new Date(machineVersion.created_at),
                     ),
-                  )} (${formatShortDistanceToNow(
-                    new Date(machineVersion.updated_at),
-                  )})`}
+                  )
+                : machineVersion.created_at === machineVersion.updated_at
+                  ? "-"
+                  : `${formatExactTime(
+                      differenceInSeconds(
+                        new Date(machineVersion.updated_at),
+                        new Date(machineVersion.created_at),
+                      ),
+                    )} (${formatShortDistanceToNow(
+                      new Date(machineVersion.updated_at),
+                    )})`}
             </span>
           </p>
         </div>
