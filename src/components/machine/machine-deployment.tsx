@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ScrollArea } from "../ui/scroll-area";
 
 export function formatExactTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -555,43 +556,51 @@ function DiffViewer({
     ],
   });
 
-  console.log("MachineDiff", MachineDiff);
-
-  // Helper function to get custom node names from steps
-  const getCustomNodeNames = (steps: any[] = []) => {
+  // Helper function to get custom node info from steps
+  const getCustomNodeInfo = (steps: any[] = []) => {
     return steps
       .filter((step) => step.type === "custom-node")
-      .map((step) => step.data.name);
+      .map((step) => ({
+        name: step.data.name,
+        hash: step.data.hash,
+      }));
   };
 
   // Process the diff to create user-friendly changes with unique fields
   const changes = MachineDiff.reduce((acc: any[], change: any) => {
     if (change.key === "docker_command_steps") {
-      // Only add docker_command_steps change if we haven't seen it before
       if (!acc.some((item) => item.type === "custom-nodes")) {
-        // Handle custom nodes changes
-        const currentNodes = getCustomNodeNames(
+        const currentNodes = getCustomNodeInfo(
           machineVersion.docker_command_steps?.steps,
         );
-        const previousNodes = getCustomNodeNames(
+        const previousNodes = getCustomNodeInfo(
           currentMachineVersion.docker_command_steps?.steps,
         );
 
         // REMOVED: nodes that were in the old version but are missing in the new
         const removed = previousNodes.filter(
-          (node) => !currentNodes.includes(node),
+          (node) => !currentNodes.some((curr) => curr.name === node.name),
         );
 
-        // ADDED: nodes that exist in the new version but weren’t in the old
+        // ADDED: nodes that exist in the new version but weren't in the old
         const added = currentNodes.filter(
-          (node) => !previousNodes.includes(node),
+          (node) => !previousNodes.some((prev) => prev.name === node.name),
         );
 
-        if (removed.length || added.length) {
+        // UPDATED: nodes that exist in both but have different hashes
+        const updated = currentNodes.filter((curr) => {
+          const prevNode = previousNodes.find(
+            (prev) => prev.name === curr.name,
+          );
+          return prevNode && prevNode.hash !== curr.hash;
+        });
+
+        if (removed.length || added.length || updated.length) {
           acc.push({
             type: "custom-nodes",
             removed,
             added,
+            updated,
           });
         }
       }
@@ -623,25 +632,25 @@ function DiffViewer({
   }
 
   return (
-    <div className="mt-4 space-y-4">
+    <div className="mt-4 space-y-2">
       <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
         <History className="h-4 w-4" />
         Changes Summary
       </div>
 
-      <div className="space-y-2">
+      <ScrollArea className="max-h-[500px] pb-3 space-y-2">
         {changes.map((change, index) => (
           <div
             key={index}
             className="bg-gray-50 rounded-[6px] p-4 border border-gray-200 transition-all hover:shadow-sm"
           >
             {change.type === "custom-nodes" ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <div className="font-medium text-sm flex items-center gap-2">
                   <Puzzle className="h-4 w-4" />
                   Custom Nodes Changes
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   {change.removed.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Badge variant="destructive" className="h-5 px-1.5">
@@ -653,7 +662,10 @@ function DiffViewer({
                             key={i}
                             className="inline-flex items-center px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium"
                           >
-                            {node}
+                            {node.name}
+                            <span className="ml-1 text-red-500 opacity-75 font-mono">
+                              ({node.hash.slice(0, 7)})
+                            </span>
                           </span>
                         ))}
                       </div>
@@ -670,9 +682,41 @@ function DiffViewer({
                             key={i}
                             className="inline-flex items-center px-2 py-1 rounded-md bg-green-50 text-green-700 text-xs font-medium"
                           >
-                            {node}
+                            {node.name}
+                            <span className="ml-1 text-green-500 opacity-75 font-mono">
+                              ({node.hash.slice(0, 7)})
+                            </span>
                           </span>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                  {change.updated.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="yellow" className="h-5 px-1.5">
+                        Updated
+                      </Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {change.updated.map((node, i) => {
+                          const prevNode =
+                            currentMachineVersion.docker_command_steps?.steps.find(
+                              (step: any) =>
+                                step.type === "custom-node" &&
+                                step.data.name === node.name,
+                            );
+                          return (
+                            <span
+                              key={i}
+                              className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-50 text-yellow-700 text-xs font-medium"
+                            >
+                              {node.name}
+                              <span className="ml-1 text-yellow-600 opacity-75 font-mono">
+                                ({prevNode?.data.hash.slice(0, 7)} →{" "}
+                                {node.hash.slice(0, 7)})
+                              </span>
+                            </span>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -687,11 +731,11 @@ function DiffViewer({
                     .replace(/\b\w/g, (l) => l.toUpperCase())}
                 </div>
                 <div className="flex items-center gap-2 text-sm">
-                  <div className="px-2 py-1 rounded-md bg-red-50 text-red-700 font-mono">
+                  <div className="px-2 py-1 rounded-md bg-red-50 text-red-700 font-mono text-xs">
                     {formatValue(change.oldValue)}
                   </div>
                   <ArrowRight className="h-4 w-4 text-gray-400" />
-                  <div className="px-2 py-1 rounded-md bg-green-50 text-green-700 font-mono">
+                  <div className="px-2 py-1 rounded-md bg-green-50 text-green-700 font-mono text-xs">
                     {formatValue(change.newValue)}
                   </div>
                 </div>
@@ -699,7 +743,7 @@ function DiffViewer({
             )}
           </div>
         ))}
-      </div>
+      </ScrollArea>
     </div>
   );
 }
