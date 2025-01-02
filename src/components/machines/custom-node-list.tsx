@@ -6,7 +6,13 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ExternalLink } from "lucide-react";
 
-export function CustomNodeList({ machine }: { machine: any }) {
+export function CustomNodeList({
+  machine,
+  numOfNodes = 3,
+}: {
+  machine: any;
+  numOfNodes?: number;
+}) {
   return (
     <>
       {machine.docker_command_steps?.steps?.length > 0 && (
@@ -15,7 +21,7 @@ export function CustomNodeList({ machine }: { machine: any }) {
             <>
               {machine.docker_command_steps.steps
                 .filter((node: any) => node.type === "custom-node")
-                .slice(0, 3)
+                .slice(0, numOfNodes)
                 .map((node: any) => (
                   <a
                     key={node.id}
@@ -31,11 +37,12 @@ export function CustomNodeList({ machine }: { machine: any }) {
                   </a>
                 ))}
 
-              {machine.docker_command_steps.steps.length > 3 && (
+              {machine.docker_command_steps.steps.length > numOfNodes && (
                 <Popover>
                   <PopoverTrigger>
                     <span className="text-2xs flex text-gray-400 whitespace-nowrap items-center leading-none">
-                      +{machine.docker_command_steps.steps.length - 3} more
+                      +{machine.docker_command_steps.steps.length - numOfNodes}{" "}
+                      more
                     </span>
                   </PopoverTrigger>
                   <PopoverContent>
