@@ -166,7 +166,7 @@ export function MachineDeployment(props: { machine: any }) {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  if (machine.machine_version_id === null) {
+  if (!machine.machine_version_id || machine.machine_version_id === null) {
     return !machine?.build_log ? (
       <div className="flex h-full w-full items-center justify-center">
         <span className="text-gray-500">No logs found</span>
