@@ -153,6 +153,18 @@ const MachineStatusBadge = ({ status }: { status: string }) => {
 export function MachineDeployment(props: { machine: any }) {
   const { machine } = props;
   const query = useMachineVersions(machine.id);
+  const [estimatedSize, setEstimatedSize] = useState(90);
+
+  useEffect(() => {
+    const updateSize = () => {
+      setEstimatedSize(window.innerWidth < 768 ? 330 : 90);
+    };
+
+    updateSize();
+
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
 
   if (query.isLoading) {
     return (
@@ -214,7 +226,7 @@ export function MachineDeployment(props: { machine: any }) {
             machine={machine}
           />
         )}
-        estimateSize={90}
+        estimateSize={estimatedSize}
       />
     </div>
   );
@@ -254,7 +266,7 @@ function MachineVersionList({
       key={machineVersion.id}
       className="border bg-white p-4 shadow-sm rounded-[8px]"
     >
-      <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-x-4 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-4 md:gap-x-4 md:items-center">
         {/* ID and Version */}
         <div
           className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer"
@@ -299,6 +311,8 @@ function MachineVersionList({
           </div>
         </div>
 
+        <hr className=" border-gray-200 border-t md:hidden" />
+
         {/* Status and Time */}
         <div className="grid grid-cols-[auto,1fr] gap-x-1.5 items-center min-w-0">
           <MachineStatusBadge status={machineVersion.status} />
@@ -322,6 +336,8 @@ function MachineVersionList({
                   )})`}
           </span>
         </div>
+
+        <hr className=" border-gray-200 border-t md:hidden" />
 
         {/* GPU and Nodes */}
         <div className="grid grid-cols-[auto,1fr] items-center gap-x-2 min-w-0">
@@ -348,6 +364,8 @@ function MachineVersionList({
           <Library className="h-[14px] w-[14px] shrink-0" />
           <CustomNodeList machine={machineVersion} numOfNodes={2} />
         </div>
+
+        <hr className="border-gray-200 border-t md:hidden" />
 
         {/* User Info and Actions */}
         <div className="justify-self-end flex flex-row gap-x-2 shrink-0">
@@ -401,7 +419,7 @@ function InstantRollback({
             <Ellipsis className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-[180px]" align="end">
+        <DropdownMenuContent className="w-[200px]" align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -413,11 +431,17 @@ function InstantRollback({
             className="text-red-500"
             onClick={() => setRollbackAlertOpen(true)}
           >
-            Instant Rollback
+            Rollback
             <DropdownMenuShortcut>
               <RotateCcw className="w-4 h-4" />
             </DropdownMenuShortcut>
           </DropdownMenuItem>
+          {/* <DropdownMenuItem>
+            Promote to Production
+            <DropdownMenuShortcut>
+              <CircleArrowUp className="w-4 h-4" />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem> */}
           <DropdownMenuItem
             onClick={() => {
               if (
@@ -449,7 +473,7 @@ function InstantRollback({
       <AlertDialog open={rollbackAlertOpen} onOpenChange={setRollbackAlertOpen}>
         <AlertDialogContent className="w-[900px] max-w-full">
           <AlertDialogHeader>
-            <AlertDialogTitle>Instant Rollback</AlertDialogTitle>
+            <AlertDialogTitle>Machine Rollback</AlertDialogTitle>
             <AlertDialogDescription>
               <div className="mb-4">
                 You are about to rollback from

@@ -420,7 +420,7 @@ function MachineAlert({
             always switch back to the latest version when ready.
             <br />
             <Link className="inline-flex items-center text-yellow-600 hover:text-yellow-700">
-              Learn more about Instant Rollback
+              Learn more about Machine Rollback
               <ExternalLink className="ml-1 h-3 w-3" />
             </Link>
           </div>,

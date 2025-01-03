@@ -103,13 +103,6 @@ export function MachineVersionDetail({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="flex flex-row items-center justify-between px-4 py-2">
-        <Button variant="outline" disabled={true} onClick={async () => {}}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Rollback
-        </Button>
-      </div>
-
       <ResponsiveGridLayout
         className="layout"
         layouts={{ lg: defaultLayout }}
