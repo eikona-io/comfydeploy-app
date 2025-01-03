@@ -145,6 +145,15 @@ export function MachineCreate() {
                   comfyui_version: validation.comfyUiHash,
                   gpu: validation.gpuType,
                   docker_command_steps: validation.docker_command_steps,
+
+                  // default values
+                  machine_builder_version: "4",
+                  allow_concurrent_inputs: 1,
+                  concurrency_limit: 2,
+                  run_timeout: 300,
+                  idle_timeout: 60,
+                  ws_timeout: 2,
+                  python_version: "3.11",
                 }),
               },
             });

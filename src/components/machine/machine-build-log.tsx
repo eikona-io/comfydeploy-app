@@ -178,6 +178,11 @@ function StepsUI(props: { logs: LogsType; machine: any }) {
   }, [logs]);
 
   const getLogsForStep = (stepName: string, index: number) => {
+    // Handle error case
+    if (!Array.isArray(logs) && (logs as any)?.error) {
+      console.warn("Build log error:", (logs as any).error);
+      return [];
+    }
     if (logs.length === 0 || !logs) return [];
     const startIndex = logs.findIndex((log) => log.logs.includes(stepName));
 
