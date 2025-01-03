@@ -10,362 +10,386 @@
 
 // Import Routes
 
-import { Route as rootRoute } from "./routes/__root";
-import { Route as UsageImport } from "./routes/usage";
-import { Route as StorageImport } from "./routes/storage";
-import { Route as SettingsImport } from "./routes/settings";
-import { Route as PricingImport } from "./routes/pricing";
-import { Route as OnboardingCallImport } from "./routes/onboarding-call";
-import { Route as ApiKeysImport } from "./routes/api-keys";
-import { Route as IndexImport } from "./routes/index";
-import { Route as WorkflowsIndexImport } from "./routes/workflows/index";
-import { Route as OrganizationProfileIndexImport } from "./routes/organization-profile/index";
-import { Route as MachinesIndexImport } from "./routes/machines/index";
-import { Route as MachinesMachineIdImport } from "./routes/machines/$machineId";
-import { Route as AuthSignUpImport } from "./routes/auth/sign-up";
-import { Route as AuthSignInImport } from "./routes/auth/sign-in";
-import { Route as OrganizationProfileOrganizationMembersIndexImport } from "./routes/organization-profile/organization-members/index";
-import { Route as WorkflowsWorkflowIdViewImport } from "./routes/workflows/$workflowId/$view";
+import { Route as rootRoute } from './routes/__root'
+import { Route as UsageImport } from './routes/usage'
+import { Route as StorageImport } from './routes/storage'
+import { Route as SettingsImport } from './routes/settings'
+import { Route as PricingImport } from './routes/pricing'
+import { Route as OnboardingCallImport } from './routes/onboarding-call'
+import { Route as ApiKeysImport } from './routes/api-keys'
+import { Route as IndexImport } from './routes/index'
+import { Route as WorkflowsIndexImport } from './routes/workflows/index'
+import { Route as OrganizationProfileIndexImport } from './routes/organization-profile/index'
+import { Route as MachinesIndexImport } from './routes/machines/index'
+import { Route as AuthSignUpImport } from './routes/auth/sign-up'
+import { Route as AuthSignInImport } from './routes/auth/sign-in'
+import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
+import { Route as MachinesMachineIdIndexImport } from './routes/machines/$machineId/index'
+import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
+import { Route as MachinesMachineIdMachineVersionIdImport } from './routes/machines/$machineId/$machineVersionId'
 
 // Create/Update Routes
 
 const UsageRoute = UsageImport.update({
-  id: "/usage",
-  path: "/usage",
+  id: '/usage',
+  path: '/usage',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const StorageRoute = StorageImport.update({
-  id: "/storage",
-  path: "/storage",
+  id: '/storage',
+  path: '/storage',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const SettingsRoute = SettingsImport.update({
-  id: "/settings",
-  path: "/settings",
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const PricingRoute = PricingImport.update({
-  id: "/pricing",
-  path: "/pricing",
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const OnboardingCallRoute = OnboardingCallImport.update({
-  id: "/onboarding-call",
-  path: "/onboarding-call",
+  id: '/onboarding-call',
+  path: '/onboarding-call',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const ApiKeysRoute = ApiKeysImport.update({
-  id: "/api-keys",
-  path: "/api-keys",
+  id: '/api-keys',
+  path: '/api-keys',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const IndexRoute = IndexImport.update({
-  id: "/",
-  path: "/",
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const WorkflowsIndexRoute = WorkflowsIndexImport.update({
-  id: "/workflows/",
-  path: "/workflows/",
+  id: '/workflows/',
+  path: '/workflows/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() =>
-  import("./routes/workflows/index.lazy").then((d) => d.Route),
-);
+  import('./routes/workflows/index.lazy').then((d) => d.Route),
+)
 
 const OrganizationProfileIndexRoute = OrganizationProfileIndexImport.update({
-  id: "/organization-profile/",
-  path: "/organization-profile/",
+  id: '/organization-profile/',
+  path: '/organization-profile/',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const MachinesIndexRoute = MachinesIndexImport.update({
-  id: "/machines/",
-  path: "/machines/",
+  id: '/machines/',
+  path: '/machines/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() =>
-  import("./routes/machines/index.lazy").then((d) => d.Route),
-);
-
-const MachinesMachineIdRoute = MachinesMachineIdImport.update({
-  id: "/machines/$machineId",
-  path: "/machines/$machineId",
-  getParentRoute: () => rootRoute,
-} as any);
+  import('./routes/machines/index.lazy').then((d) => d.Route),
+)
 
 const AuthSignUpRoute = AuthSignUpImport.update({
-  id: "/auth/sign-up",
-  path: "/auth/sign-up",
+  id: '/auth/sign-up',
+  path: '/auth/sign-up',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const AuthSignInRoute = AuthSignInImport.update({
-  id: "/auth/sign-in",
-  path: "/auth/sign-in",
+  id: '/auth/sign-in',
+  path: '/auth/sign-in',
   getParentRoute: () => rootRoute,
-} as any);
+} as any)
 
 const OrganizationProfileOrganizationMembersIndexRoute =
   OrganizationProfileOrganizationMembersIndexImport.update({
-    id: "/organization-profile/organization-members/",
-    path: "/organization-profile/organization-members/",
+    id: '/organization-profile/organization-members/',
+    path: '/organization-profile/organization-members/',
     getParentRoute: () => rootRoute,
-  } as any);
+  } as any)
 
-const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
-  id: "/workflows/$workflowId/$view",
-  path: "/workflows/$workflowId/$view",
+const MachinesMachineIdIndexRoute = MachinesMachineIdIndexImport.update({
+  id: '/machines/$machineId/',
+  path: '/machines/$machineId/',
   getParentRoute: () => rootRoute,
 } as any).lazy(() =>
-  import("./routes/workflows/$workflowId/$view.lazy").then((d) => d.Route),
-);
+  import('./routes/machines/$machineId/index.lazy').then((d) => d.Route),
+)
+
+const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
+  id: '/workflows/$workflowId/$view',
+  path: '/workflows/$workflowId/$view',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() =>
+  import('./routes/workflows/$workflowId/$view.lazy').then((d) => d.Route),
+)
+
+const MachinesMachineIdMachineVersionIdRoute =
+  MachinesMachineIdMachineVersionIdImport.update({
+    id: '/machines/$machineId/$machineVersionId',
+    path: '/machines/$machineId/$machineVersionId',
+    getParentRoute: () => rootRoute,
+  } as any)
 
 // Populate the FileRoutesByPath interface
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/api-keys": {
-      id: "/api-keys";
-      path: "/api-keys";
-      fullPath: "/api-keys";
-      preLoaderRoute: typeof ApiKeysImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/onboarding-call": {
-      id: "/onboarding-call";
-      path: "/onboarding-call";
-      fullPath: "/onboarding-call";
-      preLoaderRoute: typeof OnboardingCallImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/pricing": {
-      id: "/pricing";
-      path: "/pricing";
-      fullPath: "/pricing";
-      preLoaderRoute: typeof PricingImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/settings": {
-      id: "/settings";
-      path: "/settings";
-      fullPath: "/settings";
-      preLoaderRoute: typeof SettingsImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/storage": {
-      id: "/storage";
-      path: "/storage";
-      fullPath: "/storage";
-      preLoaderRoute: typeof StorageImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/usage": {
-      id: "/usage";
-      path: "/usage";
-      fullPath: "/usage";
-      preLoaderRoute: typeof UsageImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/auth/sign-in": {
-      id: "/auth/sign-in";
-      path: "/auth/sign-in";
-      fullPath: "/auth/sign-in";
-      preLoaderRoute: typeof AuthSignInImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/auth/sign-up": {
-      id: "/auth/sign-up";
-      path: "/auth/sign-up";
-      fullPath: "/auth/sign-up";
-      preLoaderRoute: typeof AuthSignUpImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/machines/$machineId": {
-      id: "/machines/$machineId";
-      path: "/machines/$machineId";
-      fullPath: "/machines/$machineId";
-      preLoaderRoute: typeof MachinesMachineIdImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/machines/": {
-      id: "/machines/";
-      path: "/machines";
-      fullPath: "/machines";
-      preLoaderRoute: typeof MachinesIndexImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/organization-profile/": {
-      id: "/organization-profile/";
-      path: "/organization-profile";
-      fullPath: "/organization-profile";
-      preLoaderRoute: typeof OrganizationProfileIndexImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/workflows/": {
-      id: "/workflows/";
-      path: "/workflows";
-      fullPath: "/workflows";
-      preLoaderRoute: typeof WorkflowsIndexImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/workflows/$workflowId/$view": {
-      id: "/workflows/$workflowId/$view";
-      path: "/workflows/$workflowId/$view";
-      fullPath: "/workflows/$workflowId/$view";
-      preLoaderRoute: typeof WorkflowsWorkflowIdViewImport;
-      parentRoute: typeof rootRoute;
-    };
-    "/organization-profile/organization-members/": {
-      id: "/organization-profile/organization-members/";
-      path: "/organization-profile/organization-members";
-      fullPath: "/organization-profile/organization-members";
-      preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexImport;
-      parentRoute: typeof rootRoute;
-    };
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/api-keys': {
+      id: '/api-keys'
+      path: '/api-keys'
+      fullPath: '/api-keys'
+      preLoaderRoute: typeof ApiKeysImport
+      parentRoute: typeof rootRoute
+    }
+    '/onboarding-call': {
+      id: '/onboarding-call'
+      path: '/onboarding-call'
+      fullPath: '/onboarding-call'
+      preLoaderRoute: typeof OnboardingCallImport
+      parentRoute: typeof rootRoute
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
+    '/storage': {
+      id: '/storage'
+      path: '/storage'
+      fullPath: '/storage'
+      preLoaderRoute: typeof StorageImport
+      parentRoute: typeof rootRoute
+    }
+    '/usage': {
+      id: '/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof UsageImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/sign-up': {
+      id: '/auth/sign-up'
+      path: '/auth/sign-up'
+      fullPath: '/auth/sign-up'
+      preLoaderRoute: typeof AuthSignUpImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/': {
+      id: '/machines/'
+      path: '/machines'
+      fullPath: '/machines'
+      preLoaderRoute: typeof MachinesIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/organization-profile/': {
+      id: '/organization-profile/'
+      path: '/organization-profile'
+      fullPath: '/organization-profile'
+      preLoaderRoute: typeof OrganizationProfileIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/workflows/': {
+      id: '/workflows/'
+      path: '/workflows'
+      fullPath: '/workflows'
+      preLoaderRoute: typeof WorkflowsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/$machineVersionId': {
+      id: '/machines/$machineId/$machineVersionId'
+      path: '/machines/$machineId/$machineVersionId'
+      fullPath: '/machines/$machineId/$machineVersionId'
+      preLoaderRoute: typeof MachinesMachineIdMachineVersionIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/workflows/$workflowId/$view': {
+      id: '/workflows/$workflowId/$view'
+      path: '/workflows/$workflowId/$view'
+      fullPath: '/workflows/$workflowId/$view'
+      preLoaderRoute: typeof WorkflowsWorkflowIdViewImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/': {
+      id: '/machines/$machineId/'
+      path: '/machines/$machineId'
+      fullPath: '/machines/$machineId'
+      preLoaderRoute: typeof MachinesMachineIdIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/organization-profile/organization-members/': {
+      id: '/organization-profile/organization-members/'
+      path: '/organization-profile/organization-members'
+      fullPath: '/organization-profile/organization-members'
+      preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
 // Create and export the route tree
 
 export interface FileRoutesByFullPath {
-  "/": typeof IndexRoute;
-  "/api-keys": typeof ApiKeysRoute;
-  "/onboarding-call": typeof OnboardingCallRoute;
-  "/pricing": typeof PricingRoute;
-  "/settings": typeof SettingsRoute;
-  "/storage": typeof StorageRoute;
-  "/usage": typeof UsageRoute;
-  "/auth/sign-in": typeof AuthSignInRoute;
-  "/auth/sign-up": typeof AuthSignUpRoute;
-  "/machines/$machineId": typeof MachinesMachineIdRoute;
-  "/machines": typeof MachinesIndexRoute;
-  "/organization-profile": typeof OrganizationProfileIndexRoute;
-  "/workflows": typeof WorkflowsIndexRoute;
-  "/workflows/$workflowId/$view": typeof WorkflowsWorkflowIdViewRoute;
-  "/organization-profile/organization-members": typeof OrganizationProfileOrganizationMembersIndexRoute;
+  '/': typeof IndexRoute
+  '/api-keys': typeof ApiKeysRoute
+  '/onboarding-call': typeof OnboardingCallRoute
+  '/pricing': typeof PricingRoute
+  '/settings': typeof SettingsRoute
+  '/storage': typeof StorageRoute
+  '/usage': typeof UsageRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
+  '/machines': typeof MachinesIndexRoute
+  '/organization-profile': typeof OrganizationProfileIndexRoute
+  '/workflows': typeof WorkflowsIndexRoute
+  '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
+  '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
+  '/machines/$machineId': typeof MachinesMachineIdIndexRoute
+  '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 export interface FileRoutesByTo {
-  "/": typeof IndexRoute;
-  "/api-keys": typeof ApiKeysRoute;
-  "/onboarding-call": typeof OnboardingCallRoute;
-  "/pricing": typeof PricingRoute;
-  "/settings": typeof SettingsRoute;
-  "/storage": typeof StorageRoute;
-  "/usage": typeof UsageRoute;
-  "/auth/sign-in": typeof AuthSignInRoute;
-  "/auth/sign-up": typeof AuthSignUpRoute;
-  "/machines/$machineId": typeof MachinesMachineIdRoute;
-  "/machines": typeof MachinesIndexRoute;
-  "/organization-profile": typeof OrganizationProfileIndexRoute;
-  "/workflows": typeof WorkflowsIndexRoute;
-  "/workflows/$workflowId/$view": typeof WorkflowsWorkflowIdViewRoute;
-  "/organization-profile/organization-members": typeof OrganizationProfileOrganizationMembersIndexRoute;
+  '/': typeof IndexRoute
+  '/api-keys': typeof ApiKeysRoute
+  '/onboarding-call': typeof OnboardingCallRoute
+  '/pricing': typeof PricingRoute
+  '/settings': typeof SettingsRoute
+  '/storage': typeof StorageRoute
+  '/usage': typeof UsageRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
+  '/machines': typeof MachinesIndexRoute
+  '/organization-profile': typeof OrganizationProfileIndexRoute
+  '/workflows': typeof WorkflowsIndexRoute
+  '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
+  '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
+  '/machines/$machineId': typeof MachinesMachineIdIndexRoute
+  '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 export interface FileRoutesById {
-  __root__: typeof rootRoute;
-  "/": typeof IndexRoute;
-  "/api-keys": typeof ApiKeysRoute;
-  "/onboarding-call": typeof OnboardingCallRoute;
-  "/pricing": typeof PricingRoute;
-  "/settings": typeof SettingsRoute;
-  "/storage": typeof StorageRoute;
-  "/usage": typeof UsageRoute;
-  "/auth/sign-in": typeof AuthSignInRoute;
-  "/auth/sign-up": typeof AuthSignUpRoute;
-  "/machines/$machineId": typeof MachinesMachineIdRoute;
-  "/machines/": typeof MachinesIndexRoute;
-  "/organization-profile/": typeof OrganizationProfileIndexRoute;
-  "/workflows/": typeof WorkflowsIndexRoute;
-  "/workflows/$workflowId/$view": typeof WorkflowsWorkflowIdViewRoute;
-  "/organization-profile/organization-members/": typeof OrganizationProfileOrganizationMembersIndexRoute;
+  __root__: typeof rootRoute
+  '/': typeof IndexRoute
+  '/api-keys': typeof ApiKeysRoute
+  '/onboarding-call': typeof OnboardingCallRoute
+  '/pricing': typeof PricingRoute
+  '/settings': typeof SettingsRoute
+  '/storage': typeof StorageRoute
+  '/usage': typeof UsageRoute
+  '/auth/sign-in': typeof AuthSignInRoute
+  '/auth/sign-up': typeof AuthSignUpRoute
+  '/machines/': typeof MachinesIndexRoute
+  '/organization-profile/': typeof OrganizationProfileIndexRoute
+  '/workflows/': typeof WorkflowsIndexRoute
+  '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
+  '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
+  '/machines/$machineId/': typeof MachinesMachineIdIndexRoute
+  '/organization-profile/organization-members/': typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath;
+  fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | "/"
-    | "/api-keys"
-    | "/onboarding-call"
-    | "/pricing"
-    | "/settings"
-    | "/storage"
-    | "/usage"
-    | "/auth/sign-in"
-    | "/auth/sign-up"
-    | "/machines/$machineId"
-    | "/machines"
-    | "/organization-profile"
-    | "/workflows"
-    | "/workflows/$workflowId/$view"
-    | "/organization-profile/organization-members";
-  fileRoutesByTo: FileRoutesByTo;
+    | '/'
+    | '/api-keys'
+    | '/onboarding-call'
+    | '/pricing'
+    | '/settings'
+    | '/storage'
+    | '/usage'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/machines'
+    | '/organization-profile'
+    | '/workflows'
+    | '/machines/$machineId/$machineVersionId'
+    | '/workflows/$workflowId/$view'
+    | '/machines/$machineId'
+    | '/organization-profile/organization-members'
+  fileRoutesByTo: FileRoutesByTo
   to:
-    | "/"
-    | "/api-keys"
-    | "/onboarding-call"
-    | "/pricing"
-    | "/settings"
-    | "/storage"
-    | "/usage"
-    | "/auth/sign-in"
-    | "/auth/sign-up"
-    | "/machines/$machineId"
-    | "/machines"
-    | "/organization-profile"
-    | "/workflows"
-    | "/workflows/$workflowId/$view"
-    | "/organization-profile/organization-members";
+    | '/'
+    | '/api-keys'
+    | '/onboarding-call'
+    | '/pricing'
+    | '/settings'
+    | '/storage'
+    | '/usage'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/machines'
+    | '/organization-profile'
+    | '/workflows'
+    | '/machines/$machineId/$machineVersionId'
+    | '/workflows/$workflowId/$view'
+    | '/machines/$machineId'
+    | '/organization-profile/organization-members'
   id:
-    | "__root__"
-    | "/"
-    | "/api-keys"
-    | "/onboarding-call"
-    | "/pricing"
-    | "/settings"
-    | "/storage"
-    | "/usage"
-    | "/auth/sign-in"
-    | "/auth/sign-up"
-    | "/machines/$machineId"
-    | "/machines/"
-    | "/organization-profile/"
-    | "/workflows/"
-    | "/workflows/$workflowId/$view"
-    | "/organization-profile/organization-members/";
-  fileRoutesById: FileRoutesById;
+    | '__root__'
+    | '/'
+    | '/api-keys'
+    | '/onboarding-call'
+    | '/pricing'
+    | '/settings'
+    | '/storage'
+    | '/usage'
+    | '/auth/sign-in'
+    | '/auth/sign-up'
+    | '/machines/'
+    | '/organization-profile/'
+    | '/workflows/'
+    | '/machines/$machineId/$machineVersionId'
+    | '/workflows/$workflowId/$view'
+    | '/machines/$machineId/'
+    | '/organization-profile/organization-members/'
+  fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute;
-  ApiKeysRoute: typeof ApiKeysRoute;
-  OnboardingCallRoute: typeof OnboardingCallRoute;
-  PricingRoute: typeof PricingRoute;
-  SettingsRoute: typeof SettingsRoute;
-  StorageRoute: typeof StorageRoute;
-  UsageRoute: typeof UsageRoute;
-  AuthSignInRoute: typeof AuthSignInRoute;
-  AuthSignUpRoute: typeof AuthSignUpRoute;
-  MachinesMachineIdRoute: typeof MachinesMachineIdRoute;
-  MachinesIndexRoute: typeof MachinesIndexRoute;
-  OrganizationProfileIndexRoute: typeof OrganizationProfileIndexRoute;
-  WorkflowsIndexRoute: typeof WorkflowsIndexRoute;
-  WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute;
-  OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute;
+  IndexRoute: typeof IndexRoute
+  ApiKeysRoute: typeof ApiKeysRoute
+  OnboardingCallRoute: typeof OnboardingCallRoute
+  PricingRoute: typeof PricingRoute
+  SettingsRoute: typeof SettingsRoute
+  StorageRoute: typeof StorageRoute
+  UsageRoute: typeof UsageRoute
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignUpRoute: typeof AuthSignUpRoute
+  MachinesIndexRoute: typeof MachinesIndexRoute
+  OrganizationProfileIndexRoute: typeof OrganizationProfileIndexRoute
+  WorkflowsIndexRoute: typeof WorkflowsIndexRoute
+  MachinesMachineIdMachineVersionIdRoute: typeof MachinesMachineIdMachineVersionIdRoute
+  WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
+  MachinesMachineIdIndexRoute: typeof MachinesMachineIdIndexRoute
+  OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -378,18 +402,20 @@ const rootRouteChildren: RootRouteChildren = {
   UsageRoute: UsageRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
-  MachinesMachineIdRoute: MachinesMachineIdRoute,
   MachinesIndexRoute: MachinesIndexRoute,
   OrganizationProfileIndexRoute: OrganizationProfileIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
+  MachinesMachineIdMachineVersionIdRoute:
+    MachinesMachineIdMachineVersionIdRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
+  MachinesMachineIdIndexRoute: MachinesMachineIdIndexRoute,
   OrganizationProfileOrganizationMembersIndexRoute:
     OrganizationProfileOrganizationMembersIndexRoute,
-};
+}
 
 export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
-  ._addFileTypes<FileRouteTypes>();
+  ._addFileTypes<FileRouteTypes>()
 
 /* ROUTE_MANIFEST_START
 {
@@ -406,11 +432,12 @@ export const routeTree = rootRoute
         "/usage",
         "/auth/sign-in",
         "/auth/sign-up",
-        "/machines/$machineId",
         "/machines/",
         "/organization-profile/",
         "/workflows/",
+        "/machines/$machineId/$machineVersionId",
         "/workflows/$workflowId/$view",
+        "/machines/$machineId/",
         "/organization-profile/organization-members/"
       ]
     },
@@ -441,9 +468,6 @@ export const routeTree = rootRoute
     "/auth/sign-up": {
       "filePath": "auth/sign-up.tsx"
     },
-    "/machines/$machineId": {
-      "filePath": "machines/$machineId.tsx"
-    },
     "/machines/": {
       "filePath": "machines/index.tsx"
     },
@@ -453,8 +477,14 @@ export const routeTree = rootRoute
     "/workflows/": {
       "filePath": "workflows/index.tsx"
     },
+    "/machines/$machineId/$machineVersionId": {
+      "filePath": "machines/$machineId/$machineVersionId.tsx"
+    },
     "/workflows/$workflowId/$view": {
       "filePath": "workflows/$workflowId/$view.tsx"
+    },
+    "/machines/$machineId/": {
+      "filePath": "machines/$machineId/index.tsx"
     },
     "/organization-profile/organization-members/": {
       "filePath": "organization-profile/organization-members/index.tsx"

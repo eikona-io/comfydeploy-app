@@ -226,7 +226,7 @@ export function MachineList() {
         setOpen={setOpenServerlessDialog}
         disabled={sub?.features.machineLimited}
         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
-        containerClassName="lg:flex-row lg:gap-14"
+        containerClassName="flex-col"
         tooltip={
           sub?.features.machineLimited
             ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
@@ -250,7 +250,7 @@ export function MachineList() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId: machine.id },
-              search: { view: "logs" },
+              search: { view: "deployments" },
             });
 
             return {}; // Return empty object since we're handling navigation manually
@@ -607,7 +607,7 @@ function CloneMachineDialog({
                     machineId: res.id,
                   },
                   search: {
-                    view: "logs",
+                    view: "deployments",
                   },
                 });
               },
@@ -716,7 +716,7 @@ function RebuildMachineDialog({
                   navigate({
                     to: "/machines/$machineId",
                     params: { machineId: machine.id },
-                    search: { view: "logs" },
+                    search: { view: "deployments" },
                   });
                 } catch {
                   toast.error("Failed to rebuild machine");

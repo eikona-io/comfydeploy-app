@@ -32,7 +32,7 @@ import {
   ChevronDown,
   Clock,
   ExternalLink,
-  FileClock,
+  GitBranch,
   HardDrive,
   LineChart,
   MemoryStick,
@@ -510,14 +510,14 @@ const MachineListActionBar = ({
           <Separator orientation="vertical" className="h-4" />
         </>
       )}
-      <Link href={`/machines/${machine.id}?view=logs`}>
+      <Link href={`/machines/${machine.id}?view=deployments`}>
         <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
           {isExpanded && (
             <span className="mr-2 font-normal text-muted-foreground text-xs">
-              Logs
+              Deployments
             </span>
           )}
-          <FileClock className="h-4 w-4 text-muted-foreground" />
+          <GitBranch className="h-4 w-4 text-muted-foreground" />
         </Button>
       </Link>
     </>

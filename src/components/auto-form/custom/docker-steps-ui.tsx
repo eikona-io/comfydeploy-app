@@ -1,5 +1,6 @@
 import type { AutoFormInputComponentProps } from "@/components/auto-form/types";
-import { DockerStepsUI } from "@/components/docker-steps-ui";
+import type { MachineStepValidation } from "@/components/machines/machine-create";
+import { CustomNodeSetup } from "@/components/onboarding/custom-node-setup";
 import {
   FormControl,
   FormDescription,
@@ -8,6 +9,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useEffect, useMemo, useState } from "react";
 
 export default function AutoFormDockerSteps({
   label,
@@ -16,7 +18,38 @@ export default function AutoFormDockerSteps({
   fieldConfigItem,
   zodItem,
 }: AutoFormInputComponentProps) {
-  const data = field.value;
+  const [validation, setValidation] = useState<MachineStepValidation>({
+    machineName: "",
+    gpuType: "A10G",
+    comfyUiHash: "",
+    selectedComfyOption: "recommended",
+    firstTimeSelectGPU: false,
+    docker_command_steps: {
+      steps: [],
+    },
+    isEditingHashOrAddingCommands: false,
+  });
+
+  // Memoize the docker_command_steps
+  const memoizedSteps = useMemo(
+    () => field.value,
+    [JSON.stringify(field.value)],
+  );
+
+  // Update validation when memoized steps change
+  useEffect(() => {
+    if (memoizedSteps) {
+      setValidation((prev) => ({
+        ...prev,
+        docker_command_steps: memoizedSteps,
+      }));
+    }
+  }, [memoizedSteps]);
+
+  // Update field when validation changes
+  useEffect(() => {
+    field.onChange(validation.docker_command_steps);
+  }, [validation.docker_command_steps]);
 
   return (
     <TooltipProvider>
@@ -26,13 +59,10 @@ export default function AutoFormDockerSteps({
           {isRequired && <span className="text-destructive"> *</span>}
         </FormLabel>
         <FormControl>
-          <div className="flex w-full flex-col gap-2">
-            <DockerStepsUI
-              data={data}
-              onEdit={(data) => {
-                // console.log(field.value, data);
-                field.onChange(data);
-              }}
+          <div className="w-full">
+            <CustomNodeSetup
+              validation={validation}
+              setValidation={setValidation}
             />
           </div>
         </FormControl>

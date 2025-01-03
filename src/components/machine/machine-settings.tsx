@@ -10,7 +10,7 @@ import { api } from "@/lib/api";
 import { memo, useState } from "react";
 import { toast } from "sonner";
 
-type View = "settings" | "overview" | "logs";
+type View = "settings" | "deployments" | undefined;
 
 // -----------------------components-----------------------
 
@@ -95,7 +95,7 @@ function InlineSettings(props: { machine: any }) {
       className="h-full"
     >
       <AutoForm
-        containerClassName="lg:flex-row lg:gap-14"
+        containerClassName="flex-col"
         className="px-4"
         values={state}
         formSchema={serverlessFormSchema}

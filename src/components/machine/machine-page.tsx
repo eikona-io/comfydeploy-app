@@ -1,7 +1,4 @@
-import {
-  BuildStepsUI,
-  MachineBuildLog,
-} from "@/components/machine/machine-build-log";
+import { MachineDeployment } from "@/components/machine/machine-deployment";
 import { MachineOverview } from "@/components/machine/machine-overview";
 import { MachineSettings } from "@/components/machine/machine-settings";
 import { Portal } from "@/components/ui/custom/portal";
@@ -16,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-type View = "settings" | "overview" | "logs";
+type View = "settings" | "deployments" | undefined;
 
 export default function MachinePage({
   params,
@@ -24,8 +21,7 @@ export default function MachinePage({
   params: { machine_id: string };
 }) {
   const navigate = useNavigate();
-  const machineEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
-  const { view } = useSearch({ from: "/machines/$machineId" });
+  const { view } = useSearch({ from: "/machines/$machineId/" });
 
   const { data: machine, isLoading } = useQuery<any>({
     queryKey: ["machine", params.machine_id],
@@ -37,7 +33,7 @@ export default function MachinePage({
       navigate({
         to: "/machines/$machineId",
         params: { machineId: params.machine_id },
-        search: { view: "logs" },
+        search: { view: "deployments" },
       });
     }
   }, [machine?.status, navigate, params.machine_id]);
@@ -54,7 +50,7 @@ export default function MachinePage({
     machine?.docker_command_steps === null &&
     machine?.type === "comfy-deploy-serverless";
 
-  const routes = ["Overview", "Settings", "Logs"]
+  const routes = ["Overview", "Settings", "Deployments"]
     .filter((name) => !isDockerCommandStepsNull || name !== "Settings")
     .map((name) => ({
       name,
@@ -103,7 +99,10 @@ export default function MachinePage({
               <SidebarMenuSubButton
                 onClick={route.onClick}
                 className={
-                  view === route.name.toLowerCase() ? "" : "opacity-50"
+                  view === route.name.toLowerCase() ||
+                  (!view && route.name.toLowerCase() === "overview")
+                    ? ""
+                    : "opacity-50"
                 }
               >
                 <span>{route.name}</span>
@@ -120,28 +119,10 @@ export default function MachinePage({
           switch (view) {
             case "settings":
               return <MachineSettings machine={machine} setView={setView} />;
-            case "overview":
+            case "deployments":
+              return <MachineDeployment machine={machine} />;
+            default:
               return <MachineOverview machine={machine} setView={setView} />;
-            case "logs":
-              if (machine?.status === "building") {
-                return (
-                  <MachineBuildLog
-                    machine={machine}
-                    instance_id={machine.build_machine_instance_id!}
-                    machine_id={params.machine_id}
-                    endpoint={machineEndpoint}
-                  />
-                );
-              }
-
-              if (!machine?.build_log) return <div>No logs</div>;
-
-              return (
-                <BuildStepsUI
-                  machine={machine}
-                  logs={JSON.parse(machine.build_log)}
-                />
-              );
           }
         })()}
       </div>

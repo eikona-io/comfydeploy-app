@@ -500,13 +500,13 @@ function MachineActionCommand({
           onSelect={() => {
             navigate({
               to: `/machines/${machineId}`,
-              search: { view: "logs" },
+              search: { view: "deployments" },
             });
             setOpen(false);
           }}
         >
           <ArrowRight className="!h-4 !w-4 mr-2" />
-          <span>To Logs...</span>
+          <span>To Deployments...</span>
         </CommandItem>
         <CommandItem
           onSelect={() => {

@@ -28,7 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMachineEvents } from "@/hooks/use-machine";
+import { useMachineEvents, useMachineVersionsAll } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -39,6 +39,7 @@ import {
   AlertCircle,
   Box,
   CheckCircle2,
+  CircleArrowUp,
   Clock,
   Edit,
   ExternalLink,
@@ -64,10 +65,10 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
-import { BuildStepsUI } from "@/components/machine/machine-build-log";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { toast } from "sonner";
+import { BuildStepsUI } from "./machine-build-log";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -151,7 +152,7 @@ export function MachineOverview({
   setView,
 }: {
   machine: any;
-  setView: (view: "settings" | "overview" | "logs") => void;
+  setView: (view: "settings" | "deployments" | undefined) => void;
 }) {
   const defaultLayout = [
     { i: "info", x: 0, y: 0, w: 1, h: 4, maxH: 4, minH: 4 },
@@ -169,7 +170,8 @@ export function MachineOverview({
   });
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const navigate = useNavigate();
-
+  const { data: machineVersionsAll, isLoading: isLoadingVersions } =
+    useMachineVersionsAll(machine.id);
   const handleLayoutChange = (newLayout: any) => {
     if (!isEditingLayout) return;
     setLayout(newLayout);
@@ -179,6 +181,15 @@ export function MachineOverview({
   const isDockerCommandStepsNull =
     machine?.docker_command_steps === null &&
     machine.type === "comfy-deploy-serverless";
+
+  const isLatestVersion = useMemo(() => {
+    if (isLoadingVersions || !machineVersionsAll) return true;
+
+    return (
+      machine?.machine_version_id !== null &&
+      machineVersionsAll[0]?.id === machine.machine_version_id
+    );
+  }, [machine?.machine_version_id, machineVersionsAll, isLoadingVersions]);
 
   return (
     <div className="w-full">
@@ -222,7 +233,7 @@ export function MachineOverview({
                 navigate({
                   to: "/machines/$machineId",
                   params: { machineId: machine.id },
-                  search: { view: "logs" },
+                  search: { view: "deployments" },
                 });
               } catch {
                 toast.error("Failed to rebuild machine");
@@ -232,69 +243,35 @@ export function MachineOverview({
             <RefreshCw className="mr-2 h-4 w-4" />
             Rebuild
           </Button>
-          {/* {(process.env.NODE_ENV === "development" || showDevMode) &&
-            machine.type == "comfy-deploy-serverless" && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    window.open(
-                      "https://modal.com/comfy-deploy/main/logs/" +
-                        machine.modal_app_id,
-                      "_blank"
-                    );
-                  }}
-                >
-                  <Info size={14} className="mr-2" />
-                  Open Logs
-                </Button>
-              </>
-            )} */}
         </div>
-
-        {/* {(process.env.NODE_ENV === "development" || showDevMode) && (
-          <div className="hidden lg:flex flex-row gap-2">
-            {isEditingLayout && (
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  setIsEditingLayout(false);
-                  setLayout(defaultLayout);
-                  deleteFromLS(machine.id);
-                }}
-              >
-                <ListRestart className="w-4 h-4 mr-2" />
-                Reset
-              </Button>
+        {machine.machine_version_id && (
+          <div
+            className={cn(
+              "flex cursor-pointer flex-row items-center gap-2 rounded-sm px-3 py-2 text-xs transition-colors",
+              isLatestVersion
+                ? "bg-green-500 text-green-50 hover:bg-green-600"
+                : "bg-gray-500 text-gray-50 hover:bg-gray-600 line-through",
             )}
-            <Button
-              variant={isEditingLayout ? "default" : "outline"}
-              onClick={() => {
-                if (isEditingLayout) {
-                  // Save the layout to local storage when saving
-                  saveToLS(machine.id, layout);
-                }
-                setIsEditingLayout(!isEditingLayout);
-              }}
-            >
-              {isEditingLayout ? (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save
-                </>
-              ) : (
-                <>
-                  <Pencil className="w-4 h-4 mr-2" />
-                  Layout
-                </>
-              )}
-            </Button>
+            onClick={() =>
+              navigate({
+                to: "/machines/$machineId",
+                params: { machineId: machine.id },
+                search: { view: "deployments" },
+              })
+            }
+          >
+            <CircleArrowUp className="h-4 w-4" />
+            Latest Version
           </div>
-        )} */}
+        )}
       </div>
 
       <div className="px-3 py-1">
-        <MachineAlert machine={machine} isDeprecated={isDeprecated} />
+        <MachineAlert
+          machine={machine}
+          isDeprecated={isDeprecated}
+          isLatestVersion={isLatestVersion}
+        />
       </div>
 
       <ResponsiveGridLayout
@@ -351,12 +328,15 @@ export function MachineOverview({
 function MachineAlert({
   machine,
   isDeprecated,
+  isLatestVersion,
 }: {
   machine: any;
   isDeprecated: boolean;
+  isLatestVersion: boolean;
 }) {
   const [showDeprecated, setShowDeprecated] = useState(true);
   const [showImportFailed, setShowImportFailed] = useState(true);
+  const [showRollback, setShowRollback] = useState(true);
 
   const hasImportFailedLogs = useMemo(() => {
     try {
@@ -431,6 +411,25 @@ function MachineAlert({
             <br /> Please upgrade to the latest version to ensure compatibility
             and access new features.
           </>,
+          "bg-yellow-50",
+        )}
+      {!isLatestVersion &&
+        machine.machine_version_id &&
+        renderAlert(
+          showRollback,
+          setShowRollback,
+          "warning",
+          "Rollback Version",
+          <div className="mt-2">
+            This machine is running a{" "}
+            <span className="font-semibold">rollback version</span>. You can
+            always switch back to the latest version when ready.
+            <br />
+            <Link className="inline-flex items-center text-yellow-600 hover:text-yellow-700">
+              Learn more about Machine Rollback
+              <ExternalLink className="ml-1 h-3 w-3" />
+            </Link>
+          </div>,
           "bg-yellow-50",
         )}
       {hasImportFailedLogs &&
@@ -709,21 +708,25 @@ function MachineCustomNodes({ machine }: { machine: any }) {
     }
   };
 
-  const renderCard = (nodes: any[] = [], hasFailedNodes = false) => {
+  const renderCard = (
+    nodes: any[] = [],
+    commands: any[] = [],
+    hasFailedNodes = false,
+  ) => {
     const content = (
       <Card className="flex h-full w-full flex-col rounded-[10px]">
         <CardHeader className="flex-none pb-4">
           <CardTitle className="flex items-center justify-between font-semibold text-xl">
-            Custom Nodes
+            Custom Nodes & Commands
             <div className="flex items-center">
               <Library className="h-4 w-4 text-muted-foreground" />
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden">
-          {nodes.length === 0 ? (
+          {nodes.length === 0 && commands.length === 0 ? (
             <div className="py-4 text-center text-muted-foreground text-sm">
-              No custom nodes installed
+              No custom nodes or commands installed
             </div>
           ) : (
             <ScrollArea className="h-full">
@@ -743,8 +746,12 @@ function MachineCustomNodes({ machine }: { machine: any }) {
                       )}
                     >
                       <Link
-                        href={`${node.data.url}/commit/${node.data.hash}`}
-                        target="_blank"
+                        onClick={() => {
+                          window.open(
+                            `${node.data.url}/commit/${node.data.hash}`,
+                            "_blank",
+                          );
+                        }}
                         className="flex flex-row items-center gap-2 text-sm"
                       >
                         <span className="flex-1 truncate">
@@ -770,6 +777,33 @@ function MachineCustomNodes({ machine }: { machine: any }) {
                     </div>
                   );
                 })}
+                {commands.map((command, index) => (
+                  <div
+                    key={command.id}
+                    className={cn(
+                      "flex w-full flex-row items-center justify-between rounded-[4px] p-1 transition-all",
+                      (index + nodes.length) % 2 === 1 && "bg-gray-50",
+                    )}
+                  >
+                    <div className="flex-1 flex flex-row items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground flex items-center">
+                        <span className="text-gray-400 mr-1.5">$</span>
+                        <span
+                          className="truncate max-w-[300px] inline-block"
+                          title={command.data}
+                        >
+                          {command.data}
+                        </span>
+                      </span>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="!text-2xs !font-semibold !leading-tight px-3 flex-shrink-0 ml-2"
+                    >
+                      Command
+                    </Badge>
+                  </div>
+                ))}
               </div>
             </ScrollArea>
           )}
@@ -818,8 +852,15 @@ function MachineCustomNodes({ machine }: { machine: any }) {
         }));
     }, [machine.docker_command_steps.steps, failedNodePaths]);
 
+    const commands = useMemo(() => {
+      return machine.docker_command_steps.steps.filter(
+        (node: any) => node.type === "commands",
+      );
+    }, [machine.docker_command_steps.steps]);
+
     return renderCard(
       customNodes,
+      commands,
       customNodes.some((node: any) => node.isFailed),
     );
   }
@@ -1110,7 +1151,7 @@ function MachineBuildLog({ machine }: { machine: any }) {
         </CardTitle>
         <CardDescription>Machine build logs</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[600px] overflow-y-auto">
         {machine.build_log ? (
           <BuildStepsUI
             logs={JSON.parse(machine.build_log ?? "")}
