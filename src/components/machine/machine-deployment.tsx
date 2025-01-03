@@ -1,4 +1,12 @@
 import { BuildStepsUI } from "@/components/machine/machine-build-log";
+import {
+  type Change,
+  CommandChanges,
+  CustomNodeChanges,
+  type DiffViewerProps,
+  FieldChanges,
+  processChanges,
+} from "@/components/machine/machine-version-diff";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
 import {
   AlertDialog,
@@ -30,9 +38,7 @@ import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { differenceInSeconds } from "date-fns";
-import { diff } from "json-diff-ts";
 import {
-  ArrowRight,
   CheckCircle,
   ChevronDown,
   ChevronRight,
@@ -41,11 +47,9 @@ import {
   Ellipsis,
   ExternalLink,
   HardDrive,
-  History,
   Library,
   Puzzle,
   RotateCcw,
-  Settings,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -584,227 +588,59 @@ function InstantRollback({
   );
 }
 
-function DiffViewer({
-  currentMachineVersion,
-  machineVersion,
-}: {
-  currentMachineVersion: any;
-  machineVersion: any;
-}) {
-  const MachineDiff = diff(currentMachineVersion, machineVersion, {
-    keysToSkip: [
-      "version",
-      "created_at",
-      "updated_at",
-      "status",
-      "build_log",
-      "id",
-      "user_id",
-    ],
-  });
+function NoChanges() {
+  return (
+    <div className="mt-4 flex items-center justify-center rounded-[6px] border border-gray-200 bg-gray-50 p-6">
+      <div className="flex items-center gap-2 text-gray-500 text-sm">
+        <CheckCircle className="h-4 w-4" />
+        No significant changes detected
+      </div>
+    </div>
+  );
+}
 
-  // Helper function to get custom node info from steps
-  const getCustomNodeInfo = (steps: any[] = []) => {
-    return steps
-      .filter((step) => step.type === "custom-node")
-      .map((step) => ({
-        name: step.data.name,
-        hash: step.data.hash,
-      }));
-  };
-
-  // Process the diff to create user-friendly changes with unique fields
-  const changes = MachineDiff.reduce((acc: any[], change: any) => {
-    if (change.key === "docker_command_steps") {
-      if (!acc.some((item) => item.type === "custom-nodes")) {
-        const currentNodes = getCustomNodeInfo(
-          machineVersion.docker_command_steps?.steps,
-        );
-        const previousNodes = getCustomNodeInfo(
-          currentMachineVersion.docker_command_steps?.steps,
-        );
-
-        // REMOVED: nodes that were in the old version but are missing in the new
-        const removed = previousNodes.filter(
-          (node) => !currentNodes.some((curr) => curr.name === node.name),
-        );
-
-        // ADDED: nodes that exist in the new version but weren't in the old
-        const added = currentNodes.filter(
-          (node) => !previousNodes.some((prev) => prev.name === node.name),
-        );
-
-        // UPDATED: nodes that exist in both but have different hashes
-        const updated = currentNodes.filter((curr) => {
-          const prevNode = previousNodes.find(
-            (prev) => prev.name === curr.name,
-          );
-          return prevNode && prevNode.hash !== curr.hash;
-        });
-
-        if (removed.length || added.length || updated.length) {
-          acc.push({
-            type: "custom-nodes",
-            removed,
-            added,
-            updated,
-          });
-        }
-      }
-    } else {
-      // Only add field change if we haven't seen this field before
-      if (
-        !acc.some((item) => item.type === "field" && item.field === change.key)
-      ) {
-        acc.push({
-          type: "field",
-          field: change.key,
-          oldValue: currentMachineVersion[change.key],
-          newValue: machineVersion[change.key],
-        });
-      }
-    }
-    return acc;
-  }, []);
-
-  if (changes.length === 0) {
+// ChangeItem component
+function ChangeItem({ change }: { change: Change }) {
+  if (change.type === "steps-changes") {
     return (
-      <div className="mt-4 flex items-center justify-center p-6 bg-gray-50 rounded-[6px] border border-gray-200">
-        <div className="text-sm text-gray-500 flex items-center gap-2">
-          <CheckCircle className="h-4 w-4" />
-          No significant changes detected
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 font-medium text-sm">
+          <Puzzle className="h-4 w-4" />
+          Steps Changes
+        </div>
+        <div className="space-y-1">
+          <CustomNodeChanges nodes={change.nodes} />
+          <CommandChanges commands={change.commands} />
         </div>
       </div>
     );
   }
 
+  return <FieldChanges {...change} />;
+}
+
+export function DiffViewer({
+  currentMachineVersion,
+  machineVersion,
+}: DiffViewerProps) {
+  const changes = processChanges(currentMachineVersion, machineVersion);
+
+  if (changes.length === 0) {
+    return <NoChanges />;
+  }
+
   return (
     <div className="mt-4 space-y-2">
-      <div className="text-sm font-medium text-gray-700 flex items-center gap-2">
-        <History className="h-4 w-4" />
-        Changes Summary
-      </div>
-
-      <ScrollArea className="max-h-[500px] pb-3 space-y-2">
+      <ScrollArea className="max-h-[500px] space-y-2 pb-3">
         {changes.map((change, index) => (
           <div
             key={index}
-            className="bg-gray-50 rounded-[6px] p-4 border border-gray-200 transition-all hover:shadow-sm"
+            className="rounded-lg border border-gray-100 bg-white p-4"
           >
-            {change.type === "custom-nodes" ? (
-              <div className="space-y-2">
-                <div className="font-medium text-sm flex items-center gap-2">
-                  <Puzzle className="h-4 w-4" />
-                  Custom Nodes Changes
-                </div>
-                <div className="space-y-1">
-                  {change.removed.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="destructive" className="h-5 px-1.5">
-                        Removed
-                      </Badge>
-                      <div className="flex flex-wrap gap-1">
-                        {change.removed.map((node, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center px-2 py-1 rounded-md bg-red-50 text-red-700 text-xs font-medium"
-                          >
-                            {node.name}
-                            <span className="ml-1 text-red-500 opacity-75 font-mono">
-                              ({node.hash.slice(0, 7)})
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {change.added.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="success" className="h-5 px-1.5">
-                        Added
-                      </Badge>
-                      <div className="flex flex-wrap gap-1">
-                        {change.added.map((node, i) => (
-                          <span
-                            key={i}
-                            className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 font-medium text-green-700 text-xs"
-                          >
-                            {node.name}
-                            <span className="ml-1 text-green-500 opacity-75 font-mono">
-                              ({node.hash.slice(0, 7)})
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  {change.updated.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Badge variant="yellow" className="h-5 px-1.5">
-                        Updated
-                      </Badge>
-                      <div className="flex flex-wrap gap-1">
-                        {change.updated.map((node, i) => {
-                          const prevNode =
-                            currentMachineVersion.docker_command_steps?.steps.find(
-                              (step: any) =>
-                                step.type === "custom-node" &&
-                                step.data.name === node.name,
-                            );
-                          return (
-                            <span
-                              key={i}
-                              className="inline-flex items-center px-2 py-1 rounded-md bg-yellow-50 text-yellow-700 text-xs font-medium"
-                            >
-                              {node.name}
-                              <span className="ml-1 text-yellow-600 opacity-75 font-mono">
-                                ({prevNode?.data.hash.slice(0, 7)} →{" "}
-                                {node.hash.slice(0, 7)})
-                              </span>
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <div className="font-medium text-sm flex items-center gap-2">
-                  <Settings className="h-4 w-4 text-gray-500" />
-                  {change.field
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (l) => l.toUpperCase())}
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="px-2 py-1 rounded-md bg-red-50 text-red-700 font-mono text-xs">
-                    {formatValue(change.oldValue)}
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-gray-400" />
-                  <div className="px-2 py-1 rounded-md bg-green-50 text-green-700 font-mono text-xs">
-                    {formatValue(change.newValue)}
-                  </div>
-                </div>
-              </div>
-            )}
+            <ChangeItem change={change} />
           </div>
         ))}
       </ScrollArea>
     </div>
   );
-}
-
-// Helper function to format values nicely
-function formatValue(value: any): string {
-  if (typeof value === "boolean") {
-    return value ? "Enabled" : "Disabled";
-  }
-  if (typeof value === "number") {
-    return value.toString();
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  return JSON.stringify(value);
 }
