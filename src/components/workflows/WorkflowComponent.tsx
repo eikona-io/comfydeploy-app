@@ -81,6 +81,7 @@ function RunDetails(props: {
   const { data: run, isLoading } = useQuery<any>({
     queryKey: ["run", run_id],
     queryKeyHashFn: (queryKey) => [...queryKey, "outputs"].toString(),
+    refetchInterval: 2000,
   });
 
   if (isLoading) {
