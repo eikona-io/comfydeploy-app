@@ -226,7 +226,7 @@ export function MachineList() {
         setOpen={setOpenServerlessDialog}
         disabled={sub?.features.machineLimited}
         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
-        containerClassName="lg:flex-row lg:gap-14"
+        containerClassName="flex-col"
         tooltip={
           sub?.features.machineLimited
             ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`

@@ -95,7 +95,7 @@ function InlineSettings(props: { machine: any }) {
       className="h-full"
     >
       <AutoForm
-        containerClassName="lg:flex-row lg:gap-14"
+        containerClassName="flex-col"
         className="px-4"
         values={state}
         formSchema={serverlessFormSchema}

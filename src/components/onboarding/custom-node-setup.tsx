@@ -325,6 +325,7 @@ export function CustomNodeSetup({
                                 </div>
                                 <div className="flex flex-col">
                                   <Button
+                                    type="button"
                                     variant="ghost"
                                     className="hover:bg-gray-200"
                                     onClick={async () => {
@@ -498,6 +499,7 @@ function SelectedNodeList({
           {!scriptMode && (
             <Button
               size={"xs"}
+              type="button"
               variant={"outline"}
               onClick={() => {
                 setShowNewCommand(true);
@@ -512,6 +514,7 @@ function SelectedNodeList({
             </Button>
           )}
           <Button
+            type="button"
             size={"xs"}
             variant={scriptMode ? "default" : "outline"}
             onClick={() => setScriptMode(!scriptMode)}
@@ -532,6 +535,7 @@ function SelectedNodeList({
             <span className="font-medium text-sm">New Custom Command</span>
             <div className="flex">
               <Button
+                type="button"
                 size="sm"
                 variant="ghost"
                 className="text-gray-500 hover:text-gray-700"
@@ -540,6 +544,7 @@ function SelectedNodeList({
                 <Save size={14} />
               </Button>
               <Button
+                type="button"
                 size="sm"
                 variant="ghost"
                 className="text-red-500 hover:text-red-600"
@@ -693,6 +698,7 @@ function CustomNodeCard({
             </div>
           </div>
           <Button
+            type="button"
             size="icon"
             variant="ghost"
             className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
@@ -735,6 +741,7 @@ function CustomNodeCard({
           </div>
         </div>
         <Button
+          type="button"
           size="icon"
           variant="ghost"
           className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
@@ -802,6 +809,7 @@ function CustomNodeCard({
             ) : null}
           </div>
           <Button
+            type="button"
             size="icon"
             variant="ghost"
             className={cn(
