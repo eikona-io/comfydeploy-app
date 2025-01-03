@@ -170,7 +170,8 @@ export function MachineOverview({
   });
   const [isEditingLayout, setIsEditingLayout] = useState(false);
   const navigate = useNavigate();
-  const { data: machineVersionsAll } = useMachineVersionsAll(machine.id);
+  const { data: machineVersionsAll, isLoading: isLoadingVersions } =
+    useMachineVersionsAll(machine.id);
   const handleLayoutChange = (newLayout: any) => {
     if (!isEditingLayout) return;
     setLayout(newLayout);
@@ -181,9 +182,14 @@ export function MachineOverview({
     machine?.docker_command_steps === null &&
     machine.type === "comfy-deploy-serverless";
 
-  const isLatestVersion =
-    machine?.machine_version_id !== null &&
-    machineVersionsAll?.[0]?.id === machine.machine_version_id;
+  const isLatestVersion = useMemo(() => {
+    if (isLoadingVersions || !machineVersionsAll) return true;
+
+    return (
+      machine?.machine_version_id !== null &&
+      machineVersionsAll[0]?.id === machine.machine_version_id
+    );
+  }, [machine?.machine_version_id, machineVersionsAll, isLoadingVersions]);
 
   return (
     <div className="w-full">
