@@ -308,7 +308,7 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
 }
 
 function MachineCustomNodes({ machineVersion }: { machineVersion: any }) {
-  const renderCard = (nodes: any[] = [], hasFailedNodes = false) => {
+  const renderCard = (nodes: any[] = [], commands: any[] = []) => {
     const content = (
       <Card className="flex h-full w-full flex-col rounded-[10px]">
         <CardHeader className="flex-none pb-4">
@@ -320,9 +320,9 @@ function MachineCustomNodes({ machineVersion }: { machineVersion: any }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden">
-          {nodes.length === 0 ? (
+          {nodes.length === 0 && commands.length === 0 ? (
             <div className="py-4 text-center text-muted-foreground text-sm">
-              No custom nodes installed
+              No custom nodes or commands installed
             </div>
           ) : (
             <ScrollArea className="h-full">
@@ -358,6 +358,33 @@ function MachineCustomNodes({ machineVersion }: { machineVersion: any }) {
                     </div>
                   );
                 })}
+                {commands.map((command, index) => (
+                  <div
+                    key={command.id}
+                    className={cn(
+                      "flex w-full flex-row items-center justify-between rounded-[4px] p-1 transition-all",
+                      (index + nodes.length) % 2 === 1 && "bg-gray-50",
+                    )}
+                  >
+                    <div className="flex-1 flex flex-row items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground flex items-center">
+                        <span className="text-gray-400 mr-1.5">$</span>
+                        <span
+                          className="truncate max-w-[300px] inline-block"
+                          title={command.data}
+                        >
+                          {command.data}
+                        </span>
+                      </span>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="!text-2xs !font-semibold !leading-tight px-3 flex-shrink-0 ml-2"
+                    >
+                      Command
+                    </Badge>
+                  </div>
+                ))}
               </div>
             </ScrollArea>
           )}
@@ -397,10 +424,13 @@ function MachineCustomNodes({ machineVersion }: { machineVersion: any }) {
         }));
     }, [machineVersion.docker_command_steps.steps, failedNodePaths]);
 
-    return renderCard(
-      customNodes,
-      customNodes.some((node: any) => node.isFailed),
-    );
+    const commands = useMemo(() => {
+      return machineVersion.docker_command_steps.steps.filter(
+        (node: any) => node.type === "commands",
+      );
+    }, [machineVersion.docker_command_steps.steps]);
+
+    return renderCard(customNodes, commands);
   }
 
   // Handle old format (dependencies)
@@ -421,10 +451,10 @@ function MachineCustomNodes({ machineVersion }: { machineVersion: any }) {
       }),
     );
 
-    return renderCard(customNodes);
+    return renderCard(customNodes, []);
   } catch (error) {
     console.error("Error parsing dependencies:", error);
-    return renderCard();
+    return renderCard([], []);
   }
 }
 
