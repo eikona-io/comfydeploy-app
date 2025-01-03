@@ -1,7 +1,3 @@
-import {
-  BuildStepsUI,
-  MachineBuildLog,
-} from "@/components/machine/machine-build-log";
 import { MachineDeployment } from "@/components/machine/machine-deployment";
 import { MachineOverview } from "@/components/machine/machine-overview";
 import { MachineSettings } from "@/components/machine/machine-settings";
@@ -25,7 +21,6 @@ export default function MachinePage({
   params: { machine_id: string };
 }) {
   const navigate = useNavigate();
-  const machineEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
   const { view } = useSearch({ from: "/machines/$machineId/" });
 
   const { data: machine, isLoading } = useQuery<any>({
