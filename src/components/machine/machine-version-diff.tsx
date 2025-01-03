@@ -174,7 +174,8 @@ export function RemovedCommands({ commands }: { commands?: CommandChange[] }) {
         {commands.map((cmd, i) => (
           <span
             key={i}
-            className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 font-medium text-red-700 text-xs font-mono"
+            className="inline-flex max-w-md items-center truncate rounded-md bg-red-50 px-2 py-1 font-medium font-mono text-red-700 text-xs"
+            title={cmd.data}
           >
             {cmd.data}
           </span>

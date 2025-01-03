@@ -33,6 +33,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
+import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { useMachineVersion, useMachineVersions } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -48,6 +49,7 @@ import {
   ExternalLink,
   HardDrive,
   Library,
+  Lock,
   Puzzle,
   RotateCcw,
 } from "lucide-react";
@@ -254,6 +256,10 @@ function MachineVersionList({
   const navigate = useNavigate({
     from: "/machines/$machineId",
   });
+  const sub = useCurrentPlan();
+  const isBusinessOrEnterprise = Boolean(
+    sub?.sub?.plan && ["business", "enterprise"].includes(sub.sub.plan),
+  );
 
   // Add state for the building time
   const [buildingTime, setBuildingTime] = useState(
@@ -295,6 +301,10 @@ function MachineVersionList({
                 search: { view: undefined },
               });
             } else {
+              if (!isBusinessOrEnterprise) {
+                return;
+              }
+
               navigate({
                 to: "/machines/$machineId/$machineVersionId",
                 params: {
@@ -382,7 +392,11 @@ function MachineVersionList({
         {/* User Info and Actions */}
         <div className="justify-self-end flex flex-row gap-x-2 shrink-0">
           <UserInfoForDeployment machineVersion={machineVersion} />
-          <InstantRollback machineVersion={machineVersion} machine={machine} />
+          <InstantRollback
+            machineVersion={machineVersion}
+            machine={machine}
+            isBusinessOrEnterprise={isBusinessOrEnterprise}
+          />
         </div>
       </div>
     </div>
@@ -392,9 +406,11 @@ function MachineVersionList({
 function InstantRollback({
   machineVersion,
   machine,
+  isBusinessOrEnterprise,
 }: {
   machineVersion: any;
   machine: any;
+  isBusinessOrEnterprise: boolean;
 }) {
   const [rollbackAlertOpen, setRollbackAlertOpen] = useState(false);
   const { data: currentMachineVersion } = useMachineVersion(
@@ -406,6 +422,10 @@ function InstantRollback({
   });
 
   const handleRollback = async () => {
+    if (!isBusinessOrEnterprise) {
+      return;
+    }
+
     try {
       await api({
         url: `machine/serverless/${machine.id}/rollback`,
@@ -436,6 +456,7 @@ function InstantRollback({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             disabled={
+              !isBusinessOrEnterprise ||
               machineVersion.id === machine.machine_version_id ||
               machineVersion.status !== "ready" ||
               machine.status === "building"
@@ -445,7 +466,11 @@ function InstantRollback({
           >
             Rollback
             <DropdownMenuShortcut>
-              <RotateCcw className="w-4 h-4" />
+              {isBusinessOrEnterprise ? (
+                <RotateCcw className="w-4 h-4" />
+              ) : (
+                <Lock className="w-4 h-4" />
+              )}
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           {/* <DropdownMenuItem>
@@ -455,6 +480,7 @@ function InstantRollback({
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
           <DropdownMenuItem
+            disabled={!isBusinessOrEnterprise}
             onClick={() => {
               if (
                 machine.machine_version_id === machineVersion.id &&
@@ -478,6 +504,11 @@ function InstantRollback({
             }}
           >
             <span>Details</span>
+            {!isBusinessOrEnterprise && (
+              <DropdownMenuShortcut>
+                <Lock className="w-4 h-4" />
+              </DropdownMenuShortcut>
+            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
