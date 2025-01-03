@@ -425,10 +425,15 @@ function MachineAlert({
             <span className="font-semibold">rollback version</span>. You can
             always switch back to the latest version when ready.
             <br />
-            <Link className="inline-flex items-center text-yellow-600 hover:text-yellow-700">
+            <a
+              href="https://comfydeploy.com/docs/v2/machines/rollback"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center text-yellow-600 hover:text-yellow-700"
+            >
               Learn more about Machine Rollback
               <ExternalLink className="ml-1 h-3 w-3" />
-            </Link>
+            </a>
           </div>,
           "bg-yellow-50",
         )}
