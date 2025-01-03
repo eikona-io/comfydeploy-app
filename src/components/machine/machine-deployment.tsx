@@ -166,6 +166,16 @@ export function MachineDeployment(props: { machine: any }) {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
+  if (machine.machine_version_id === null) {
+    return !machine?.build_log ? (
+      <div className="flex h-full w-full items-center justify-center">
+        <span className="text-gray-500">No logs found</span>
+      </div>
+    ) : (
+      <BuildStepsUI machine={machine} logs={JSON.parse(machine.build_log)} />
+    );
+  }
+
   if (query.isLoading) {
     return (
       <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
@@ -206,12 +216,10 @@ export function MachineDeployment(props: { machine: any }) {
   }
 
   if (!query.data?.pages[0]?.length) {
-    return !machine?.build_log ? (
+    return (
       <div className="flex h-full w-full items-center justify-center">
         <span className="text-gray-500">No deployments or logs found</span>
       </div>
-    ) : (
-      <BuildStepsUI machine={machine} logs={JSON.parse(machine.build_log)} />
     );
   }
 
