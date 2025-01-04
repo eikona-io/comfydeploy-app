@@ -312,10 +312,6 @@ function MachineVersionList({
                 search: { view: undefined },
               });
             } else {
-              if (!isBusinessOrEnterprise) {
-                return;
-              }
-
               navigate({
                 to: "/machines/$machineId/$machineVersionId",
                 params: {
@@ -491,7 +487,6 @@ function InstantRollback({
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
           <DropdownMenuItem
-            disabled={!isBusinessOrEnterprise}
             onClick={() => {
               if (
                 machine.machine_version_id === machineVersion.id &&
@@ -515,11 +510,6 @@ function InstantRollback({
             }}
           >
             <span>Details</span>
-            {!isBusinessOrEnterprise && (
-              <DropdownMenuShortcut>
-                <Lock className="w-4 h-4" />
-              </DropdownMenuShortcut>
-            )}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
