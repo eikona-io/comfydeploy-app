@@ -230,19 +230,30 @@ export function MachineDeployment(props: { machine: any }) {
   }
 
   return (
-    <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
-      <VirtualizedInfiniteList
-        className="!h-full fab-machine-list w-full"
-        queryResult={query}
-        renderItem={(machineVersion) => (
-          <MachineVersionList
-            machineVersion={machineVersion}
-            machine={machine}
-          />
-        )}
-        estimateSize={estimatedSize}
-      />
-    </div>
+    <>
+      <a
+        href="https://www.comfydeploy.com/docs/v2/machines/versioning"
+        target="_blank"
+        className="flex cursor-pointer flex-row items-center gap-x-1 px-2 text-gray-500 text-xs hover:text-gray-600 hover:underline md:px-4"
+        rel="noreferrer"
+      >
+        Learn more about machine version control
+        <ExternalLink className="h-3 w-3" />
+      </a>
+      <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
+        <VirtualizedInfiniteList
+          className="!h-full fab-machine-list w-full"
+          queryResult={query}
+          renderItem={(machineVersion) => (
+            <MachineVersionList
+              machineVersion={machineVersion}
+              machine={machine}
+            />
+          )}
+          estimateSize={estimatedSize}
+        />
+      </div>
+    </>
   );
 }
 
