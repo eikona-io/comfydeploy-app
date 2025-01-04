@@ -289,7 +289,7 @@ export function SessionCreator(props: {
           workflowJson={props.workflowLatestVersion.workflow}
         />
         <App endpoint={staticUrl}>
-          <div className="flex w-full justify-between">
+          <div className="flex w-full justify-between gap-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
