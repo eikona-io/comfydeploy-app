@@ -753,7 +753,7 @@ function CustomNodeCard({
 
       <Separator className="my-2" />
 
-      {node.data.meta && (
+      {node.data && (
         <div className="flex items-center justify-between gap-2">
           <div className="flex w-full flex-col text-gray-500 text-xs leading-snug">
             <div className="flex w-full items-center gap-2">
