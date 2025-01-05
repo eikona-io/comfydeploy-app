@@ -156,6 +156,45 @@ const MachineStatusBadge = ({ status }: { status: string }) => {
   );
 };
 
+const LoadingSkeleton = () => {
+  return (
+    <>
+      {[...Array(5)].map((_, i) => (
+        <div
+          key={i}
+          className="mb-4 rounded-[8px] border bg-white p-4 shadow-sm"
+        >
+          <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] items-center gap-x-4">
+            {/* ID and Version */}
+            <div className="grid grid-cols-1 gap-y-1">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-5 w-12" />
+            </div>
+
+            {/* Status and Time */}
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+
+            {/* GPU and Nodes */}
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-5 w-40" />
+            </div>
+
+            {/* User Info */}
+            <div className="flex items-center gap-2 justify-self-end">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-[22px] w-[22px] rounded-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+};
+
 export function MachineDeployment(props: { machine: any }) {
   const { machine } = props;
   const query = useMachineVersions(machine.id);
@@ -185,38 +224,7 @@ export function MachineDeployment(props: { machine: any }) {
   if (query.isLoading) {
     return (
       <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
-        {[...Array(5)].map((_, i) => (
-          <div
-            key={i}
-            className="mb-4 rounded-[8px] border bg-white p-4 shadow-sm"
-          >
-            <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] items-center gap-x-4">
-              {/* ID and Version */}
-              <div className="grid grid-cols-1 gap-y-1">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-5 w-12" />
-              </div>
-
-              {/* Status and Time */}
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-4 w-4 rounded-full" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-
-              {/* GPU and Nodes */}
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-5 w-40" />
-              </div>
-
-              {/* User Info */}
-              <div className="flex items-center gap-2 justify-self-end">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-[22px] w-[22px] rounded-full" />
-              </div>
-            </div>
-          </div>
-        ))}
+        <LoadingSkeleton />
       </div>
     );
   }
@@ -240,7 +248,7 @@ export function MachineDeployment(props: { machine: any }) {
         Learn more about machine version control
         <ExternalLink className="h-3 w-3" />
       </a>
-      <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
+      <div className="mx-auto h-[calc(100vh-120px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
         <VirtualizedInfiniteList
           className="!h-full fab-machine-list w-full"
           queryResult={query}
@@ -251,6 +259,7 @@ export function MachineDeployment(props: { machine: any }) {
             />
           )}
           estimateSize={estimatedSize}
+          renderLoading={() => <LoadingSkeleton />}
         />
       </div>
     </>
