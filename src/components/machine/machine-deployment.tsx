@@ -272,23 +272,28 @@ function MachineVersionList({
     sub?.sub?.plan && ["business", "enterprise"].includes(sub.sub.plan),
   );
 
-  // Add state for the building time
-  const [buildingTime, setBuildingTime] = useState(
-    differenceInSeconds(new Date(), new Date(machineVersion.created_at)),
-  );
+  // Single state to track the build start time
+  const [buildStartTime, setBuildStartTime] = useState<Date | null>(null);
 
   // Set up interval to update the time every second when building
   useEffect(() => {
     if (machineVersion.status === "building") {
+      if (!buildStartTime) {
+        setBuildStartTime(new Date());
+      }
+
       const interval = setInterval(() => {
-        setBuildingTime(
-          differenceInSeconds(new Date(), new Date(machineVersion.created_at)),
-        );
+        // Create a new Date object to force re-render
+        if (buildStartTime) {
+          setBuildStartTime(new Date(buildStartTime.getTime()));
+        }
       }, 1000);
 
       return () => clearInterval(interval);
     }
-  }, [machineVersion.status, machineVersion.created_at]);
+    // Reset when not building
+    setBuildStartTime(null);
+  }, [machineVersion.status, buildStartTime]);
 
   return (
     <div
@@ -352,7 +357,11 @@ function MachineVersionList({
           )}
           <span className="text-sm text-gray-500 truncate">
             {machineVersion.status === "building"
-              ? formatExactTime(buildingTime)
+              ? formatExactTime(
+                  buildStartTime
+                    ? differenceInSeconds(new Date(), buildStartTime)
+                    : 0,
+                )
               : machineVersion.created_at === machineVersion.updated_at
                 ? "-"
                 : `${formatExactTime(

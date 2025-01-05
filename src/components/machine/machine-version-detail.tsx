@@ -44,7 +44,7 @@ import {
   Thermometer,
   Ticket,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
@@ -200,6 +200,25 @@ function MachineInfo({ machineVersion }: { machineVersion: any }) {
 }
 
 function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
+  const [buildStartTime, setBuildStartTime] = useState<Date | null>(null);
+
+  useEffect(() => {
+    if (machineVersion.status === "building") {
+      if (!buildStartTime) {
+        setBuildStartTime(new Date());
+      }
+
+      const interval = setInterval(() => {
+        if (buildStartTime) {
+          setBuildStartTime(new Date(buildStartTime.getTime()));
+        }
+      }, 1000);
+
+      return () => clearInterval(interval);
+    }
+    setBuildStartTime(null);
+  }, [machineVersion.status, buildStartTime]);
+
   const serverlessSpec = (
     <>
       <Separator className="my-4" />
@@ -282,10 +301,9 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
             <span className="text-sm text-gray-500 truncate">
               {machineVersion.status === "building"
                 ? formatExactTime(
-                    differenceInSeconds(
-                      new Date(),
-                      new Date(machineVersion.created_at),
-                    ),
+                    buildStartTime
+                      ? differenceInSeconds(new Date(), buildStartTime)
+                      : 0,
                   )
                 : machineVersion.created_at === machineVersion.updated_at
                   ? "-"
