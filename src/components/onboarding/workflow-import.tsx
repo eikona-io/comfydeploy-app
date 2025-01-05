@@ -540,40 +540,6 @@ export function AccordionOption({
   );
 }
 
-function InnerAccordionOption({
-  value,
-  selected,
-  label,
-  content,
-}: {
-  value: string;
-  selected: string;
-  label: string;
-  content: React.ReactNode;
-}) {
-  return (
-    <AccordionItem
-      value={value}
-      className={cn(
-        "rounded-[4px] px-4 py-1 transition-all duration-200 ease-in-out",
-        selected !== value ? "opacity-50" : "bg-gray-50",
-      )}
-    >
-      <AccordionTrigger>
-        <div className="flex flex-row items-center">
-          {selected === value ? (
-            <CircleCheckBig className="mr-4 h-3 w-3" />
-          ) : (
-            <Circle className="mr-4 h-3 w-3" />
-          )}
-          {label}
-        </div>
-      </AccordionTrigger>
-      <AccordionContent>{content}</AccordionContent>
-    </AccordionItem>
-  );
-}
-
 function DefaultOption({
   validation,
   setValidation,
