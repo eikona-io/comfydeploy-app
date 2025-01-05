@@ -28,7 +28,7 @@ export function MachineSettings(props: {
           You can drag and drop a snapshot file to import your machine
           configuration.
         </span>
-        <MemoizedInlineSettings machine={machine} setView={setView} />
+        <MemoizedInlineSettings machine={machine} />
       </div>
     );
   }
@@ -83,10 +83,7 @@ export function MachineSettings(props: {
 
 const MemoizedInlineSettings = memo(InlineSettings);
 
-function InlineSettings(props: {
-  machine: any;
-  setView: (view: View) => void;
-}) {
+function InlineSettings(props: { machine: any }) {
   const { machine } = props;
   const [isLoading, setIsLoading] = useState(false);
   const [state, setState] = useState(machine);
@@ -118,7 +115,6 @@ function InlineSettings(props: {
               },
             });
             toast.success("Updated successfully!");
-            setView("deployments");
           } catch (error: any) {
             console.error("API Error:", error);
             // If the error response contains validation details, show them
