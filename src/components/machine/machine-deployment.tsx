@@ -278,7 +278,8 @@ function MachineVersionList({
   });
   const sub = useCurrentPlan();
   const isBusinessOrEnterprise = Boolean(
-    sub?.sub?.plan && ["business", "enterprise"].includes(sub.sub.plan),
+    sub?.plans?.plans[0] &&
+      ["business", "enterprise"].includes(sub.plans.plans[0].toLowerCase()),
   );
 
   // Single state to track the build start time
