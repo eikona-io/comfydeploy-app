@@ -288,11 +288,10 @@ function MachineVersionList({
   useEffect(() => {
     if (machineVersion.status === "building") {
       if (!buildStartTime) {
-        setBuildStartTime(new Date());
+        setBuildStartTime(new Date(machineVersion.created_at));
       }
 
       const interval = setInterval(() => {
-        // Create a new Date object to force re-render
         if (buildStartTime) {
           setBuildStartTime(new Date(buildStartTime.getTime()));
         }
@@ -302,7 +301,7 @@ function MachineVersionList({
     }
     // Reset when not building
     setBuildStartTime(null);
-  }, [machineVersion.status, buildStartTime]);
+  }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
   return (
     <div

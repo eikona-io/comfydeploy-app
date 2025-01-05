@@ -205,7 +205,7 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
   useEffect(() => {
     if (machineVersion.status === "building") {
       if (!buildStartTime) {
-        setBuildStartTime(new Date());
+        setBuildStartTime(new Date(machineVersion.created_at));
       }
 
       const interval = setInterval(() => {
@@ -217,7 +217,7 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
       return () => clearInterval(interval);
     }
     setBuildStartTime(null);
-  }, [machineVersion.status, buildStartTime]);
+  }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
   const serverlessSpec = (
     <>

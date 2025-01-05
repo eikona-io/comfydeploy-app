@@ -36,7 +36,7 @@ import { toast } from "sonner";
 // Add these interfaces
 export interface StepValidation {
   workflowName: string;
-  importOption: "import" | "default" | "empty";
+  importOption: "import" | "default";
   importJson?: string;
   workflowJson?: string;
   workflowApi?: string;
@@ -76,8 +76,7 @@ function getStepNavigation(
       return {
         next:
           validation.machineOption === "new"
-            ? validation.importOption === "empty" ||
-              validation.importOption === "default"
+            ? validation.importOption === "default"
               ? 4
               : 2 // Skip Custom Node Setup for empty workflows
             : null, // End flow for existing/none machine
@@ -99,11 +98,7 @@ function getStepNavigation(
     case 4: // Machine Settings
       return {
         next: null,
-        prev:
-          validation.importOption === "empty" ||
-          validation.importOption === "default"
-            ? 1
-            : 3,
+        prev: validation.importOption === "default" ? 1 : 3,
       };
 
     default:
@@ -119,15 +114,10 @@ export default function WorkflowImport() {
   const [validation, setValidation] = useState<StepValidation>({
     workflowName: "Untitled Workflow",
     importOption:
-      (localStorage.getItem("workflowImportOption") as
-        | "import"
-        | "default"
-        | "empty") || "default",
+      (localStorage.getItem("workflowImportOption") as "import" | "default") ||
+      "default",
     importJson: "",
-    workflowJson:
-      localStorage.getItem("workflowImportOption") === "empty"
-        ? JSON.stringify(EMPTY_WORKFLOW)
-        : "",
+    workflowJson: "",
     workflowApi: "",
     selectedMachineId: "",
     machineOption: "existing",
@@ -464,22 +454,12 @@ function Import({
 
               // console.log(value);
 
-              if (value === "empty") {
-                setValidation({
-                  ...validation,
-                  importOption: value as "empty",
-                  workflowJson: JSON.stringify(EMPTY_WORKFLOW),
-                  workflowApi: undefined,
-                  importJson: "",
-                });
-              } else {
-                setValidation({
-                  ...validation,
-                  importOption: value as "import" | "default",
-                  workflowJson: "",
-                  workflowApi: undefined,
-                });
-              }
+              setValidation({
+                ...validation,
+                importOption: value as "import" | "default",
+                workflowJson: "",
+                workflowApi: undefined,
+              });
             }}
           >
             <DefaultOption
@@ -738,19 +718,3 @@ function ImportOptions({
     />
   );
 }
-
-const EMPTY_WORKFLOW = {
-  last_node_id: 14,
-  last_link_id: 11,
-  nodes: [],
-  links: [],
-  groups: [],
-  config: {},
-  extra: {
-    ds: {
-      scale: 1.1167815779424797,
-      offset: [-1275.5956025607436, -780.4765046901985],
-    },
-  },
-  version: 0.4,
-};
