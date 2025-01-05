@@ -1,3 +1,4 @@
+import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
 import { MachineStatus } from "@/components/machines/machine-status";
 import { ShineBorder } from "@/components/magicui/shine-border";
@@ -208,18 +209,24 @@ export function MachineListItem({
                 params={{
                   machineId: machine.id,
                 }}
-                search={{ view: "overview" }}
+                search={{ view: undefined }}
               >
                 <h2 className="whitespace-nowrap font-medium text-base">
                   {machine.name}
                 </h2>
               </Link>
+              {isExpanded && machine.machine_version_id && (
+                <MachineVersionBadge machine={machine} isExpanded={true} />
+              )}
             </div>
 
             {!isExpanded && machine.gpu && (
               <div className="flex flex-row items-center gap-1 font-medium text-2xs">
                 <HardDrive className="h-[14px] w-[14px]" />
                 {machine.gpu}
+                {machine.machine_version_id && (
+                  <MachineVersionBadge machine={machine} isExpanded={false} />
+                )}
               </div>
             )}
           </div>
