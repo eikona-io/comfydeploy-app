@@ -1,6 +1,7 @@
 import { MachineDeployment } from "@/components/machine/machine-deployment";
 import { MachineOverview } from "@/components/machine/machine-overview";
 import { MachineSettings } from "@/components/machine/machine-settings";
+import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
 import { Portal } from "@/components/ui/custom/portal";
 import {
   SidebarMenuSub,
@@ -106,6 +107,10 @@ export default function MachinePage({
                 }
               >
                 <span>{route.name}</span>
+                {machine.machine_version_id &&
+                  route.name.toLowerCase() === "deployments" && (
+                    <MachineVersionBadge machine={machine} isExpanded={true} />
+                  )}
               </SidebarMenuSubButton>
             </SidebarMenuSubItem>
           ))}

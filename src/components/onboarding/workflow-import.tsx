@@ -36,7 +36,7 @@ import { toast } from "sonner";
 // Add these interfaces
 export interface StepValidation {
   workflowName: string;
-  importOption: "import" | "default" | "empty";
+  importOption: "import" | "default";
   importJson?: string;
   workflowJson?: string;
   workflowApi?: string;
@@ -76,8 +76,7 @@ function getStepNavigation(
       return {
         next:
           validation.machineOption === "new"
-            ? validation.importOption === "empty" ||
-              validation.importOption === "default"
+            ? validation.importOption === "default"
               ? 4
               : 2 // Skip Custom Node Setup for empty workflows
             : null, // End flow for existing/none machine
@@ -99,11 +98,7 @@ function getStepNavigation(
     case 4: // Machine Settings
       return {
         next: null,
-        prev:
-          validation.importOption === "empty" ||
-          validation.importOption === "default"
-            ? 1
-            : 3,
+        prev: validation.importOption === "default" ? 1 : 3,
       };
 
     default:
@@ -119,15 +114,10 @@ export default function WorkflowImport() {
   const [validation, setValidation] = useState<StepValidation>({
     workflowName: "Untitled Workflow",
     importOption:
-      (localStorage.getItem("workflowImportOption") as
-        | "import"
-        | "default"
-        | "empty") || "default",
+      (localStorage.getItem("workflowImportOption") as "import" | "default") ||
+      "default",
     importJson: "",
-    workflowJson:
-      localStorage.getItem("workflowImportOption") === "empty"
-        ? JSON.stringify(EMPTY_WORKFLOW)
-        : "",
+    workflowJson: "",
     workflowApi: "",
     selectedMachineId: "",
     machineOption: "existing",
@@ -208,7 +198,6 @@ export default function WorkflowImport() {
         onNext: async (validation) => {
           try {
             switch (validation.machineOption) {
-              // case "none":
               case "existing":
                 // console.log(validation);
                 // console.log(validation.workflowApi);
@@ -465,22 +454,12 @@ function Import({
 
               // console.log(value);
 
-              if (value === "empty") {
-                setValidation({
-                  ...validation,
-                  importOption: value as "empty",
-                  workflowJson: JSON.stringify(EMPTY_WORKFLOW),
-                  workflowApi: undefined,
-                  importJson: "",
-                });
-              } else {
-                setValidation({
-                  ...validation,
-                  importOption: value as "import" | "default",
-                  workflowJson: "",
-                  workflowApi: undefined,
-                });
-              }
+              setValidation({
+                ...validation,
+                importOption: value as "import" | "default",
+                workflowJson: "",
+                workflowApi: undefined,
+              });
             }}
           >
             <DefaultOption
@@ -490,17 +469,6 @@ function Import({
             <ImportOptions
               validation={validation}
               setValidation={setValidation}
-            />
-
-            <AccordionOption
-              value="empty"
-              selected={validation.importOption}
-              label="Empty"
-              content={
-                <span className="text-muted-foreground">
-                  Blank page for you to start your own workflow.
-                </span>
-              }
             />
           </Accordion>
         </div>
@@ -552,46 +520,12 @@ export function AccordionOption({
   );
 }
 
-function InnerAccordionOption({
-  value,
-  selected,
-  label,
-  content,
-}: {
-  value: string;
-  selected: string;
-  label: string;
-  content: React.ReactNode;
-}) {
-  return (
-    <AccordionItem
-      value={value}
-      className={cn(
-        "rounded-[4px] px-4 py-1 transition-all duration-200 ease-in-out",
-        selected !== value ? "opacity-50" : "bg-gray-50",
-      )}
-    >
-      <AccordionTrigger>
-        <div className="flex flex-row items-center">
-          {selected === value ? (
-            <CircleCheckBig className="mr-4 h-3 w-3" />
-          ) : (
-            <Circle className="mr-4 h-3 w-3" />
-          )}
-          {label}
-        </div>
-      </AccordionTrigger>
-      <AccordionContent>{content}</AccordionContent>
-    </AccordionItem>
-  );
-}
-
 function DefaultOption({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
   // Initialize innerSelected from validation if it exists, otherwise use default
-  const [innerSelected, setInnerSelected] = useState<string>(
+  const [workflowSelected, setWorkflowSelected] = useState<string>(
     validation.workflowJson
       ? defaultWorkflowTemplates.find(
           (t) => t.workflowJson === validation.workflowJson,
@@ -602,7 +536,7 @@ function DefaultOption({
   // Only update validation when template changes, not on every mount
   useEffect(() => {
     const selectedTemplate = defaultWorkflowTemplates.find(
-      (template) => template.workflowId === innerSelected,
+      (template) => template.workflowId === workflowSelected,
     );
 
     if (selectedTemplate && validation.importOption === "default") {
@@ -613,53 +547,59 @@ function DefaultOption({
         importJson: "",
       });
     }
-  }, [innerSelected, validation.importOption]);
+  }, [workflowSelected, validation.importOption]);
 
   return (
     <AccordionOption
       value="default"
       // Make sure this matches exactly with validation.importOption
       selected={validation.importOption}
-      label="Default"
+      label="Templates"
       content={
         <div>
           <span className="text-muted-foreground">
             Select a workflow as your starting point.{" "}
           </span>
 
-          <div className="mt-2">
-            <Accordion
-              type="single"
-              defaultValue={defaultWorkflowTemplates[0].workflowId}
-              value={innerSelected}
-              onValueChange={setInnerSelected}
-            >
-              {defaultWorkflowTemplates.map((template, index) => (
-                <InnerAccordionOption
-                  key={index}
-                  value={template.workflowId}
-                  selected={innerSelected}
-                  label={template.workflowName}
-                  content={
-                    <div className="flex flex-row items-center gap-8 py-4">
-                      <div className="w-1/2">
-                        <p className="text-muted-foreground text-sm">
-                          {template.workflowDescription}
-                        </p>
-                      </div>
-                      <div className="relative h-48 w-1/2">
-                        <div className="absolute inset-0 bg-gradient-to-r from-background to-15% to-transparent" />
-                        <img
-                          src={template.workflowImageUrl}
-                          className="h-full w-full object-cover"
-                          alt={`${template.workflowName} example`}
-                        />
-                      </div>
-                    </div>
-                  }
-                />
-              ))}
-            </Accordion>
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            {defaultWorkflowTemplates.map((template, index) => (
+              <button
+                key={template.workflowId}
+                type="button"
+                className={cn(
+                  "w-full rounded-lg border p-4 text-left transition-all",
+                  workflowSelected === template.workflowId
+                    ? "border-2 border-gray-500 ring-2 ring-gray-500 ring-offset-2"
+                    : "border-gray-200 hover:border-gray-300",
+                )}
+                onClick={() => setWorkflowSelected(template.workflowId)}
+                aria-pressed={workflowSelected === template.workflowId}
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    {workflowSelected === template.workflowId ? (
+                      <CircleCheckBig className="h-4 w-4" />
+                    ) : (
+                      <Circle className="h-4 w-4" />
+                    )}
+                    <h3 className="font-medium">{template.workflowName}</h3>
+                  </div>
+
+                  <div className="relative aspect-video w-full overflow-hidden rounded-md">
+                    <div className="absolute inset-0 bg-gradient-to-r from-background to-15% to-transparent" />
+                    <img
+                      src={template.workflowImageUrl}
+                      className="h-full w-full object-cover"
+                      alt={`${template.workflowName} example`}
+                    />
+                  </div>
+
+                  <p className="text-sm text-muted-foreground">
+                    {template.workflowDescription}
+                  </p>
+                </div>
+              </button>
+            ))}
           </div>
         </div>
       }
@@ -778,19 +718,3 @@ function ImportOptions({
     />
   );
 }
-
-const EMPTY_WORKFLOW = {
-  last_node_id: 14,
-  last_link_id: 11,
-  nodes: [],
-  links: [],
-  groups: [],
-  config: {},
-  extra: {
-    ds: {
-      scale: 1.1167815779424797,
-      offset: [-1275.5956025607436, -780.4765046901985],
-    },
-  },
-  version: 0.4,
-};
