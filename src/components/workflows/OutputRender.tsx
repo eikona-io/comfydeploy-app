@@ -214,7 +214,7 @@ function FileURLRenderMulti({
             </DialogTrigger>
             <DialogContent className="max-h-fit max-w-fit">
               <DialogHeader>
-                <DialogTitle></DialogTitle>
+                <DialogTitle />
               </DialogHeader>
               <FileURLRender
                 url={urlImage.url}

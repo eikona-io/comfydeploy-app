@@ -16,7 +16,7 @@ import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useWorkflowList } from "@/hooks/use-workflow-list";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { useRouter } from "@tanstack/react-router";
+import { useMatch, useMatchRoute, useRouter } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, ExternalLink, Search } from "lucide-react";
 import * as React from "react";
 import { useMemo, useRef, useState } from "react";
@@ -35,6 +35,11 @@ export function WorkflowDropdown({
   path_suffix?: string;
   className?: string;
 }) {
+  const match = useMatch({
+    from: "/workflows/$workflowId/$view",
+    shouldThrow: false,
+  });
+
   const [open, setOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
@@ -70,8 +75,7 @@ export function WorkflowDropdown({
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button
-            // variant="ghost"
-            role="combobox"
+            type="button"
             aria-expanded={open}
             className={cn(
               "flex w-full items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-gray-50 ",
@@ -103,11 +107,17 @@ export function WorkflowDropdown({
                 item={item}
                 selected={workflow}
                 onSelect={(selectedItem) => {
-                  const href =
-                    (path ? path : "/workflows/") +
-                    selectedItem.id +
-                    (path_suffix ? path_suffix : "");
-                  router.push(href);
+                  // const href =
+                  //   (path ? path : "/workflows/") +
+                  //   selectedItem.id +
+                  //   (path_suffix ? path_suffix : "");
+                  router.navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: {
+                      workflowId: selectedItem.id,
+                      view: match?.params.view || "workspace",
+                    },
+                  });
                 }}
               />
             )}

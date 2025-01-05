@@ -10,6 +10,7 @@ import {
   CreditCard,
   Database,
   ExternalLink,
+  Folder,
   Github,
   Key,
   LineChart,
@@ -147,6 +148,11 @@ function usePages() {
       name: "Storage",
       path: "/storage",
       icon: Database,
+    },
+    {
+      name: "Assets",
+      path: "/assets",
+      icon: Folder,
     },
   ];
 

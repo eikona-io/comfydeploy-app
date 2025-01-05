@@ -5,19 +5,22 @@ export async function api({
   init,
   params,
   raw,
+  skipDefaultHeaders = false,
+  onUploadProgress,
 }: {
   url: string;
   init?: RequestInit;
   params?: Record<string, any> | string;
   raw?: boolean;
+  skipDefaultHeaders?: boolean;
+  onUploadProgress?: (progressEvent: ProgressEvent) => void;
 }) {
   const fetchToken = useAuthStore.getState().fetchToken;
-
   const auth = await fetchToken();
 
   let queryString;
   if (typeof params === "string") {
-    queryString = "?" + params;
+    queryString = `?${params}`;
   } else {
     queryString = params
       ? `?${new URLSearchParams(
@@ -28,19 +31,59 @@ export async function api({
       : "";
   }
 
-  const headers = {
-    "Content-Type": "application/json",
+  // Always include auth header, but only include Content-Type if not skipping defaults
+  const defaultHeaders = {
+    ...(skipDefaultHeaders ? {} : { "Content-Type": "application/json" }),
     Authorization: `Bearer ${auth}`,
+  };
+
+  const headers = {
+    ...defaultHeaders,
+    ...init?.headers,
   };
 
   const finalUrl = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/${url}${queryString}`;
 
+  // Use XMLHttpRequest for upload progress
+  if (onUploadProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(init?.method || "GET", finalUrl);
+
+      // Set headers
+      Object.entries(headers).forEach(([key, value]) => {
+        if (value) xhr.setRequestHeader(key, value);
+      });
+
+      // Handle progress
+      xhr.upload.addEventListener("progress", onUploadProgress);
+
+      // Handle completion
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const response = xhr.responseText
+            ? JSON.parse(xhr.responseText)
+            : null;
+          resolve(convertDateFields(response));
+        } else {
+          reject(new Error(`HTTP error! status: ${xhr.status}`));
+        }
+      };
+
+      // Handle error
+      xhr.onerror = () => {
+        reject(new Error("Network error occurred"));
+      };
+
+      // Send the request
+      xhr.send(init?.body as FormData);
+    });
+  }
+
+  // Use regular fetch for non-upload requests
   return await fetch(finalUrl, {
-    headers: {
-      ...headers,
-      ...init?.headers,
-    },
     ...init,
+    headers,
   }).then(async (res) => {
     if (!res.ok) {
       const errorBody = await res.text();

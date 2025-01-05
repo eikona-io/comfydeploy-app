@@ -14,18 +14,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { UploadZone } from "@/components/upload/upload-zone";
+import { AssetsPanel } from "@/components/workspace/assets-panel";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { useAuthStore } from "@/lib/auth-store";
 import { machineGPUOptions } from "@/lib/schema";
 import { EventSourcePolyfill } from "event-source-polyfill";
-import { Folder, List, Plus, Wrench } from "lucide-react";
+import { Folder, Image, List, Plus, Wrench } from "lucide-react";
 import { Info } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { Suspense, useEffect } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { AssetBrowser } from "../asset-browser";
 import { ModelList } from "../storage/model-list";
 import { ModelListHeader, ModelListView } from "../storage/model-list-view";
 import { Skeleton } from "../ui/skeleton";
@@ -38,6 +41,7 @@ import Workspace from "./Workspace";
 // import { ModelsListLayout } from "@/repo/components/ui/custom/workspace/Windows";
 // import { WorkspaceProvider } from "./WorkspaceContext";
 import { useCDStore } from "./Workspace";
+import { sendEventToCD } from "./sendEventToCD";
 
 const staticUrl = process.env.COMFYUI_FRONTEND_URL!;
 console.log(staticUrl);
@@ -45,44 +49,61 @@ console.log(staticUrl);
 export function ModelsButton(props: {
   isPreview: boolean;
 }) {
+  const handleAssetClick = (asset: {
+    url: string;
+    name: string;
+    id: string;
+  }) => {
+    if (asset.url) {
+      sendEventToCD("add_node", {
+        type: "ComfyUIDeployExternalImage",
+        widgets_values: [asset.url],
+      });
+    }
+  };
+
   return (
     <>
       {!props.isPreview && (
-        <>
-          <Popover>
-            {/* <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="gap-1"
-                size="sm"
-                Icon={Wrench}
-                iconPlacement="left"
-              >
-                <span className="hidden lg:block">Setup</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-fit p-2">
-              <OnBoardingDialog />
-            </PopoverContent> */}
-          </Popover>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className="gap-1"
-                size="sm"
-                Icon={List}
-                iconPlacement="left"
-              >
-                <span className="hidden lg:block">Logs</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-fit p-2">
-              <LogDisplay />
-            </PopoverContent>
-          </Popover>
-        </>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="gap-1"
+              size="sm"
+              Icon={List}
+              iconPlacement="left"
+            >
+              <span className="hidden lg:block">Logs</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-fit p-2">
+            <LogDisplay />
+          </PopoverContent>
+        </Popover>
       )}
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="gap-1"
+            size="sm"
+            Icon={Image}
+            iconPlacement="left"
+          >
+            <span className="hidden lg:block">Assets</span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-fit p-2">
+          <div className="h-[300px] w-[250px]">
+            <AssetBrowser
+              className="h-full w-full"
+              showNewFolderButton={false}
+              onItemClick={handleAssetClick}
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -283,67 +304,58 @@ export function SessionCreator(props: {
     return (
       <>
         {ui}
-        <Workspace
-          nativeMode={false}
-          endpoint={staticUrl}
-          workflowJson={props.workflowLatestVersion.workflow}
-        />
-        <App endpoint={staticUrl}>
-          <div className="flex w-full justify-between gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="mx-2 flex cursor-help items-center gap-1">
-                    <span className="text-gray-600 text-sm">Preview Mode</span>
-                    <Info className="h-4 w-4 text-gray-400" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className="max-w-xs">
-                  <p>
-                    You're currently viewing a edit-only preview of this
-                    workflow. To run the workflow, you'll need to create a new
-                    ComfyUI session.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            {/* <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="default"
-                size="sm"
-                className="flex items-center gap-1"
-                Icon={Plus}
-                iconPlacement="left"
-              >
-                Session
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-fit p-1">
-              <div className="flex flex-col gap-2">{sessionUI}</div>
-            </PopoverContent>
-          </Popover> */}
-            <Button
-              variant="default"
-              size="sm"
-              className="flex items-center gap-1"
-              Icon={Plus}
-              iconPlacement="left"
-              onClick={() => {
-                setOpen({
-                  gpu: (localStorage.getItem("lastGPUSelection") ||
-                    "A10G") as (typeof machineGPUOptions)[number],
-                  timeout: Number.parseInt(
-                    localStorage.getItem("lastTimeoutSelection") || "15",
-                  ),
-                });
-              }}
-            >
-              Session
-            </Button>
-            <ModelsButton isPreview={true} />
+        <UploadZone className="relative flex h-full w-full">
+          <div className="flex h-full w-full flex-col">
+            <Workspace
+              nativeMode={false}
+              endpoint={staticUrl}
+              workflowJson={props.workflowLatestVersion.workflow}
+            />
+            <App endpoint={staticUrl}>
+              <div className="flex w-full justify-between gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="mx-2 flex cursor-help items-center gap-1">
+                        <span className="text-sm text-gray-600">
+                          Preview Mode
+                        </span>
+                        <Info className="h-4 w-4 text-gray-400" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>
+                        You're currently viewing a edit-only preview of this
+                        workflow. To run the workflow, you'll need to create a
+                        new ComfyUI session.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  Icon={Plus}
+                  iconPlacement="left"
+                  onClick={() => {
+                    setOpen({
+                      gpu: (localStorage.getItem("lastGPUSelection") ||
+                        "A10G") as (typeof machineGPUOptions)[number],
+                      timeout: Number.parseInt(
+                        localStorage.getItem("lastTimeoutSelection") || "15",
+                      ),
+                    });
+                  }}
+                >
+                  Session
+                </Button>
+                <ModelsButton isPreview={true} />
+              </div>
+            </App>
           </div>
-        </App>
+          <AssetsPanel />
+        </UploadZone>
       </>
     );
   }
@@ -351,11 +363,16 @@ export function SessionCreator(props: {
   if (sessionId && machineId && url) {
     return (
       <>
-        <Workspace
-          nativeMode={true}
-          endpoint={url}
-          workflowJson={props.workflowLatestVersion.workflow}
-        />
+        <UploadZone className="relative flex h-full w-full">
+          <div className="flex h-full w-full flex-col">
+            <Workspace
+              nativeMode={true}
+              endpoint={url}
+              workflowJson={props.workflowLatestVersion.workflow}
+            />
+          </div>
+          <AssetsPanel />
+        </UploadZone>
         {ui}
       </>
     );

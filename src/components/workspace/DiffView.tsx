@@ -56,11 +56,14 @@ export function DiffView({
     const processChange = (change: any, path: string[] = []) => {
       const currentPath = [...path, change.key].join(".");
       if (currentPath.includes(".pos")) {
-        // Match the section ID format used in the render logic
-        // Format: `${type}-${nodeType}-${index}`
         const nodeType = getNodeType(currentPath, nodeInfo) || "other";
+        // Get all paths containing .pos for this nodeType
+        const pathsForType = Object.keys(initialState).filter(
+          (key) => key.includes(`-${nodeType}-`) && key.startsWith("update"),
+        );
+        const index = pathsForType.length;
         ["update", "add", "remove"].forEach((type) => {
-          initialState[`${type}-${nodeType}-0`] = true;
+          initialState[`${type}-${nodeType}-${index}`] = true;
         });
       }
       if (change.changes) {
@@ -70,6 +73,8 @@ export function DiffView({
       }
     };
     differences.forEach((change: any) => processChange(change));
+    console.log(initialState);
+
     return initialState;
   });
 
@@ -235,10 +240,15 @@ export function DiffView({
                 const sectionId = `update-${nodeType}-${index}`;
                 const isCollapsed = collapsedSections[sectionId];
                 return (
-                  <div key={sectionId} className="border rounded-lg p-2 ml-6">
+                  <div
+                    key={sectionId}
+                    className={`${
+                      isCollapsed ? "" : "border rounded-lg p-2"
+                    } ml-6`}
+                  >
                     <h3
                       className={`text-xs font-medium text-gray-500 flex items-center cursor-pointer ${
-                        isCollapsed ? "mb-0" : "mb-1"
+                        isCollapsed ? "" : "mb-1"
                       }`}
                       onClick={() => toggleSection(sectionId)}
                     >
@@ -321,10 +331,15 @@ export function DiffView({
                 const sectionId = `add-${nodeType}-${index}`;
                 const isCollapsed = collapsedSections[sectionId];
                 return (
-                  <div key={sectionId} className="border rounded-lg p-2 ml-6">
+                  <div
+                    key={sectionId}
+                    className={`${
+                      isCollapsed ? "" : "border rounded-lg p-2"
+                    } ml-6`}
+                  >
                     <h3
                       className={`text-xs font-medium text-green-600 flex items-center cursor-pointer ${
-                        isCollapsed ? "mb-0" : "mb-1"
+                        isCollapsed ? "" : "mb-1"
                       }`}
                       onClick={() => toggleSection(sectionId)}
                     >
@@ -365,10 +380,15 @@ export function DiffView({
                 const sectionId = `remove-${nodeType}-${index}`;
                 const isCollapsed = collapsedSections[sectionId];
                 return (
-                  <div key={sectionId} className="border rounded-lg p-2 ml-6">
+                  <div
+                    key={sectionId}
+                    className={`${
+                      isCollapsed ? "" : "border rounded-lg p-2"
+                    } ml-6`}
+                  >
                     <h3
                       className={`text-xs font-medium text-red-600 flex items-center cursor-pointer ${
-                        isCollapsed ? "mb-0" : "mb-1"
+                        isCollapsed ? "" : "mb-1"
                       }`}
                       onClick={() => toggleSection(sectionId)}
                     >

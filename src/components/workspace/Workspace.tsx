@@ -227,6 +227,7 @@ export default function Workspace({
       volume_name: volumeName,
       user_id: userId,
       org_id: orgId,
+      machine_hash: machine?.machine_hash,
       // gpu: useGPUStore.getState().gpu,
       // timeout: useGPUStore.getState().gpuTimeout,
       // gpuEventId: useGPUStore.getState().gpuEventId,
@@ -415,7 +416,7 @@ export default function Workspace({
               : `${endpoint}?workspace_mode=true`
           }
           className={cn(
-            "inset-0 h-full w-full border-none transition-opacity",
+            "inset-0 h-full w-full border-none transition-opacity ",
             !cdSetup && "opacity-0",
             cdSetup && "animate-blur-in",
           )}
