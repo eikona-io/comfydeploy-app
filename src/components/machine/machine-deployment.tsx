@@ -131,26 +131,39 @@ const UserInfoForDeployment = ({ machineVersion }: { machineVersion: any }) => {
   );
 };
 
-const MachineStatusBadge = ({ status }: { status: string }) => {
+const MachineStatusBadge = ({
+  status,
+  createdAt,
+}: {
+  status: string;
+  createdAt?: string;
+}) => {
   if (!status) return null;
+
+  const isStale =
+    status === "building" &&
+    createdAt &&
+    differenceInSeconds(new Date(), new Date(createdAt)) > 3600;
 
   return (
     <>
       <div className="flex shrink-0 items-center justify-center">
         <div
           className={`h-[9px] w-[9px] animate-pulse rounded-full ${
-            status === "ready"
-              ? "bg-green-500"
-              : status === "error"
-                ? "bg-red-500"
-                : status === "building"
-                  ? "bg-yellow-500"
-                  : "bg-gray-500"
+            isStale
+              ? "bg-gray-500"
+              : status === "ready"
+                ? "bg-green-500"
+                : status === "error"
+                  ? "bg-red-500"
+                  : status === "building"
+                    ? "bg-yellow-500"
+                    : "bg-gray-500"
           }`}
         />
       </div>
       <span className="truncate text-gray-600 text-sm">
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {isStale ? "Stale" : status.charAt(0).toUpperCase() + status.slice(1)}
       </span>
     </>
   );
@@ -285,11 +298,19 @@ function MachineVersionList({
   // Single state to track the build start time
   const [buildStartTime, setBuildStartTime] = useState<Date | null>(null);
 
-  // Set up interval to update the time every second when building
+  // Modify useEffect to check for stale builds
   useEffect(() => {
     if (machineVersion.status === "building") {
+      const startTime = new Date(machineVersion.created_at);
+      const isStale = differenceInSeconds(new Date(), startTime) > 3600; // 1 hour
+
+      if (isStale) {
+        setBuildStartTime(null);
+        return;
+      }
+
       if (!buildStartTime) {
-        setBuildStartTime(new Date(machineVersion.created_at));
+        setBuildStartTime(startTime);
       }
 
       const interval = setInterval(() => {
@@ -300,7 +321,6 @@ function MachineVersionList({
 
       return () => clearInterval(interval);
     }
-    // Reset when not building
     setBuildStartTime(null);
   }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
@@ -344,20 +364,28 @@ function MachineVersionList({
         <hr className=" border-gray-200 border-t md:hidden" />
 
         {/* Status and Time */}
-        <div className="grid grid-cols-[auto,1fr] gap-x-1.5 items-center min-w-0">
-          <MachineStatusBadge status={machineVersion.status} />
+        <div className="grid min-w-0 grid-cols-[auto,1fr] items-center gap-x-1.5">
+          <MachineStatusBadge
+            status={machineVersion.status}
+            createdAt={machineVersion.created_at}
+          />
           {machineVersion.status === "building" ? (
-            <LoadingIcon className="h-[14px] w-[14px] text-gray-600 shrink-0" />
+            <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />
           ) : (
             <div className="w-[14px] shrink-0" />
           )}
-          <span className="text-sm text-gray-500 truncate">
+          <span className="truncate text-gray-500 text-sm">
             {machineVersion.status === "building"
-              ? formatExactTime(
-                  buildStartTime
-                    ? differenceInSeconds(new Date(), buildStartTime)
-                    : 0,
-                )
+              ? differenceInSeconds(
+                  new Date(),
+                  new Date(machineVersion.created_at),
+                ) > 3600
+                ? "-"
+                : formatExactTime(
+                    buildStartTime
+                      ? differenceInSeconds(new Date(), buildStartTime)
+                      : 0,
+                  )
               : machineVersion.created_at === machineVersion.updated_at
                 ? "-"
                 : `${formatExactTime(
@@ -540,6 +568,7 @@ function InstantRollback({
                       <div className="flex flex-row gap-x-2 items-center">
                         <MachineStatusBadge
                           status={currentMachineVersion?.status}
+                          createdAt={currentMachineVersion?.created_at}
                         />
                       </div>
                       <UserInfoForDeployment
@@ -579,7 +608,10 @@ function InstantRollback({
                         </span>
                       </div>
                       <div className="flex flex-row gap-x-2 items-center">
-                        <MachineStatusBadge status={machineVersion.status} />
+                        <MachineStatusBadge
+                          status={machineVersion.status}
+                          createdAt={machineVersion.created_at}
+                        />
                       </div>
                       <UserInfoForDeployment machineVersion={machineVersion} />
                     </div>

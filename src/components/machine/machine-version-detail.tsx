@@ -211,6 +211,15 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
 
   useEffect(() => {
     if (machineVersion.status === "building") {
+      const isStale =
+        differenceInSeconds(new Date(), new Date(machineVersion.created_at)) >
+        3600;
+
+      if (isStale) {
+        setBuildStartTime(null);
+        return;
+      }
+
       if (!buildStartTime) {
         setBuildStartTime(new Date(machineVersion.created_at));
       }
@@ -283,13 +292,15 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
         <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Status
           <div className="flex items-center">
-            {machineVersion.status === "building" ? (
-              <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
-            ) : machineVersion.status === "error" ? (
-              <div className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
-            ) : (
-              <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-            )}
+            <div
+              className={`h-2 w-2 animate-pulse rounded-full ${
+                machineVersion.status === "building"
+                  ? "bg-yellow-500"
+                  : machineVersion.status === "error"
+                    ? "bg-red-500"
+                    : "bg-green-500"
+              }`}
+            />
           </div>
         </CardTitle>
       </CardHeader>
@@ -307,11 +318,16 @@ function MachineOverviewStatus({ machineVersion }: { machineVersion: any }) {
           <p className="text-muted-foreground text-sm">
             <span className="text-sm text-gray-500 truncate">
               {machineVersion.status === "building"
-                ? formatExactTime(
-                    buildStartTime
-                      ? differenceInSeconds(new Date(), buildStartTime)
-                      : 0,
-                  )
+                ? differenceInSeconds(
+                    new Date(),
+                    new Date(machineVersion.created_at),
+                  ) > 3600
+                  ? "-"
+                  : formatExactTime(
+                      buildStartTime
+                        ? differenceInSeconds(new Date(), buildStartTime)
+                        : 0,
+                    )
                 : machineVersion.created_at === machineVersion.updated_at
                   ? "-"
                   : `${formatExactTime(
