@@ -248,18 +248,6 @@ export function AppSidebar() {
   const isAdminAndMember = useIsAdminAndMember();
   const workflow_id = useWorkflowIdInWorkflowPage();
 
-  const [showV2Alert, setShowV2Alert] = React.useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("hideV2Alert") !== "true";
-    }
-    return false;
-  });
-
-  const handleCloseAlert = () => {
-    setShowV2Alert(false);
-    localStorage.setItem("hideV2Alert", "true");
-  };
-
   return (
     <Sidebar>
       <SidebarHeader>
@@ -388,29 +376,6 @@ export function AppSidebar() {
             leaveEmpty
             className="rounded-full border bg-slate-100 p-2"
           />
-        )}
-
-        {showV2Alert && (
-          <Alert className="relative mb-2 bg-yellow-50">
-            <AlertDescription className="flex items-center gap-2 text-xs text-yellow-800 hover:text-yellow-900">
-              <Link
-                href="https://www.comfydeploy.com/docs/v2/upgrade/v2"
-                className="flex items-center gap-2"
-                target="_blank"
-              >
-                <span>V2 API now available! See migration guide</span>
-                <ExternalLink size={12} className="w-6" />
-              </Link>
-            </AlertDescription>
-            <button
-              type="button"
-              onClick={handleCloseAlert}
-              className="absolute top-2 right-2 text-yellow-800 hover:text-yellow-900"
-              aria-label="Close alert"
-            >
-              ×
-            </button>
-          </Alert>
         )}
 
         <OrganizationSwitcher
