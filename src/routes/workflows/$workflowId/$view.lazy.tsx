@@ -163,7 +163,7 @@ function WorkflowPageComponent() {
 
   const { data: sessions } = listSession;
 
-  const { openMobile: isMobileSidebarOpen } = useSidebar();
+  const { openMobile: isMobileSidebarOpen, isMobile } = useSidebar();
 
   const router = useRouter();
 
@@ -174,7 +174,10 @@ function WorkflowPageComponent() {
 
   return (
     <div className="relative flex h-full w-full flex-col">
-      <Portal targetId="sidebar-panel" trigger={isMobileSidebarOpen}>
+      <Portal
+        targetId="sidebar-panel"
+        trigger={isMobile ? isMobileSidebarOpen : true}
+      >
         <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
