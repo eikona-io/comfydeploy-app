@@ -314,25 +314,12 @@ function MachineVersionList({
         <div
           className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer"
           onClick={() => {
-            if (
-              machine.machine_version_id === machineVersion.id &&
-              machine.status !== "building"
-            ) {
-              navigate({
-                to: "/machines/$machineId",
-                params: {
-                  machineId: machine.id,
-                },
-                search: { view: undefined },
-              });
-            } else {
-              navigate({
-                to: "/machines/$machineId/$machineVersionId",
-                params: {
-                  machineVersionId: machineVersion.id,
-                },
-              });
-            }
+            navigate({
+              to: "/machines/$machineId/$machineVersionId",
+              params: {
+                machineVersionId: machineVersion.id,
+              },
+            });
           }}
         >
           <div className="font-medium font-mono text-2xs truncate">
@@ -506,25 +493,12 @@ function InstantRollback({
           </DropdownMenuItem> */}
           <DropdownMenuItem
             onClick={() => {
-              if (
-                machine.machine_version_id === machineVersion.id &&
-                machine.status !== "building"
-              ) {
-                navigate({
-                  to: "/machines/$machineId",
-                  params: {
-                    machineId: machine.id,
-                  },
-                  search: { view: undefined },
-                });
-              } else {
-                navigate({
-                  to: "/machines/$machineId/$machineVersionId",
-                  params: {
-                    machineVersionId: machineVersion.id,
-                  },
-                });
-              }
+              navigate({
+                to: "/machines/$machineId/$machineVersionId",
+                params: {
+                  machineVersionId: machineVersion.id,
+                },
+              });
             }}
           >
             <span>Details</span>

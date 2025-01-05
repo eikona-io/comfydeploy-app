@@ -72,36 +72,43 @@ export function MachineVersionDetail({
     { i: "status", x: 0, y: 3, w: 1, h: 7 },
   ];
 
-  console.log("machine status", machine?.status);
-
   if (isLoading || machineVersionLoading) return <div>Loading...</div>;
 
   return (
     <div className="mx-auto w-full max-w-[1500px] md:p-4">
       <h1 className="p-4 font-medium text-2xl">{machine.name}</h1>
 
-      <Breadcrumb className="px-4 py-2">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink
-              onClick={() =>
-                navigate({
-                  to: "/machines/$machineId",
-                  params: { machineId: machine.id },
-                  search: { view: "deployments" },
-                })
-              }
-              className="cursor-pointer"
-            >
-              Deployments
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>v{machineVersion.version}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <div className="flex flex-row items-center justify-between px-4 py-2">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                onClick={() =>
+                  navigate({
+                    to: "/machines/$machineId",
+                    params: { machineId: machine.id },
+                    search: { view: "deployments" },
+                  })
+                }
+                className="cursor-pointer"
+              >
+                Deployments
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>v{machineVersion.version}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        {machine.machine_version_id === machineVersion.id && (
+          <div className="flex flex-row items-center gap-2 rounded-sm bg-green-500 px-3 py-2 text-green-50 text-xs">
+            <CircleArrowUp className="h-4 w-4" />
+            Latest Version
+          </div>
+        )}
+      </div>
 
       <ResponsiveGridLayout
         className="layout"

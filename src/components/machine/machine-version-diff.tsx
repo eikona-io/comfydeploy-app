@@ -267,6 +267,10 @@ export function FieldChanges({
   oldValue,
   newValue,
 }: Omit<FieldChange, "type">) {
+  const truncateValue = (value: string) => {
+    return value.length > 20 ? `${value.slice(0, 20)}...` : value;
+  };
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2 font-medium text-sm">
@@ -274,12 +278,18 @@ export function FieldChanges({
         {formatFieldName(field)}
       </div>
       <div className="flex items-center gap-2 text-sm">
-        <div className="rounded-md bg-red-50 px-2 py-1 font-mono text-red-700 text-xs">
-          {formatValue(oldValue)}
+        <div
+          className="rounded-md bg-red-50 px-2 py-1 font-mono text-red-700 text-xs"
+          title={formatValue(oldValue)}
+        >
+          {truncateValue(formatValue(oldValue))}
         </div>
-        <ArrowRight className="h-4 w-4 text-gray-400" />
-        <div className="rounded-md bg-green-50 px-2 py-1 font-mono text-green-700 text-xs">
-          {formatValue(newValue)}
+        <ArrowRight className="h-4 w-4 flex-shrink-0 text-gray-400" />
+        <div
+          className="rounded-md bg-green-50 px-2 py-1 font-mono text-green-700 text-xs"
+          title={formatValue(newValue)}
+        >
+          {truncateValue(formatValue(newValue))}
         </div>
       </div>
     </div>

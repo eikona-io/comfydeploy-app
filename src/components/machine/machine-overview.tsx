@@ -161,7 +161,7 @@ export function MachineOverview({
     { i: "workflowDeployment", x: 0, y: 2, w: 1, h: 6, maxH: 12, minH: 6 },
     { i: "containerGraph", x: 1, y: 1, w: 1, h: 7, maxH: 8, minH: 7 },
     { i: "containerTable", x: 1, y: 2, w: 2, h: 8, maxH: 16, minH: 8 },
-    { i: "buildLog", x: 0, y: 3, w: 2, h: 12, maxH: 12, minH: 12 },
+    // { i: "buildLog", x: 0, y: 3, w: 2, h: 12, maxH: 12, minH: 12 },
   ];
 
   const [layout, setLayout] = useState(() => {
@@ -314,12 +314,12 @@ export function MachineOverview({
         >
           <MachineContainerTable machine={machine} />
         </div>
-        <div
+        {/* <div
           key="buildLog"
           className={cn(isEditingLayout && "shake-animation")}
         >
           <MachineBuildLog machine={machine} />
-        </div>
+        </div> */}
       </ResponsiveGridLayout>
     </div>
   );
