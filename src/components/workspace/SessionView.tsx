@@ -310,7 +310,7 @@ export function SessionCreator(props: {
         >
           <div className="flex h-full w-full flex-col">
             <Workspace
-              nativeMode={false}
+              nativeMode={true}
               endpoint={staticUrl}
               workflowJson={props.workflowLatestVersion.workflow}
             />

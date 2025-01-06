@@ -239,8 +239,6 @@ export default function Workspace({
       // It's important to check the origin for security reasons
       if (event.origin !== endpoint) return;
 
-      // console.log(event.data);
-
       if (event.data.internal) {
         switch (event.data.internal.type) {
           case "api_info":
@@ -287,12 +285,27 @@ export default function Workspace({
         }
 
         const data = JSON.parse(event.data);
+
+        if (data.type === "assets") {
+          console.log(data.data);
+          toast.success("Open Assets");
+        }
+
         // console.log(data);
         if (data.type === "cd_plugin_setup" && workflowJson) {
           sendWorkflow(workflowJson);
           console.log("sending workflow");
           setCDSetup(true);
           setProgress(100);
+          sendEventToCD("configure_queue_buttons", [
+            {
+              id: "assets",
+              icon: "pi-image",
+              tooltip: "Assets",
+              event: "assets",
+              eventData: { foo: "bar" },
+            },
+          ]);
         } else if (data.type === "cd_plugin_onAfterChange") {
         } else if (data.type === "cd_plugin_onDeployChanges") {
           const differences = diff(
