@@ -3,6 +3,7 @@ import { generateDependencyGraphJson } from "comfyui-json";
 const BLACKLISTED_CUSTOM_NODES = [
   "https://github.com/bennykok/comfyui-deploy",
   // Add more blacklisted nodes here
+  "https://github.com/audioscavenger/ComfyUI-Thumbnails",
   "https://github.com/mrhan1993/ComfyUI-Fooocus",
 ];
 

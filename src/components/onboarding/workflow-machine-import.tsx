@@ -796,14 +796,6 @@ export function WorkflowImportCustomNodeSetup({
   const description = (
     <div className="space-y-1">
       {/* Add a container with controlled spacing */}
-      <span className="block text-muted-foreground text-sm leading-normal">
-        Custom Nodes Setup helps you detect any custom nodes that are used in
-        the workflow.
-      </span>
-      <span className="block text-muted-foreground text-sm">
-        You can select the nodes you want to include in the machine, and update
-        their hashes (versions) if needed.
-      </span>
     </div>
   );
 
@@ -918,7 +910,7 @@ export function WorkflowImportCustomNodeSetup({
       >
         <div className="space-y-1">
           <div className="flex flex-row items-center gap-1">
-            <span className="font-medium text-sm">Custom Nodes</span>
+            <span className="bold font-medium text-md">Custom Nodes</span>
             <span className="text-muted-foreground text-sm">
               ({Object.keys(validation.dependencies?.custom_nodes || {}).length}
               )
@@ -1054,16 +1046,25 @@ export function WorkflowImportCustomNodeSetup({
             0 && (
             <div className="space-y-1">
               <div className="flex flex-row items-center gap-1">
-                <h3 className="font-medium text-sm">Conflicting Nodes</h3>
-                <span className="text-sm text-yellow-600">
-                  (
-                  {
-                    Object.keys(
-                      validation.dependencies?.conflicting_nodes || {},
-                    ).length
-                  }
-                  )
-                </span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1">
+                    <h3 className="bold font-medium text-md">
+                      Conflicting Nodes
+                    </h3>
+                    <span className="text-sm text-yellow-600">
+                      (
+                      {
+                        Object.keys(
+                          validation.dependencies?.conflicting_nodes || {},
+                        ).length
+                      }
+                      )
+                    </span>
+                  </div>
+                  <span className="block text-muted-foreground text-sm leading-normal">
+                    Conflicting nodes have multiple repos. Pick one for each.
+                  </span>
+                </div>
               </div>
 
               {Object.entries(
