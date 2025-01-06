@@ -304,7 +304,10 @@ export function SessionCreator(props: {
     return (
       <>
         {ui}
-        <UploadZone className="relative flex h-full w-full">
+        <UploadZone
+          className="relative flex h-full w-full"
+          iframeEndpoint={staticUrl}
+        >
           <div className="flex h-full w-full flex-col">
             <Workspace
               nativeMode={false}
@@ -363,7 +366,10 @@ export function SessionCreator(props: {
   if (sessionId && machineId && url) {
     return (
       <>
-        <UploadZone className="relative flex h-full w-full">
+        <UploadZone
+          className="relative flex h-full w-full"
+          iframeEndpoint={url}
+        >
           <div className="flex h-full w-full flex-col">
             <Workspace
               nativeMode={true}
