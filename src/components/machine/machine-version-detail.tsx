@@ -105,7 +105,7 @@ export function MachineVersionDetail({
         {machine.machine_version_id === machineVersion.id && (
           <div className="flex flex-row items-center gap-2 rounded-sm bg-green-500 px-3 py-2 text-green-50 text-xs">
             <CircleArrowUp className="h-4 w-4" />
-            Latest Version
+            Current Version
           </div>
         )}
       </div>

@@ -24,6 +24,7 @@ import {
   CircleGauge,
   CreditCard,
   Database,
+  Folder,
   Github,
   Key,
   MessageCircle,
@@ -256,6 +257,17 @@ function NavigationPartCommand({ navigate, setOpen }: ComfyCommandProps) {
       >
         <Database className="!h-4 !w-4 mr-2" />
         <span>Storage</span>
+      </CommandItem>
+      <CommandItem
+        onSelect={() => {
+          navigate({
+            to: "/assets",
+          });
+          setOpen(false);
+        }}
+      >
+        <Folder className="!h-4 !w-4 mr-2" />
+        <span>Assets</span>
       </CommandItem>
     </CommandGroup>
   );
