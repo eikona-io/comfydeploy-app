@@ -165,80 +165,57 @@ export function convertToDockerSteps(
   customNodes: Record<string, any> = {},
   selectedConflictingNodes: Record<string, any[]> = {},
 ): any {
-  const conflict = findFirstDuplicateNode(
-    customNodes,
-    selectedConflictingNodes,
-  );
-  if (conflict) {
-    throw new Error(
-      `Duplicate node found: "${conflict.name}". The URL "${conflict.url}" conflicts with "${conflict.conflictWith.url}" from ${conflict.conflictWith.source}`,
-    );
-  }
-
-  const urlMap = new Map<
+  // Track unique URLs to prevent duplicates
+  const uniqueUrls = new Map<
     string,
-    { url: string; source: string; name: string }
+    {
+      name: string;
+      hash?: string;
+      url: string;
+      pip?: string[];
+    }
   >();
 
+  // Add custom nodes first
   for (const [url, node] of Object.entries(customNodes)) {
     const lowerUrl = url.toLowerCase();
-    if (urlMap.has(lowerUrl)) {
-      const existing = urlMap.get(lowerUrl)!;
-      throw new Error(
-        `Duplicate node found: "${node.name}". The URL "${url}" conflicts with "${existing.url}" from ${existing.source}`,
-      );
-    }
-    urlMap.set(lowerUrl, { url, source: "custom nodes", name: node.name });
+    uniqueUrls.set(lowerUrl, {
+      name: node.name,
+      hash: node.hash || undefined,
+      url: url,
+      pip: node.pip || undefined,
+    });
   }
 
+  // Add selected conflicting nodes, only if URL isn't already present
   for (const [nodeName, nodes] of Object.entries(selectedConflictingNodes)) {
     for (const node of nodes) {
       const lowerUrl = node.url.toLowerCase();
-      if (urlMap.has(lowerUrl)) {
-        const existing = urlMap.get(lowerUrl)!;
-        throw new Error(
-          `Duplicate node found: "${nodeName}". The URL "${node.url}" conflicts with "${existing.url}" from ${existing.source}`,
-        );
+      if (!uniqueUrls.has(lowerUrl)) {
+        uniqueUrls.set(lowerUrl, {
+          name: nodeName,
+          hash: node.hash || undefined,
+          url: node.url,
+          pip: node.pip || undefined,
+        });
       }
-      urlMap.set(lowerUrl, {
-        url: node.url,
-        source: "conflicting nodes",
-        name: nodeName,
-      });
     }
   }
 
+  // Convert to steps format
   return {
-    steps: [
-      // Map custom nodes
-      ...Object.entries(customNodes).map(([url, node]) => ({
-        id: crypto.randomUUID().slice(0, 10),
-        type: "custom-node" as const,
-        data: {
-          name: node.name,
-          hash: node.hash || undefined,
-          url: url,
-          files: [url],
-          install_type: "git-clone" as const,
-          pip: node.pip || undefined,
-        },
-      })),
-      // Map selected conflicting nodes
-      ...Object.entries(selectedConflictingNodes).flatMap(([nodeName, nodes]) =>
-        nodes.map((node) => ({
-          id: crypto.randomUUID().slice(0, 10),
-          type: "custom-node" as const,
-          data: {
-            name: nodeName,
-            hash: node.hash || undefined,
-            url: node.url,
-            files: [node.url],
-            install_type: "git-clone" as const,
-            pip: node.pip || undefined,
-          },
-        })),
-      ),
-    ],
+    steps: Array.from(uniqueUrls.values()).map((node) => ({
+      id: crypto.randomUUID().slice(0, 10),
+      type: "custom-node" as const,
+      data: {
+        name: node.name,
+        hash: node.hash,
+        url: node.url,
+        files: [node.url],
+        install_type: "git-clone" as const,
+        pip: node.pip,
+      },
+    })),
   };
 }
 
@@ -665,9 +642,6 @@ export function WorkflowImportCustomNodeSetup({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
-  const [editingHashes, setEditingHashes] = useState<Record<string, boolean>>(
-    {},
-  );
   const [showAll, setShowAll] = useState(false);
 
   const json =
@@ -922,7 +896,6 @@ export function WorkflowImportCustomNodeSetup({
             .map(([url, node]) => {
               const author = url.split("/")[3];
               const nodeInfo = node as any;
-              const isEditing = editingHashes[url] || false;
 
               return (
                 <div
@@ -935,12 +908,7 @@ export function WorkflowImportCustomNodeSetup({
                       "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2",
                   )}
                 >
-                  <div
-                    className={cn(
-                      "flex items-center justify-between",
-                      isEditing && "mb-2",
-                    )}
-                  >
+                  <div className="flex items-center justify-between">
                     <div>
                       <h3 className="font-medium text-sm">{nodeInfo.name}</h3>
                       <Link
@@ -951,69 +919,7 @@ export function WorkflowImportCustomNodeSetup({
                         by {author} <ExternalLink className="h-3 w-3" />
                       </Link>
                     </div>
-                    <div className="flex flex-col items-end">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          setEditingHashes((prev) => ({
-                            ...prev,
-                            [url]: !prev[url],
-                          }))
-                        }
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      {!isEditing && (
-                        <div className="flex items-center gap-1">
-                          <span className="min-w-0 max-w-[120px] truncate font-mono text-2xs text-muted-foreground">
-                            {nodeInfo.hash || "No hash specified"}
-                          </span>
-                          {nodeInfo.hash && (
-                            <Link
-                              href={`${url}/commit/${nodeInfo.hash}`}
-                              target="_blank"
-                              className="shrink-0 text-muted-foreground hover:text-primary"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          )}
-                        </div>
-                      )}
-                    </div>
                   </div>
-
-                  {isEditing && (
-                    <div className="mt-3 flex items-center gap-2">
-                      <Input
-                        className="font-mono text-xs"
-                        placeholder="Commit hash..."
-                        defaultValue={nodeInfo.hash || ""}
-                        onChange={(e) => {
-                          const newHash = e.target.value;
-                          const updatedDependencies = {
-                            ...validation.dependencies!,
-                            custom_nodes: {
-                              ...validation.dependencies!.custom_nodes,
-                              [url]: {
-                                ...validation.dependencies!.custom_nodes[url],
-                                hash: newHash,
-                              },
-                            },
-                            comfyui: validation.dependencies!.comfyui,
-                            missing_nodes:
-                              validation.dependencies!.missing_nodes,
-                            conflicting_nodes:
-                              validation.dependencies!.conflicting_nodes,
-                          };
-                          setValidation({
-                            ...validation,
-                            dependencies: updatedDependencies,
-                          });
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -1062,7 +968,7 @@ export function WorkflowImportCustomNodeSetup({
                     </span>
                   </div>
                   <span className="block text-muted-foreground text-sm leading-normal">
-                    Conflicting nodes have multiple repos. Pick one for each.
+                    Multiple repos found with the same node name.
                   </span>
                 </div>
               </div>
@@ -1082,7 +988,6 @@ export function WorkflowImportCustomNodeSetup({
                   <div className="space-y-2">
                     {conflicts.map((conflict, index) => {
                       const author = conflict.url.split("/")[3];
-                      const isEditing = editingHashes[conflict.url] || false;
 
                       return (
                         <div
@@ -1103,24 +1008,51 @@ export function WorkflowImportCustomNodeSetup({
                                 nodeName
                               ]?.some((node) => node.url === conflict.url)}
                               onCheckedChange={(checked: boolean) => {
-                                setValidation({
-                                  ...validation,
-                                  selectedConflictingNodes: {
-                                    ...validation.selectedConflictingNodes,
-                                    [nodeName]: checked
-                                      ? [
-                                          ...(validation
-                                            .selectedConflictingNodes?.[
-                                            nodeName
+                                setValidation((prev) => {
+                                  const newSelectedNodes = {
+                                    ...prev.selectedConflictingNodes,
+                                  };
+                                  // Find all node names that have this same URL
+                                  for (const [
+                                    currentNodeName,
+                                    conflicts,
+                                  ] of Object.entries(
+                                    validation.dependencies
+                                      ?.conflicting_nodes || {},
+                                  )) {
+                                    const matchingConflict = conflicts.find(
+                                      (c) =>
+                                        c.url.toLowerCase() ===
+                                        conflict.url.toLowerCase(),
+                                    );
+
+                                    if (matchingConflict) {
+                                      if (checked) {
+                                        // Add this implementation to all relevant nodes
+                                        newSelectedNodes[currentNodeName] = [
+                                          ...(newSelectedNodes[
+                                            currentNodeName
                                           ] || []),
-                                          conflict,
-                                        ] // Add to existing array
-                                      : validation.selectedConflictingNodes?.[
-                                          nodeName
-                                        ]?.filter(
-                                          (node) => node.url !== conflict.url,
-                                        ) || [], // Remove this conflict
-                                  },
+                                          matchingConflict,
+                                        ];
+                                      } else {
+                                        // Remove this implementation from all relevant nodes
+                                        newSelectedNodes[currentNodeName] = (
+                                          newSelectedNodes[currentNodeName] ||
+                                          []
+                                        ).filter(
+                                          (node) =>
+                                            node.url.toLowerCase() !==
+                                            conflict.url.toLowerCase(),
+                                        );
+                                      }
+                                    }
+                                  }
+
+                                  return {
+                                    ...prev,
+                                    selectedConflictingNodes: newSelectedNodes,
+                                  };
                                 });
                               }}
                             />
@@ -1134,82 +1066,15 @@ export function WorkflowImportCustomNodeSetup({
                               <span className="text-[10px] text-gray-400">
                                 by {author}
                               </span>
-                              <span className="hidden max-w-[80px] truncate font-mono text-[10px] text-gray-400 sm:inline">
-                                {conflict.hash?.slice(0, 15) || "no hash"}
-                              </span>
                             </label>
-                            <div className="flex items-center gap-2">
-                              <Link
-                                href={conflict.url}
-                                target="_blank"
-                                className="shrink-0 text-muted-foreground transition-colors hover:text-gray-600"
-                              >
-                                <ExternalLink className="h-3 w-3" />
-                              </Link>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  setEditingHashes((prev) => ({
-                                    ...prev,
-                                    [conflict.url]: !prev[conflict.url],
-                                  }))
-                                }
-                              >
-                                <Pencil className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <Link
+                              href={conflict.url}
+                              target="_blank"
+                              className="shrink-0 text-muted-foreground transition-colors hover:text-gray-600"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                            </Link>
                           </div>
-
-                          {isEditing && (
-                            <div className="flex items-center gap-2 pl-9">
-                              <Input
-                                className="font-mono text-xs"
-                                placeholder="Commit hash..."
-                                defaultValue={conflict.hash || ""}
-                                onChange={(e) => {
-                                  const newHash = e.target.value;
-                                  // Update both the dependencies and selectedConflictingNodes
-                                  const updatedDependencies = {
-                                    ...validation.dependencies!,
-                                    conflicting_nodes: {
-                                      ...validation.dependencies!
-                                        .conflicting_nodes,
-                                      [nodeName]:
-                                        validation.dependencies!.conflicting_nodes[
-                                          nodeName
-                                        ].map((node) =>
-                                          node.url === conflict.url
-                                            ? { ...node, hash: newHash }
-                                            : node,
-                                        ),
-                                    },
-                                  };
-
-                                  // Also update the hash in selectedConflictingNodes if this node is selected
-                                  const updatedSelectedNodes = {
-                                    ...validation.selectedConflictingNodes,
-                                    [nodeName]: (
-                                      validation.selectedConflictingNodes?.[
-                                        nodeName
-                                      ] || []
-                                    ).map((node) =>
-                                      node.url === conflict.url
-                                        ? { ...node, hash: newHash }
-                                        : node,
-                                    ),
-                                  };
-
-                                  setValidation({
-                                    ...validation,
-                                    dependencies: updatedDependencies,
-                                    selectedConflictingNodes:
-                                      updatedSelectedNodes,
-                                  });
-                                }}
-                              />
-                            </div>
-                          )}
                         </div>
                       );
                     })}
@@ -1417,10 +1282,15 @@ export function findFirstDuplicateNode(
     urlMap.set(lowerUrl, { url, source: "custom nodes", name: node.name });
   }
 
+  // Create a map to track URLs that are already selected in conflicting nodes
+  const selectedUrlsMap = new Map<string, string>();
+
   // Check conflicting nodes
   for (const [nodeName, nodes] of Object.entries(selectedConflictingNodes)) {
     for (const node of nodes) {
       const lowerUrl = node.url.toLowerCase();
+
+      // If URL exists in custom nodes, that's still a conflict
       if (urlMap.has(lowerUrl)) {
         const existing = urlMap.get(lowerUrl);
         if (existing) {
@@ -1435,11 +1305,11 @@ export function findFirstDuplicateNode(
           };
         }
       }
-      urlMap.set(lowerUrl, {
-        url: node.url,
-        source: "conflicting nodes",
-        name: nodeName,
-      });
+
+      // Don't consider it a conflict if the same URL is selected for different nodes
+      if (!selectedUrlsMap.has(lowerUrl)) {
+        selectedUrlsMap.set(lowerUrl, nodeName);
+      }
     }
   }
 
