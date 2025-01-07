@@ -59,7 +59,11 @@ import { useAuthStore } from "@/lib/auth-store";
 import { useQuery } from "@tanstack/react-query";
 // import { usePathname, useRouter } from "next/navigation";
 import { parseAsInteger, useQueryState } from "nuqs";
+import { useMediaQuery } from "usehooks-ts";
+import { Drawer } from "vaul";
 import { create } from "zustand";
+import { AssetBrowser } from "../asset-browser";
+import { UploadZone } from "../upload/upload-zone";
 // import { useCurrentWorkflow } from "@/components/useCurrentWorkflow";
 // import { useMachineStore } from "@/repo/components/ui/custom/workspace/DevSelectMachine";
 
@@ -287,8 +291,10 @@ export default function Workspace({
         const data = JSON.parse(event.data);
 
         if (data.type === "assets") {
-          console.log(data.data);
-          toast.success("Open Assets");
+          // console.log(data.data);
+          // toast.success("Open Assets");
+          useAssetsBrowserStore.getState().setOpen(true);
+          useAssetsBrowserStore.getState().setTargetNodeData(data.data);
         }
 
         // console.log(data);
@@ -303,7 +309,6 @@ export default function Workspace({
               icon: "pi-image",
               tooltip: "Assets",
               event: "assets",
-              eventData: { foo: "bar" },
             },
           ]);
         } else if (data.type === "cd_plugin_onAfterChange") {
@@ -419,6 +424,8 @@ export default function Workspace({
         )}
       </AnimatePresence>
 
+      <AssetsBrowserPopup />
+
       {hasSetupEventListener && (
         <iframe
           key={endpoint}
@@ -443,5 +450,72 @@ export default function Workspace({
         />
       )}
     </>
+  );
+}
+
+interface AssetsBrowserState {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  targetNodeData: any;
+  setTargetNodeData: (targetNodeData: any) => void;
+}
+
+export const useAssetsBrowserStore = create<AssetsBrowserState>((set) => ({
+  open: false,
+  setOpen: (open) => set({ open }),
+  targetNodeData: null,
+  setTargetNodeData: (targetNodeData) => set({ targetNodeData }),
+}));
+
+function AssetsBrowserPopup() {
+  const { open, setOpen, targetNodeData } = useAssetsBrowserStore();
+  const isMobile = useMediaQuery("(max-width: 768px)");
+
+  return (
+    <Drawer.Root
+      open={open}
+      onOpenChange={(open) => setOpen(open)}
+      direction={isMobile ? "bottom" : "right"}
+    >
+      <Drawer.Portal>
+        <Drawer.Content
+          className={cn(
+            isMobile
+              ? "fixed right-0 bottom-0 left-0 mt-24 flex h-[96%] flex-col rounded-t-[10px] bg-white md:top-0 md:right-0 md:bottom-0 md:h-full md:w-[400px] md:rounded-l-[10px] md:rounded-tr-none"
+              : "fixed top-2 right-2 bottom-2 z-10 flex w-[500px] outline-none",
+          )}
+          style={
+            {
+              "--initial-transform": "calc(100% + 8px)",
+            } as React.CSSProperties
+          }
+        >
+          <div className="flex h-full w-full grow flex-col rounded-[16px] bg-zinc-50 p-5">
+            <AssetBrowser
+              onItemClick={(asset) => {
+                if (targetNodeData?.node) {
+                  // If we have target node data, update the existing node
+                  console.log(targetNodeData);
+
+                  sendEventToCD("update_widget", {
+                    nodeId: targetNodeData.node,
+                    widgetName: targetNodeData.inputName,
+                    value: asset.url,
+                  });
+                  useAssetsBrowserStore.getState().setTargetNodeData(null);
+                } else {
+                  // Otherwise create a new node (existing behavior)
+                  sendEventToCD("add_node", {
+                    type: "ComfyUIDeployExternalImage",
+                    widgets_values: ["input_image", "", "", asset.url],
+                  });
+                }
+                setOpen(false); // Close the drawer after selection
+              }}
+            />
+          </div>
+        </Drawer.Content>
+      </Drawer.Portal>
+    </Drawer.Root>
   );
 }
