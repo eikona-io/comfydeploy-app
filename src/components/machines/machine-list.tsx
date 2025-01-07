@@ -326,14 +326,16 @@ export function MachineList() {
   );
 }
 
-function MachineItemActionList({
+export function MachineItemActionList({
   machine,
   refetch,
   sub,
+  isDetailedButton = false,
 }: {
   machine: any;
   refetch: () => void;
   sub: any;
+  isDetailedButton?: boolean;
 }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [cloneModalOpen, setCloneModalOpen] = useState(false);
@@ -344,52 +346,103 @@ function MachineItemActionList({
     machine.docker_command_steps === null &&
     machine.type === "comfy-deploy-serverless";
 
+  const DetailedButton = () => {
+    return (
+      <div className="flex flex-row gap-2">
+        {machine.type === "comfy-deploy-serverless" && (
+          <>
+            <Button
+              variant="outline"
+              disabled={isDockerCommandStepsNull}
+              onClick={() => setRebuildModalOpen(true)}
+            >
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Rebuild
+            </Button>
+
+            <Button
+              variant="outline"
+              disabled={isDockerCommandStepsNull}
+              onClick={() => setCloneModalOpen(true)}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Clone
+            </Button>
+          </>
+        )}
+
+        <Button variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </Button>
+      </div>
+    );
+  };
+
+  const IconOnlyButton = () => {
+    return (
+      <>
+        {machine.type === "comfy-deploy-serverless" && (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={isDockerCommandStepsNull}
+                  onClick={() => setRebuildModalOpen(true)}
+                >
+                  <RefreshCcw className="h-[14px] w-[14px]" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Rebuild</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={isDockerCommandStepsNull}
+                  onClick={() => setCloneModalOpen(true)}
+                >
+                  <Copy className="h-[14px] w-[14px]" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Clone</TooltipContent>
+            </Tooltip>
+          </>
+        )}
+        <Tooltip>
+          <TooltipTrigger>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-red-500"
+              onClick={() => setDeleteModalOpen(true)}
+            >
+              <Trash2 className="h-[14px] w-[14px]" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Delete</TooltipContent>
+        </Tooltip>
+      </>
+    );
+  };
+
   return (
     <div className="flex flex-row">
-      {machine.type === "comfy-deploy-serverless" && (
+      {isDetailedButton ? (
         <>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={isDockerCommandStepsNull}
-                onClick={() => setRebuildModalOpen(true)}
-              >
-                <RefreshCcw className="h-[14px] w-[14px]" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Rebuild</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={isDockerCommandStepsNull}
-                onClick={() => setCloneModalOpen(true)}
-              >
-                <Copy className="h-[14px] w-[14px]" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Clone</TooltipContent>
-          </Tooltip>
+          <div className="hidden md:block">
+            <DetailedButton />
+          </div>
+          <div className="flex md:hidden">
+            <IconOnlyButton />
+          </div>
         </>
+      ) : (
+        <IconOnlyButton />
       )}
-
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-red-500"
-            onClick={() => setDeleteModalOpen(true)}
-          >
-            <Trash2 className="h-[14px] w-[14px]" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Delete</TooltipContent>
-      </Tooltip>
 
       <DeleteMachineDialog
         machine={machine}
@@ -429,6 +482,8 @@ function DeleteMachineDialog({
   dialogOpen,
   setDialogOpen,
 }: MachineDialogProps & { planRefetch?: () => void }) {
+  const navigate = useNavigate();
+
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogContent className={cn("sm:max-w-[425px]")}>
@@ -509,6 +564,11 @@ function DeleteMachineDialog({
 
               await refetch();
               setDialogOpen(false);
+
+              navigate({
+                to: "/machines",
+                search: { view: undefined },
+              });
             }}
           >
             Delete

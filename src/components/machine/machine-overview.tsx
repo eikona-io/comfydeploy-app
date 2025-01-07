@@ -52,7 +52,6 @@ import {
   Loader2,
   MemoryStick,
   Pause,
-  RefreshCw,
   Table as TableIcon,
   Thermometer,
   Ticket,
@@ -65,10 +64,9 @@ import { Responsive, WidthProvider } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
-import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { toast } from "sonner";
-import { BuildStepsUI } from "./machine-build-log";
+import { BuildStepsUI } from "@/components/machine/machine-build-log";
+import { MachineItemActionList } from "@/components/machines/machine-list";
+import { useCurrentPlan } from "@/hooks/use-current-plan";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -150,9 +148,11 @@ function deleteFromLS(key: string) {
 export function MachineOverview({
   machine,
   setView,
+  refetch,
 }: {
   machine: any;
   setView: (view: "settings" | "deployments" | undefined) => void;
+  refetch: () => void;
 }) {
   const defaultLayout = [
     { i: "info", x: 0, y: 0, w: 1, h: 4, maxH: 4, minH: 4 },
@@ -176,6 +176,7 @@ export function MachineOverview({
     if (!isEditingLayout) return;
     setLayout(newLayout);
   };
+  const sub = useCurrentPlan();
 
   const isDeprecated = isMachineDeprecated(machine);
   const isDockerCommandStepsNull =
@@ -195,7 +196,10 @@ export function MachineOverview({
     <div className="w-full">
       <div className="flex flex-row items-center justify-between px-4 py-2">
         <div
-          className={cn("flex flex-row gap-2", isEditingLayout && "invisible")}
+          className={cn(
+            "flex w-full flex-row justify-between gap-2 md:w-auto md:justify-start",
+            isEditingLayout && "invisible",
+          )}
         >
           <Button
             variant="outline"
@@ -205,44 +209,12 @@ export function MachineOverview({
             <Edit className="mr-2 h-4 w-4" />
             Edit
           </Button>
-          <Button
-            variant="outline"
-            disabled={
-              machine.type !== "comfy-deploy-serverless" ||
-              isDockerCommandStepsNull
-            }
-            onClick={async () => {
-              try {
-                await callServerPromise(
-                  api({
-                    url: `machine/serverless/${machine.id}`,
-                    init: {
-                      method: "PATCH",
-                      body: JSON.stringify({
-                        is_trigger_rebuild: true,
-                      }),
-                    },
-                  }),
-                  {
-                    loadingText: "Rebuilding machine",
-                  },
-                );
-                toast.success("Rebuild machine successfully");
-                toast.info("Redirecting to machine page...");
-                await new Promise((resolve) => setTimeout(resolve, 1000));
-                navigate({
-                  to: "/machines/$machineId",
-                  params: { machineId: machine.id },
-                  search: { view: "deployments" },
-                });
-              } catch {
-                toast.error("Failed to rebuild machine");
-              }
-            }}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Rebuild
-          </Button>
+          <MachineItemActionList
+            machine={machine}
+            refetch={refetch}
+            sub={sub}
+            isDetailedButton={true}
+          />
         </div>
         {machine.machine_version_id && (
           <div

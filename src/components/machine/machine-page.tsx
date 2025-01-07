@@ -24,7 +24,11 @@ export default function MachinePage({
   const navigate = useNavigate();
   const { view } = useSearch({ from: "/machines/$machineId/" });
 
-  const { data: machine, isLoading } = useQuery<any>({
+  const {
+    data: machine,
+    isLoading,
+    refetch,
+  } = useQuery<any>({
     queryKey: ["machine", params.machine_id],
     refetchInterval: 5000,
   });
@@ -127,7 +131,13 @@ export default function MachinePage({
             case "deployments":
               return <MachineDeployment machine={machine} />;
             default:
-              return <MachineOverview machine={machine} setView={setView} />;
+              return (
+                <MachineOverview
+                  machine={machine}
+                  refetch={refetch}
+                  setView={setView}
+                />
+              );
           }
         })()}
       </div>
