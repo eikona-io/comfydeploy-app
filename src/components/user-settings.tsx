@@ -33,10 +33,6 @@ export function UserSettings() {
         className={cn(!sub?.plans && "disabled pointer-events-none opacity-50")}
         buttonTitle="Save"
         formSchema={z.object({
-          api_version: z
-            .enum(["v1", "v2"])
-            .default("v1")
-            .describe("Dashboard API Version"),
           output_visibility: z
             .enum(["public", "private"])
             .default("public")
@@ -109,17 +105,9 @@ export function UserSettings() {
           },
         ]}
         fieldConfig={{
-          api_version: {
-            description: (
-              <>
-                Both V1 and V2 APIs are accessible via API endpoints. This
-                setting only affects the Dashboard API.
-              </>
-            ),
-          },
           custom_output_bucket: {
             fieldType: "switch",
-            group: "Storage Settings [Enterprise]",
+            group: "Storage Settings [Business]",
             renderParent: (props) => {
               return (
                 <div
@@ -168,7 +156,7 @@ export function UserSettings() {
             ),
           },
           output_visibility: {
-            group: "Storage Settings [Enterprise]",
+            group: "Storage Settings [Business]",
             renderParent: (props) => {
               return (
                 <div
@@ -182,20 +170,20 @@ export function UserSettings() {
             },
           },
           s3_secret_access_key: {
-            group: "Storage Settings [Enterprise]",
+            group: "Storage Settings [Business]",
           },
           s3_access_key_id: {
-            group: "Storage Settings [Enterprise]",
+            group: "Storage Settings [Business]",
           },
           s3_bucket_name: {
-            group: "Storage Settings [Enterprise]",
+            group: "Storage Settings [Business]",
           },
           s3_region: {
-            group: "Storage Settings [Enterprise]",
+            group: "Storage Settings [Business]",
           },
           hugging_face_token: {
             fieldType: "fallback",
-            group: "Hugging Face [Enterprise]",
+            group: "Hugging Face [Business]",
             inputProps: {
               type: "password",
             },
