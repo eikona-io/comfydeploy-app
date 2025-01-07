@@ -353,7 +353,7 @@ function LinkPartCommand({ navigate, setOpen }: ComfyCommandProps) {
       </CommandItem>
       <CommandItem
         onSelect={() => {
-          navigate({ to: "/blog" });
+          window.open("https://www.comfydeploy.com/blog", "_blank");
           setOpen(false);
         }}
       >

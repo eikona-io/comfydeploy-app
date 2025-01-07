@@ -213,7 +213,7 @@ const links = [
   },
   {
     title: "Blog",
-    url: "/blog",
+    url: "https://www.comfydeploy.com/blog",
     icon: Rss,
   },
 ];
