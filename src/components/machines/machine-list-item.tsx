@@ -469,8 +469,8 @@ export function MachineListItem({
   return hasActiveEvents ? (
     <ShineBorder
       color="green"
-      className="w-full p-0"
-      borderRadius={10}
+      className="w-full p-[2px]"
+      borderRadius={14}
       borderWidth={2}
     >
       {content}

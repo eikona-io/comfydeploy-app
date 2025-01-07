@@ -5,6 +5,8 @@ import {
   serverlessFormSchema,
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
+import { ActiveMachineProvider } from "@/components/machines/active-machine-context";
+import { ActiveMachineList } from "@/components/machines/active-machine-list";
 import { MachineListItem } from "@/components/machines/machine-list-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,6 +125,12 @@ export function MachineList() {
             </div>
           </div>
         ))}
+      <ActiveMachineProvider>
+        <ActiveMachineList
+          machineActionItemList={<></>}
+          hide={!!debouncedSearchValue}
+        />
+      </ActiveMachineProvider>
       <VirtualizedInfiniteList
         className="!h-full fab-machine-list w-full"
         queryResult={query}
