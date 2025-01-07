@@ -48,6 +48,7 @@ import {
   Pencil,
   Search,
   Settings2,
+  Star,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -680,6 +681,7 @@ export function WorkflowImportCustomNodeSetup({
         if (nodesNeedingHash.length > 0) {
           const hashPromises = nodesNeedingHash.map(async ([url]) => {
             const branchInfo = await getBranchInfo(url);
+            console.log("branchInfo: ", branchInfo);
 
             if (isLoading) return { url, hash: null }; // Handle loading state
             if (error) {
@@ -690,15 +692,23 @@ export function WorkflowImportCustomNodeSetup({
             return {
               url,
               hash: branchInfo?.commit.sha || null,
+              meta: {
+                message: branchInfo?.commit.commit.message,
+                committer: branchInfo?.commit.commit.committer,
+                latest_hash: branchInfo?.commit.sha,
+                stargazers_count: branchInfo?.stargazers_count,
+                commit_url: branchInfo?.commit.html_url,
+              },
             };
           });
 
           const results = await Promise.all(hashPromises);
-          for (const { url, hash } of results) {
+          for (const { url, hash, meta } of results) {
             if (hash) {
               updatedDependencies.custom_nodes[url] = {
                 ...updatedDependencies.custom_nodes[url],
                 hash,
+                meta,
                 warning: "No hash found in snapshot, using latest commit hash",
               };
             }
@@ -725,6 +735,13 @@ export function WorkflowImportCustomNodeSetup({
 
               return {
                 url: node.url,
+                meta: {
+                  message: branchInfo?.commit.commit.message,
+                  committer: branchInfo?.commit.commit.committer,
+                  latest_hash: branchInfo?.commit.sha,
+                  stargazers_count: branchInfo?.stargazers_count,
+                  commit_url: branchInfo?.commit.html_url,
+                },
                 hash: branchInfo?.commit.sha || null,
               };
             },
@@ -740,10 +757,12 @@ export function WorkflowImportCustomNodeSetup({
               (node) => {
                 if (node.hash !== null) return node; // Skip if already has hash
                 const result = conflictResults.find((r) => r.url === node.url);
+                console.log("result: ", result);
                 if (result?.hash) {
                   return {
                     ...node,
                     hash: result.hash,
+                    meta: result.meta,
                     warning:
                       "No hash found in snapshot, using latest commit hash",
                   };
@@ -893,30 +912,51 @@ export function WorkflowImportCustomNodeSetup({
 
           {Object.entries(validation.dependencies?.custom_nodes || {})
             .slice(0, showAll ? undefined : PREVIEW_COUNT)
-            .map(([url, node]) => {
+            .map(([url, node], index) => {
               const author = url.split("/")[3];
-              const nodeInfo = node as any;
 
               return (
-                <div
-                  key={url}
-                  className={cn(
-                    "rounded-sm border p-1 px-4",
-                    !nodeInfo.hash &&
-                      "bg-red-50 ring-1 ring-red-500 ring-offset-2",
-                    isUrlDuplicate(url) &&
-                      "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2",
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-sm">{nodeInfo.name}</h3>
-                      <Link
-                        href={url}
-                        target="_blank"
-                        className="flex items-center gap-1 text-muted-foreground text-xs hover:text-primary"
+                <div key={url} className="space-y-2">
+                  <div
+                    className={cn(
+                      "rounded-sm border p-1 px-4",
+                      !node.hash &&
+                        "bg-red-50 ring-1 ring-red-500 ring-offset-2",
+                      isUrlDuplicate(url) &&
+                        "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2",
+                    )}
+                  >
+                    <div className="group flex items-center gap-3">
+                      <label
+                        htmlFor={`${url}-${index}`}
+                        className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-sm"
                       >
-                        by {author} <ExternalLink className="h-3 w-3" />
+                        <span className="bold truncate whitespace-nowrap">
+                          {node.name}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-400">
+                            by {author}
+                          </span>
+                          {node.meta?.stargazers_count && (
+                            <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                              <Star
+                                size={12}
+                                className="fill-yellow-400 text-yellow-400"
+                              />
+                              <span>
+                                {node.meta.stargazers_count.toLocaleString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                      <Link
+                        href={node.url}
+                        target="_blank"
+                        className="shrink-0 text-muted-foreground transition-colors hover:text-gray-600"
+                      >
+                        <ExternalLink className="h-3 w-3" />
                       </Link>
                     </div>
                   </div>
@@ -1058,14 +1098,27 @@ export function WorkflowImportCustomNodeSetup({
                             />
                             <label
                               htmlFor={`${nodeName}-${index}`}
-                              className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-gray-500 text-sm"
+                              className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-sm"
                             >
-                              <span className="truncate whitespace-nowrap">
+                              <span className="bold truncate whitespace-nowrap">
                                 {conflict.name}
                               </span>
-                              <span className="text-[10px] text-gray-400">
-                                by {author}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-gray-400">
+                                  by {author}
+                                </span>
+                                {conflict.meta?.stargazers_count && (
+                                  <div className="flex items-center gap-0.5 text-muted-foreground text-[10px]">
+                                    <Star
+                                      size={12}
+                                      className="fill-yellow-400 text-yellow-400"
+                                    />
+                                    <span>
+                                      {conflict.meta.stargazers_count.toLocaleString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </label>
                             <Link
                               href={conflict.url}

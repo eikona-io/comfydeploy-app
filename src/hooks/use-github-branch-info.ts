@@ -23,7 +23,7 @@ import { z } from "zod";
 // }
 
 // Helper function for non-hook usage with the dedicated client
-export async function getBranchInfo(gitUrl: string) {
+export async function getBranchInfo(gitUrl: string): Promise<BranchInfoData> {
   return queryClient.fetchQuery({
     queryKey: ["branch-info"],
     queryKeyHashFn: (queryKey) => [...queryKey, gitUrl].toString(),
@@ -55,8 +55,16 @@ const BranchInfoSchema = z.object({
     sha: z.string(),
     commit: z.object({
       message: z.string(),
+      // TODO: committer obj: this makes types work in custom-node-setup.tsx but doesn't match the API responsee
+      committer: z.object({
+        name: z.string(),
+        email: z.string(),
+        date: z.string(),
+      }),
     }),
+    html_url: z.string(),
   }),
+  stargazers_count: z.number(),
 });
 
 type BranchInfoData = z.infer<typeof BranchInfoSchema>;
