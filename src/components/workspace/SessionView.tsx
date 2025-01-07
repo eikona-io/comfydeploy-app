@@ -35,7 +35,7 @@ import { Skeleton } from "../ui/skeleton";
 import { App } from "./App";
 import { useLogStore } from "./LogContext";
 import { LogDisplay } from "./LogDisplay";
-import Workspace from "./Workspace";
+import Workspace, { useAssetsBrowserStore } from "./Workspace";
 // import { OnBoardingDialog } from "@/repo/components/ui/custom/workspace/OnBoardingDialog";
 // import { SessionList } from "@/repo/components/ui/custom/workspace/SessionList";
 // import { ModelsListLayout } from "@/repo/components/ui/custom/workspace/Windows";
@@ -82,18 +82,21 @@ export function ModelsButton(props: {
           </PopoverContent>
         </Popover>
       )}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="gap-1"
-            size="sm"
-            Icon={Image}
-            iconPlacement="left"
-          >
-            <span className="hidden lg:block">Assets</span>
-          </Button>
-        </PopoverTrigger>
+      {/* <Popover>
+        <PopoverTrigger asChild> */}
+      <Button
+        variant="outline"
+        className="gap-1"
+        size="sm"
+        Icon={Image}
+        onClick={() => {
+          useAssetsBrowserStore.getState().setOpen(true);
+        }}
+        iconPlacement="left"
+      >
+        <span className="hidden lg:block">Assets</span>
+      </Button>
+      {/* </PopoverTrigger>
         <PopoverContent className="w-fit p-2">
           <div className="h-[300px] w-[250px]">
             <AssetBrowser
@@ -103,7 +106,7 @@ export function ModelsButton(props: {
             />
           </div>
         </PopoverContent>
-      </Popover>
+      </Popover> */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
