@@ -5,9 +5,9 @@ export const Route = createFileRoute("/analytics/")({
   loader: async () => {
     const sub = (await queryClient.ensureQueryData({
       queryKey: ["platform", "plan"],
-    })) as { plans?: any };
+    })) as { sub?: any };
 
-    if (!sub?.plans?.length) {
+    if (!sub?.sub?.plan) {
       console.log("redirecting");
       throw redirect({
         to: "/workflows",

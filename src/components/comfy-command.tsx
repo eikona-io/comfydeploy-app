@@ -319,7 +319,7 @@ function AccountPartCommand({ navigate, setOpen }: ComfyCommandProps) {
         </CommandItem>
       )}
 
-      {sub?.plans && (
+      {sub?.sub?.plan && (
         <CommandItem
           onSelect={() => {
             navigate({

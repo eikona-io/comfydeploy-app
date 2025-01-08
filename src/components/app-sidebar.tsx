@@ -184,7 +184,7 @@ function usePages() {
         ]
       : []),
 
-    ...(sub?.plans
+    ...(sub?.sub?.plan
       ? [
           {
             name: "Analytics",
