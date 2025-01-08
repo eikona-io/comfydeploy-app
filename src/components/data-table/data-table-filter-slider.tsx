@@ -5,6 +5,8 @@ import { Slider } from "@/components/custom/slider";
 import { Label } from "@/components/ui/label";
 import { isArrayOfNumbers } from "@/lib/is-array";
 import type { Table } from "@tanstack/react-table";
+import { useEffect, useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import type { DataTableSliderFilterField } from "./types";
 
 type DataTableFilterSliderProps<TData> = DataTableSliderFilterField<TData> & {
@@ -17,18 +19,27 @@ export function DataTableFilterSlider<TData>({
   min,
   max,
 }: DataTableFilterSliderProps<TData>) {
+  const [localValue, setLocalValue] = useState<number[]>([min, max]);
   const value = _value as string;
   const column = table.getColumn(value);
   const filterValue = column?.getFilterValue();
 
-  const filters =
-    typeof filterValue === "number"
-      ? [filterValue, filterValue]
-      : Array.isArray(filterValue) && isArrayOfNumbers(filterValue)
-        ? filterValue.length === 1
-          ? [filterValue[0], filterValue[0]]
-          : filterValue
-        : undefined;
+  useEffect(() => {
+    const filters =
+      typeof filterValue === "number"
+        ? [filterValue, filterValue]
+        : Array.isArray(filterValue) && isArrayOfNumbers(filterValue)
+          ? filterValue.length === 1
+            ? [filterValue[0], filterValue[0]]
+            : filterValue
+          : [min, max];
+
+    setLocalValue(filters);
+  }, [filterValue, min, max]);
+
+  const debouncedSetFilter = useDebouncedCallback((value: number[]) => {
+    column?.setFilterValue(value);
+  }, 300);
 
   return (
     <div className="grid gap-2">
@@ -47,16 +58,16 @@ export function DataTableFilterSlider<TData>({
             type="number"
             name={`min-${value}`}
             id={`min-${value}`}
-            value={`${filters?.[0] ?? min}`}
+            value={`${localValue?.[0] ?? min}`}
             min={min}
             max={max}
             onChange={(e) => {
               const val = Number.parseInt(e.target.value) || 0;
               const newValue =
-                Array.isArray(filters) && val < filters[1]
-                  ? [val, filters[1]]
+                Array.isArray(localValue) && val < localValue[1]
+                  ? [val, localValue[1]]
                   : [val, max];
-              column?.setFilterValue(newValue);
+              debouncedSetFilter(newValue);
             }}
           />
         </div>
@@ -74,16 +85,16 @@ export function DataTableFilterSlider<TData>({
             type="number"
             name={`max-${value}`}
             id={`max-${value}`}
-            value={`${filters?.[1] ?? max}`}
+            value={`${localValue?.[1] ?? max}`}
             min={min}
             max={max}
             onChange={(e) => {
               const val = Number.parseInt(e.target.value) || 0;
               const newValue =
-                Array.isArray(filters) && val > filters[0]
-                  ? [filters[0], val]
+                Array.isArray(localValue) && val > localValue[0]
+                  ? [localValue[0], val]
                   : [min, val];
-              column?.setFilterValue(newValue);
+              debouncedSetFilter(newValue);
             }}
           />
         </div>
@@ -91,8 +102,11 @@ export function DataTableFilterSlider<TData>({
       <Slider
         min={min}
         max={max}
-        value={filters || [min, max]}
-        onValueChange={(values) => column?.setFilterValue(values)}
+        value={localValue}
+        onValueChange={(values) => {
+          setLocalValue(values);
+          debouncedSetFilter(values);
+        }}
       />
     </div>
   );
