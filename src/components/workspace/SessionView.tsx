@@ -17,9 +17,11 @@ import {
 import { UploadZone } from "@/components/upload/upload-zone";
 import { AssetsPanel } from "@/components/workspace/assets-panel";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { useAuthStore } from "@/lib/auth-store";
 import { machineGPUOptions } from "@/lib/schema";
+import { cn } from "@/lib/utils";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { Folder, Image, List, Plus, Wrench } from "lucide-react";
 import { Info } from "lucide-react";
@@ -152,6 +154,11 @@ export function SessionCreator(props: {
 }) {
   const { workflow } = useCurrentWorkflow(props.workflowId);
   const machineId = workflow?.selected_machine_id;
+
+  const { data: machine } = useMachine(machineId);
+
+  const machineBuilderVersion = machine?.machine_builder_version;
+  console.log("machineBuilderVersion", machineBuilderVersion);
 
   // const [machineId] = useSelectedMachine(undefined, workflow, true);
 
@@ -366,6 +373,15 @@ export function SessionCreator(props: {
     );
   }
 
+  if (Number.parseInt(machineBuilderVersion) <= 4) {
+    return (
+      <div className={cn("flex h-full w-full items-center justify-center")}>
+        Machine builder version {machineBuilderVersion} is not supported for
+        workspace.
+      </div>
+    );
+  }
+
   if (sessionId && machineId && url) {
     return (
       <>
@@ -403,12 +419,7 @@ export function SessionCreator(props: {
     );
   }
 
-  return (
-    <>
-      {/* {sessionUI} */}
-      {ui}
-    </>
-  );
+  return <>{ui}</>;
 }
 
 function useLogListener({ sessionId }: { sessionId: string }) {

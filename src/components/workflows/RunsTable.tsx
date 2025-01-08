@@ -142,7 +142,7 @@ export function useRuns(props: {
   defaultData?: any;
 }) {
   return useInfiniteQuery({
-    queryKey: ["workflow", props.workflow_id, "runs"],
+    queryKey: ["v2", "workflow", props.workflow_id, "runs"],
     meta: {
       limit: BATCH_SIZE,
       params: { with_outputs: false, with_inputs: false },
@@ -401,6 +401,9 @@ function RunRow({
     return <LoadingRow />;
   }
 
+  // Truncate the UUID to first 8 characters
+  const truncatedId = run.id.substring(0, 6);
+
   return (
     <div
       className={`flex h-full cursor-pointer items-center justify-between overflow-hidden border-b p-2 text-sm hover:bg-gray-100 ${
@@ -411,7 +414,9 @@ function RunRow({
       }}
     >
       <div className="grid w-full grid-cols-12 items-center gap-2">
-        <span className="col-span-1 text-2xs text-gray-500">#{run.number}</span>
+        <span className="col-span-1 text-2xs text-gray-500">
+          #{truncatedId}
+        </span>
         <Badge className="col-span-2 w-fit rounded-[10px] px-2 py-1 text-xs">
           {run.version?.version ? `v${run.version.version}` : "N/A"}
         </Badge>
