@@ -161,21 +161,34 @@ export const gpuOptions: GpuOption[] = [
   },
 ];
 
-// Add this function outside of any component
-export function convertToDockerSteps(
+// Helper type for node metadata
+type NodeMeta = {
+  message: string;
+  committer: {
+    date: string;
+    name: string;
+    email: string;
+  };
+  commit_url: string;
+  latest_hash: string;
+  stargazers_count: number;
+};
+
+// Helper type for node data
+type NodeData = {
+  name: string;
+  hash?: string;
+  url: string;
+  pip?: string[];
+  meta?: NodeMeta;
+};
+
+// Helper function to get unique URLs map
+function mergeCustomNodes(
   customNodes: Record<string, any> = {},
   selectedConflictingNodes: Record<string, any[]> = {},
-): any {
-  // Track unique URLs to prevent duplicates
-  const uniqueUrls = new Map<
-    string,
-    {
-      name: string;
-      hash?: string;
-      url: string;
-      pip?: string[];
-    }
-  >();
+): Map<string, NodeData> {
+  const uniqueUrls = new Map<string, NodeData>();
 
   // Add custom nodes first
   for (const [url, node] of Object.entries(customNodes)) {
@@ -185,23 +198,36 @@ export function convertToDockerSteps(
       hash: node.hash || undefined,
       url: url,
       pip: node.pip || undefined,
+      meta: node.meta || undefined,
     });
   }
 
   // Add selected conflicting nodes, only if URL isn't already present
-  for (const [nodeName, nodes] of Object.entries(selectedConflictingNodes)) {
+  for (const nodes of Object.values(selectedConflictingNodes)) {
     for (const node of nodes) {
       const lowerUrl = node.url.toLowerCase();
       if (!uniqueUrls.has(lowerUrl)) {
         uniqueUrls.set(lowerUrl, {
-          name: nodeName,
+          name: node.name,
           hash: node.hash || undefined,
           url: node.url,
           pip: node.pip || undefined,
+          meta: node.meta || undefined,
         });
       }
     }
   }
+
+  return uniqueUrls;
+}
+
+// Add this function outside of any component
+export function convertToDockerSteps(
+  customNodes: Record<string, any> = {},
+  selectedConflictingNodes: Record<string, any[]> = {},
+): any {
+  // Get unique URLs using helper function
+  const uniqueUrls = mergeCustomNodes(customNodes, selectedConflictingNodes);
 
   // Convert to steps format
   return {
@@ -215,6 +241,7 @@ export function convertToDockerSteps(
         files: [node.url],
         install_type: "git-clone" as const,
         pip: node.pip,
+        meta: node.meta,
       },
     })),
   };
@@ -312,6 +339,40 @@ function ExistingMachine({
     query.refetch();
   }, [debouncedSearchValue]);
 
+  // Helper function to compare nodes
+  const compareNodes = (
+    machineDockerSteps: any,
+    validation: StepValidation,
+  ) => {
+    const matchingNodes: string[] = [];
+    const missingNodes: string[] = [];
+    const machineNodeUrls = machineDockerSteps?.steps?.map((node) =>
+      node?.data?.url?.toLowerCase(),
+    );
+
+    const uniqueUrls = mergeCustomNodes(
+      validation.dependencies?.custom_nodes,
+      validation.selectedConflictingNodes,
+    );
+
+    for (const url of uniqueUrls.keys()) {
+      const isMatched = machineNodeUrls.some(
+        (mnUrl: string) => mnUrl === url.toLowerCase(),
+      );
+      if (isMatched) {
+        matchingNodes.push(url);
+      } else {
+        missingNodes.push(url);
+      }
+    }
+
+    return {
+      matchingCount: matchingNodes.length,
+      totalRequired: uniqueUrls.size,
+      missingNodes,
+    };
+  };
+
   if (query.isLoading) {
     return (
       <div>
@@ -347,13 +408,17 @@ function ExistingMachine({
         queryResult={query}
         renderItem={(item, index) => {
           const isSelected = validation.selectedMachineId === item.id;
+          const nodeComparison = compareNodes(
+            item.docker_command_steps,
+            validation,
+          );
+
           return (
             <div
               className={cn(
                 "flex h-[72px] flex-col items-center justify-center border-gray-200 border-r border-b border-l p-2.5",
                 index === 0 && "rounded-t-[8px] border-t",
               )}
-              key={index}
             >
               <div className="group flex w-full items-center gap-3">
                 <Checkbox
@@ -369,23 +434,54 @@ function ExistingMachine({
                 />
                 <label
                   htmlFor={item.id}
-                  className="flex min-w-0 flex-1 items-center"
+                  className="flex min-w-0 flex-1 items-center gap-4"
                 >
                   <span className="flex-1 truncate whitespace-nowrap">
                     {item.name}
                   </span>
-                  <div className="flex w-[80px] justify-center">
+                  <div className="flex items-center gap-2">
                     <Badge
                       variant="secondary"
                       className="!text-[11px] font-mono"
                     >
                       {item.gpu}
                     </Badge>
+                    <Badge
+                      variant={
+                        nodeComparison.missingNodes.length === 0
+                          ? "success"
+                          : "yellow"
+                      }
+                      className="!text-[11px]"
+                    >
+                      {nodeComparison.matchingCount}/
+                      {nodeComparison.totalRequired} nodes
+                    </Badge>
                   </div>
-                  <span className="hidden w-[100px] truncate text-center font-mono text-[10px] text-gray-400 md:block">
-                    {item.id}
-                  </span>
                 </label>
+
+                {nodeComparison.missingNodes.length > 0 && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="text-yellow-500">
+                          <Settings2 className="h-4 w-4" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="font-medium">Missing Custom Nodes:</p>
+                        <ul className="text-xs">
+                          {nodeComparison.missingNodes.map((url, i) => (
+                            <li key={i} className="text-muted-foreground">
+                              • {url.split("/").pop()}
+                            </li>
+                          ))}
+                        </ul>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
                 <Link
                   href={`/machines/${item.id}`}
                   target="_blank"
@@ -662,55 +758,71 @@ export function WorkflowImportCustomNodeSetup({
     enabled: !!json,
   });
 
+  // Helper function to fetch branch info and format result
+  async function fetchNodeInfo(url: string, isLoading: boolean, error: any) {
+    const branchInfo = await getBranchInfo(url);
+
+    if (isLoading) return { url, hash: null };
+    if (error) {
+      console.error(`Failed to fetch hash for ${url}:`, error);
+      return { url, hash: null };
+    }
+
+    return {
+      url,
+      hash: branchInfo?.commit.sha || null,
+      meta: branchInfo && {
+        message: branchInfo.commit.commit.message,
+        committer: branchInfo.commit.commit.committer,
+        latest_hash: branchInfo.commit.sha,
+        stargazers_count: branchInfo.stargazers_count,
+        commit_url: branchInfo.commit.html_url,
+      },
+    };
+  }
+
+  // Helper function to update node with hash info
+  function updateNodeWithHash(node: any, hashInfo: any) {
+    if (!hashInfo.hash) return node;
+
+    return {
+      ...node,
+      hash: hashInfo.hash,
+      meta: hashInfo.meta,
+      warning: "No hash found in snapshot, using latest commit hash",
+    };
+  }
+
   useEffect(() => {
     if (dependencies) {
       const initializeHashes = async () => {
         // First, ensure dependencies are in validation
         if (!validation.dependencies) {
           setValidation({ ...validation, dependencies });
-          return; // Exit and let the next effect cycle handle hash updates
+          return;
         }
 
         const updatedDependencies = { ...validation.dependencies };
 
-        // Check custom nodes that need hashes
-        const nodesNeedingHash = Object.entries(
+        // Handle custom nodes that need hashes
+        const nodesNeedBranchInfo = Object.entries(
           updatedDependencies.custom_nodes || {},
-        ).filter(([_, node]) => node.hash === undefined);
+        ).filter(([_, node]) => node.meta === undefined);
 
-        if (nodesNeedingHash.length > 0) {
-          const hashPromises = nodesNeedingHash.map(async ([url]) => {
-            const branchInfo = await getBranchInfo(url);
-            console.log("branchInfo: ", branchInfo);
+        if (nodesNeedBranchInfo.length > 0) {
+          const results = await Promise.all(
+            nodesNeedBranchInfo.map(([url]) =>
+              fetchNodeInfo(url, isLoading, error),
+            ),
+          );
 
-            if (isLoading) return { url, hash: null }; // Handle loading state
-            if (error) {
-              console.error(`Failed to fetch hash for ${url}:`, error);
-              return { url, hash: null };
-            }
-
-            return {
-              url,
-              hash: branchInfo?.commit.sha || null,
-              meta: {
-                message: branchInfo?.commit.commit.message,
-                committer: branchInfo?.commit.commit.committer,
-                latest_hash: branchInfo?.commit.sha,
-                stargazers_count: branchInfo?.stargazers_count,
-                commit_url: branchInfo?.commit.html_url,
-              },
-            };
-          });
-
-          const results = await Promise.all(hashPromises);
-          for (const { url, hash, meta } of results) {
-            if (hash) {
-              updatedDependencies.custom_nodes[url] = {
-                ...updatedDependencies.custom_nodes[url],
-                hash,
-                meta,
-                warning: "No hash found in snapshot, using latest commit hash",
-              };
+          for (const hashInfo of results) {
+            if (hashInfo.hash) {
+              updatedDependencies.custom_nodes[hashInfo.url] =
+                updateNodeWithHash(
+                  updatedDependencies.custom_nodes[hashInfo.url],
+                  hashInfo,
+                );
             }
           }
         }
@@ -723,31 +835,11 @@ export function WorkflowImportCustomNodeSetup({
         );
 
         if (conflictingNodesNeedingHash.length > 0) {
-          const conflictingHashPromises = conflictingNodesNeedingHash.map(
-            async (node) => {
-              const branchInfo = await getBranchInfo(node.url);
-
-              if (isLoading) return { url: node.url, hash: null }; // Handle loading state
-              if (error) {
-                console.error(`Failed to fetch hash for ${node.url}:`, error);
-                return { url: node.url, hash: null };
-              }
-
-              return {
-                url: node.url,
-                meta: {
-                  message: branchInfo?.commit.commit.message,
-                  committer: branchInfo?.commit.commit.committer,
-                  latest_hash: branchInfo?.commit.sha,
-                  stargazers_count: branchInfo?.stargazers_count,
-                  commit_url: branchInfo?.commit.html_url,
-                },
-                hash: branchInfo?.commit.sha || null,
-              };
-            },
+          const conflictResults = await Promise.all(
+            conflictingNodesNeedingHash.map((node) =>
+              fetchNodeInfo(node.url, isLoading, error),
+            ),
           );
-
-          const conflictResults = await Promise.all(conflictingHashPromises);
 
           // Update only the nodes that needed hashes
           for (const [nodeName, conflicts] of Object.entries(
@@ -756,18 +848,10 @@ export function WorkflowImportCustomNodeSetup({
             updatedDependencies.conflicting_nodes[nodeName] = conflicts.map(
               (node) => {
                 if (node.hash !== null) return node; // Skip if already has hash
-                const result = conflictResults.find((r) => r.url === node.url);
-                console.log("result: ", result);
-                if (result?.hash) {
-                  return {
-                    ...node,
-                    hash: result.hash,
-                    meta: result.meta,
-                    warning:
-                      "No hash found in snapshot, using latest commit hash",
-                  };
-                }
-                return node;
+                const hashInfo = conflictResults.find(
+                  (r) => r.url === node.url,
+                );
+                return hashInfo ? updateNodeWithHash(node, hashInfo) : node;
               },
             );
           }
@@ -775,7 +859,7 @@ export function WorkflowImportCustomNodeSetup({
 
         // Only update validation if any changes were made
         if (
-          nodesNeedingHash.length > 0 ||
+          nodesNeedBranchInfo.length > 0 ||
           conflictingNodesNeedingHash.length > 0
         ) {
           setValidation({ ...validation, dependencies: updatedDependencies });
@@ -912,105 +996,54 @@ export function WorkflowImportCustomNodeSetup({
 
           {Object.entries(validation.dependencies?.custom_nodes || {})
             .slice(0, showAll ? undefined : PREVIEW_COUNT)
-            .map(([url, node], index) => {
+            .map(([url, node]) => {
               const author = url.split("/")[3];
-
               return (
                 <div key={url} className="space-y-2">
-                  <div
-                    className={cn(
-                      "rounded-sm border p-1 px-4",
-                      !node.hash &&
-                        "bg-red-50 ring-1 ring-red-500 ring-offset-2",
-                      isUrlDuplicate(url) &&
-                        "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2",
-                    )}
-                  >
-                    <div className="group flex items-center gap-3">
-                      <label
-                        htmlFor={`${url}-${index}`}
-                        className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-sm"
-                      >
-                        <span className="bold truncate whitespace-nowrap">
-                          {node.name}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] text-gray-400">
-                            by {author}
-                          </span>
-                          {node.meta?.stargazers_count && (
-                            <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                              <Star
-                                size={12}
-                                className="fill-yellow-400 text-yellow-400"
-                              />
-                              <span>
-                                {node.meta.stargazers_count.toLocaleString()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </label>
-                      <Link
-                        href={node.url}
-                        target="_blank"
-                        className="shrink-0 text-muted-foreground transition-colors hover:text-gray-600"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </div>
-                  </div>
+                  <NodeListItem
+                    name={node.name}
+                    author={author}
+                    url={url}
+                    starCount={node.meta?.stargazers_count}
+                    hasHash={!!node.hash}
+                    isUrlDuplicate={isUrlDuplicate(url)}
+                  />
                 </div>
               );
             })}
 
-          {Object.keys(validation.dependencies?.custom_nodes || {}).length >
-            PREVIEW_COUNT && (
-            <Button
-              variant="ghost"
-              className="mt-2 w-full text-muted-foreground text-xs hover:text-primary"
-              onClick={() => setShowAll(!showAll)}
-            >
-              {showAll ? (
-                <div className="flex items-center gap-2">
-                  Show Less <ChevronUp className="h-3 w-3" />
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  Show{" "}
-                  {Object.keys(validation.dependencies?.custom_nodes || {})
-                    .length - PREVIEW_COUNT}{" "}
-                  More <ChevronDown className="h-3 w-3" />
-                </div>
-              )}
-            </Button>
-          )}
+          <ShowMoreButton
+            showAll={showAll}
+            setShowAll={setShowAll}
+            totalCount={
+              Object.keys(validation.dependencies?.custom_nodes || {}).length
+            }
+            previewCount={PREVIEW_COUNT}
+          />
         </div>
 
         {validation.dependencies?.conflicting_nodes &&
           Object.keys(validation.dependencies?.conflicting_nodes).length >
             0 && (
             <div className="space-y-1">
-              <div className="flex flex-row items-center gap-1">
-                <div className="flex flex-col gap-1">
-                  <div className="flex items-center gap-1">
-                    <h3 className="bold font-medium text-md">
-                      Conflicting Nodes
-                    </h3>
-                    <span className="text-sm text-yellow-600">
-                      (
-                      {
-                        Object.keys(
-                          validation.dependencies?.conflicting_nodes || {},
-                        ).length
-                      }
-                      )
-                    </span>
-                  </div>
-                  <span className="block text-muted-foreground text-sm leading-normal">
-                    Multiple repos found with the same node name.
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1">
+                  <h3 className="bold font-medium text-md">
+                    Conflicting Nodes
+                  </h3>
+                  <span className="text-sm text-yellow-600">
+                    (
+                    {
+                      Object.keys(
+                        validation.dependencies?.conflicting_nodes || {},
+                      ).length
+                    }
+                    )
                   </span>
                 </div>
+                <span className="block text-muted-foreground text-sm leading-normal">
+                  Multiple repos found with the same node name.
+                </span>
               </div>
 
               {Object.entries(
@@ -1028,19 +1061,16 @@ export function WorkflowImportCustomNodeSetup({
                   <div className="space-y-2">
                     {conflicts.map((conflict, index) => {
                       const author = conflict.url.split("/")[3];
-
                       return (
-                        <div
+                        <NodeListItem
                           key={conflict.url}
-                          className={cn(
-                            "flex flex-col rounded-sm border p-2",
-                            !conflict.hash &&
-                              "bg-red-50 ring-1 ring-red-500 ring-offset-2",
-                            isUrlDuplicate(conflict.url) &&
-                              "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2",
-                          )}
-                        >
-                          <div className="group flex items-center gap-3">
+                          name={conflict.name}
+                          author={author}
+                          url={conflict.url}
+                          starCount={conflict.meta?.stargazers_count}
+                          hasHash={!!conflict.hash}
+                          isUrlDuplicate={isUrlDuplicate(conflict.url)}
+                          checkbox={
                             <Checkbox
                               id={`${nodeName}-${index}`}
                               className="data-[state=checked]:!bg-primary rounded-[4px] border-gray-500 group-hover:bg-gray-100"
@@ -1096,39 +1126,8 @@ export function WorkflowImportCustomNodeSetup({
                                 });
                               }}
                             />
-                            <label
-                              htmlFor={`${nodeName}-${index}`}
-                              className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-sm"
-                            >
-                              <span className="bold truncate whitespace-nowrap">
-                                {conflict.name}
-                              </span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] text-gray-400">
-                                  by {author}
-                                </span>
-                                {conflict.meta?.stargazers_count && (
-                                  <div className="flex items-center gap-0.5 text-muted-foreground text-[10px]">
-                                    <Star
-                                      size={12}
-                                      className="fill-yellow-400 text-yellow-400"
-                                    />
-                                    <span>
-                                      {conflict.meta.stargazers_count.toLocaleString()}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </label>
-                            <Link
-                              href={conflict.url}
-                              target="_blank"
-                              className="shrink-0 text-muted-foreground transition-colors hover:text-gray-600"
-                            >
-                              <ExternalLink className="h-3 w-3" />
-                            </Link>
-                          </div>
-                        </div>
+                          }
+                        />
                       );
                     })}
                   </div>
@@ -1367,4 +1366,82 @@ export function findFirstDuplicateNode(
   }
 
   return null;
+}
+
+// New reusable components
+function NodeListItem({
+  name,
+  author,
+  url,
+  starCount,
+  hasHash,
+  isUrlDuplicate,
+  checkbox = null,
+}: {
+  name: string;
+  author: string;
+  url: string;
+  starCount?: number;
+  hasHash: boolean;
+  isUrlDuplicate: boolean;
+  checkbox?: React.ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col rounded-sm border p-2",
+        !hasHash && "bg-red-50 ring-1 ring-red-500 ring-offset-2",
+        isUrlDuplicate && "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2",
+      )}
+    >
+      <div className="group flex items-center gap-3">
+        {checkbox}
+        <label
+          htmlFor={`${url}`}
+          className="flex min-w-0 flex-1 cursor-pointer items-center gap-4 text-sm"
+        >
+          <span className="bold truncate whitespace-nowrap">{name}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-gray-400">by {author}</span>
+            {starCount && (
+              <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                <Star size={12} className="fill-yellow-400 text-yellow-400" />
+                <span>{starCount.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        </label>
+        <Link
+          href={url}
+          target="_blank"
+          className="shrink-0 text-muted-foreground transition-colors hover:text-gray-600"
+        >
+          <ExternalLink className="h-3 w-3" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function ShowMoreButton({ showAll, setShowAll, totalCount, previewCount }) {
+  return totalCount > previewCount ? (
+    <Button
+      variant="ghost"
+      className="mt-2 w-full text-muted-foreground text-xs hover:text-primary"
+      onClick={() => setShowAll(!showAll)}
+    >
+      <div className="flex items-center gap-2">
+        {showAll ? (
+          <>
+            Show Less <ChevronUp className="h-3 w-3" />
+          </>
+        ) : (
+          <>
+            Show {totalCount - previewCount} More{" "}
+            <ChevronDown className="h-3 w-3" />
+          </>
+        )}
+      </div>
+    </Button>
+  ) : null;
 }
