@@ -223,7 +223,7 @@ export function MachineListItem({
             {!isExpanded && machine.gpu && (
               <div className="flex flex-row items-center gap-1 font-medium text-2xs">
                 <HardDrive className="h-[14px] w-[14px]" />
-                {machine.gpu}
+                <span className="whitespace-nowrap">{machine.gpu}</span>
                 {machine.machine_version_id && (
                   <MachineVersionBadge machine={machine} isExpanded={false} />
                 )}

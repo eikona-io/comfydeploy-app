@@ -158,7 +158,7 @@ export function SessionCreator(props: {
   const { data: machine } = useMachine(machineId);
 
   const machineBuilderVersion = machine?.machine_builder_version;
-  console.log("machineBuilderVersion", machineBuilderVersion);
+  // console.log("machineBuilderVersion", machineBuilderVersion);
 
   // const [machineId] = useSelectedMachine(undefined, workflow, true);
 
@@ -367,13 +367,13 @@ export function SessionCreator(props: {
               </div>
             </App>
           </div>
-          <AssetsPanel />
+          {/* <AssetsPanel /> */}
         </UploadZone>
       </>
     );
   }
 
-  if (Number.parseInt(machineBuilderVersion) <= 4) {
+  if (Number.parseInt(machineBuilderVersion) < 4) {
     return (
       <div className={cn("flex h-full w-full items-center justify-center")}>
         Machine builder version {machineBuilderVersion} is not supported for
@@ -385,19 +385,19 @@ export function SessionCreator(props: {
   if (sessionId && machineId && url) {
     return (
       <>
-        <UploadZone
+        {/* <UploadZone
           className="relative flex h-full w-full"
           iframeEndpoint={url}
-        >
-          <div className="flex h-full w-full flex-col">
-            <Workspace
-              nativeMode={true}
-              endpoint={url}
-              workflowJson={props.workflowLatestVersion.workflow}
-            />
-          </div>
-          <AssetsPanel />
-        </UploadZone>
+        > */}
+        <div className="flex h-full w-full flex-col">
+          <Workspace
+            nativeMode={true}
+            endpoint={url}
+            workflowJson={props.workflowLatestVersion.workflow}
+          />
+        </div>
+        {/* <AssetsPanel /> */}
+        {/* </UploadZone> */}
         {ui}
       </>
     );
