@@ -17,7 +17,7 @@ export function UserSettings() {
 
   return (
     <div className={cn("mx-auto max-w-lg py-10")}>
-      {!sub?.plans && (
+      {!sub?.sub?.plans && (
         <div className="mb-4 border-yellow-400 border-l-4 bg-yellow-50 p-4">
           <div className="flex">
             <div className="ml-3">
@@ -30,7 +30,9 @@ export function UserSettings() {
         </div>
       )}
       <InlineAutoForm
-        className={cn(!sub?.plans && "disabled pointer-events-none opacity-50")}
+        className={cn(
+          !sub?.sub?.plans && "disabled pointer-events-none opacity-50",
+        )}
         buttonTitle="Save"
         formSchema={z.object({
           output_visibility: z
