@@ -385,19 +385,19 @@ export function SessionCreator(props: {
   if (sessionId && machineId && url) {
     return (
       <>
-        <UploadZone
+        {/* <UploadZone
           className="relative flex h-full w-full"
           iframeEndpoint={url}
-        >
-          <div className="flex h-full w-full flex-col">
-            <Workspace
-              nativeMode={true}
-              endpoint={url}
-              workflowJson={props.workflowLatestVersion.workflow}
-            />
-          </div>
-          {/* <AssetsPanel /> */}
-        </UploadZone>
+        > */}
+        <div className="flex h-full w-full flex-col">
+          <Workspace
+            nativeMode={true}
+            endpoint={url}
+            workflowJson={props.workflowLatestVersion.workflow}
+          />
+        </div>
+        {/* <AssetsPanel /> */}
+        {/* </UploadZone> */}
         {ui}
       </>
     );
