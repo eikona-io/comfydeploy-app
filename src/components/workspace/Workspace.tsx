@@ -64,6 +64,10 @@ import { Drawer } from "vaul";
 import { create } from "zustand";
 import { AssetBrowser } from "../asset-browser";
 import { UploadZone } from "../upload/upload-zone";
+import {
+  SessionIncrementDialog,
+  useSessionIncrementStore,
+} from "./increase-session";
 // import { useCurrentWorkflow } from "@/components/useCurrentWorkflow";
 // import { useMachineStore } from "@/repo/components/ui/custom/workspace/DevSelectMachine";
 
@@ -296,6 +300,10 @@ export default function Workspace({
           useAssetsBrowserStore.getState().setOpen(true);
           useAssetsBrowserStore.getState().setTargetNodeData(data.data);
         }
+        if (data.type === "increase-session") {
+          useSessionIncrementStore.getState().setOpen(true);
+          useSessionIncrementStore.getState().setSessionId(sessionId);
+        }
 
         // console.log(data);
         if (data.type === "cd_plugin_setup" && workflowJson) {
@@ -309,6 +317,16 @@ export default function Workspace({
               icon: "pi-image",
               tooltip: "Assets",
               event: "assets",
+            },
+          ]);
+          sendEventToCD("configure_menu_right_buttons", [
+            {
+              id: "session",
+              icon: "pi-clock",
+              tooltip: "Increase the timeout of your current session",
+              label: "Increase Timeout",
+              event: "increase-session",
+              eventData: {},
             },
           ]);
         } else if (data.type === "cd_plugin_onAfterChange") {
@@ -405,6 +423,7 @@ export default function Workspace({
 
   return (
     <>
+      {sessionId !== "preview" && <SessionIncrementDialog />}
       <AnimatePresence>
         {!cdSetup && (
           <motion.div
