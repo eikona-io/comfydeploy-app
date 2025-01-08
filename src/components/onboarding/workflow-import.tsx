@@ -260,32 +260,28 @@ export default function WorkflowImport() {
           try {
             switch (validation.machineOption) {
               case "existing":
-                // console.log(validation);
-                // console.log(validation.workflowApi);
-                // console.log(validation.workflowJson);
-
                 // Execute the promise with toast and handle navigation
-                toast.promise(
-                  createWorkflow(validation.selectedMachineId || undefined),
-                  {
-                    loading: "Creating workflow...",
-                    success: (data) => {
-                      console.log(data);
-                      if (data.workflow_id) {
-                        navigate({
-                          to: "/workflows/$workflowId/$view",
-                          params: {
-                            workflowId: data.workflow_id,
-                            view: "workspace",
-                          },
-                          search: { view: undefined },
-                        });
-                      }
-                      return `Workflow "${validation.workflowName}" has been created!`;
-                    },
-                    error: (err) => `Failed to create workflow: ${err.message}`,
-                  },
-                );
+                // toast.promise(
+                //   createWorkflow(validation.selectedMachineId || undefined),
+                //   {
+                //     loading: "Creating workflow...",
+                //     success: (data) => {
+                //       console.log(data);
+                //       if (data.workflow_id) {
+                //         navigate({
+                //           to: "/workflows/$workflowId/$view",
+                //           params: {
+                //             workflowId: data.workflow_id,
+                //             view: "workspace",
+                //           },
+                //           search: { view: undefined },
+                //         });
+                //       }
+                //       return `Workflow "${validation.workflowName}" has been created!`;
+                //     },
+                //     error: (err) => `Failed to create workflow: ${err.message}`,
+                //   },
+                // );
 
                 return true;
 
@@ -340,6 +336,9 @@ export default function WorkflowImport() {
       actions: {
         onNext: async (validation) => {
           try {
+            if (validation.machineOption === "existing") {
+            }
+
             // Type guard to ensure required fields exist
             if (
               !validation.machineName ||
