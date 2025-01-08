@@ -281,9 +281,8 @@ export function WorkflowImportMachine({
           content={
             <div className="flex flex-col gap-4">
               <span className="text-muted-foreground">
-                Select from your existing machines to run this workflow.
+                Non-existing custom nodes will be added to the machine.
               </span>
-
               <ExistingMachine
                 validation={validation}
                 setValidation={setValidation}
