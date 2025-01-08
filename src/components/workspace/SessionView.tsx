@@ -17,9 +17,11 @@ import {
 import { UploadZone } from "@/components/upload/upload-zone";
 import { AssetsPanel } from "@/components/workspace/assets-panel";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { useAuthStore } from "@/lib/auth-store";
 import { machineGPUOptions } from "@/lib/schema";
+import { cn } from "@/lib/utils";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { Folder, Image, List, Plus, Wrench } from "lucide-react";
 import { Info } from "lucide-react";
@@ -35,7 +37,7 @@ import { Skeleton } from "../ui/skeleton";
 import { App } from "./App";
 import { useLogStore } from "./LogContext";
 import { LogDisplay } from "./LogDisplay";
-import Workspace from "./Workspace";
+import Workspace, { useAssetsBrowserStore } from "./Workspace";
 // import { OnBoardingDialog } from "@/repo/components/ui/custom/workspace/OnBoardingDialog";
 // import { SessionList } from "@/repo/components/ui/custom/workspace/SessionList";
 // import { ModelsListLayout } from "@/repo/components/ui/custom/workspace/Windows";
@@ -82,18 +84,21 @@ export function ModelsButton(props: {
           </PopoverContent>
         </Popover>
       )}
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className="gap-1"
-            size="sm"
-            Icon={Image}
-            iconPlacement="left"
-          >
-            <span className="hidden lg:block">Assets</span>
-          </Button>
-        </PopoverTrigger>
+      {/* <Popover>
+        <PopoverTrigger asChild> */}
+      <Button
+        variant="outline"
+        className="gap-1"
+        size="sm"
+        Icon={Image}
+        onClick={() => {
+          useAssetsBrowserStore.getState().setOpen(true);
+        }}
+        iconPlacement="left"
+      >
+        <span className="hidden lg:block">Assets</span>
+      </Button>
+      {/* </PopoverTrigger>
         <PopoverContent className="w-fit p-2">
           <div className="h-[300px] w-[250px]">
             <AssetBrowser
@@ -103,7 +108,7 @@ export function ModelsButton(props: {
             />
           </div>
         </PopoverContent>
-      </Popover>
+      </Popover> */}
       <Popover>
         <PopoverTrigger asChild>
           <Button
@@ -149,6 +154,11 @@ export function SessionCreator(props: {
 }) {
   const { workflow } = useCurrentWorkflow(props.workflowId);
   const machineId = workflow?.selected_machine_id;
+
+  const { data: machine } = useMachine(machineId);
+
+  const machineBuilderVersion = machine?.machine_builder_version;
+  // console.log("machineBuilderVersion", machineBuilderVersion);
 
   // const [machineId] = useSelectedMachine(undefined, workflow, true);
 
@@ -304,7 +314,10 @@ export function SessionCreator(props: {
     return (
       <>
         {ui}
-        <UploadZone className="relative flex h-full w-full">
+        <UploadZone
+          className="relative flex h-full w-full"
+          iframeEndpoint={staticUrl}
+        >
           <div className="flex h-full w-full flex-col">
             <Workspace
               nativeMode={false}
@@ -354,25 +367,37 @@ export function SessionCreator(props: {
               </div>
             </App>
           </div>
-          <AssetsPanel />
+          {/* <AssetsPanel /> */}
         </UploadZone>
       </>
+    );
+  }
+
+  if (Number.parseInt(machineBuilderVersion) < 4) {
+    return (
+      <div className={cn("flex h-full w-full items-center justify-center")}>
+        Machine builder version {machineBuilderVersion} is not supported for
+        workspace.
+      </div>
     );
   }
 
   if (sessionId && machineId && url) {
     return (
       <>
-        <UploadZone className="relative flex h-full w-full">
-          <div className="flex h-full w-full flex-col">
-            <Workspace
-              nativeMode={true}
-              endpoint={url}
-              workflowJson={props.workflowLatestVersion.workflow}
-            />
-          </div>
-          <AssetsPanel />
-        </UploadZone>
+        {/* <UploadZone
+          className="relative flex h-full w-full"
+          iframeEndpoint={url}
+        > */}
+        <div className="flex h-full w-full flex-col">
+          <Workspace
+            nativeMode={true}
+            endpoint={url}
+            workflowJson={props.workflowLatestVersion.workflow}
+          />
+        </div>
+        {/* <AssetsPanel /> */}
+        {/* </UploadZone> */}
         {ui}
       </>
     );
@@ -394,12 +419,7 @@ export function SessionCreator(props: {
     );
   }
 
-  return (
-    <>
-      {/* {sessionUI} */}
-      {ui}
-    </>
-  );
+  return <>{ui}</>;
 }
 
 function useLogListener({ sessionId }: { sessionId: string }) {

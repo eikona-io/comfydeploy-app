@@ -17,7 +17,7 @@ import { getRelativeTime } from "@/lib/get-relative-time";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { Settings2Icon } from "lucide-react";
 import { useQueryState } from "nuqs";
-import React, { use, useEffect } from "react";
+import React, { Suspense, use, useEffect } from "react";
 import { create } from "zustand";
 
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -32,7 +32,11 @@ import { LiveStatus } from "@/components/workflows/LiveStatus";
 import { useRealtimeWorkflow } from "@/components/workflows/RealtimeRunUpdate";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useQuery,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
 
 interface RunsTableState {
   selectedRun: any | null;
@@ -142,7 +146,7 @@ export function useRuns(props: {
   defaultData?: any;
 }) {
   return useInfiniteQuery({
-    queryKey: ["workflow", props.workflow_id, "runs"],
+    queryKey: ["v2", "workflow", props.workflow_id, "runs"],
     meta: {
       limit: BATCH_SIZE,
       params: { with_outputs: false, with_inputs: false },
@@ -401,6 +405,9 @@ function RunRow({
     return <LoadingRow />;
   }
 
+  // Truncate the UUID to first 8 characters
+  const truncatedId = run.id.substring(0, 6);
+
   return (
     <div
       className={`flex h-full cursor-pointer items-center justify-between overflow-hidden border-b p-2 text-sm hover:bg-gray-100 ${
@@ -411,10 +418,12 @@ function RunRow({
       }}
     >
       <div className="grid w-full grid-cols-12 items-center gap-2">
-        <span className="col-span-1 text-2xs text-gray-500">#{run.number}</span>
-        <Badge className="col-span-2 w-fit rounded-[10px] px-2 py-1 text-xs">
-          {run.version?.version ? `v${run.version.version}` : "N/A"}
-        </Badge>
+        <span className="col-span-1 text-2xs text-gray-500">
+          #{truncatedId}
+        </span>
+        {/* <Suspense fallback={}> */}
+        <DisplayVersion versionId={run.workflow_version_id} />
+        {/* </Suspense> */}
         <span className="col-span-2">
           {run.gpu && (
             <Badge className="w-fit rounded-[10px] text-2xs text-gray-500">
@@ -446,5 +455,28 @@ function LoadingState() {
 function LoadingSpinner() {
   return (
     <div className="h-6 w-6 animate-spin rounded-full border-gray-900 border-b-2" />
+  );
+}
+
+function DisplayVersion(props: { versionId?: string }) {
+  const { data: version, isLoading } = useQuery({
+    queryKey: ["workflow-version", props.versionId],
+    queryFn: async ({ queryKey }) => {
+      const response = await api({ url: queryKey.join("/") });
+      return response;
+    },
+  });
+
+  if (isLoading) return <Skeleton className="h-6 w-[28px]" />;
+
+  if (!version)
+    return (
+      <Badge className="w-fit rounded-[10px] px-2 py-1 text-xs">N/A</Badge>
+    );
+
+  return (
+    <Badge className="w-fit rounded-[10px] px-2 py-1 text-xs">
+      v{version?.version}
+    </Badge>
   );
 }

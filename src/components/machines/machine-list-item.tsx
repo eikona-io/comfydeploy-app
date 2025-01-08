@@ -223,7 +223,7 @@ export function MachineListItem({
             {!isExpanded && machine.gpu && (
               <div className="flex flex-row items-center gap-1 font-medium text-2xs">
                 <HardDrive className="h-[14px] w-[14px]" />
-                {machine.gpu}
+                <span className="whitespace-nowrap">{machine.gpu}</span>
                 {machine.machine_version_id && (
                   <MachineVersionBadge machine={machine} isExpanded={false} />
                 )}
@@ -469,8 +469,8 @@ export function MachineListItem({
   return hasActiveEvents ? (
     <ShineBorder
       color="green"
-      className="w-full p-0"
-      borderRadius={10}
+      className="w-full p-[2px]"
+      borderRadius={14}
       borderWidth={2}
     >
       {content}
@@ -637,14 +637,20 @@ export function MachineListItemEvents({
       )}
       <ChartContainer
         config={chartConfig}
-        className={cn("w-full", isExpanded ? "max-h-[250px]" : "max-h-[40px]")}
+        className={cn(
+          "w-full",
+          isExpanded ? "h-[250px] max-h-[250px]" : "h-[40px] max-h-[40px]",
+        )}
       >
         <AreaChart
+          height={isExpanded ? 250 : 40}
           accessibilityLayer
           data={chartData}
           margin={{
             left: 12,
             right: 12,
+            top: 5,
+            bottom: isExpanded ? 20 : 5,
           }}
         >
           <defs>

@@ -412,7 +412,7 @@ function WorkflowCard({
                   variant="default"
                   size="sm"
                   className="w-full "
-                  href={`/workflows/${workflow.id}/request`}
+                  href={`/workflows/${workflow.id}/requests`}
                 >
                   <Code className="h-4 w-4" />
                 </Button>

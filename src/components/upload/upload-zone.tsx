@@ -13,9 +13,14 @@ import { toast } from "sonner";
 interface UploadZoneProps {
   className?: string;
   children?: React.ReactNode;
+  iframeEndpoint?: string;
 }
 
-export function UploadZone({ className, children }: UploadZoneProps) {
+export function UploadZone({
+  className,
+  children,
+  iframeEndpoint,
+}: UploadZoneProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutateAsync: uploadAsset } = useAssetUpload();
   const setFileInput = useUploadStore((state) => state.setFileInput);
@@ -108,6 +113,54 @@ export function UploadZone({ className, children }: UploadZoneProps) {
       });
     };
   }, [handleFileImport]);
+
+  useEffect(() => {
+    if (!iframeEndpoint) return;
+
+    const receiveMessage = async (event: any) => {
+      // It's important to check the origin for security reasons
+      if (event.origin !== iframeEndpoint) return;
+
+      if (event.data.type) {
+        const { type, data } = event.data;
+
+        switch (type) {
+          case "file_drop":
+            console.log("Files dropped:", data.files);
+            console.log("Drop position:", data.x, data.y);
+            setIsDragging(false);
+            handleFileImport(data.files[0]);
+            break;
+
+          case "file_dragover":
+            console.log("Drag position:", data.x, data.y);
+            setIsDragging(true);
+            break;
+
+          case "file_dragenter":
+            console.log("Drag enter");
+            setIsDragging(true);
+            break;
+
+          case "file_dragleave":
+            console.log("Drag leave");
+            setIsDragging(false);
+            break;
+        }
+      }
+    };
+
+    window.addEventListener("message", receiveMessage, {
+      capture: true,
+    });
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener("message", receiveMessage, {
+        capture: true,
+      });
+    };
+  }, [iframeEndpoint, handleFileImport]);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     if (!e.dataTransfer.types.includes("Files")) return;
