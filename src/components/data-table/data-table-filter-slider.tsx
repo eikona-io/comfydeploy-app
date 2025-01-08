@@ -67,6 +67,7 @@ export function DataTableFilterSlider<TData>({
                 Array.isArray(localValue) && val < localValue[1]
                   ? [val, localValue[1]]
                   : [val, max];
+              setLocalValue(newValue);
               debouncedSetFilter(newValue);
             }}
           />
@@ -94,6 +95,7 @@ export function DataTableFilterSlider<TData>({
                 Array.isArray(localValue) && val > localValue[0]
                   ? [localValue[0], val]
                   : [min, val];
+              setLocalValue(newValue);
               debouncedSetFilter(newValue);
             }}
           />
