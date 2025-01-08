@@ -367,7 +367,7 @@ export function SessionCreator(props: {
               </div>
             </App>
           </div>
-          <AssetsPanel />
+          {/* <AssetsPanel /> */}
         </UploadZone>
       </>
     );
@@ -396,7 +396,7 @@ export function SessionCreator(props: {
               workflowJson={props.workflowLatestVersion.workflow}
             />
           </div>
-          <AssetsPanel />
+          {/* <AssetsPanel /> */}
         </UploadZone>
         {ui}
       </>
