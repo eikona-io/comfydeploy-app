@@ -421,9 +421,9 @@ function RunRow({
         <span className="col-span-1 text-2xs text-gray-500">
           #{truncatedId}
         </span>
-        <Suspense fallback={<Skeleton className="h-6 w-[28px]" />}>
-          <DisplayVersion versionId={run.workflow_version_id} />
-        </Suspense>
+        {/* <Suspense fallback={}> */}
+        <DisplayVersion versionId={run.workflow_version_id} />
+        {/* </Suspense> */}
         <span className="col-span-2">
           {run.gpu && (
             <Badge className="w-fit rounded-[10px] text-2xs text-gray-500">
@@ -458,14 +458,21 @@ function LoadingSpinner() {
   );
 }
 
-function DisplayVersion(props: { versionId: string }) {
-  const { data: version } = useSuspenseQuery({
+function DisplayVersion(props: { versionId?: string }) {
+  const { data: version, isLoading } = useQuery({
     queryKey: ["workflow-version", props.versionId],
     queryFn: async ({ queryKey }) => {
       const response = await api({ url: queryKey.join("/") });
       return response;
     },
   });
+
+  if (isLoading) return <Skeleton className="h-6 w-[28px]" />;
+
+  if (!version)
+    return (
+      <Badge className="w-fit rounded-[10px] px-2 py-1 text-xs">N/A</Badge>
+    );
 
   return (
     <Badge className="w-fit rounded-[10px] px-2 py-1 text-xs">
