@@ -12,7 +12,13 @@ export const useCurrentPlanQuery = () => {
 export const useCurrentPlan = () => {
   const { isSignedIn } = useUser();
   const { data, isLoading } = useCurrentPlanQuery();
-  // console.log(data);
+
+  if (data) {
+    return {
+      ...data,
+      plans: data.plans?.length ? data.plans : null,
+    };
+  }
 
   return data;
 };
