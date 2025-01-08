@@ -158,7 +158,7 @@ export function SessionCreator(props: {
   const { data: machine } = useMachine(machineId);
 
   const machineBuilderVersion = machine?.machine_builder_version;
-  console.log("machineBuilderVersion", machineBuilderVersion);
+  // console.log("machineBuilderVersion", machineBuilderVersion);
 
   // const [machineId] = useSelectedMachine(undefined, workflow, true);
 
