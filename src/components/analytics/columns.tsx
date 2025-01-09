@@ -202,6 +202,8 @@ export const columns: ColumnDef<ColumnSchema>[] = [
 
       if (!version) return null;
 
+      if (!version.version) return "-";
+
       return <Badge variant={"outline"}>{`v${version.version}`}</Badge>;
     },
     meta: {
