@@ -13,7 +13,8 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@rsbuild/core": "^1.0.2",
-    "@rsbuild/plugin-react": "^1.0.1",
+    "@rsbuild/plugin-babel": "^1.0.3",
+    "@rsbuild/plugin-react": "^1.1.0",
     "@rsdoctor/rspack-plugin": "^0.4.12",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/typography": "^0.5.15",
@@ -21,6 +22,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
+    "babel-plugin-react-compiler": "^19.0.0-beta-63e3235-20250105",
     "postcss": "^8.4.49",
     "postcss-loader": "^8.1.1",
     "tailwind-scrollbar": "^3.1.0",
