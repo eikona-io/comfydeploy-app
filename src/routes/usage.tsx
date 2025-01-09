@@ -141,7 +141,7 @@ function Credit() {
     <Card className="flex flex-col gap-2 p-4">
       <div className="flex flex-wrap justify-between gap-2">
         <Badge>Usage Credit</Badge>
-        <div className="flex gap-2">${userSettings.credit}</div>
+        <div className="flex gap-2">- $ {userSettings.credit?.toFixed(3)}</div>
       </div>
     </Card>
   );
@@ -224,7 +224,9 @@ function GPUTotalChargeCard() {
                 <TableCell colSpan={3} className="font-bold">
                   Usage Credit:
                 </TableCell>
-                <TableCell className="font-bold">- $ {usage.credit}</TableCell>
+                <TableCell className="font-bold">
+                  - $ {usage.credit?.toFixed(3)}
+                </TableCell>
               </TableRow>
             )}
             <TableRow>
