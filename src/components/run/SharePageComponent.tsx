@@ -109,9 +109,9 @@ export function SharePageComponent(props: {
         <CardContent className="flex w-full flex-col gap-4 p-4">
           {sharedDeployment?.description && (
             <ScrollArea className="relative rounded-md bg-slate-100 p-2 [&>[data-radix-scroll-area-viewport]]:max-h-36">
-              <DisplaySharePageSheet
+              {/* <DisplaySharePageSheet
                 mdString={sharedDeployment.description || ""}
-              />
+              /> */}
               {/* <Markdown remarkPlugins={[remarkGfm]} className="prose "> */}
               {sharedDeployment?.description}
               {/* </Markdown> */}

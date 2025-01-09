@@ -3,20 +3,16 @@ import { useAuthStore } from "@/lib/auth-store";
 
 export async function uploadFile(file: File) {
   const formData = new FormData();
-  formData.append("file", file);
 
-  const fetchToken = useAuthStore.getState().fetchToken;
-  const auth = await fetchToken();
-  const headers = {
-    Authorization: `Bearer ${auth}`,
-  };
+  formData.append("file", file);
 
   const response = await api({
     url: "file/upload",
+    skipDefaultHeaders: true,
     init: {
       method: "POST",
       body: formData,
-      headers,
+      redirect: "follow",
     },
   });
   return response;
