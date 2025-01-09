@@ -59,6 +59,7 @@ export const searchParamsParser = {
   status: parseAsArrayOf(parseAsStringLiteral(STATUS), ARRAY_DELIMITER),
   origin: parseAsArrayOf(parseAsStringLiteral(ORIGIN), ARRAY_DELIMITER),
   workflow_id: parseAsString,
+  machine_id: parseAsString,
   duration: parseAsArrayOf(parseAsInteger, SLIDER_DELIMITER),
 };
 

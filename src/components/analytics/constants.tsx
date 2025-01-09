@@ -35,6 +35,12 @@ export const filterFields = [
     options: [{ label: "", value: "" }], // REMINDER: this is a placeholder to set the type in the client.tsx
   },
   {
+    label: "Machine",
+    value: "machine_id",
+    type: "input",
+    options: [{ label: "", value: "" }], // REMINDER: this is a placeholder to set the type in the client.tsx
+  },
+  {
     label: "Run Duration",
     value: "duration",
     type: "slider",
