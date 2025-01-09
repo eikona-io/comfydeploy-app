@@ -810,7 +810,7 @@ function CustomNodeCard({
                         className="fill-yellow-400 text-yellow-400"
                       />
                       <span>
-                        {node.data.meta.stargazers_count?.toLocaleString()}
+                        {node.data.meta?.stargazers_count?.toLocaleString()}
                       </span>
                     </div>
                     <span className="shrink-0 text-gray-300">•</span>
