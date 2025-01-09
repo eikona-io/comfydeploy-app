@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { useAssetBrowserStore } from "@/stores/asset-browser-store";
 import { Eye, Paperclip, Trash } from "lucide-react";
 import React, {
   type ChangeEvent,
@@ -19,6 +20,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { useAssetsBrowserStore } from "../workspace/Workspace";
 
 type SDImageInputProps = {
   label?: string;
@@ -130,6 +132,16 @@ export function SDImageInput({
               }}
               type="file"
             />
+
+            {/* <Button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                useAssetsBrowserStore.getState().setOpen(true);
+              }}
+            >
+              Assets
+            </Button> */}
           </>
         )}
         {ImgView && (

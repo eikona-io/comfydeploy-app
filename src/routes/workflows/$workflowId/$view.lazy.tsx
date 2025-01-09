@@ -137,12 +137,14 @@ function WorkflowPageComponent() {
         <PaddingLayout>
           <div className={cn("h-full w-full")}>
             {workflow?.selected_machine_id && version?.id && (
-              <SharePageComponent
-                runOrigin={"manual"}
-                machine_id={workflow?.selected_machine_id}
-                workflow_version_id={version?.id}
-                inputs={getInputsFromWorkflowAPI(version?.workflow_api)}
-              />
+              <RealtimeWorkflowProvider workflowId={workflowId}>
+                <SharePageComponent
+                  runOrigin={"manual"}
+                  machine_id={workflow?.selected_machine_id}
+                  workflow_version_id={version?.id}
+                  inputs={getInputsFromWorkflowAPI(version?.workflow_api)}
+                />
+              </RealtimeWorkflowProvider>
             )}
           </div>
         </PaddingLayout>

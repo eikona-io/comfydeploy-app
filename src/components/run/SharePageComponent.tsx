@@ -29,6 +29,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 // import Markdown from "react-markdown";
 // import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import { AssetsBrowserPopup } from "../workspace/assets-browser-drawer";
 
 export function SharePageComponent(props: {
   inputs: any[];
@@ -155,6 +156,8 @@ export function SharePageComponent(props: {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AssetsBrowserPopup />
     </div>
   );
 }
