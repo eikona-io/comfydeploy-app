@@ -39,7 +39,7 @@ import { getRelativeTime } from "@/lib/get-relative-time";
 import { useAuth } from "@clerk/clerk-react";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { useQuery } from "@tanstack/react-query";
-import { Pen, Plus, Trash } from "lucide-react";
+import { FileIcon, LinkIcon, Pen, Plus, Trash } from "lucide-react";
 import React, {
   forwardRef,
   useCallback,
@@ -70,10 +70,20 @@ import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useDebounceValue } from "usehooks-ts";
 import { z } from "zod";
 import { create } from "zustand";
+import { uploadFile, uploadFileToVolume } from "../files-api";
+import { Button } from "../ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { formatFileSize } from "./FileTable";
 import { addModel } from "./addModel";
 
@@ -883,7 +893,7 @@ export function ModelList(props: { apiEndpoint: string }) {
             if (data.file) {
               const uploadToastId = toast.loading("Preparing upload...");
               try {
-                await uploadFile({
+                await uploadFileToVolume({
                   volumeName: volumeName,
                   file: data.file[0],
                   targetPath: data.customPath,
@@ -1415,93 +1425,89 @@ export function AnyModelRegistry(props: {
         shouldFilter={false}
         isLoading={isLoading}
       />
-      {/* <>
-        {!selected ||
-          (selected.length === 0 && (
-            <>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    className="min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
-                    size="default"
-                    variant="outline"
-                    Icon={Plus}
-                    iconPlacement="right"
-                  >
-                    Add from custom source
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48">
-                  <DropdownMenuLabel>Add models from</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                      setInsertModalSource("huggingface");
-                    }}
-                  >
-                    <img
-                      src="https://huggingface.co/favicon.ico"
-                      className="mr-2 h-4 w-4"
-                    />
-                    <span>Hugging Face</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                      setInsertModalSource("civitai");
-                    }}
-                  >
-                    <img
-                      src="https://civitai.com/favicon.ico"
-                      className="mr-2 h-4 w-4"
-                    />
-                    <span>CivitAI</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                      setInsertModalSource("comfymanager");
-                    }}
-                  >
-                    <img
-                      src="https://storage.googleapis.com/comfy-assets/favicon.ico"
-                      className="mr-2 h-4 w-4"
-                    />
-                    <span>ComfyUI Manager</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                      setInsertModalSource("link");
-                    }}
-                  >
-                    <Link className="mr-2 h-4 w-4" />
-                    <span>Link</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      e.nativeEvent.stopImmediatePropagation();
-                      setInsertModalSource("local");
-                    }}
-                  >
-                    <FileIcon className="mr-2 h-4 w-4" />
-                    <span>Local</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
-          ))}
-      </> */}
+      {!selected ||
+        (selected.length === 0 && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
+                size="default"
+                variant="outline"
+                Icon={Plus}
+                iconPlacement="right"
+              >
+                Add from custom source
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuLabel>Add models from</DropdownMenuLabel>
+              {/* <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  setInsertModalSource("huggingface");
+                }}
+              >
+                <img
+                  src="https://huggingface.co/favicon.ico"
+                  className="mr-2 h-4 w-4"
+                />
+                <span>Hugging Face</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  setInsertModalSource("civitai");
+                }}
+              >
+                <img
+                  src="https://civitai.com/favicon.ico"
+                  className="mr-2 h-4 w-4"
+                />
+                <span>CivitAI</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  setInsertModalSource("comfymanager");
+                }}
+              >
+                <img
+                  src="https://storage.googleapis.com/comfy-assets/favicon.ico"
+                  className="mr-2 h-4 w-4"
+                />
+                <span>ComfyUI Manager</span>
+              </DropdownMenuItem> */}
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  setInsertModalSource("link");
+                }}
+              >
+                <LinkIcon className="mr-2 h-4 w-4" />
+                <span>Link</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.stopImmediatePropagation();
+                  setInsertModalSource("local");
+                }}
+              >
+                <FileIcon className="mr-2 h-4 w-4" />
+                <span>Local</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ))}
       {/* {JSON.stringify(selected)} */}
       {selected && selected.length > 0 && (
         <InlineAutoForm
