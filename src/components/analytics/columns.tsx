@@ -44,35 +44,41 @@ export const columns: ColumnDef<ColumnSchema>[] = [
       <DataTableColumnHeader column={column} title="Date" className="text-xs" />
     ),
     cell: ({ row }) => {
-      const date = new Date(row.getValue("created_at"));
+      const utcDate = new Date(row.getValue("created_at"));
+      const localDate = new Date(
+        utcDate.getTime() - utcDate.getTimezoneOffset() * 60000,
+      );
+
       return (
         <HoverCard openDelay={0} closeDelay={0}>
           <HoverCardTrigger asChild>
             <div className="whitespace-nowrap">
-              {formatDistanceToNow(date, { addSuffix: true })}
+              {formatDistanceToNow(localDate, { addSuffix: true })}
             </div>
           </HoverCardTrigger>
           <HoverCardContent
             side="right"
             align="start"
             alignOffset={-4}
-            className="p-2 w-auto z-10"
+            className="z-10 w-auto p-2"
           >
             <dl className="flex flex-col gap-1">
-              <div className="flex gap-4 text-sm justify-between items-center">
+              <div className="flex items-center justify-between gap-4 text-sm">
                 <dt className="text-muted-foreground text-xs">Timestamp</dt>
-                <dd className="font-mono truncate text-xs">{date.getTime()}</dd>
-              </div>
-              <div className="flex gap-4 text-sm justify-between items-center">
-                <dt className="text-muted-foreground text-xs">UTC</dt>
-                <dd className="font-mono truncate text-xs">
-                  {format(new UTCDate(date), "LLL dd, y HH:mm:ss")}
+                <dd className="truncate font-mono text-xs">
+                  {localDate.getTime()}
                 </dd>
               </div>
-              <div className="flex gap-4 text-sm justify-between items-center">
+              <div className="flex items-center justify-between gap-4 text-sm">
+                <dt className="text-muted-foreground text-xs">UTC</dt>
+                <dd className="truncate font-mono text-xs">
+                  {format(new UTCDate(localDate), "LLL dd, y HH:mm:ss")}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 text-sm">
                 <dt className="text-muted-foreground text-xs">{timezone}</dt>
-                <dd className="font-mono truncate text-xs">
-                  {format(date, "LLL dd, y HH:mm:ss")}
+                <dd className="truncate font-mono text-xs">
+                  {format(localDate, "LLL dd, y HH:mm:ss")}
                 </dd>
               </div>
             </dl>
