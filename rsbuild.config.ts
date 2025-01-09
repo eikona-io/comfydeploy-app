@@ -1,11 +1,27 @@
 import path from "node:path";
 import { defineConfig, rspack } from "@rsbuild/core";
+import { pluginBabel } from "@rsbuild/plugin-babel";
 import { pluginReact } from "@rsbuild/plugin-react";
 import { RsdoctorRspackPlugin } from "@rsdoctor/rspack-plugin";
 import { TanStackRouterRspack } from "@tanstack/router-plugin/rspack";
 
+const ReactCompilerConfig = {
+  /* ... */
+};
+
 export default defineConfig({
-  plugins: [pluginReact()],
+  plugins: [
+    pluginReact(),
+    pluginBabel({
+      include: /\.(?:jsx|tsx)$/,
+      babelLoaderOptions(opts) {
+        opts.plugins?.unshift([
+          "babel-plugin-react-compiler",
+          ReactCompilerConfig,
+        ]);
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
