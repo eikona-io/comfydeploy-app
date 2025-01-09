@@ -594,7 +594,7 @@ function SelectedNodeList({
                 reorder the nodes.
               </span>
             )}
-            <div className="flex flex-col gap-2">
+            <div className="flex max-h-[518px] flex-col gap-2 overflow-y-auto overflow-x-hidden">
               {validation.docker_command_steps.steps.length === 0 ? (
                 <div className="text-gray-500 text-sm">No nodes selected.</div>
               ) : (
@@ -724,16 +724,18 @@ function CustomNodeCard({
       className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm"
     >
       <div className="flex items-center justify-between">
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span className="truncate font-medium">{node.data.name}</span>
-          <div className="flex items-center">
-            <span className="text-gray-500 text-xs">
-              {node.data.meta?.committer?.name}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <span className="flex-[2] truncate font-medium">
+            {node.data.name}
+          </span>
+          <div className="flex min-w-fit flex-1 items-center">
+            <span className="truncate text-gray-500 text-xs">
+              {node.data.url.split("/").slice(-2)[0]}
             </span>
             <Link
               to={node.data.url}
               target="_blank"
-              className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-700"
+              className="ml-1 inline-flex shrink-0 items-center text-gray-500 hover:text-gray-700"
               onClick={(e) => e.stopPropagation()}
             >
               <ExternalLink size={12} />
@@ -742,9 +744,8 @@ function CustomNodeCard({
         </div>
         <Button
           type="button"
-          size="icon"
           variant="ghost"
-          className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
+          className="h-3 shrink-0 text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
           onClick={() => handleRemoveNode(node)}
         >
           <Minus size={14} />
@@ -755,67 +756,64 @@ function CustomNodeCard({
 
       {node.data && (
         <div className="flex items-center justify-between gap-2">
-          <div className="flex w-full flex-col text-gray-500 text-xs leading-snug">
-            <div className="flex w-full items-center gap-2">
-              <span className="whitespace-nowrap font-medium">
-                {isHashChanged || editingHash === node.data.url
-                  ? "Custom hash"
-                  : "Latest commit"}
-                :
-              </span>
-              {editingHash === node.data.url ? (
-                <Input
-                  autoFocus
-                  defaultValue={node.data.hash}
-                  placeholder="commit hash..."
-                  className="h-7 max-w-96 rounded-[6px] px-2 py-0 font-mono text-xs"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      setValidation({
-                        ...validation,
-                        isEditingHashOrAddingCommands: false,
-                      });
-                      handleSaveHash(node, e.currentTarget.value);
-                    }
-                  }}
-                />
-              ) : (
-                <code className="rounded bg-gray-100 px-1 py-0.5 text-2xs">
+          <div className="flex w-full items-center gap-2 text-gray-500 text-xs leading-snug">
+            <span className="whitespace-nowrap font-medium">
+              {isHashChanged || editingHash === node.data.url
+                ? "Custom hash"
+                : "Latest commit"}
+              :
+            </span>
+            {editingHash === node.data.url ? (
+              <Input
+                autoFocus
+                defaultValue={node.data.hash}
+                placeholder="commit hash..."
+                className="h-7 max-w-96 rounded-[6px] px-2 py-0 font-mono text-xs"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setValidation({
+                      ...validation,
+                      isEditingHashOrAddingCommands: false,
+                    });
+                    handleSaveHash(node, e.currentTarget.value);
+                  }
+                }}
+              />
+            ) : (
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <code className="shrink-0 rounded bg-gray-100 px-1 py-0.5 text-2xs">
                   <span className={cn(isHashChanged && "text-amber-600")}>
                     {node.data.hash?.slice(0, 7)}
                   </span>
                 </code>
-              )}
-              {!isHashChanged && !editingHash && (
-                <>
-                  <span className="text-gray-300">•</span>
-                  <div className="flex items-center gap-1">
-                    <Star
-                      size={12}
-                      className="fill-yellow-400 text-yellow-400"
-                    />
-                    <span>
-                      {node.data.meta.stargazers_count?.toLocaleString()}
+                {!isHashChanged && !editingHash && (
+                  <>
+                    <span className="shrink-0 text-gray-300">•</span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Star
+                        size={12}
+                        className="fill-yellow-400 text-yellow-400"
+                      />
+                      <span>
+                        {node.data.meta.stargazers_count?.toLocaleString()}
+                      </span>
+                    </div>
+                    <span className="shrink-0 text-gray-300">•</span>
+                    <span className="w-24 truncate">
+                      {node.data.meta?.message}
                     </span>
-                  </div>
-                </>
-              )}
-            </div>
-            {!isHashChanged && editingHash !== node.data.url ? (
-              <div className="line-clamp-1">
-                <span className="font-medium">Message:</span>{" "}
-                {node.data.meta?.message}
+                  </>
+                )}
               </div>
-            ) : null}
+            )}
           </div>
           <Button
             type="button"
-            size="icon"
             variant="ghost"
             className={cn(
               "shrink-0 text-gray-500",
               editingHash !== node.data.url &&
-                "opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100",
+                "h-3 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100",
             )}
             onClick={(e) => {
               if (editingHash === node.data.url) {
