@@ -1099,7 +1099,7 @@ export function ModelList(props: { apiEndpoint: string }) {
           }
         }}
         formSchema={z.object({
-          url: z.string().default("").optional(),
+          url: z.string().default(""),
           filename: z
             .string()
             .regex(CustomModelFilenameRegex, CustomModelFilenameError)
@@ -1111,7 +1111,6 @@ export function ModelList(props: { apiEndpoint: string }) {
         })}
         fieldConfig={{
           url: {
-            fieldType: "model-url-selector",
             inputProps: {
               type: "huggingface",
             },
