@@ -39,6 +39,7 @@ import {
   HardDrive,
   Layers,
   Library,
+  Loader2,
   MemoryStick,
   Thermometer,
   Ticket,
@@ -48,6 +49,7 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
 import { Responsive, WidthProvider } from "react-grid-layout";
+import { ShineBorder } from "../magicui/shine-border";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
