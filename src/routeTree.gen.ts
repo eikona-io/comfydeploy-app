@@ -22,6 +22,7 @@ import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowsIndexImport } from './routes/workflows/index'
 import { Route as OrganizationProfileIndexImport } from './routes/organization-profile/index'
 import { Route as MachinesIndexImport } from './routes/machines/index'
+import { Route as AnalyticsIndexImport } from './routes/analytics/index'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
 import { Route as AuthSignInImport } from './routes/auth/sign-in'
 import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
@@ -99,6 +100,14 @@ const MachinesIndexRoute = MachinesIndexImport.update({
   getParentRoute: () => rootRoute,
 } as any).lazy(() =>
   import('./routes/machines/index.lazy').then((d) => d.Route),
+)
+
+const AnalyticsIndexRoute = AnalyticsIndexImport.update({
+  id: '/analytics/',
+  path: '/analytics/',
+  getParentRoute: () => rootRoute,
+} as any).lazy(() =>
+  import('./routes/analytics/index.lazy').then((d) => d.Route),
 )
 
 const AuthSignUpRoute = AuthSignUpImport.update({
@@ -217,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignUpImport
       parentRoute: typeof rootRoute
     }
+    '/analytics/': {
+      id: '/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/machines/': {
       id: '/machines/'
       path: '/machines'
@@ -282,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/analytics': typeof AnalyticsIndexRoute
   '/machines': typeof MachinesIndexRoute
   '/organization-profile': typeof OrganizationProfileIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
@@ -302,6 +319,7 @@ export interface FileRoutesByTo {
   '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/analytics': typeof AnalyticsIndexRoute
   '/machines': typeof MachinesIndexRoute
   '/organization-profile': typeof OrganizationProfileIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
@@ -323,6 +341,7 @@ export interface FileRoutesById {
   '/usage': typeof UsageRoute
   '/auth/sign-in': typeof AuthSignInRoute
   '/auth/sign-up': typeof AuthSignUpRoute
+  '/analytics/': typeof AnalyticsIndexRoute
   '/machines/': typeof MachinesIndexRoute
   '/organization-profile/': typeof OrganizationProfileIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
@@ -345,6 +364,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/analytics'
     | '/machines'
     | '/organization-profile'
     | '/workflows'
@@ -364,6 +384,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/analytics'
     | '/machines'
     | '/organization-profile'
     | '/workflows'
@@ -383,6 +404,7 @@ export interface FileRouteTypes {
     | '/usage'
     | '/auth/sign-in'
     | '/auth/sign-up'
+    | '/analytics/'
     | '/machines/'
     | '/organization-profile/'
     | '/workflows/'
@@ -404,6 +426,7 @@ export interface RootRouteChildren {
   UsageRoute: typeof UsageRoute
   AuthSignInRoute: typeof AuthSignInRoute
   AuthSignUpRoute: typeof AuthSignUpRoute
+  AnalyticsIndexRoute: typeof AnalyticsIndexRoute
   MachinesIndexRoute: typeof MachinesIndexRoute
   OrganizationProfileIndexRoute: typeof OrganizationProfileIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
@@ -424,6 +447,7 @@ const rootRouteChildren: RootRouteChildren = {
   UsageRoute: UsageRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
+  AnalyticsIndexRoute: AnalyticsIndexRoute,
   MachinesIndexRoute: MachinesIndexRoute,
   OrganizationProfileIndexRoute: OrganizationProfileIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
@@ -455,6 +479,7 @@ export const routeTree = rootRoute
         "/usage",
         "/auth/sign-in",
         "/auth/sign-up",
+        "/analytics/",
         "/machines/",
         "/organization-profile/",
         "/workflows/",
@@ -493,6 +518,9 @@ export const routeTree = rootRoute
     },
     "/auth/sign-up": {
       "filePath": "auth/sign-up.tsx"
+    },
+    "/analytics/": {
+      "filePath": "analytics/index.tsx"
     },
     "/machines/": {
       "filePath": "machines/index.tsx"
