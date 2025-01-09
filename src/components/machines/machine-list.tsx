@@ -368,21 +368,21 @@ export function MachineItemActionList({
               Rebuild
             </Button>
 
-            <Button
+            {/* <Button
               variant="outline"
               disabled={isDockerCommandStepsNull}
               onClick={() => setCloneModalOpen(true)}
             >
               <Copy className="mr-2 h-4 w-4" />
               Clone
-            </Button>
+            </Button> */}
           </>
         )}
 
-        <Button variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+        {/* <Button variant="destructive" onClick={() => setDeleteModalOpen(true)}>
           <Trash2 className="mr-2 h-4 w-4" />
           Delete
-        </Button>
+        </Button> */}
       </div>
     );
   };
