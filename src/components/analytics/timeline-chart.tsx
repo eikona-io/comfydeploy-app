@@ -47,15 +47,33 @@ export function TimelineChart({
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
 
+  // Filter data if the range exceeds one month
+  const filteredData = useMemo(() => {
+    if (data.length < 2) return data;
+
+    const timeRange = Math.abs(
+      data[data.length - 1].timestamp - data[0].timestamp,
+    );
+    const oneMonth = 90 * 24 * 60 * 60 * 1000; // 90 days in milliseconds
+
+    if (timeRange <= oneMonth) {
+      return data;
+    }
+
+    // If range exceeds a month, return most recent month of data
+    const cutoffTime = data[data.length - 1].timestamp - oneMonth;
+    return data.filter((item) => item.timestamp > cutoffTime);
+  }, [data]);
+
   // TODO: check why timestamp cannot be a number
   // FIXME: move to server
   const chart = useMemo(
     () =>
-      data.map((item) => ({
+      filteredData.map((item) => ({
         ...item,
         date: new Date(item.timestamp).toString(),
       })),
-    [data],
+    [filteredData],
   );
 
   const interval = useMemo(() => {
