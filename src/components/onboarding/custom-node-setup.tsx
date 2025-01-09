@@ -573,9 +573,24 @@ function SelectedNodeList({
       {scriptMode ? (
         <Textarea
           placeholder="Enter your script here..."
-          value={JSON.stringify(validation.docker_command_steps, null, 4)}
-          className="h-[400px]"
-          readOnly
+          value={JSON.stringify(validation.docker_command_steps, null, 2)}
+          className="h-[400px] font-mono text-2xs"
+          onChange={(e) => {
+            try {
+              const parsed = JSON.parse(e.target.value);
+              // Basic validation to ensure the structure is correct
+              if (typeof parsed === "object" && Array.isArray(parsed.steps)) {
+                setValidation((prev) => ({
+                  ...prev,
+                  docker_command_steps: parsed,
+                }));
+              }
+            } catch (error) {
+              // Optional: Show error toast when invalid JSON is entered
+              toast.error("Invalid JSON format");
+              console.error("Invalid JSON:", error);
+            }
+          }}
         />
       ) : (
         <DndContext
