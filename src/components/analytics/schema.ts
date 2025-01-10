@@ -43,6 +43,7 @@ export const columnFilterSchema = z.object({
     .pipe(z.enum(ORIGIN).array())
     .optional(),
   workflow_id: z.string().optional(),
+  machine_id: z.string().optional(),
   duration: z
     .string()
     .transform((val) => val.split(SLIDER_DELIMITER))

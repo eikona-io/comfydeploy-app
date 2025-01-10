@@ -33,54 +33,31 @@ function RouteComponent() {
   });
   const navigate = useNavigate();
 
-  const isDockerCommandStepsNull =
-    machine?.docker_command_steps === null &&
-    machine?.type === "comfy-deploy-serverless";
-
   const { openMobile: isSidebarOpen } = useSidebar();
-
-  const routes = ["Overview", "Settings", "Deployments"]
-    .filter((name) => !isDockerCommandStepsNull || name !== "Settings")
-    .map((name) => ({
-      name,
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        navigate({
-          to: "/machines/$machineId",
-          params: { machineId },
-          search: {
-            view:
-              name === "Overview" ? undefined : (name.toLowerCase() as View),
-          },
-        });
-      },
-    }));
 
   return (
     <>
       <Portal targetId="sidebar-panel-machines" trigger={isSidebarOpen}>
         <SidebarMenuSub>
-          {routes.map((route) => (
-            <SidebarMenuSubItem key={route.name}>
-              <SidebarMenuSubButton
-                onClick={route.onClick}
-                className={route.name === "Deployments" ? "" : "opacity-50"}
-              >
-                <span>
-                  {route.name === "Deployments" ? (
-                    <>
-                      Deployments{" "}
-                      <Badge variant={"outline"} className="ml-2">
-                        v{machineVersion?.version}
-                      </Badge>
-                    </>
-                  ) : (
-                    route.name
-                  )}
-                </span>
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          ))}
+          <SidebarMenuSubItem>
+            <SidebarMenuSubButton
+              onClick={(e: React.MouseEvent) => {
+                e.preventDefault();
+                navigate({
+                  to: "/machines/$machineId",
+                  params: { machineId },
+                  search: { view: "deployments" as View },
+                });
+              }}
+            >
+              <span>
+                Deployments{" "}
+                <Badge variant={"outline"} className="ml-2">
+                  v{machineVersion?.version}
+                </Badge>
+              </span>
+            </SidebarMenuSubButton>
+          </SidebarMenuSubItem>
         </SidebarMenuSub>
       </Portal>
 

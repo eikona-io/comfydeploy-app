@@ -125,11 +125,11 @@ export const columns: ColumnDef<ColumnSchema>[] = [
     },
   },
   {
-    accessorKey: "machine",
+    accessorKey: "machine_id",
     header: "Machine",
     accessorFn: (row) => row.machine_id,
     cell: ({ row }) => {
-      const value = row.getValue("machine") as string;
+      const value = row.getValue("machine_id") as string;
       const { data: machine, isLoading } = useMachine(value);
 
       if (isLoading) return <Skeleton className="h-5 w-20" />;
@@ -167,7 +167,7 @@ export const columns: ColumnDef<ColumnSchema>[] = [
     },
   },
   {
-    accessorKey: "workflow name",
+    accessorKey: "workflow_id",
     header: "Workflow Name",
     accessorFn: (row) => row.workflow_id,
     cell: ({ row }) => {
@@ -250,18 +250,6 @@ export const columns: ColumnDef<ColumnSchema>[] = [
             </Badge>
           );
       }
-    },
-    meta: {
-      headerClassName: "h-5 text-xs",
-    },
-  },
-  {
-    accessorKey: "workflow_id",
-    header: "Workflow ID",
-    accessorFn: (row) => row.workflow_id,
-    cell: ({ row }) => {
-      const value = row.getValue("workflow_id") as string;
-      return <TextWithTooltip className="max-w-[200px]" text={value} />;
     },
     meta: {
       headerClassName: "h-5 text-xs",
