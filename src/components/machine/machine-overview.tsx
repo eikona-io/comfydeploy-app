@@ -1,3 +1,4 @@
+import { MachineVersionList } from "@/components/machine/machine-deployment";
 import {
   CPU_MEMORY_MAP,
   MachineListItemEvents,
@@ -5,7 +6,6 @@ import {
   isMachineDeprecated,
   useHasActiveEvents,
 } from "@/components/machines/machine-list-item";
-import { MachineStatus } from "@/components/machines/machine-status";
 import { ShineBorder } from "@/components/magicui/shine-border";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -28,12 +27,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCurrentPlan } from "@/hooks/use-current-plan";
 import {
   useMachineEvents,
   useMachineVersion,
   useMachineVersionsAll,
 } from "@/hooks/use-machine";
-import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -43,37 +43,19 @@ import {
   AlertCircle,
   Box,
   CheckCircle2,
-  CircleArrowUp,
-  Clock,
-  Edit,
+  DollarSign,
   ExternalLink,
-  FileClock,
   GitBranch,
-  HardDrive,
-  Layers,
-  Library,
   LineChart,
   Loader2,
-  MemoryStick,
-  Pause,
+  Save,
   Table as TableIcon,
-  Thermometer,
-  Ticket,
   Workflow,
   X,
   Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Responsive, WidthProvider } from "react-grid-layout";
-import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
-import "./machine-overview-style.css";
-import { BuildStepsUI } from "@/components/machine/machine-build-log";
-import { MachineItemActionList } from "@/components/machines/machine-list";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
-import { MachineVersionList } from "./machine-deployment";
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
+// const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // -----------------------hooks-----------------------
 
@@ -189,7 +171,7 @@ export function MachineOverview({ machine }: { machine: any }) {
 
   return (
     <div className="w-full">
-      <div className="px-3 py-1">
+      <div className="px-4 py-1">
         <MachineAlert
           machine={machine}
           isDeprecated={isDeprecated}
@@ -203,6 +185,7 @@ export function MachineOverview({ machine }: { machine: any }) {
         <div className="h-[200px] transition-all delay-300 duration-300 ease-in-out hover:h-[400px]">
           <MachineWorkflowDeployment machine={machine} />
         </div>
+        <MachineSettings />
       </div>
     </div>
   );
@@ -346,7 +329,13 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
     <Card className="flex h-full flex-col rounded-[10px]">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between font-semibold text-xl">
-          Version Details
+          <Link
+            to="/machines/$machineId"
+            params={{ machineId: machine.id }}
+            search={{ view: "deployments" }}
+          >
+            Version Details
+          </Link>
           <div className="flex items-center">
             <GitBranch className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -507,7 +496,7 @@ function MachineContainerActivity({ machine }: { machine: any }) {
       className={cn(
         "group flex flex-col rounded-[10px]",
         "transition-all delay-300 duration-300 ease-in-out",
-        "h-[190px] hover:h-[510px]",
+        "h-[600px] md:h-[190px] md:hover:h-[510px]",
       )}
     >
       <CardHeader className="pb-4">
@@ -552,7 +541,7 @@ function MachineContainerActivity({ machine }: { machine: any }) {
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden">
-        <div className="grid grid-cols-2 items-center gap-4 pb-4">
+        <div className="grid grid-cols-2 items-center gap-4 pb-4 md:grid-cols-3">
           <div className="flex flex-col gap-2">
             <h3
               className={cn(
@@ -580,6 +569,20 @@ function MachineContainerActivity({ machine }: { machine: any }) {
               {calculateTotalUpEventTime(events)}
             </p>
           </div>
+
+          <div className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
+              Cost (estimated)
+              <DollarSign className="h-[14px] w-[14px]" />
+            </h3>
+            <p className="font-bold text-2xl text-black">
+              $0.00
+              <span className="font-normal text-2xs text-gray-400">
+                {" "}
+                / month
+              </span>
+            </p>
+          </div>
         </div>
 
         <div
@@ -587,7 +590,7 @@ function MachineContainerActivity({ machine }: { machine: any }) {
             "overflow-hidden",
             "transition-all delay-300 duration-300 ease-in-out",
             "group-hover:max-h-[500px] group-hover:opacity-100",
-            "max-h-0 opacity-0",
+            "max-h-auto opacity-100 md:max-h-0 md:opacity-0",
           )}
         >
           {view === "graph" ? (
@@ -687,5 +690,48 @@ function MachineContainerActivity({ machine }: { machine: any }) {
     </ShineBorder>
   ) : (
     content
+  );
+}
+
+function MachineSettings() {
+  return (
+    <Card className="flex h-full flex-col rounded-[10px]">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
+          Settings
+          <div className="flex items-center">
+            <Button>
+              <Save className="mr-2 h-4 w-4" />
+              Save Changes
+            </Button>
+          </div>
+        </CardTitle>
+        <CardDescription>
+          Configure your machine's GPU settings and environment
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-hidden">
+        <Tabs defaultValue="environment">
+          <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
+            <TabsTrigger value="environment" className="rounded-[6px]">
+              Environment
+            </TabsTrigger>
+            <TabsTrigger value="auto-scaling" className="rounded-[6px]">
+              Auto Scaling
+            </TabsTrigger>
+            <TabsTrigger value="advanced" className="rounded-[6px]">
+              Advanced
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="environment">
+            Make changes to your account here.
+          </TabsContent>
+          <TabsContent value="auto-scaling">
+            Change your password here.
+          </TabsContent>
+          <TabsContent value="advanced">Advanced settings.</TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
