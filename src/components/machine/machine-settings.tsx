@@ -24,18 +24,28 @@ import {
   useCurrentPlan,
 } from "@/hooks/use-current-plan";
 import { useGithubBranchInfo } from "@/hooks/use-github-branch-info";
+import { useUserSettings } from "@/hooks/use-user-settings";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isEqual } from "lodash";
-import { ExternalLinkIcon, Lock, Save } from "lucide-react";
+import { AlertCircleIcon, ExternalLinkIcon, Lock, Save } from "lucide-react";
 import { type RefObject, memo, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import type { MachineStepValidation } from "../machines/machine-create";
 import { CustomNodeSetup } from "../onboarding/custom-node-setup";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { Badge } from "../ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Slider } from "../ui/slider";
 
 type View = "deployments" | undefined;
 
@@ -155,6 +165,10 @@ function ServerlessSettings({
       comfyui_version: machine.comfyui_version,
       docker_command_steps: machine.docker_command_steps,
       gpu: machine.gpu,
+      concurrency_limit: machine.concurrency_limit,
+      run_timeout: machine.run_timeout,
+      idle_timeout: machine.idle_timeout,
+      keep_warm: machine.keep_warm,
     },
   });
 
@@ -193,12 +207,44 @@ function ServerlessSettings({
         </TabsContent>
 
         <TabsContent value="auto-scaling">
-          <div className="p-2">
-            <h3 className="font-medium text-sm">GPU</h3>
-            <GPUSelectBox
-              value={form.watch("gpu")}
-              onChange={(value) => form.setValue("gpu", value)}
-            />
+          <div className="space-y-10 p-2">
+            <div>
+              <h3 className="font-medium text-sm">GPU</h3>
+              <GPUSelectBox
+                value={form.watch("gpu")}
+                onChange={(value) => form.setValue("gpu", value)}
+              />
+            </div>
+            <div>
+              <h3 className="font-medium text-sm">Max Parallel GPU</h3>
+              <MaxParallelGPUSlider
+                value={form.watch("concurrency_limit")}
+                onChange={(value) => form.setValue("concurrency_limit", value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <h3 className="mb-2 font-medium text-sm">Workflow Timeout</h3>
+                <WorkflowTimeOut
+                  value={form.watch("run_timeout")}
+                  onChange={(value) => form.setValue("run_timeout", value)}
+                />
+              </div>
+              <div>
+                <h3 className="mb-2 font-medium text-sm">Warm Time</h3>
+                <WarmTime
+                  value={form.watch("idle_timeout")}
+                  onChange={(value) => form.setValue("idle_timeout", value)}
+                />
+              </div>
+            </div>
+            <div>
+              <h3 className="mb-2 font-medium text-sm">Keep Always On</h3>
+              <MaxAlwaysOnSlider
+                value={form.watch("keep_warm") || 0}
+                onChange={(value) => form.setValue("keep_warm", value)}
+              />
+            </div>
           </div>
         </TabsContent>
       </Tabs>
@@ -353,6 +399,284 @@ function GPUSelectBox({
           />
         );
       })}
+    </div>
+  );
+}
+
+interface RangeSliderProps {
+  value: number;
+  onChange: (value: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  label?: string;
+  description?: string;
+  inputWidth?: string;
+}
+
+function RangeSlider({
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  label,
+  description,
+}: RangeSliderProps) {
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex flex-row items-center gap-4">
+        <Slider
+          showTooltip={true}
+          min={min}
+          max={max}
+          step={step}
+          value={[value || min]}
+          onValueChange={(value) => onChange(value[0])}
+          className="w-full"
+        />
+        <Input
+          className="w-20"
+          type="number"
+          min={min}
+          max={max}
+          value={value || min}
+          onChange={(e) => {
+            const newValue = Math.round(
+              Math.min(Math.max(Number(e.target.value), min), max),
+            );
+            onChange(newValue);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "." || e.key === ",") {
+              e.preventDefault();
+            }
+          }}
+        />
+      </div>
+      <div className="flex w-[calc(100%-90px)] justify-between px-1 text-muted-foreground text-sm leading-tight">
+        <span>{min}</span>
+        <span>Current: {value || min}</span>
+        <span>{max}</span>
+      </div>
+      {description && (
+        <span className="text-muted-foreground text-sm">{description}</span>
+      )}
+    </div>
+  );
+}
+
+function MaxParallelGPUSlider({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const sub = useCurrentPlan();
+  const { data: userSettings } = useUserSettings();
+  const plan = sub?.plans?.plans.filter(
+    (plan: string) => !plan.includes("ws"),
+  )?.[0];
+
+  const planHierarchy: Record<string, { max: number }> = {
+    basic: { max: 1 },
+    pro: { max: 3 },
+    ws_basic: { max: 1 },
+    ws_pro: { max: 3 },
+    business: { max: 10 },
+    enterprise: { max: 10 },
+    creator: { max: 10 },
+  };
+
+  let maxGPU = planHierarchy[plan as keyof typeof planHierarchy]?.max || 1;
+  if (userSettings?.max_gpu) {
+    maxGPU = Math.max(maxGPU, userSettings.max_gpu);
+  }
+
+  return (
+    <RangeSlider
+      value={value}
+      onChange={onChange}
+      min={1}
+      max={maxGPU}
+      description="Increase the concurrency limit for the machine to handle more gpu intensive tasks at the same time."
+    />
+  );
+}
+
+interface TimeSelectOption {
+  seconds: number;
+  requiredPlan?: string;
+}
+
+interface TimeSelectProps {
+  value: number;
+  onChange: (value: number) => void;
+  options: TimeSelectOption[];
+  placeholder?: string;
+  description?: string;
+}
+
+function TimeSelect({
+  value,
+  onChange,
+  options,
+  placeholder,
+  description,
+}: TimeSelectProps) {
+  const planHierarchy: Record<string, string[]> = {
+    basic: [],
+    pro: ["pro"],
+    enterprise: ["pro", "business", "creator"],
+    ws_basic: [],
+    ws_pro: [],
+    business: ["pro", "business"],
+    creator: ["pro", "business", "creator"],
+  };
+
+  const sub = useCurrentPlan();
+  const plan = sub?.plans?.plans.filter(
+    (plan: string) => !plan.includes("ws"),
+  )?.[0];
+
+  const formatTime = (seconds: number) => {
+    return seconds < 60 ? `${seconds} sec` : `${Math.floor(seconds / 60)} min`;
+  };
+
+  return (
+    <div className="flex flex-col gap-1">
+      <Select
+        value={String(value)}
+        onValueChange={(val) => onChange(Number(val))}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder={placeholder || "Select time"} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map(({ seconds, requiredPlan }) => {
+            const isAllowed =
+              !requiredPlan ||
+              (plan &&
+                plan in planHierarchy &&
+                planHierarchy[plan as keyof typeof planHierarchy]?.includes(
+                  requiredPlan,
+                ));
+
+            return (
+              <SelectItem
+                key={seconds}
+                value={String(seconds)}
+                disabled={!isAllowed}
+              >
+                <span className="flex w-full items-center justify-between">
+                  <span>{formatTime(seconds)}</span>
+                  {!isAllowed && (
+                    <span className="mx-2 inline-flex items-center justify-center gap-2">
+                      <Badge className="capitalize">{requiredPlan}</Badge> plan
+                      required
+                      <Lock size={14} />
+                    </span>
+                  )}
+                </span>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
+      {description && (
+        <span className="pt-2 text-muted-foreground text-sm leading-snug">
+          {description}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function WorkflowTimeOut({
+  value,
+  onChange,
+}: { value: number; onChange: (value: number) => void }) {
+  const options: TimeSelectOption[] = [
+    { seconds: 300 },
+    { seconds: 420, requiredPlan: "pro" },
+    { seconds: 600, requiredPlan: "business" },
+    { seconds: 1200, requiredPlan: "business" },
+    { seconds: 1800, requiredPlan: "business" },
+  ];
+
+  return (
+    <TimeSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder="Select Timeout"
+    />
+  );
+}
+
+function WarmTime({
+  value,
+  onChange,
+}: { value: number; onChange: (value: number) => void }) {
+  const options: TimeSelectOption[] = [
+    { seconds: 2 },
+    { seconds: 15 },
+    { seconds: 30 },
+    { seconds: 60 },
+    { seconds: 120, requiredPlan: "pro" },
+    { seconds: 240, requiredPlan: "business" },
+    { seconds: 600, requiredPlan: "business" },
+    { seconds: 1200, requiredPlan: "business" },
+  ];
+
+  return (
+    <TimeSelect
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder="Select Warm Time"
+      description="The warm time is the seconds before the container will be stopped after the run is finished. So the next request will reuse the warm container."
+    />
+  );
+}
+
+function MaxAlwaysOnSlider({
+  value,
+  onChange,
+}: { value: number; onChange: (value: number) => void }) {
+  const sub = useCurrentPlan();
+
+  const minAlwaysOn = 0;
+  const maxAlwaysOn = sub?.features.alwaysOnMachineLimit ?? 0;
+
+  return (
+    <div>
+      {maxAlwaysOn === 0 ? (
+        <Alert variant="warning" className="border-blue-500 bg-blue-500/10">
+          <AlertCircleIcon className="!text-blue-500 h-4 w-4" />
+          <AlertTitle className="text-blue-500">Limited Feature</AlertTitle>
+          <AlertDescription className="text-blue-500">
+            This feature is limited with your current plan. Please consult with
+            support if you need to increase the limit.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <RangeSlider
+          value={value}
+          onChange={onChange}
+          min={0}
+          max={maxAlwaysOn}
+        />
+      )}
+      <Alert variant="warning" className="mt-2 bg-yellow-500/10">
+        <AlertCircleIcon className="h-4 w-4" />
+        <AlertTitle>Advanced Feature</AlertTitle>
+        <AlertDescription>
+          This is an advanced feature. Keeping machines always-on will
+          continuously incur GPU costs until you reduce the value.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 }
