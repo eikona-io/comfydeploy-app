@@ -1,3 +1,3 @@
-export const comfydeploy_hash = "5423b4ee6f5d1bb0e9a84b6fc84bdc0f2814c825";
+export const comfydeploy_hash = "230cee40d2b7d2437d8e00665c0c0277b14585b9";
 
 export const comfyui_hash = "8ce2a1052ca03183768da0aaa483024e58b8008c";
