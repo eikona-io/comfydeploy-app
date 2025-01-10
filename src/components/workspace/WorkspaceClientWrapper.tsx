@@ -5,6 +5,7 @@ import { useMachine } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "../ui/badge";
+import { LoadingIcon } from "../ui/custom/loading-icon";
 import { useWorkflowVersion } from "../workflow-list";
 import { SessionCreator } from "./SessionView";
 import { WorkspaceLoading, WorkspaceMachineLoading } from "./WorkspaceLoading";
@@ -37,7 +38,12 @@ export function WorkspaceClientWrapper({
   );
 
   if (isLoadingWorkflow || isLoading || isLoadingVersions || !versions) {
-    return <WorkspaceLoading />;
+    // return <WorkspaceLoading />;
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <LoadingIcon />
+      </div>
+    );
   }
 
   if (!machine && !isLoading && !isLoadingWorkflow)
