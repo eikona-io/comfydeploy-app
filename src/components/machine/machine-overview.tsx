@@ -36,7 +36,7 @@ import {
   useMachineVersionsAll,
 } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { differenceInMilliseconds, max } from "date-fns";
 import { motion } from "framer-motion";
@@ -57,6 +57,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useIsAdminOnly } from "../permissions";
 import { MachineSettingsWrapper } from "./machine-settings";
 // const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -187,7 +188,7 @@ export function MachineOverview({ machine }: { machine: any }) {
           <MachineContainerActivity machine={machine} />
         )}
         <MachineVersionWrapper machine={machine} />
-        <div className="h-[200px] transition-all delay-300 duration-300 ease-in-out hover:h-[400px]">
+        <div className="h-[200px] transition-all delay-500 duration-300 ease-in-out hover:h-[400px]">
           <MachineWorkflowDeployment machine={machine} />
         </div>
         <MachineSettingsWrapper machine={machine} />
@@ -369,7 +370,7 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
               height: isHovered ? "auto" : 0,
               opacity: isHovered ? 1 : 0,
             }}
-            transition={{ delay: 0.3, duration: 0.15, ease: "easeOut" }}
+            transition={{ delay: 0.5, duration: 0.15, ease: "easeOut" }}
             className="hidden space-y-2 overflow-hidden md:block"
           >
             {versions
@@ -528,12 +529,24 @@ function MachineContainerActivity({ machine }: { machine: any }) {
   const [view, setView] = useState<"graph" | "table">("graph");
   const { data: events, isLoading } = useMachineEvents(machine.id);
   const { hasActiveEvents } = useHasActiveEvents(machine.id);
+  const isAdminMember = useIsAdminOnly();
+  const { data: usage } = useSuspenseQuery<any>({
+    queryKey: ["platform", "usage"],
+  });
+
+  // Calculate cost for this machine
+  const machineCost = useMemo(() => {
+    const machineUsage = usage?.usage?.find(
+      (u: any) => u.machine_id === machine.id,
+    );
+    return machineUsage?.cost || 0;
+  }, [usage, machine.id]);
 
   const content = (
     <Card
       className={cn(
         "group flex flex-col rounded-[10px]",
-        "transition-all delay-300 duration-300 ease-in-out",
+        "transition-all delay-500 duration-300 ease-in-out",
         "h-[600px] md:h-[190px] md:hover:h-[510px]",
       )}
     >
@@ -579,7 +592,12 @@ function MachineContainerActivity({ machine }: { machine: any }) {
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden">
-        <div className="grid grid-cols-2 items-center gap-4 pb-4 md:grid-cols-3">
+        <div
+          className={cn(
+            "grid grid-cols-2 items-center gap-4 pb-4",
+            isAdminMember && "md:grid-cols-3",
+          )}
+        >
           <div className="flex flex-col gap-2">
             <h3
               className={cn(
@@ -608,25 +626,27 @@ function MachineContainerActivity({ machine }: { machine: any }) {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
-              Cost (estimated)
-              <DollarSign className="h-[14px] w-[14px]" />
-            </h3>
-            <p className="font-bold text-2xl text-black">
-              $0.00
-              <span className="font-normal text-2xs text-gray-400">
-                {" "}
-                / month
-              </span>
-            </p>
-          </div>
+          {isAdminMember && (
+            <div className="flex flex-col gap-2">
+              <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
+                Cost (estimated)
+                <DollarSign className="h-[14px] w-[14px]" />
+              </h3>
+              <p className="font-bold text-2xl text-black">
+                ${machineCost.toFixed(2)}
+                <span className="font-normal text-2xs text-gray-400">
+                  {" "}
+                  / month
+                </span>
+              </p>
+            </div>
+          )}
         </div>
 
         <div
           className={cn(
             "overflow-hidden",
-            "transition-all delay-300 duration-300 ease-in-out",
+            "transition-all delay-500 duration-300 ease-in-out",
             "group-hover:max-h-[500px] group-hover:opacity-100",
             "max-h-auto opacity-100 md:max-h-0 md:opacity-0",
           )}
