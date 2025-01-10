@@ -62,39 +62,72 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
   };
 
   return (
-    <Card className="flex flex-col rounded-[10px]">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between font-semibold text-xl">
-          Settings
-          <div className="flex items-center">
-            <Button onClick={handleSave} disabled={isLoading}>
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
-            </Button>
+    <div>
+      <div>
+        <Tabs defaultValue={isServerless ? "environment" : "advanced"}>
+          <div className="sticky top-[49px] z-10 flex items-center justify-between bg-background">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="font-semibold text-xl">
+                  Settings
+                </CardTitle>
+                {/* <CardDescription>
+                Configure your machine's GPU settings and environment
+              </CardDescription> */}
+              </div>
+
+              {/* <div className="flex items-center">
+                <Button onClick={handleSave} disabled={isLoading}>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Changes
+                </Button>
+              </div> */}
+            </div>
+            <TabsList className=" w-fit border-0 bg-transparent">
+              {machine.type === "comfy-deploy-serverless" && (
+                <>
+                  <TabsTrigger
+                    value="environment"
+                    className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  >
+                    Environment
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="auto-scaling"
+                    className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                  >
+                    Auto Scaling
+                  </TabsTrigger>
+                </>
+              )}
+              <TabsTrigger
+                value="advanced"
+                className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+              >
+                Advanced
+              </TabsTrigger>
+            </TabsList>
           </div>
-        </CardTitle>
-        <CardDescription>
-          Configure your machine's GPU settings and environment
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isServerless ? (
-          <ServerlessSettings
-            machine={machine}
-            formRef={formRef}
-            isLoading={isLoading}
-            setIsLoading={setIsLoading}
-          />
-        ) : (
-          <ClassicSettings
-            machine={machine}
-            formRef={formRef}
-            isLoading={isLoading}
-            setIsLoading={setIsLoading}
-          />
-        )}
-      </CardContent>
-    </Card>
+          <Card className="flex flex-col rounded-[10px] px-2">
+            {isServerless ? (
+              <ServerlessSettings
+                machine={machine}
+                formRef={formRef}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+              />
+            ) : (
+              <ClassicSettings
+                machine={machine}
+                formRef={formRef}
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+              />
+            )}
+          </Card>
+        </Tabs>
+      </div>
+    </div>
   );
 }
 
@@ -110,26 +143,7 @@ function ClassicSettings({
   setIsLoading: (value: boolean) => void;
 }) {
   return (
-    <Tabs defaultValue="advanced">
-      <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
-        <TabsTrigger
-          value="environment"
-          className="rounded-[6px]"
-          disabled={true}
-        >
-          Environment
-        </TabsTrigger>
-        <TabsTrigger
-          value="auto-scaling"
-          className="rounded-[6px]"
-          disabled={true}
-        >
-          Auto Scaling
-        </TabsTrigger>
-        <TabsTrigger value="advanced" className="rounded-[6px]">
-          Advanced
-        </TabsTrigger>
-      </TabsList>
+    <>
       <TabsContent value="environment">
         Not available for classic machines.
       </TabsContent>
@@ -173,7 +187,7 @@ function ClassicSettings({
           }}
         />
       </TabsContent>
-    </Tabs>
+    </>
   );
 }
 
@@ -256,254 +270,236 @@ function ServerlessSettings({
 
   return (
     <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)}>
-      <Tabs defaultValue="environment">
-        <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
-          <TabsTrigger value="environment" className="rounded-[6px]">
-            Environment
-          </TabsTrigger>
-          <TabsTrigger value="auto-scaling" className="rounded-[6px]">
-            Auto Scaling
-          </TabsTrigger>
-          <TabsTrigger value="advanced" className="rounded-[6px]">
-            Advanced
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="environment">
-          <div className="space-y-4 p-2">
-            <div>
-              <h3 className="font-medium text-sm">ComfyUI Version</h3>
-              <ComfyUIVersionSelectBox
-                value={form.watch("comfyui_version")}
-                onChange={(value) => form.setValue("comfyui_version", value)}
-              />
-            </div>
-            <CustomNodeSetupWrapper
-              value={form.watch("docker_command_steps")}
-              onChange={(value) => form.setValue("docker_command_steps", value)}
+      <TabsContent value="environment">
+        <div className="space-y-4 p-2">
+          <div>
+            <h3 className="font-medium text-sm">ComfyUI Version</h3>
+            <ComfyUIVersionSelectBox
+              value={form.watch("comfyui_version")}
+              onChange={(value) => form.setValue("comfyui_version", value)}
             />
           </div>
-        </TabsContent>
+          <CustomNodeSetupWrapper
+            value={form.watch("docker_command_steps")}
+            onChange={(value) => form.setValue("docker_command_steps", value)}
+          />
+        </div>
+      </TabsContent>
 
-        <TabsContent value="auto-scaling">
-          <div className="space-y-10 p-2">
-            <div>
-              <h3 className="font-medium text-sm">GPU</h3>
-              <GPUSelectBox
-                value={form.watch("gpu")}
-                onChange={(value) => form.setValue("gpu", value)}
-              />
-            </div>
-
-            <Accordion type="single" defaultValue="concurrency" className="">
-              <AccordionItem value="concurrency">
-                <AccordionTrigger className="py-4">
-                  GPU Configuration
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6">
-                  <div>
-                    <h3 className="font-medium text-sm">Max Parallel GPU</h3>
-                    <MaxParallelGPUSlider
-                      value={form.watch("concurrency_limit")}
-                      onChange={(value) =>
-                        form.setValue("concurrency_limit", value)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <h3 className="mb-2 font-medium text-sm">Keep Always On</h3>
-                    <MaxAlwaysOnSlider
-                      value={form.watch("keep_warm") || 0}
-                      onChange={(value) => form.setValue("keep_warm", value)}
-                    />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="timeout">
-                <AccordionTrigger className="py-4">
-                  Timeout Settings
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <h3 className="mb-2 font-medium text-sm">
-                        Workflow Timeout
-                      </h3>
-                      <WorkflowTimeOut
-                        value={form.watch("run_timeout")}
-                        onChange={(value) =>
-                          form.setValue("run_timeout", value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <h3 className="mb-2 font-medium text-sm">Warm Time</h3>
-                      <WarmTime
-                        value={form.watch("idle_timeout")}
-                        onChange={(value) =>
-                          form.setValue("idle_timeout", value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+      <TabsContent value="auto-scaling">
+        <div className="space-y-10 p-2">
+          <div>
+            <h3 className="font-medium text-sm">GPU</h3>
+            <GPUSelectBox
+              value={form.watch("gpu")}
+              onChange={(value) => form.setValue("gpu", value)}
+            />
           </div>
-        </TabsContent>
 
-        <TabsContent value="advanced">
-          <div className="space-y-10 p-2">
-            <div className="flex flex-col gap-2">
-              <h3 className="font-medium text-sm">Builder Version</h3>
-              <BuilderVersionPicker
-                value={form.watch("machine_builder_version") || "4"}
-                onChange={(value) =>
-                  form.setValue(
-                    "machine_builder_version",
-                    value as "2" | "3" | "4",
-                  )
-                }
-              />
-            </div>
-
-            <Accordion type="single" defaultValue="docker">
-              <AccordionItem value="docker">
-                <AccordionTrigger className="py-4">
-                  Docker Configuration
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6">
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Base Docker Image</h3>
-                    <Input
-                      value={form.watch("base_docker_image") ?? ""}
-                      onChange={(e) =>
-                        form.setValue("base_docker_image", e.target.value)
-                      }
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      Optional base docker image for the machine.
-                    </p>
-                  </div>
-                  <ExtraDockerCommands
-                    value={form.watch("extra_docker_commands")}
+          <Accordion type="single" defaultValue="concurrency" className="">
+            <AccordionItem value="concurrency">
+              <AccordionTrigger className="py-4">
+                GPU Configuration
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6">
+                <div>
+                  <h3 className="font-medium text-sm">Max Parallel GPU</h3>
+                  <MaxParallelGPUSlider
+                    value={form.watch("concurrency_limit")}
                     onChange={(value) =>
-                      form.setValue("extra_docker_commands", value)
+                      form.setValue("concurrency_limit", value)
                     }
                   />
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="system">
-                <AccordionTrigger className="py-4">
-                  System Settings
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6">
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Python Version</h3>
-                    <Select
-                      value={form.watch("python_version") ?? "3.11"}
-                      onValueChange={(value) =>
-                        form.setValue("python_version", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Python Version" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="3.9">3.9</SelectItem>
-                        <SelectItem value="3.10">3.10</SelectItem>
-                        <SelectItem value="3.11">3.11 (Recommended)</SelectItem>
-                        <SelectItem value="3.12">3.12</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Queue per GPU</h3>
-                    <RangeSlider
-                      value={form.watch("allow_concurrent_inputs") || 1}
-                      onChange={(value) =>
-                        form.setValue("allow_concurrent_inputs", value)
-                      }
-                      min={1}
-                      max={10}
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      The queue size is the number of inputs that can be queued
-                      to 1 container before spinning up a new container.
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Websocket timeout</h3>
-                    <WebSocketTimeout
-                      value={form.watch("ws_timeout")}
-                      onChange={(value) => form.setValue("ws_timeout", value)}
-                    />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="custom">
-                <AccordionTrigger className="py-4">
-                  Custom Settings
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6">
+                </div>
+                <div>
+                  <h3 className="mb-2 font-medium text-sm">Keep Always On</h3>
+                  <MaxAlwaysOnSlider
+                    value={form.watch("keep_warm") || 0}
+                    onChange={(value) => form.setValue("keep_warm", value)}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="timeout">
+              <AccordionTrigger className="py-4">
+                Timeout Settings
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <div className="flex flex-row items-center gap-4">
-                      <Switch
-                        id="install_custom_node_with_gpu"
-                        checked={form.watch("install_custom_node_with_gpu")}
-                        onCheckedChange={(value) =>
-                          form.setValue("install_custom_node_with_gpu", value)
-                        }
-                      />
-                      <Label htmlFor="install_custom_node_with_gpu">
-                        Install custom nodes with GPU
-                      </Label>
-                    </div>
-                    <p className="mt-2 text-muted-foreground text-xs">
-                      Some custom nodes require GPU while being initialized.
-                    </p>
+                    <h3 className="mb-2 font-medium text-sm">
+                      Workflow Timeout
+                    </h3>
+                    <WorkflowTimeOut
+                      value={form.watch("run_timeout")}
+                      onChange={(value) => form.setValue("run_timeout", value)}
+                    />
                   </div>
+                  <div>
+                    <h3 className="mb-2 font-medium text-sm">Warm Time</h3>
+                    <WarmTime
+                      value={form.watch("idle_timeout")}
+                      onChange={(value) => form.setValue("idle_timeout", value)}
+                    />
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </TabsContent>
 
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Extra arguments</h3>
-                    <Input
-                      value={form.watch("extra_args") ?? ""}
-                      onChange={(e) =>
-                        form.setValue("extra_args", e.target.value)
-                      }
-                    />
-                    <p className="flex flex-row items-center gap-1 text-muted-foreground text-xs">
-                      ComfyUI extra arguments.
-                      <a
-                        href="https://github.com/comfyanonymous/ComfyUI/blob/master/comfy/cli_args.py"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex flex-row items-center gap-1 text-blue-500"
-                      >
-                        Examples
-                        <ExternalLinkIcon className="h-3 w-3" />
-                      </a>
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Prestart Command</h3>
-                    <Input
-                      value={form.watch("prestart_command") ?? ""}
-                      onChange={(e) =>
-                        form.setValue("prestart_command", e.target.value)
-                      }
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      Command to run before the machine starts.
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+      <TabsContent value="advanced">
+        <div className="space-y-10 p-2">
+          <div className="flex flex-col gap-2">
+            <h3 className="font-medium text-sm">Builder Version</h3>
+            <BuilderVersionPicker
+              value={form.watch("machine_builder_version") || "4"}
+              onChange={(value) =>
+                form.setValue(
+                  "machine_builder_version",
+                  value as "2" | "3" | "4",
+                )
+              }
+            />
           </div>
-        </TabsContent>
-      </Tabs>
+
+          <Accordion type="single" defaultValue="docker">
+            <AccordionItem value="docker">
+              <AccordionTrigger className="py-4">
+                Docker Configuration
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6">
+                <div className="flex flex-col gap-2">
+                  <h3 className="font-medium text-sm">Base Docker Image</h3>
+                  <Input
+                    value={form.watch("base_docker_image") ?? ""}
+                    onChange={(e) =>
+                      form.setValue("base_docker_image", e.target.value)
+                    }
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Optional base docker image for the machine.
+                  </p>
+                </div>
+                <ExtraDockerCommands
+                  value={form.watch("extra_docker_commands")}
+                  onChange={(value) =>
+                    form.setValue("extra_docker_commands", value)
+                  }
+                />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="system">
+              <AccordionTrigger className="py-4">
+                System Settings
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6">
+                <div className="flex flex-col gap-2">
+                  <h3 className="font-medium text-sm">Python Version</h3>
+                  <Select
+                    value={form.watch("python_version") ?? "3.11"}
+                    onValueChange={(value) =>
+                      form.setValue("python_version", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Python Version" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="3.9">3.9</SelectItem>
+                      <SelectItem value="3.10">3.10</SelectItem>
+                      <SelectItem value="3.11">3.11 (Recommended)</SelectItem>
+                      <SelectItem value="3.12">3.12</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <h3 className="font-medium text-sm">Queue per GPU</h3>
+                  <RangeSlider
+                    value={form.watch("allow_concurrent_inputs") || 1}
+                    onChange={(value) =>
+                      form.setValue("allow_concurrent_inputs", value)
+                    }
+                    min={1}
+                    max={10}
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    The queue size is the number of inputs that can be queued to
+                    1 container before spinning up a new container.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <h3 className="font-medium text-sm">Websocket timeout</h3>
+                  <WebSocketTimeout
+                    value={form.watch("ws_timeout")}
+                    onChange={(value) => form.setValue("ws_timeout", value)}
+                  />
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="custom">
+              <AccordionTrigger className="py-4">
+                Custom Settings
+              </AccordionTrigger>
+              <AccordionContent className="space-y-6">
+                <div>
+                  <div className="flex flex-row items-center gap-4">
+                    <Switch
+                      id="install_custom_node_with_gpu"
+                      checked={form.watch("install_custom_node_with_gpu")}
+                      onCheckedChange={(value) =>
+                        form.setValue("install_custom_node_with_gpu", value)
+                      }
+                    />
+                    <Label htmlFor="install_custom_node_with_gpu">
+                      Install custom nodes with GPU
+                    </Label>
+                  </div>
+                  <p className="mt-2 text-muted-foreground text-xs">
+                    Some custom nodes require GPU while being initialized.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <h3 className="font-medium text-sm">Extra arguments</h3>
+                  <Input
+                    value={form.watch("extra_args") ?? ""}
+                    onChange={(e) =>
+                      form.setValue("extra_args", e.target.value)
+                    }
+                  />
+                  <p className="flex flex-row items-center gap-1 text-muted-foreground text-xs">
+                    ComfyUI extra arguments.
+                    <a
+                      href="https://github.com/comfyanonymous/ComfyUI/blob/master/comfy/cli_args.py"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex flex-row items-center gap-1 text-blue-500"
+                    >
+                      Examples
+                      <ExternalLinkIcon className="h-3 w-3" />
+                    </a>
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <h3 className="font-medium text-sm">Prestart Command</h3>
+                  <Input
+                    value={form.watch("prestart_command") ?? ""}
+                    onChange={(e) =>
+                      form.setValue("prestart_command", e.target.value)
+                    }
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Command to run before the machine starts.
+                  </p>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
+      </TabsContent>
     </form>
   );
 }

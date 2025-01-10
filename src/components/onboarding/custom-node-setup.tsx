@@ -218,9 +218,9 @@ export function CustomNodeSetup({
       </div>
       <ResizablePanelGroup direction="horizontal">
         <ResizablePanel defaultSize={50} minSize={40} collapsible>
-          <div className="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white p-4 shadow-sm">
-            <h2 className="font-medium text-md">Custom Node Library</h2>
-            <div className="flex flex-row items-center border-gray-300 border-b px-2">
+          <div className="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white px-4 pb-4 shadow-sm">
+            {/* <h2 className="font-medium text-md">Custom Node Library</h2> */}
+            <div className="mt-1 flex flex-row items-center border-gray-300 border-b px-2">
               <Search size={18} className="text-gray-500" />
               <div className="relative flex-1">
                 <Input
@@ -340,7 +340,7 @@ export function CustomNodeSetup({
                                           nodeRefLower,
                                     )}
                                   >
-                                    <ChevronRight size={12} />
+                                    <Plus size={12} />
                                   </Button>
                                 </div>
                               </div>

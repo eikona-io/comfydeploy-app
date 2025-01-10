@@ -1,5 +1,9 @@
 import { MachineDeployment } from "@/components/machine/machine-deployment";
-import { MachineOverview } from "@/components/machine/machine-overview";
+import {
+  LastActiveEvent,
+  MachineCostEstimate,
+  MachineOverview,
+} from "@/components/machine/machine-overview";
 import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
 import { Portal } from "@/components/ui/custom/portal";
 import {
@@ -120,17 +124,25 @@ export default function MachinePage({
         </SidebarMenuSub>
       </Portal>
 
-      <div className="mx-auto w-full max-w-[1500px] md:p-4">
-        <h1 className="p-4 font-medium text-2xl">{machine.name}</h1>
+      <div className="mx-auto w-full">
+        <div className="sticky top-0 flex flex-row justify-between border-gray-200 border-b bg-[#fcfcfc] p-3 shadow-sm">
+          <h1 className="font-medium text-1xl">{machine.name}</h1>
+          <div className="flex flex-row gap-2">
+            <MachineCostEstimate machineId={machine.id} />
+            <LastActiveEvent machineId={machine.id} />
+          </div>
+        </div>
 
-        {(() => {
-          switch (view) {
-            case "deployments":
-              return <MachineDeployment machine={machine} />;
-            default:
-              return <MachineOverview machine={machine} />;
-          }
-        })()}
+        <div className="mx-auto max-w-[1200px]">
+          {(() => {
+            switch (view) {
+              case "deployments":
+                return <MachineDeployment machine={machine} />;
+              default:
+                return <MachineOverview machine={machine} />;
+            }
+          })()}
+        </div>
       </div>
     </div>
   );

@@ -184,13 +184,13 @@ export function MachineOverview({ machine }: { machine: any }) {
       </div>
 
       <div className="grid grid-cols-1 gap-8 px-4 py-2">
-        {machine.type === "comfy-deploy-serverless" && (
+        {/* {machine.type === "comfy-deploy-serverless" && (
           <MachineContainerActivity machine={machine} />
-        )}
+        )} */}
         <MachineVersionWrapper machine={machine} />
-        <div className="h-[200px] transition-all delay-500 duration-300 ease-in-out hover:h-[400px]">
+        {/* <div className="h-[200px] transition-all delay-500 duration-300 ease-in-out hover:h-[400px]">
           <MachineWorkflowDeployment machine={machine} />
-        </div>
+        </div> */}
         <MachineSettingsWrapper machine={machine} />
       </div>
     </div>
@@ -326,7 +326,7 @@ function MachineAlert({
 // -----------------------cards-----------------------
 
 function MachineVersionWrapper({ machine }: { machine: any }) {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState(true);
   const { data: machineVersion, isLoading: isLoadingMachineVersion } =
     useMachineVersion(machine.id, machine.machine_version_id);
   const { data: machineVersions, isLoading: isLoadingMachineVersions } =
@@ -337,55 +337,38 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
   const versions = machineVersions?.pages[0] || [];
 
   return (
-    <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Card className="flex flex-col rounded-[10px]">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center justify-between font-semibold text-xl">
-            <Link
-              to="/machines/$machineId"
-              params={{ machineId: machine.id }}
-              search={{ view: "deployments" }}
-            >
-              Version Details
-            </Link>
-            <div className="flex items-center">
-              <GitBranch className="h-4 w-4 text-muted-foreground" />
-            </div>
-          </CardTitle>
-          <CardDescription>
-            Current version configuration, custom nodes, dependencies, and more.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex-1 space-y-2 overflow-hidden">
-          <MachineVersionList
-            machineVersion={machineVersion}
-            machine={machine}
-          />
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{
-              height: isHovered ? "auto" : 0,
-              opacity: isHovered ? 1 : 0,
-            }}
-            transition={{ delay: 0.5, duration: 0.15, ease: "easeOut" }}
-            className="hidden space-y-2 overflow-hidden md:block"
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-col">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
+          Machine History
+          <Link
+            to="/machines/$machineId"
+            params={{ machineId: machine.id }}
+            search={{ view: "deployments" }}
           >
-            {versions
-              .filter((version) => version.id !== machineVersion.id)
-              .slice(0, 2)
-              .map((version) => (
-                <MachineVersionList
-                  key={version.id}
-                  machineVersion={version}
-                  machine={machine}
-                />
-              ))}
-          </motion.div>
-        </CardContent>
-      </Card>
+            <div className="flex items-center gap-2 font-normal text-muted-foreground text-sm hover:text-foreground">
+              View All
+              <GitBranch className="h-4 w-4" />
+            </div>
+          </Link>
+        </CardTitle>
+        <CardDescription>
+          Current version configuration, custom nodes, dependencies, and more.
+        </CardDescription>
+      </div>
+      <div className="flex flex-col gap-2">
+        <MachineVersionList machineVersion={machineVersion} machine={machine} />
+        {versions
+          .filter((version) => version.id !== machineVersion.id)
+          .slice(0, 2)
+          .map((version) => (
+            <MachineVersionList
+              key={version.id}
+              machineVersion={version}
+              machine={machine}
+            />
+          ))}
+      </div>
     </div>
   );
 }
@@ -525,6 +508,63 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
   );
 }
 
+export function LastActiveEvent({ machineId }: { machineId: string }) {
+  const { data: events, isLoading } = useMachineEvents(machineId);
+  const { hasActiveEvents } = useHasActiveEvents(machineId);
+
+  return (
+    <div className="flex items-center">
+      <Badge
+        variant="outline"
+        className={cn(
+          "flex h-6 items-center gap-2 px-2",
+          hasActiveEvents ? "border-yellow-500" : "",
+        )}
+      >
+        <div
+          className={cn(
+            "h-2 w-2 rounded-full",
+            hasActiveEvents ? "animate-pulse bg-yellow-500" : "bg-gray-400",
+          )}
+        />
+        <span
+          className={cn(
+            "text-xs",
+            hasActiveEvents ? "text-yellow-500" : "text-gray-600",
+          )}
+        >
+          Last Active: {getLastActiveText(events)}
+        </span>
+      </Badge>
+    </div>
+  );
+}
+
+export function MachineCostEstimate({ machineId }: { machineId: string }) {
+  const { data: usage } = useSuspenseQuery<any>({
+    queryKey: ["platform", "usage"],
+  });
+
+  // Calculate cost for this machine
+  const machineCost = useMemo(() => {
+    const machineUsage = usage?.usage?.find(
+      (u: any) => u.machine_id === machineId,
+    );
+    return machineUsage?.cost || 0;
+  }, [usage, machineId]);
+
+  return (
+    <div className="flex items-center">
+      <Badge variant="outline" className="flex h-6 items-center gap-2 px-2">
+        <DollarSign className="h-3 w-3 text-gray-600" />
+        <span className="text-xs text-gray-600">
+          ${machineCost.toFixed(2)}/mo
+        </span>
+      </Badge>
+    </div>
+  );
+}
+
 function MachineContainerActivity({ machine }: { machine: any }) {
   const [view, setView] = useState<"graph" | "table">("graph");
   const { data: events, isLoading } = useMachineEvents(machine.id);
@@ -626,21 +666,19 @@ function MachineContainerActivity({ machine }: { machine: any }) {
             </p>
           </div>
 
-          {isAdminMember && (
-            <div className="flex flex-col gap-2">
-              <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
-                Cost (estimated)
-                <DollarSign className="h-[14px] w-[14px]" />
-              </h3>
-              <p className="font-bold text-2xl text-black">
-                ${machineCost.toFixed(2)}
-                <span className="font-normal text-2xs text-gray-400">
-                  {" "}
-                  / month
-                </span>
-              </p>
-            </div>
-          )}
+          <div className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
+              Cost (estimated)
+              <DollarSign className="h-[14px] w-[14px]" />
+            </h3>
+            <p className="font-bold text-2xl text-black">
+              ${machineCost.toFixed(2)}
+              <span className="font-normal text-2xs text-gray-400">
+                {" "}
+                / month
+              </span>
+            </p>
+          </div>
         </div>
 
         <div
