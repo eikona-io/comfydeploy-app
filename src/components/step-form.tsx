@@ -168,10 +168,10 @@ export function StepForm<T>({
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
-              initial={{ opacity: 0, y: 100 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -100 }}
-              transition={{ duration: 0.3 }}
+              initial={{ filter: "blur(2px)", opacity: 0, y: 20 }}
+              animate={{ filter: "blur(0px)", opacity: 1, y: 0 }}
+              exit={{ filter: "blur(2px)", opacity: 0, y: -20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
               <h1 className="mb-4 font-medium text-xl">{steps[step].title}</h1>
               <CurrentStepComponent
@@ -185,16 +185,16 @@ export function StepForm<T>({
 
       <div className="fixed right-8 bottom-12 flex flex-row gap-2">
         <Button
-          variant="expandIconOutline"
-          Icon={ChevronLeft}
-          iconPlacement="left"
+          variant="outline"
+          // Icon={ChevronLeft}
+          // iconPlacement="left"
           onClick={() => handleNavigation("prev")}
           className="drop-shadow-md"
         >
           Back
         </Button>
         <Button
-          variant="expandIcon"
+          // variant="expandIcon"
           Icon={ChevronRight}
           iconPlacement="right"
           onClick={() => handleNavigation("next")}
