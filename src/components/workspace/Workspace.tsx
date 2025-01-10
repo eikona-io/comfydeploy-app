@@ -139,7 +139,7 @@ export default function Workspace({
   const { value: selectedVersion } = useSelectedVersion(workflowId);
 
   const [sessionId] = useQueryState("sessionId", {
-    defaultValue: "preview",
+    defaultValue: "",
   });
 
   const isDraftDifferent = useMemo(() => {

@@ -222,13 +222,13 @@ function WorkflowPageComponent() {
                             sessionSelected?.tunnel_url ||
                             process.env.COMFYUI_FRONTEND_URL
                           }
-                          className="mt-2"
+                          className=""
                           btnsClassName="gap-1"
                         />
-                        <SidebarMenu className="mt-2">
+                        <SidebarMenu className="">
                           <SidebarMenuItem>
                             <div className="flex items-center gap-0.5">
-                              <SidebarMenuButton>
+                              {/* <SidebarMenuButton>
                                 <SessionCreate
                                   workflowId={workflowId}
                                   setSessionId={setSessionId}
@@ -238,7 +238,7 @@ function WorkflowPageComponent() {
                                     <Plus size={16} /> Create Session
                                   </div>
                                 </SessionCreate>
-                              </SidebarMenuButton>
+                              </SidebarMenuButton> */}
                               {currentView === "workspace" &&
                                 tab === "workspace" &&
                                 sessionSelected && (

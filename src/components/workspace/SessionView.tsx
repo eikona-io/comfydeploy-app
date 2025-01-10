@@ -281,7 +281,7 @@ export function SessionCreator(props: {
       return;
     }
     if (sessionId && !session) {
-      setSessionId("preview");
+      setSessionId("");
     }
 
     // if (session) {
