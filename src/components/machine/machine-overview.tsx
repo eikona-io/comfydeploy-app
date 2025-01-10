@@ -32,12 +32,14 @@ import { useCurrentPlan } from "@/hooks/use-current-plan";
 import {
   useMachineEvents,
   useMachineVersion,
+  useMachineVersions,
   useMachineVersionsAll,
 } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { differenceInMilliseconds, max } from "date-fns";
+import { motion } from "framer-motion";
 import {
   Activity,
   AlertCircle,
@@ -320,34 +322,67 @@ function MachineAlert({
 // -----------------------cards-----------------------
 
 function MachineVersionWrapper({ machine }: { machine: any }) {
+  const [isHovered, setIsHovered] = useState(false);
   const { data: machineVersion, isLoading: isLoadingMachineVersion } =
     useMachineVersion(machine.id, machine.machine_version_id);
+  const { data: machineVersions, isLoading: isLoadingMachineVersions } =
+    useMachineVersions(machine.id);
 
   if (!machineVersion) return null;
 
+  const versions = machineVersions?.pages[0] || [];
+
   return (
-    <Card className="flex h-full flex-col rounded-[10px]">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between font-semibold text-xl">
-          <Link
-            to="/machines/$machineId"
-            params={{ machineId: machine.id }}
-            search={{ view: "deployments" }}
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <Card className="flex flex-col rounded-[10px]">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center justify-between font-semibold text-xl">
+            <Link
+              to="/machines/$machineId"
+              params={{ machineId: machine.id }}
+              search={{ view: "deployments" }}
+            >
+              Version Details
+            </Link>
+            <div className="flex items-center">
+              <GitBranch className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardTitle>
+          <CardDescription>
+            Current version configuration, custom nodes, dependencies, and more.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-1 space-y-2 overflow-hidden">
+          <MachineVersionList
+            machineVersion={machineVersion}
+            machine={machine}
+          />
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{
+              height: isHovered ? "auto" : 0,
+              opacity: isHovered ? 1 : 0,
+            }}
+            transition={{ delay: 0.3, duration: 0.15, ease: "easeOut" }}
+            className="hidden space-y-2 overflow-hidden md:block"
           >
-            Version Details
-          </Link>
-          <div className="flex items-center">
-            <GitBranch className="h-4 w-4 text-muted-foreground" />
-          </div>
-        </CardTitle>
-        <CardDescription>
-          Current version configuration, custom nodes, dependencies, and more.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <MachineVersionList machineVersion={machineVersion} machine={machine} />
-      </CardContent>
-    </Card>
+            {versions
+              .filter((version) => version.id !== machineVersion.id)
+              .slice(0, 2)
+              .map((version) => (
+                <MachineVersionList
+                  key={version.id}
+                  machineVersion={version}
+                  machine={machine}
+                />
+              ))}
+          </motion.div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
