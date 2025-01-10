@@ -504,23 +504,6 @@ function InstantRollback({
               <CircleArrowUp className="w-4 h-4" />
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
-          {machine.machine_version_id === machineVersion.id && (
-            <DropdownMenuItem
-              onClick={() => {
-                navigate({
-                  to: "/machines/$machineId",
-                  params: {
-                    machineId: machine.id,
-                  },
-                  search: {
-                    view: "settings",
-                  },
-                });
-              }}
-            >
-              <span>Edit</span>
-            </DropdownMenuItem>
-          )}
           <DropdownMenuItem
             onClick={() => {
               navigate({

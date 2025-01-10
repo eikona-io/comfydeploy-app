@@ -14,7 +14,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-type View = "settings" | "deployments" | undefined;
+type View = "deployments" | undefined;
 
 export default function MachinePage({
   params,
@@ -55,7 +55,7 @@ export default function MachinePage({
     machine?.docker_command_steps === null &&
     machine?.type === "comfy-deploy-serverless";
 
-  const routes = ["Overview", "Settings", "Deployments"]
+  const routes = ["Settings", "Deployments"]
     .filter((name) => !isDockerCommandStepsNull || name !== "Settings")
     .map((name) => ({
       name,
@@ -105,7 +105,7 @@ export default function MachinePage({
                 onClick={route.onClick}
                 className={
                   view === route.name.toLowerCase() ||
-                  (!view && route.name.toLowerCase() === "overview")
+                  (!view && route.name.toLowerCase() === "settings")
                     ? ""
                     : "opacity-50"
                 }
@@ -126,18 +126,10 @@ export default function MachinePage({
 
         {(() => {
           switch (view) {
-            case "settings":
-              return <MachineSettings machine={machine} setView={setView} />;
             case "deployments":
               return <MachineDeployment machine={machine} />;
             default:
-              return (
-                <MachineOverview
-                  machine={machine}
-                  refetch={refetch}
-                  setView={setView}
-                />
-              );
+              return <MachineOverview machine={machine} />;
           }
         })()}
       </div>

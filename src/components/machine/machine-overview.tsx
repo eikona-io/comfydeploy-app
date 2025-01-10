@@ -150,15 +150,7 @@ function deleteFromLS(key: string) {
 
 // -----------------------components-----------------------
 
-export function MachineOverview({
-  machine,
-  setView,
-  refetch,
-}: {
-  machine: any;
-  setView: (view: "settings" | "deployments" | undefined) => void;
-  refetch: () => void;
-}) {
+export function MachineOverview({ machine }: { machine: any }) {
   const defaultLayout = [
     { i: "status", x: 0, y: 0, w: 1, h: 6 },
     { i: "customNodes", x: 0, y: 6, w: 1, h: 6 },
@@ -197,50 +189,6 @@ export function MachineOverview({
 
   return (
     <div className="w-full">
-      <div className="flex flex-row items-center justify-between px-4 py-2">
-        <div
-          className={cn(
-            "flex w-full flex-row justify-between gap-2 md:w-auto md:justify-start",
-            isEditingLayout && "invisible",
-          )}
-        >
-          <Button
-            variant="outline"
-            disabled={isDockerCommandStepsNull}
-            onClick={() => setView("settings")}
-          >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit
-          </Button>
-          <MachineItemActionList
-            machine={machine}
-            refetch={refetch}
-            sub={sub}
-            isDetailedButton={true}
-          />
-        </div>
-        {machine.machine_version_id && (
-          <div
-            className={cn(
-              "flex cursor-pointer flex-row items-center gap-2 rounded-sm px-3 py-2 text-xs transition-colors whitespace-nowrap",
-              isLatestVersion
-                ? "bg-green-500 text-green-50 hover:bg-green-600"
-                : "bg-gray-500 text-gray-50 hover:bg-gray-600 line-through",
-            )}
-            onClick={() =>
-              navigate({
-                to: "/machines/$machineId",
-                params: { machineId: machine.id },
-                search: { view: "deployments" },
-              })
-            }
-          >
-            <CircleArrowUp className="h-4 w-4" />
-            Latest Version
-          </div>
-        )}
-      </div>
-
       <div className="px-3 py-1">
         <MachineAlert
           machine={machine}
@@ -250,12 +198,9 @@ export function MachineOverview({
       </div>
 
       <div className="grid grid-cols-1 gap-6 px-4 py-2">
-        <MachineOverviewStatus machine={machine} />
+        <MachineContainerActivity machine={machine} />
         <MachineVersionWrapper machine={machine} />
-        <div className="h-[450px]">
-          <MachineContainerActivity machine={machine} />
-        </div>
-        <div className="h-[400px]">
+        <div className="h-[200px] transition-all delay-300 duration-300 ease-in-out hover:h-[400px]">
           <MachineWorkflowDeployment machine={machine} />
         </div>
       </div>
@@ -390,87 +335,6 @@ function MachineAlert({
 }
 
 // -----------------------cards-----------------------
-
-function MachineOverviewStatus({ machine }: { machine: any }) {
-  const { data: events, isLoading } = useMachineEvents(machine.id);
-  const { hasActiveEvents } = useHasActiveEvents(machine.id);
-
-  const content = (
-    <Card className="h-full w-full rounded-[10px]">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between font-semibold text-xl">
-          Status
-          <div className="flex items-center">
-            {hasActiveEvents ? (
-              <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-            ) : (
-              <Pause className="h-4 w-4 text-muted-foreground" />
-            )}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-row items-center justify-between">
-          <h2 className="font-medium text-sm">Current Status</h2>
-          <Badge
-            variant={hasActiveEvents ? "green" : "secondary"}
-            className="!font-semibold flex items-center gap-1"
-          >
-            {hasActiveEvents ? (
-              <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-            ) : (
-              <Pause className="h-3 w-3 text-muted-foreground" />
-            )}
-            {hasActiveEvents ? "Running" : "Idle"}
-          </Badge>
-        </div>
-
-        <div className="grid grid-cols-2 items-center gap-4 py-4">
-          <div className="flex flex-col gap-2">
-            <h3
-              className={cn(
-                "flex items-center gap-2 font-base text-gray-600 text-sm",
-                hasActiveEvents ? "text-yellow-500" : "",
-              )}
-            >
-              Last Activity <Zap className="h-[14px] w-[14px]" />
-            </h3>
-            <p
-              className={cn(
-                "font-bold text-2xl",
-                hasActiveEvents ? "text-yellow-500" : "text-black",
-              )}
-            >
-              {getLastActiveText(events)}
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
-              Runtime <Activity className="h-[14px] w-[14px]" />
-            </h3>
-            <p className="font-bold text-2xl text-black">
-              {calculateTotalUpEventTime(events)}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  return hasActiveEvents ? (
-    <ShineBorder
-      color="green"
-      className="h-full w-full p-0"
-      borderRadius={10}
-      borderWidth={2}
-    >
-      {content}
-    </ShineBorder>
-  ) : (
-    content
-  );
-}
 
 function MachineVersionWrapper({ machine }: { machine: any }) {
   const { data: machineVersion, isLoading: isLoadingMachineVersion } =
@@ -636,16 +500,22 @@ function MachineWorkflowDeployment({ machine }: { machine: any }) {
 function MachineContainerActivity({ machine }: { machine: any }) {
   const [view, setView] = useState<"graph" | "table">("graph");
   const { data: events, isLoading } = useMachineEvents(machine.id);
+  const { hasActiveEvents } = useHasActiveEvents(machine.id);
 
-  return (
-    <Card className="h-full flex flex-col rounded-[10px]">
+  const content = (
+    <Card
+      className={cn(
+        "group flex flex-col rounded-[10px]",
+        "transition-all delay-300 duration-300 ease-in-out",
+        "h-[190px] hover:h-[510px]",
+      )}
+    >
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <CardTitle className="font-semibold text-xl">
             Container Activity
           </CardTitle>
 
-          {/* Toggle Button */}
           <div className="flex items-center gap-2">
             <div className="flex rounded-sm bg-muted p-1">
               <button
@@ -679,94 +549,143 @@ function MachineContainerActivity({ machine }: { machine: any }) {
             </div>
           </div>
         </div>
-        <CardDescription>
-          Container history for the last 24 hours
-        </CardDescription>
       </CardHeader>
 
       <CardContent className="flex-1 overflow-hidden">
-        {view === "graph" ? (
-          <MachineListItemEvents
-            isExpanded={true}
-            events={{ data: events, isLoading }}
-            machine={machine}
-          />
-        ) : (
-          <ScrollArea className="h-full">
-            <div className="pr-4">
-              <Table>
-                <TableHeader className="sticky top-0 bg-background">
-                  <TableRow>
-                    <TableHead>Start</TableHead>
-                    <TableHead>End</TableHead>
-                    <TableHead>Duration</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>GPU</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {events?.map((event) => {
-                    const startTime = new Date(event.start_time ?? "");
-                    const endTime = event.end_time
-                      ? new Date(event.end_time)
-                      : new Date();
-                    const duration = differenceInMilliseconds(
-                      endTime,
-                      startTime,
-                    );
-                    const status = event.end_time ? "Done" : "Running";
+        <div className="grid grid-cols-2 items-center gap-4 pb-4">
+          <div className="flex flex-col gap-2">
+            <h3
+              className={cn(
+                "flex items-center gap-2 font-base text-gray-600 text-sm",
+                hasActiveEvents ? "text-yellow-500" : "",
+              )}
+            >
+              Last Activity <Zap className="h-[14px] w-[14px]" />
+            </h3>
+            <p
+              className={cn(
+                "font-bold text-2xl",
+                hasActiveEvents ? "text-yellow-500" : "text-black",
+              )}
+            >
+              {getLastActiveText(events)}
+            </p>
+          </div>
 
-                    // Format duration to be more readable
-                    const durationSeconds = Math.floor(duration / 1000);
-                    const durationMinutes = Math.floor(durationSeconds / 60);
-                    const durationHours = Math.floor(durationMinutes / 60);
+          <div className="flex flex-col gap-2">
+            <h3 className="flex items-center gap-2 font-base text-gray-600 text-sm">
+              Runtime <Activity className="h-[14px] w-[14px]" />
+            </h3>
+            <p className="font-bold text-2xl text-black">
+              {calculateTotalUpEventTime(events)}
+            </p>
+          </div>
+        </div>
 
-                    let durationText = "";
-                    if (durationHours > 0) {
-                      durationText += `${durationHours}h `;
-                    }
-                    if (durationMinutes % 60 > 0) {
-                      durationText += `${durationMinutes % 60}m `;
-                    }
-                    if (durationSeconds % 60 > 0) {
-                      durationText += `${durationSeconds % 60}s`;
-                    }
+        <div
+          className={cn(
+            "overflow-hidden",
+            "transition-all delay-300 duration-300 ease-in-out",
+            "group-hover:max-h-[500px] group-hover:opacity-100",
+            "max-h-0 opacity-0",
+          )}
+        >
+          {view === "graph" ? (
+            <MachineListItemEvents
+              isExpanded={true}
+              events={{ data: events, isLoading }}
+              machine={machine}
+            />
+          ) : (
+            <ScrollArea className="h-full">
+              <div className="pr-4">
+                <Table>
+                  <TableHeader className="sticky top-0 bg-background">
+                    <TableRow>
+                      <TableHead>Start</TableHead>
+                      <TableHead>End</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>GPU</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {events?.map((event) => {
+                      const startTime = new Date(event.start_time ?? "");
+                      const endTime = event.end_time
+                        ? new Date(event.end_time)
+                        : new Date();
+                      const duration = differenceInMilliseconds(
+                        endTime,
+                        startTime,
+                      );
+                      const status = event.end_time ? "Done" : "Running";
 
-                    return (
-                      <TableRow key={event.id}>
-                        <TableCell className="font-medium">
-                          {startTime.toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          {event.end_time ? (
-                            endTime.toLocaleString()
-                          ) : (
-                            <Skeleton className="h-4 w-16 rounded-[4px]" />
-                          )}
-                        </TableCell>
-                        <TableCell>{durationText.trim() || "0s"}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={status === "Done" ? "green" : "yellow"}
-                          >
-                            {status === "Done" ? (
-                              <CheckCircle2 className="h-3 w-3" />
+                      // Format duration to be more readable
+                      const durationSeconds = Math.floor(duration / 1000);
+                      const durationMinutes = Math.floor(durationSeconds / 60);
+                      const durationHours = Math.floor(durationMinutes / 60);
+
+                      let durationText = "";
+                      if (durationHours > 0) {
+                        durationText += `${durationHours}h `;
+                      }
+                      if (durationMinutes % 60 > 0) {
+                        durationText += `${durationMinutes % 60}m `;
+                      }
+                      if (durationSeconds % 60 > 0) {
+                        durationText += `${durationSeconds % 60}s`;
+                      }
+
+                      return (
+                        <TableRow key={event.id}>
+                          <TableCell className="font-medium">
+                            {startTime.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            {event.end_time ? (
+                              endTime.toLocaleString()
                             ) : (
-                              <Loader2 className="h-3 w-3 animate-spin" />
+                              <Skeleton className="h-4 w-16 rounded-[4px]" />
                             )}
-                            {status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{event.gpu}</TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </ScrollArea>
-        )}
+                          </TableCell>
+                          <TableCell>{durationText.trim() || "0s"}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={status === "Done" ? "green" : "yellow"}
+                            >
+                              {status === "Done" ? (
+                                <CheckCircle2 className="h-3 w-3" />
+                              ) : (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              )}
+                              {status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{event.gpu}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </ScrollArea>
+          )}
+        </div>
       </CardContent>
     </Card>
+  );
+
+  return hasActiveEvents ? (
+    <ShineBorder
+      color="green"
+      className="h-full w-full p-0"
+      borderRadius={10}
+      borderWidth={2}
+    >
+      {content}
+    </ShineBorder>
+  ) : (
+    content
   );
 }

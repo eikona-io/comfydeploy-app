@@ -14,7 +14,7 @@ export const Route = createFileRoute("/machines/$machineId/$machineVersionId")({
   component: RouteComponent,
 });
 
-type View = "settings" | "deployments" | undefined;
+type View = "deployments" | undefined;
 
 function RouteComponent() {
   const { machineId, machineVersionId } = Route.useParams();
