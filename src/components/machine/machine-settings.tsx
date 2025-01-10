@@ -48,6 +48,7 @@ import {
 } from "../ui/select";
 import { Slider } from "../ui/slider";
 import { Switch } from "../ui/switch";
+import { ExtraDockerCommands } from "./extra-docker-commands";
 
 type View = "deployments" | undefined;
 
@@ -361,6 +362,14 @@ function ServerlessSettings({
                     "machine_builder_version",
                     value as "2" | "3" | "4",
                   )
+                }
+              />
+            </div>
+            <div>
+              <ExtraDockerCommands
+                value={form.watch("extra_docker_commands")}
+                onChange={(value) =>
+                  form.setValue("extra_docker_commands", value)
                 }
               />
             </div>
