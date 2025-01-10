@@ -65,36 +65,24 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
     <div>
       <div>
         <Tabs defaultValue={isServerless ? "environment" : "advanced"}>
-          <div className="sticky top-[49px] z-10 flex items-center justify-between bg-background">
+          <div className="sticky top-[57px] z-10 flex items-center justify-between bg-background">
             <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="font-semibold text-xl">
-                  Settings
-                </CardTitle>
-                {/* <CardDescription>
-                Configure your machine's GPU settings and environment
-              </CardDescription> */}
+              <div className="flex items-center justify-between px-2">
+                <div className="font-medium text-xl">Settings</div>
               </div>
-
-              {/* <div className="flex items-center">
-                <Button onClick={handleSave} disabled={isLoading}>
-                  <Save className="mr-2 h-4 w-4" />
-                  Save Changes
-                </Button>
-              </div> */}
             </div>
             <TabsList className=" w-fit border-0 bg-transparent">
               {machine.type === "comfy-deploy-serverless" && (
                 <>
                   <TabsTrigger
                     value="environment"
-                    className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                    className="rounded-none border-transparent border-b-2 bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
                   >
                     Environment
                   </TabsTrigger>
                   <TabsTrigger
                     value="auto-scaling"
-                    className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                    className="rounded-none border-transparent border-b-2 bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
                   >
                     Auto Scaling
                   </TabsTrigger>
@@ -102,7 +90,7 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
               )}
               <TabsTrigger
                 value="advanced"
-                className="rounded-none border-b-2 border-transparent bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
+                className="rounded-none border-transparent border-b-2 bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
               >
                 Advanced
               </TabsTrigger>

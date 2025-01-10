@@ -32,6 +32,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { differenceInSeconds } from "date-fns";
 import {
+  ChevronRight,
   CircleArrowUp,
   Clock,
   ExternalLink,
@@ -50,6 +51,8 @@ import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
 import { Responsive, WidthProvider } from "react-grid-layout";
 import { ShineBorder } from "../magicui/shine-border";
+import { LastActiveEvent, MachineCostEstimate } from "./machine-overview";
+import { MachineVersionBadge } from "./machine-version-badge";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -75,39 +78,37 @@ export function MachineVersionDetail({
   if (isLoading || machineVersionLoading) return <div>Loading...</div>;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] md:p-4">
-      <h1 className="p-4 font-medium text-2xl">{machine.name}</h1>
-
-      <div className="flex flex-row items-center justify-between px-4 py-2">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                onClick={() =>
-                  navigate({
-                    to: "/machines/$machineId",
-                    params: { machineId: machine.id },
-                    search: { view: "deployments" },
-                  })
-                }
-                className="cursor-pointer"
-              >
-                Deployments
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>v{machineVersion.version}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        {machine.machine_version_id === machineVersion.id && (
-          <div className="flex flex-row items-center gap-2 rounded-sm bg-green-500 px-3 py-2 text-green-50 text-xs">
-            <CircleArrowUp className="h-4 w-4" />
-            Current Version
-          </div>
-        )}
+    <div className="mx-auto w-full">
+      <div className="sticky top-0 z-50 flex flex-row justify-between border-gray-200 border-b bg-[#fcfcfc] p-4 shadow-sm">
+        <div className="flex flex-row items-center gap-4">
+          <Link
+            to={`/machines/${machine.id}`}
+            params={{ machineId: machine.id }}
+            className="flex flex-row items-center gap-2 font-medium text-md"
+          >
+            {machine.name}
+            {machine.machine_version_id && (
+              <MachineVersionBadge machine={machine} isExpanded={true} />
+            )}
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link
+            to={`/machines/${machine.id}`}
+            params={{ machineId: machine.id }}
+            search={{ view: "history" }}
+            className="text-gray-500 text-sm"
+          >
+            History
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-gray-500 text-sm">
+            v{machineVersion.version}
+          </span>
+        </div>
+        <div className="flex flex-row gap-2">
+          <MachineCostEstimate machineId={machine.id} />
+          <LastActiveEvent machineId={machine.id} />
+        </div>
       </div>
 
       <ResponsiveGridLayout

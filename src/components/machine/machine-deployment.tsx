@@ -237,6 +237,9 @@ export function MachineDeployment(props: { machine: any }) {
 
   return (
     <>
+      <h3 className="px-2 pt-4 font-semibold text-xl md:px-4">
+        Machine History
+      </h3>
       <a
         href="https://www.comfydeploy.com/docs/v2/machines/versioning"
         target="_blank"

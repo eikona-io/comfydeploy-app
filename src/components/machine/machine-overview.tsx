@@ -184,13 +184,7 @@ export function MachineOverview({ machine }: { machine: any }) {
       </div>
 
       <div className="grid grid-cols-1 gap-8 px-4 py-2">
-        {/* {machine.type === "comfy-deploy-serverless" && (
-          <MachineContainerActivity machine={machine} />
-        )} */}
         <MachineVersionWrapper machine={machine} />
-        {/* <div className="h-[200px] transition-all delay-500 duration-300 ease-in-out hover:h-[400px]">
-          <MachineWorkflowDeployment machine={machine} />
-        </div> */}
         <MachineSettingsWrapper machine={machine} />
       </div>
     </div>
@@ -339,20 +333,20 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col">
-        <CardTitle className="flex items-center justify-between font-semibold text-xl">
+        <div className="flex items-center justify-between px-2 font-semibold text-xl">
           Machine History
           <Link
             to="/machines/$machineId"
             params={{ machineId: machine.id }}
-            search={{ view: "deployments" }}
+            search={{ view: "history" }}
           >
             <div className="flex items-center gap-2 font-normal text-muted-foreground text-sm hover:text-foreground">
               View All
               <GitBranch className="h-4 w-4" />
             </div>
           </Link>
-        </CardTitle>
-        <CardDescription>
+        </div>
+        <CardDescription className="px-2">
           Current version configuration, custom nodes, dependencies, and more.
         </CardDescription>
       </div>
@@ -554,14 +548,14 @@ export function MachineCostEstimate({ machineId }: { machineId: string }) {
   }, [usage, machineId]);
 
   return (
-    <div className="flex items-center">
+    <Link to={"/usage"} className="flex items-center">
       <Badge variant="outline" className="flex h-6 items-center gap-2 px-2">
         <DollarSign className="h-3 w-3 text-gray-600" />
-        <span className="text-xs text-gray-600">
-          ${machineCost.toFixed(2)}/mo
+        <span className="text-gray-600 text-xs">
+          ${machineCost.toFixed(2)} / mo
         </span>
       </Badge>
-    </div>
+    </Link>
   );
 }
 

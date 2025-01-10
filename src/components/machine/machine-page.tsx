@@ -14,10 +14,9 @@ import {
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 import { useEffect } from "react";
-
-type View = "deployments" | undefined;
 
 export default function MachinePage({
   params,
@@ -41,34 +40,14 @@ export default function MachinePage({
       navigate({
         to: "/machines/$machineId",
         params: { machineId: params.machine_id },
-        search: { view: "deployments" },
+        search: { view: "history" },
       });
     }
   }, [machine?.status, navigate, params.machine_id]);
 
-  const setView = (newView: View) => {
-    navigate({
-      to: "/machines/$machineId",
-      params: { machineId: params.machine_id },
-      search: { view: newView },
-    });
-  };
-
   const isDockerCommandStepsNull =
     machine?.docker_command_steps === null &&
     machine?.type === "comfy-deploy-serverless";
-
-  const routes = ["Settings", "Deployments"]
-    .filter((name) => !isDockerCommandStepsNull || name !== "Settings")
-    .map((name) => ({
-      name,
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        setView(name.toLowerCase() as View);
-      },
-    }));
-
-  const { openMobile: isSidebarOpen } = useSidebar();
 
   if (isLoading || !machine) {
     return (
@@ -100,33 +79,26 @@ export default function MachinePage({
 
   return (
     <div className="w-full">
-      <Portal targetId="sidebar-panel-machines" trigger={isSidebarOpen}>
-        <SidebarMenuSub>
-          {routes.map((route) => (
-            <SidebarMenuSubItem key={route.name}>
-              <SidebarMenuSubButton
-                onClick={route.onClick}
-                className={
-                  view === route.name.toLowerCase() ||
-                  (!view && route.name.toLowerCase() === "settings")
-                    ? ""
-                    : "opacity-50"
-                }
-              >
-                <span>{route.name}</span>
-                {machine.machine_version_id &&
-                  route.name.toLowerCase() === "deployments" && (
-                    <MachineVersionBadge machine={machine} isExpanded={true} />
-                  )}
-              </SidebarMenuSubButton>
-            </SidebarMenuSubItem>
-          ))}
-        </SidebarMenuSub>
-      </Portal>
-
       <div className="mx-auto w-full">
-        <div className="sticky top-0 flex flex-row justify-between border-gray-200 border-b bg-[#fcfcfc] p-3 shadow-sm">
-          <h1 className="font-medium text-1xl">{machine.name}</h1>
+        <div className="sticky top-0 z-50 flex flex-row justify-between border-gray-200 border-b bg-[#fcfcfc] p-4 shadow-sm">
+          <div className="flex flex-row items-center gap-4">
+            <Link
+              to={`/machines/${machine.id}`}
+              params={{ machineId: machine.id }}
+              className="flex flex-row items-center gap-2 font-medium text-md"
+            >
+              {machine.name}
+              {machine.machine_version_id && (
+                <MachineVersionBadge machine={machine} isExpanded={true} />
+              )}
+            </Link>
+            {view === "history" && (
+              <>
+                <ChevronRight className="h-4 w-4" />
+                <span className="text-gray-500 text-sm">History</span>
+              </>
+            )}
+          </div>
           <div className="flex flex-row gap-2">
             <MachineCostEstimate machineId={machine.id} />
             <LastActiveEvent machineId={machine.id} />
@@ -136,7 +108,7 @@ export default function MachinePage({
         <div className="mx-auto max-w-[1200px]">
           {(() => {
             switch (view) {
-              case "deployments":
+              case "history":
                 return <MachineDeployment machine={machine} />;
               default:
                 return <MachineOverview machine={machine} />;
