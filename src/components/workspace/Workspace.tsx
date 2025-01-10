@@ -139,7 +139,7 @@ export default function Workspace({
   const { value: selectedVersion } = useSelectedVersion(workflowId);
 
   const [sessionId] = useQueryState("sessionId", {
-    defaultValue: "preview",
+    defaultValue: "",
   });
 
   const isDraftDifferent = useMemo(() => {
@@ -327,6 +327,7 @@ export default function Workspace({
               icon: "pi-clock",
               tooltip: "Increase the timeout of your current session",
               label: "Increase Timeout",
+              btnClasses: "p-button-success",
               event: "increase-session",
               eventData: {},
             },
