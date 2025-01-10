@@ -42,13 +42,13 @@ import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
-import { OrganizationSwitcher, UserButton } from "@clerk/clerk-react";
+import { OrganizationSwitcher, UserButton, useAuth } from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
 // import { MachineSelect } from "@/components/MachineSelect";
 // import { useCurrentPlan } from "@/components/useCurrentPlan";
 import { motion } from "framer-motion";
-import React, { use } from "react";
+import React, { use, useEffect, useRef } from "react";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
 
@@ -238,6 +238,18 @@ const links = [
 export function AppSidebar() {
   const { pages, flatPages, metaPages } = usePages();
   // const sub = useCurrentPlan();
+
+  const { orgId } = useAuth();
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    console.log("org_id", orgId);
+    window.location.reload();
+  }, [orgId]);
 
   const items = flatPages.map((page) => ({
     title: page.name,

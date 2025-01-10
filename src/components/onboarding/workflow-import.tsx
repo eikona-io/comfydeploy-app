@@ -569,7 +569,7 @@ function DefaultOption({
                 className={cn(
                   "w-full rounded-lg border p-4 text-left transition-all",
                   workflowSelected === template.workflowId
-                    ? "border-2 border-gray-500 ring-2 ring-gray-500 ring-offset-2"
+                    ? "border-2 border-gray-500 ring-gray-500 ring-offset-2"
                     : "border-gray-200 hover:border-gray-300",
                 )}
                 onClick={() => setWorkflowSelected(template.workflowId)}
