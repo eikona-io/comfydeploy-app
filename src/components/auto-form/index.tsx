@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { type RefObject } from "react";
 import { type DefaultValues, useForm } from "react-hook-form";
 import type { z } from "zod";
 import { Form } from "../ui/form";
@@ -43,6 +43,7 @@ export function AutoFormSubmit({
 
 function AutoForm<SchemaType extends ZodObjectOrWrapped>({
   formSchema,
+  formRef,
   values: valuesProp,
   onValuesChange: onValuesChangeProp,
   onParsedValuesChange,
@@ -55,6 +56,7 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
   containerClassName,
 }: {
   formSchema: SchemaType;
+  formRef?: RefObject<HTMLFormElement>;
   values?: Partial<z.infer<SchemaType>>;
   onValuesChange?: (values: Partial<z.infer<SchemaType>>) => void;
   onParsedValuesChange?: (values: Partial<z.infer<SchemaType>>) => void;
@@ -99,15 +101,15 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
     <Form {...form}>
       <ScrollArea>
         <form
+          ref={formRef}
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
-
             form.handleSubmit(onSubmit)(e);
           }}
           className={cn("mb-10 space-y-5", className)}
         >
-          {extraUI}
+          <div className="sticky top-0 z-10 bg-background">{extraUI}</div>
           <div className="flex w-full flex-col gap-2 p-4 px-1">
             <AutoFormObject
               className={containerClassName}

@@ -471,7 +471,7 @@ function InstantRollback({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">
             <Ellipsis className="h-4 w-4" />
           </Button>

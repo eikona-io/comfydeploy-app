@@ -1,6 +1,5 @@
 import { MachineDeployment } from "@/components/machine/machine-deployment";
 import { MachineOverview } from "@/components/machine/machine-overview";
-import { MachineSettings } from "@/components/machine/machine-settings";
 import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
 import { Portal } from "@/components/ui/custom/portal";
 import {

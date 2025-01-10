@@ -57,6 +57,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { MachineSettingsWrapper } from "./machine-settings";
 // const ResponsiveGridLayout = WidthProvider(Responsive);
 
 // -----------------------hooks-----------------------
@@ -182,12 +183,14 @@ export function MachineOverview({ machine }: { machine: any }) {
       </div>
 
       <div className="grid grid-cols-1 gap-8 px-4 py-2">
-        <MachineContainerActivity machine={machine} />
+        {machine.type === "comfy-deploy-serverless" && (
+          <MachineContainerActivity machine={machine} />
+        )}
         <MachineVersionWrapper machine={machine} />
         <div className="h-[200px] transition-all delay-300 duration-300 ease-in-out hover:h-[400px]">
           <MachineWorkflowDeployment machine={machine} />
         </div>
-        <MachineSettings />
+        <MachineSettingsWrapper machine={machine} />
       </div>
     </div>
   );
@@ -725,48 +728,5 @@ function MachineContainerActivity({ machine }: { machine: any }) {
     </ShineBorder>
   ) : (
     content
-  );
-}
-
-function MachineSettings() {
-  return (
-    <Card className="flex h-full flex-col rounded-[10px]">
-      <CardHeader className="pb-4">
-        <CardTitle className="flex items-center justify-between font-semibold text-xl">
-          Settings
-          <div className="flex items-center">
-            <Button>
-              <Save className="mr-2 h-4 w-4" />
-              Save Changes
-            </Button>
-          </div>
-        </CardTitle>
-        <CardDescription>
-          Configure your machine's GPU settings and environment
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
-        <Tabs defaultValue="environment">
-          <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
-            <TabsTrigger value="environment" className="rounded-[6px]">
-              Environment
-            </TabsTrigger>
-            <TabsTrigger value="auto-scaling" className="rounded-[6px]">
-              Auto Scaling
-            </TabsTrigger>
-            <TabsTrigger value="advanced" className="rounded-[6px]">
-              Advanced
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="environment">
-            Make changes to your account here.
-          </TabsContent>
-          <TabsContent value="auto-scaling">
-            Change your password here.
-          </TabsContent>
-          <TabsContent value="advanced">Advanced settings.</TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
   );
 }

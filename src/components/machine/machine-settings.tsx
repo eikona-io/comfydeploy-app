@@ -5,16 +5,144 @@ import {
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
 import { SnapshotImportZone } from "@/components/snapshot-import-zone";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
-import { memo, useState } from "react";
+import { Save } from "lucide-react";
+import { type RefObject, memo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type View = "settings" | "deployments" | undefined;
+type View = "deployments" | undefined;
 
-// -----------------------components-----------------------
+export function MachineSettingsWrapper({ machine }: { machine: any }) {
+  const isServerless = machine.type === "comfy-deploy-serverless";
+  const formRef = useRef<HTMLFormElement>(null);
 
-export function MachineSettings(props: {
+  const handleSave = () => {
+    formRef.current?.requestSubmit();
+  };
+
+  return (
+    <Card className="flex h-full flex-col rounded-[10px]">
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center justify-between font-semibold text-xl">
+          Settings
+          <div className="flex items-center">
+            <Button onClick={handleSave}>
+              <Save className="mr-2 h-4 w-4" />
+              Save Changes
+            </Button>
+          </div>
+        </CardTitle>
+        <CardDescription>
+          Configure your machine's GPU settings and environment
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex-1 overflow-hidden">
+        {isServerless ? (
+          <ServerlessSettings machine={machine} formRef={formRef} />
+        ) : (
+          <ClassicSettings machine={machine} formRef={formRef} />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ClassicSettings({
+  machine,
+  formRef,
+}: { machine: any; formRef: RefObject<HTMLFormElement> }) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  return (
+    <>
+      <Tabs defaultValue="advanced">
+        <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
+          <TabsTrigger
+            value="environment"
+            className="rounded-[6px]"
+            disabled={true}
+          >
+            Environment
+          </TabsTrigger>
+          <TabsTrigger
+            value="auto-scaling"
+            className="rounded-[6px]"
+            disabled={true}
+          >
+            Auto Scaling
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="rounded-[6px]">
+            Advanced
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="environment">
+          Not available for classic machines.
+        </TabsContent>
+        <TabsContent value="auto-scaling">
+          Not available for classic machines.
+        </TabsContent>
+        <TabsContent value="advanced">
+          <AutoForm
+            formRef={formRef}
+            className="md:px-2"
+            values={machine}
+            formSchema={customFormSchema}
+            fieldConfig={{
+              auth_token: {
+                inputProps: {
+                  type: "password",
+                },
+              },
+            }}
+            onSubmit={async (data) => {
+              setIsLoading(true);
+              try {
+                await api({
+                  url: `machine/custom/${machine.id}`,
+                  init: {
+                    method: "PATCH",
+                    body: JSON.stringify({
+                      name: data.name,
+                      endpoint: data.endpoint,
+                      auth_token: data.auth_token || "",
+                      type: data.type,
+                    }),
+                  },
+                });
+                toast.success("Updated successfully!");
+              } catch (error) {
+                toast.error("Failed to update!");
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+          />
+        </TabsContent>
+      </Tabs>
+    </>
+  );
+}
+
+function ServerlessSettings({
+  machine,
+  formRef,
+}: { machine: any; formRef: RefObject<HTMLFormElement> }) {
+  return <div>Serverless Settings</div>;
+}
+
+// -----------------------legacy-----------------------
+
+export function MachineSettingsLegacy(props: {
   machine: any;
   setView: (view: View) => void;
 }) {
