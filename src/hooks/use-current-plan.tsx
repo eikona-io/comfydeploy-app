@@ -20,3 +20,14 @@ export const useCurrentPlan = () => {
 export const useCurrentPlanWithStatus = () => {
   return useCurrentPlanQuery();
 };
+
+export interface SubscriptionPlan {
+  plans: {
+    plans: string[];
+    names: string[];
+    prices: (number | null)[];
+    amount: number[];
+  };
+  cancel_at_period_end: boolean;
+  canceled_at: string | null;
+}

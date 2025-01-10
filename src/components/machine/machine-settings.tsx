@@ -1,8 +1,10 @@
 import AutoForm, { AutoFormSubmit } from "@/components/auto-form";
 import {
   customFormSchema,
+  type machineGPUOptions,
   serverlessFormSchema,
   sharedMachineConfig,
+  useGPUConfig,
 } from "@/components/machine/machine-schema";
 import { SnapshotImportZone } from "@/components/snapshot-import-zone";
 import { Button } from "@/components/ui/button";
@@ -13,16 +15,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { SelectionBox } from "@/components/ui/custom/selection-box";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  type SubscriptionPlan,
+  useCurrentPlan,
+} from "@/hooks/use-current-plan";
 import { useGithubBranchInfo } from "@/hooks/use-github-branch-info";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { isEqual } from "lodash";
-import { ExternalLinkIcon, Save } from "lucide-react";
+import { ExternalLinkIcon, Lock, Save } from "lucide-react";
 import { type RefObject, memo, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -36,8 +43,8 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
   const isServerless = machine.type === "comfy-deploy-serverless";
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const handleSave = () => {
-    formRef.current?.requestSubmit();
+  const handleSave = async () => {
+    await formRef.current?.requestSubmit();
   };
 
   return (
@@ -71,8 +78,6 @@ function ClassicSettings({
   machine,
   formRef,
 }: { machine: any; formRef: RefObject<HTMLFormElement | null> }) {
-  const [isLoading, setIsLoading] = useState(false);
-
   return (
     <Tabs defaultValue="advanced">
       <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
@@ -114,7 +119,6 @@ function ClassicSettings({
             },
           }}
           onSubmit={async (data) => {
-            setIsLoading(true);
             try {
               await api({
                 url: `machine/custom/${machine.id}`,
@@ -131,8 +135,6 @@ function ClassicSettings({
               toast.success("Updated successfully!");
             } catch (error) {
               toast.error("Failed to update!");
-            } finally {
-              setIsLoading(false);
             }
           }}
         />
@@ -152,6 +154,7 @@ function ServerlessSettings({
     defaultValues: {
       comfyui_version: machine.comfyui_version,
       docker_command_steps: machine.docker_command_steps,
+      gpu: machine.gpu,
     },
   });
 
@@ -189,14 +192,21 @@ function ServerlessSettings({
           </div>
         </TabsContent>
 
-        {/* Other tabs content... */}
+        <TabsContent value="auto-scaling">
+          <div className="p-2">
+            <h3 className="font-medium text-sm">GPU</h3>
+            <GPUSelectBox
+              value={form.watch("gpu")}
+              onChange={(value) => form.setValue("gpu", value)}
+            />
+          </div>
+        </TabsContent>
       </Tabs>
     </form>
   );
 }
 
 // -----------------------components-----------------------
-
 function ComfyUIVersionSelectBox({
   value,
   onChange,
@@ -223,15 +233,11 @@ function ComfyUIVersionSelectBox({
   return (
     <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
       {options.map((option) => (
-        <div
+        <SelectionBox
           key={option.label}
-          className={cn(
-            "flex cursor-pointer flex-col justify-center rounded-lg border p-4 transition-all duration-200",
-            "hover:border-gray-400",
+          selected={Boolean(
             (option.isCustom && isCustomSelected) ||
-              (!option.isCustom && value === option.value)
-              ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
-              : "border-gray-200 opacity-60",
+              (!option.isCustom && value === option.value),
           )}
           onClick={() => {
             if (option.isCustom) {
@@ -240,9 +246,10 @@ function ComfyUIVersionSelectBox({
               onChange(option.value);
             }
           }}
-        >
-          <div className="flex items-center justify-between">
+          leftHeader={
             <span className="font-medium text-sm">{option.label}</span>
+          }
+          rightHeader={
             <a
               href={`https://github.com/comfyanonymous/ComfyUI/commit/${option.value}`}
               target="_blank"
@@ -251,24 +258,24 @@ function ComfyUIVersionSelectBox({
             >
               <ExternalLinkIcon className="h-3 w-3" />
             </a>
-          </div>
-          {option.isCustom ? (
-            <Input
-              className="w-full rounded-[8px] font-mono text-[11px]"
-              placeholder="ComfyUI hash..."
-              value={isCustomSelected ? value : ""}
-              onChange={(e) => {
-                const newValue = e.target.value;
-                onChange(newValue || (recommendedOption?.value ?? ""));
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          ) : (
-            <span className="truncate break-all font-mono text-[11px] text-gray-400">
-              {option.value}
-            </span>
-          )}
-        </div>
+          }
+          description={
+            option.isCustom ? (
+              <Input
+                className="w-full rounded-[8px] font-mono text-[11px]"
+                placeholder="ComfyUI hash..."
+                value={isCustomSelected ? value : ""}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  onChange(newValue || (recommendedOption?.value ?? ""));
+                }}
+                onClick={(e) => e.stopPropagation()}
+              />
+            ) : (
+              <span className="truncate break-all">{option.value}</span>
+            )
+          }
+        />
       ))}
     </div>
   );
@@ -307,6 +314,46 @@ function CustomNodeSetupWrapper({
 
   return (
     <CustomNodeSetup validation={validation} setValidation={setValidation} />
+  );
+}
+
+function GPUSelectBox({
+  value,
+  onChange,
+}: {
+  value?: (typeof machineGPUOptions)[number];
+  onChange: (value: (typeof machineGPUOptions)[number]) => void;
+}) {
+  const { gpuConfig } = useGPUConfig();
+  const sub = useCurrentPlan() as SubscriptionPlan;
+  const isBusiness = sub?.plans?.plans?.includes("business");
+
+  return (
+    <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-3">
+      {gpuConfig.map((gpu) => {
+        const isDisabled = !isBusiness && gpu.tier === "business";
+        return (
+          <SelectionBox
+            key={gpu.id}
+            selected={value === gpu.id}
+            disabled={isDisabled}
+            onClick={() =>
+              !isDisabled &&
+              onChange(gpu.id as (typeof machineGPUOptions)[number])
+            }
+            leftHeader={
+              <span className="flex items-center gap-1 font-medium text-sm">
+                {gpu.gpuName} {isDisabled && <Lock className="h-3 w-3" />}
+              </span>
+            }
+            rightHeader={
+              <span className="text-gray-500 text-sm">{gpu.ram}</span>
+            }
+            description={`$${gpu.pricePerSec?.toFixed(6)} / sec`}
+          />
+        );
+      })}
+    </div>
   );
 }
 

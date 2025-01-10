@@ -3,6 +3,7 @@ import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { Link } from "@tanstack/react-router";
 import { ExternalLinkIcon } from "lucide-react";
 import { z } from "zod";
+import { useGPUPricing } from "../pricing/GPUPriceSimulator";
 
 export const customFormSchema = z.object({
   name: z.string().default("My Machine").describe("Name"),
@@ -80,6 +81,70 @@ export const serverlessFormSchema = z.object({
     .optional()
     .describe("Prestart command"),
 });
+
+interface GPUConfig {
+  id: string;
+  gpuName: string;
+  ram: string;
+  pricePerSec?: number;
+  tier: string;
+}
+
+export function useGPUConfig() {
+  const { data: gpuPricing, isLoading: gpuPricingLoading } =
+    useGPUPricing() as {
+      data?: Record<string, number>;
+      isLoading: boolean;
+    };
+
+  const baseConfig: GPUConfig[] = [
+    { id: "CPU", gpuName: "CPU", ram: "-", pricePerSec: 0, tier: "free" },
+    { id: "T4", gpuName: "T4", ram: "16GB", pricePerSec: 0.01, tier: "free" },
+    { id: "L4", gpuName: "L4", ram: "24GB", pricePerSec: 0.02, tier: "free" },
+    {
+      id: "A10G",
+      gpuName: "A10G",
+      ram: "24GB",
+      pricePerSec: 0.02,
+      tier: "free",
+    },
+    {
+      id: "L40S",
+      gpuName: "L40S",
+      ram: "48GB",
+      pricePerSec: 0,
+      tier: "business",
+    },
+    {
+      id: "A100",
+      gpuName: "A100",
+      ram: "40GB",
+      pricePerSec: 0.02,
+      tier: "business",
+    },
+    {
+      id: "A100-80GB",
+      gpuName: "A100-80GB",
+      ram: "80GB",
+      pricePerSec: 0.02,
+      tier: "business",
+    },
+    {
+      id: "H100",
+      gpuName: "H100",
+      ram: "80GB",
+      pricePerSec: 0.02,
+      tier: "business",
+    },
+  ];
+
+  const gpuConfig = baseConfig.map((config) => ({
+    ...config,
+    pricePerSec: gpuPricing?.[config.id] ?? config.pricePerSec,
+  }));
+
+  return { gpuConfig, isLoading: gpuPricingLoading };
+}
 
 export const sharedMachineConfig: FieldConfig<
   z.infer<typeof serverlessFormSchema>
