@@ -38,6 +38,7 @@ import type { MachineStepValidation } from "../machines/machine-create";
 import { CustomNodeSetup } from "../onboarding/custom-node-setup";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 import { Badge } from "../ui/badge";
+import { Label } from "../ui/label";
 import {
   Select,
   SelectContent,
@@ -46,6 +47,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Slider } from "../ui/slider";
+import { Switch } from "../ui/switch";
 
 type View = "deployments" | undefined;
 
@@ -58,7 +60,7 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
   };
 
   return (
-    <Card className="flex h-full flex-col rounded-[10px]">
+    <Card className="flex flex-col rounded-[10px]">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between font-semibold text-xl">
           Settings
@@ -73,7 +75,7 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
           Configure your machine's GPU settings and environment
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 overflow-hidden">
+      <CardContent>
         {isServerless ? (
           <ServerlessSettings machine={machine} formRef={formRef} />
         ) : (
@@ -162,13 +164,27 @@ function ServerlessSettings({
   const form = useForm<FormData>({
     resolver: zodResolver(serverlessFormSchema),
     defaultValues: {
+      // env
       comfyui_version: machine.comfyui_version,
       docker_command_steps: machine.docker_command_steps,
+
+      // auto scaling
       gpu: machine.gpu,
       concurrency_limit: machine.concurrency_limit,
       run_timeout: machine.run_timeout,
       idle_timeout: machine.idle_timeout,
       keep_warm: machine.keep_warm,
+
+      // advance
+      install_custom_node_with_gpu: machine.install_custom_node_with_gpu,
+      ws_timeout: machine.ws_timeout,
+      extra_docker_commands: machine.extra_docker_commands,
+      allow_concurrent_inputs: machine.allow_concurrent_inputs,
+      machine_builder_version: machine.machine_builder_version,
+      base_docker_image: machine.base_docker_image,
+      python_version: machine.python_version,
+      extra_args: machine.extra_args,
+      prestart_command: machine.prestart_command,
     },
   });
 
@@ -243,6 +259,109 @@ function ServerlessSettings({
               <MaxAlwaysOnSlider
                 value={form.watch("keep_warm") || 0}
                 onChange={(value) => form.setValue("keep_warm", value)}
+              />
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="advanced">
+          <div className="space-y-10 p-2">
+            <div>
+              <div className="flex flex-row items-center gap-4">
+                <Switch
+                  id="install_custom_node_with_gpu"
+                  checked={form.watch("install_custom_node_with_gpu")}
+                  onCheckedChange={(value) =>
+                    form.setValue("install_custom_node_with_gpu", value)
+                  }
+                />
+                <Label htmlFor="install_custom_node_with_gpu">
+                  Install custom nodes with GPU
+                </Label>
+              </div>
+              <p className="mt-2 text-muted-foreground text-xs">
+                Some custom nodes require GPU while being initialized.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="font-medium text-sm">Websocket timeout</h3>
+              <WebSocketTimeout
+                value={form.watch("ws_timeout")}
+                onChange={(value) => form.setValue("ws_timeout", value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="font-medium text-sm">Base Docker Image</h3>
+              <Input
+                value={form.watch("base_docker_image") ?? ""}
+                onChange={(e) =>
+                  form.setValue("base_docker_image", e.target.value)
+                }
+              />
+              <p className="text-muted-foreground text-xs">
+                Optional base docker image for the machine.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="font-medium text-sm">Extra arguments</h3>
+              <Input
+                value={form.watch("extra_args") ?? ""}
+                onChange={(e) => form.setValue("extra_args", e.target.value)}
+              />
+              <p className="flex flex-row items-center gap-1 text-muted-foreground text-xs">
+                ComfyUI extra arguments.
+                <a
+                  href="https://github.com/comfyanonymous/ComfyUI/blob/master/comfy/cli_args.py"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex flex-row items-center gap-1 text-blue-500"
+                >
+                  Examples
+                  <ExternalLinkIcon className="h-3 w-3" />
+                </a>
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="font-medium text-sm">Prestart Command</h3>
+              <Input
+                value={form.watch("prestart_command") ?? ""}
+                onChange={(e) =>
+                  form.setValue("prestart_command", e.target.value)
+                }
+              />
+              <p className="text-muted-foreground text-xs">
+                Command to run before the machine starts.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="font-medium text-sm">Python Version</h3>
+              <Select
+                value={form.watch("python_version") ?? "3.11"}
+                onValueChange={(value) =>
+                  form.setValue("python_version", value)
+                }
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Python Version" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3.9">3.9</SelectItem>
+                  <SelectItem value="3.10">3.10</SelectItem>
+                  <SelectItem value="3.11">3.11 (Recommended)</SelectItem>
+                  <SelectItem value="3.12">3.12</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <h3 className="font-medium text-sm">Builder Version</h3>
+              <BuilderVersionPicker
+                value={form.watch("machine_builder_version") || "4"}
+                onChange={(value) =>
+                  form.setValue(
+                    "machine_builder_version",
+                    value as "2" | "3" | "4",
+                  )
+                }
               />
             </div>
           </div>
@@ -506,7 +625,9 @@ function MaxParallelGPUSlider({
 }
 
 interface TimeSelectOption {
-  seconds: number;
+  seconds?: number;
+  minutes?: number;
+  value?: number;
   requiredPlan?: string;
 }
 
@@ -540,8 +661,13 @@ function TimeSelect({
     (plan: string) => !plan.includes("ws"),
   )?.[0];
 
-  const formatTime = (seconds: number) => {
-    return seconds < 60 ? `${seconds} sec` : `${Math.floor(seconds / 60)} min`;
+  const formatTime = (option: TimeSelectOption) => {
+    if (option.minutes) return `${option.minutes} min`;
+    if (option.seconds)
+      return option.seconds < 60
+        ? `${option.seconds} sec`
+        : `${Math.floor(option.seconds / 60)} min`;
+    return `${option.value} min`;
   };
 
   return (
@@ -554,27 +680,31 @@ function TimeSelect({
           <SelectValue placeholder={placeholder || "Select time"} />
         </SelectTrigger>
         <SelectContent>
-          {options.map(({ seconds, requiredPlan }) => {
+          {options.map((option) => {
+            const optionValue =
+              option.value ?? (option.seconds || (option.minutes || 0) * 60);
             const isAllowed =
-              !requiredPlan ||
+              !option.requiredPlan ||
               (plan &&
                 plan in planHierarchy &&
                 planHierarchy[plan as keyof typeof planHierarchy]?.includes(
-                  requiredPlan,
+                  option.requiredPlan,
                 ));
 
             return (
               <SelectItem
-                key={seconds}
-                value={String(seconds)}
+                key={optionValue}
+                value={String(optionValue)}
                 disabled={!isAllowed}
               >
                 <span className="flex w-full items-center justify-between">
-                  <span>{formatTime(seconds)}</span>
+                  <span>{formatTime(option)}</span>
                   {!isAllowed && (
                     <span className="mx-2 inline-flex items-center justify-center gap-2">
-                      <Badge className="capitalize">{requiredPlan}</Badge> plan
-                      required
+                      <Badge className="capitalize">
+                        {option.requiredPlan}
+                      </Badge>{" "}
+                      plan required
                       <Lock size={14} />
                     </span>
                   )}
@@ -677,6 +807,82 @@ function MaxAlwaysOnSlider({
           continuously incur GPU costs until you reduce the value.
         </AlertDescription>
       </Alert>
+    </div>
+  );
+}
+
+function WebSocketTimeout({
+  value,
+  onChange,
+}: { value: number; onChange: (value: number) => void }) {
+  const options: TimeSelectOption[] = [
+    { minutes: 2 },
+    { minutes: 5, requiredPlan: "pro" },
+    { minutes: 10, requiredPlan: "business" },
+  ];
+
+  return (
+    <TimeSelect
+      value={value}
+      onChange={onChange}
+      options={options.map((opt) => ({ ...opt, value: opt.minutes }))}
+      placeholder="Select Timeout"
+    />
+  );
+}
+
+function BuilderVersionPicker({
+  value,
+  onChange,
+}: { value: string; onChange: (value: string) => void }) {
+  const builderVersions = [
+    {
+      value: "2",
+      label: "V2",
+      status: "deprecated",
+      disabled: true,
+      description: "Deprecated",
+    },
+    {
+      value: "3",
+      label: "V3",
+      status: "",
+      disabled: true,
+      description: "Support version",
+    },
+    {
+      value: "4",
+      label: "V4",
+      status: "latest",
+      disabled: false,
+      description: "Recommended version",
+    },
+  ];
+
+  return (
+    <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3">
+      {builderVersions.map((version) => (
+        <SelectionBox
+          key={version.value}
+          selected={value === version.value}
+          disabled={version.disabled}
+          onClick={() => !version.disabled && onChange(version.value)}
+          leftHeader={
+            <span className="font-medium text-sm">{version.label}</span>
+          }
+          rightHeader={
+            <Badge
+              variant={
+                version.status === "deprecated" ? "destructive" : "green"
+              }
+              className="text-xs"
+            >
+              {version.status}
+            </Badge>
+          }
+          description={version.description}
+        />
+      ))}
     </div>
   );
 }
