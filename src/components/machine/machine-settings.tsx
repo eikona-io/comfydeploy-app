@@ -13,18 +13,25 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useGithubBranchInfo } from "@/hooks/use-github-branch-info";
 import { api } from "@/lib/api";
-import { Save } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ExternalLinkIcon, Save } from "lucide-react";
 import { type RefObject, memo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import type { z } from "zod";
 
 type View = "deployments" | undefined;
 
 export function MachineSettingsWrapper({ machine }: { machine: any }) {
   const isServerless = machine.type === "comfy-deploy-serverless";
-  const formRef = useRef<HTMLFormElement>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const handleSave = () => {
     formRef.current?.requestSubmit();
@@ -60,84 +67,201 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
 function ClassicSettings({
   machine,
   formRef,
-}: { machine: any; formRef: RefObject<HTMLFormElement> }) {
+}: { machine: any; formRef: RefObject<HTMLFormElement | null> }) {
   const [isLoading, setIsLoading] = useState(false);
 
   return (
-    <>
-      <Tabs defaultValue="advanced">
+    <Tabs defaultValue="advanced">
+      <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
+        <TabsTrigger
+          value="environment"
+          className="rounded-[6px]"
+          disabled={true}
+        >
+          Environment
+        </TabsTrigger>
+        <TabsTrigger
+          value="auto-scaling"
+          className="rounded-[6px]"
+          disabled={true}
+        >
+          Auto Scaling
+        </TabsTrigger>
+        <TabsTrigger value="advanced" className="rounded-[6px]">
+          Advanced
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="environment">
+        Not available for classic machines.
+      </TabsContent>
+      <TabsContent value="auto-scaling">
+        Not available for classic machines.
+      </TabsContent>
+      <TabsContent value="advanced">
+        <AutoForm
+          formRef={formRef}
+          className="md:px-2"
+          values={machine}
+          formSchema={customFormSchema}
+          fieldConfig={{
+            auth_token: {
+              inputProps: {
+                type: "password",
+              },
+            },
+          }}
+          onSubmit={async (data) => {
+            setIsLoading(true);
+            try {
+              await api({
+                url: `machine/custom/${machine.id}`,
+                init: {
+                  method: "PATCH",
+                  body: JSON.stringify({
+                    name: data.name,
+                    endpoint: data.endpoint,
+                    auth_token: data.auth_token || "",
+                    type: data.type,
+                  }),
+                },
+              });
+              toast.success("Updated successfully!");
+            } catch (error) {
+              toast.error("Failed to update!");
+            } finally {
+              setIsLoading(false);
+            }
+          }}
+        />
+      </TabsContent>
+    </Tabs>
+  );
+}
+
+type FormData = z.infer<typeof serverlessFormSchema>;
+
+function ServerlessSettings({
+  machine,
+  formRef,
+}: { machine: any; formRef: RefObject<HTMLFormElement | null> }) {
+  const form = useForm<FormData>({
+    resolver: zodResolver(serverlessFormSchema),
+    defaultValues: {
+      comfyui_version: machine.comfyui_version,
+    },
+  });
+
+  return (
+    <form
+      ref={formRef}
+      onSubmit={form.handleSubmit((data) => console.log(data))}
+    >
+      <Tabs defaultValue="environment">
         <TabsList className="grid w-full grid-cols-3 rounded-[8px]">
-          <TabsTrigger
-            value="environment"
-            className="rounded-[6px]"
-            disabled={true}
-          >
+          <TabsTrigger value="environment" className="rounded-[6px]">
             Environment
           </TabsTrigger>
-          <TabsTrigger
-            value="auto-scaling"
-            className="rounded-[6px]"
-            disabled={true}
-          >
+          <TabsTrigger value="auto-scaling" className="rounded-[6px]">
             Auto Scaling
           </TabsTrigger>
           <TabsTrigger value="advanced" className="rounded-[6px]">
             Advanced
           </TabsTrigger>
         </TabsList>
+
         <TabsContent value="environment">
-          Not available for classic machines.
+          <div className="p-2">
+            <h3 className="font-medium text-sm">ComfyUI Version</h3>
+            <ComfyUIVersionSelectBox
+              value={form.watch("comfyui_version")}
+              onChange={(value) => form.setValue("comfyui_version", value)}
+            />
+          </div>
         </TabsContent>
-        <TabsContent value="auto-scaling">
-          Not available for classic machines.
-        </TabsContent>
-        <TabsContent value="advanced">
-          <AutoForm
-            formRef={formRef}
-            className="md:px-2"
-            values={machine}
-            formSchema={customFormSchema}
-            fieldConfig={{
-              auth_token: {
-                inputProps: {
-                  type: "password",
-                },
-              },
-            }}
-            onSubmit={async (data) => {
-              setIsLoading(true);
-              try {
-                await api({
-                  url: `machine/custom/${machine.id}`,
-                  init: {
-                    method: "PATCH",
-                    body: JSON.stringify({
-                      name: data.name,
-                      endpoint: data.endpoint,
-                      auth_token: data.auth_token || "",
-                      type: data.type,
-                    }),
-                  },
-                });
-                toast.success("Updated successfully!");
-              } catch (error) {
-                toast.error("Failed to update!");
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-          />
-        </TabsContent>
+
+        {/* Other tabs content... */}
       </Tabs>
-    </>
+    </form>
   );
 }
 
-function ServerlessSettings({
-  machine,
-  formRef,
-}: { machine: any; formRef: RefObject<HTMLFormElement> }) {
-  return <div>Serverless Settings</div>;
+// -----------------------components-----------------------
+
+export function ComfyUIVersionSelectBox({
+  value,
+  onChange,
+}: {
+  value?: string;
+  onChange: (value: string) => void;
+}) {
+  const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
+    "https://github.com/comfyanonymous/ComfyUI",
+  );
+
+  const options = [
+    { label: "Recommended", value: comfyui_hash },
+    { label: "Latest", value: latestComfyUI?.commit.sha || "" },
+    { label: "Custom", value: "", isCustom: true },
+  ];
+
+  const recommendedOption = options.find((opt) => opt.label === "Recommended");
+  const selectedOption = options.find(
+    (opt) => opt.value === value && !opt.isCustom,
+  );
+  const isCustomSelected = !selectedOption && value;
+
+  return (
+    <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+      {options.map((option) => (
+        <div
+          key={option.label}
+          className={cn(
+            "flex cursor-pointer flex-col justify-center rounded-lg border p-4 transition-all duration-200",
+            "hover:border-gray-400",
+            (option.isCustom && isCustomSelected) ||
+              (!option.isCustom && value === option.value)
+              ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
+              : "border-gray-200 opacity-60",
+          )}
+          onClick={() => {
+            if (option.isCustom) {
+              onChange(value ?? "");
+            } else {
+              onChange(option.value);
+            }
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-sm">{option.label}</span>
+            <a
+              href={`https://github.com/comfyanonymous/ComfyUI/commit/${option.value}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLinkIcon className="h-3 w-3" />
+            </a>
+          </div>
+          {option.isCustom ? (
+            <Input
+              className="w-full rounded-[8px] font-mono text-[11px]"
+              placeholder="ComfyUI hash..."
+              value={isCustomSelected ? value : ""}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                onChange(newValue || (recommendedOption?.value ?? ""));
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <span className="truncate break-all font-mono text-[11px] text-gray-400">
+              {option.value}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 // -----------------------legacy-----------------------
