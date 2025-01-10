@@ -9,14 +9,6 @@ import {
 import { CPU_MEMORY_MAP } from "@/components/machines/machine-list-item";
 import { Badge } from "@/components/ui/badge";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -33,7 +25,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { differenceInSeconds } from "date-fns";
 import {
   ChevronRight,
-  CircleArrowUp,
   Clock,
   ExternalLink,
   FileClock,
@@ -111,35 +102,37 @@ export function MachineVersionDetail({
         </div>
       </div>
 
-      <ResponsiveGridLayout
-        className="layout"
-        layouts={{ lg: defaultLayout }}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 2, md: 2, sm: 1, xs: 1, xxs: 1 }}
-        rowHeight={50}
-        isResizable={false}
-        isDraggable={false}
-      >
-        <div key="info">
-          <MachineInfo machineVersion={machineVersion} />
-        </div>
-        <div key="status">
-          <MachineOverviewStatus machineVersion={machineVersion} />
-        </div>
-        <div key="customNodes">
-          {machine.machine_version_id === machineVersion.id ? (
-            <CurrentMachineCustomNodes machineId={machine.id} />
-          ) : (
-            <MachineCustomNodes machineVersion={machineVersion} />
-          )}
-        </div>
-        <div key="buildLog">
-          <MachineVersionBuildLog
-            machine={machine}
-            machineVersion={machineVersion}
-          />
-        </div>
-      </ResponsiveGridLayout>
+      <div className="mx-auto max-w-[1200px]">
+        <ResponsiveGridLayout
+          className="layout"
+          layouts={{ lg: defaultLayout }}
+          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+          cols={{ lg: 2, md: 2, sm: 1, xs: 1, xxs: 1 }}
+          rowHeight={50}
+          isResizable={false}
+          isDraggable={false}
+        >
+          <div key="info">
+            <MachineInfo machineVersion={machineVersion} />
+          </div>
+          <div key="status">
+            <MachineOverviewStatus machineVersion={machineVersion} />
+          </div>
+          <div key="customNodes">
+            {machine.machine_version_id === machineVersion.id ? (
+              <CurrentMachineCustomNodes machineId={machine.id} />
+            ) : (
+              <MachineCustomNodes machineVersion={machineVersion} />
+            )}
+          </div>
+          <div key="buildLog">
+            <MachineVersionBuildLog
+              machine={machine}
+              machineVersion={machineVersion}
+            />
+          </div>
+        </ResponsiveGridLayout>
+      </div>
     </div>
   );
 }

@@ -34,7 +34,7 @@ export function MachineVersionBadge({
       params={{
         machineId: machine.id,
       }}
-      search={{ view: "deployments" }}
+      search={{ view: "history" }}
       className="flex items-center justify-center"
     >
       <Badge
