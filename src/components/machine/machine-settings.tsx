@@ -21,11 +21,14 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { isEqual } from "lodash";
 import { ExternalLinkIcon, Save } from "lucide-react";
-import { type RefObject, memo, useRef, useState } from "react";
+import { type RefObject, memo, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
+import type { MachineStepValidation } from "../machines/machine-create";
+import { CustomNodeSetup } from "../onboarding/custom-node-setup";
 
 type View = "deployments" | undefined;
 
@@ -148,6 +151,7 @@ function ServerlessSettings({
     resolver: zodResolver(serverlessFormSchema),
     defaultValues: {
       comfyui_version: machine.comfyui_version,
+      docker_command_steps: machine.docker_command_steps,
     },
   });
 
@@ -170,11 +174,17 @@ function ServerlessSettings({
         </TabsList>
 
         <TabsContent value="environment">
-          <div className="p-2">
-            <h3 className="font-medium text-sm">ComfyUI Version</h3>
-            <ComfyUIVersionSelectBox
-              value={form.watch("comfyui_version")}
-              onChange={(value) => form.setValue("comfyui_version", value)}
+          <div className="space-y-4 p-2">
+            <div>
+              <h3 className="font-medium text-sm">ComfyUI Version</h3>
+              <ComfyUIVersionSelectBox
+                value={form.watch("comfyui_version")}
+                onChange={(value) => form.setValue("comfyui_version", value)}
+              />
+            </div>
+            <CustomNodeSetupWrapper
+              value={form.watch("docker_command_steps")}
+              onChange={(value) => form.setValue("docker_command_steps", value)}
             />
           </div>
         </TabsContent>
@@ -187,7 +197,7 @@ function ServerlessSettings({
 
 // -----------------------components-----------------------
 
-export function ComfyUIVersionSelectBox({
+function ComfyUIVersionSelectBox({
   value,
   onChange,
 }: {
@@ -261,6 +271,42 @@ export function ComfyUIVersionSelectBox({
         </div>
       ))}
     </div>
+  );
+}
+
+function CustomNodeSetupWrapper({
+  value,
+  onChange,
+}: {
+  value: any;
+  onChange: (value: any) => void;
+}) {
+  const [validation, setValidation] = useState<MachineStepValidation>(() => ({
+    docker_command_steps: value || { steps: [] },
+    machineName: "",
+    gpuType: "A10G",
+    comfyUiHash: "",
+    selectedComfyOption: "recommended",
+    firstTimeSelectGPU: false,
+  }));
+
+  useEffect(() => {
+    if (value && !isEqual(value, validation.docker_command_steps)) {
+      setValidation((prev) => ({
+        ...prev,
+        docker_command_steps: value,
+      }));
+    }
+  }, [value]);
+
+  useEffect(() => {
+    if (!isEqual(validation.docker_command_steps, value)) {
+      onChange(validation.docker_command_steps);
+    }
+  }, [validation.docker_command_steps, value, onChange]);
+
+  return (
+    <CustomNodeSetup validation={validation} setValidation={setValidation} />
   );
 }
 
