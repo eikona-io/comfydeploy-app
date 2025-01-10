@@ -197,7 +197,7 @@ export function MachineOverview({ machine }: { machine: any }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 px-4 py-2">
+      <div className="grid grid-cols-1 gap-8 px-4 py-2">
         <MachineContainerActivity machine={machine} />
         <MachineVersionWrapper machine={machine} />
         <div className="h-[200px] transition-all delay-300 duration-300 ease-in-out hover:h-[400px]">

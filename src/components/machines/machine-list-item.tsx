@@ -491,24 +491,13 @@ const MachineListActionBar = ({
 }) => {
   return (
     <>
-      <Link href={`/machines/${machine.id}`}>
-        <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
-          {isExpanded && (
-            <span className="mr-2 font-normal text-muted-foreground text-xs">
-              Dashboard
-            </span>
-          )}
-          <LineChart className="h-4 w-4 text-muted-foreground" />
-        </Button>
-      </Link>
-      <Separator orientation="vertical" className="h-4" />
       {!isDockerCommandStepsNull && (
         <>
           <Link href={`/machines/${machine.id}?view=settings`}>
             <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
               {isExpanded && (
                 <span className="mr-2 font-normal text-muted-foreground text-xs">
-                  Edit
+                  Settings
                 </span>
               )}
               <Settings className="h-4 w-4 text-muted-foreground" />
