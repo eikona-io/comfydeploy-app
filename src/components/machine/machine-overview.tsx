@@ -358,9 +358,8 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
       </div>
       <div className="flex justify-end">
         <Link
-          to="/machines/$machineId"
+          to="/machines/$machineId/history"
           params={{ machineId: machine.id }}
-          search={{ view: "history" }}
         >
           <div className="flex items-center gap-2 font-normal text-muted-foreground text-sm hover:text-foreground">
             View All
@@ -387,9 +386,8 @@ export function LastActiveEvent({ machineId }: { machineId: string }) {
         )}
         onClick={() =>
           navigate({
-            to: "/machines/$machineId",
+            to: "/machines/$machineId/activity",
             params: { machineId: machineId },
-            search: { view: "activity" },
           })
         }
       >

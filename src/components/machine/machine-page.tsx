@@ -67,14 +67,6 @@ export default function MachinePage({
                 <MachineVersionBadge machine={machine} isExpanded={true} />
               )}
             </Link>
-            {view && (
-              <>
-                <ChevronRight className="h-4 w-4" />
-                <span className="text-gray-500 text-sm">
-                  {view.charAt(0).toUpperCase() + view.slice(1)}
-                </span>
-              </>
-            )}
           </div>
           <div className="flex flex-row gap-2">
             <MachineCostEstimate machineId={machine.id} />
@@ -83,16 +75,7 @@ export default function MachinePage({
         </div>
 
         <div className="mx-auto max-w-[1200px]">
-          {(() => {
-            switch (view) {
-              case "history":
-                return <MachineDeployment machine={machine} />;
-              case "activity":
-                return <MachineActivity machine={machine} />;
-              default:
-                return <MachineOverview machine={machine} />;
-            }
-          })()}
+          <MachineOverview machine={machine} />
         </div>
       </div>
     </div>

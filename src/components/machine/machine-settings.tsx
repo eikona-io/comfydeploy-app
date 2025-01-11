@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/card";
 import { SelectionBox } from "@/components/ui/custom/selection-box";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type SubscriptionPlan,
   useCurrentPlan,
@@ -23,8 +22,10 @@ import {
 import { useGithubBranchInfo } from "@/hooks/use-github-branch-info";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Link, useSearch } from "@tanstack/react-router";
 import { useBlocker } from "@tanstack/react-router";
 import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
 import { isEqual } from "lodash";
@@ -66,60 +67,98 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
   const isServerless = machine.type === "comfy-deploy-serverless";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { view = isServerless ? "environment" : "advanced" } = useSearch({
+    from: "/machines/$machineId/",
+  });
 
   return (
     <div>
       <div>
-        <Tabs defaultValue={isServerless ? "environment" : "advanced"}>
-          <div className="sticky top-[57px] z-10 flex items-center justify-between bg-background">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between px-2">
-                <div className="font-medium text-xl">Settings</div>
-              </div>
+        <div className="sticky top-[57px] z-10 flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur-sm">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between px-2">
+              <div className="font-medium">Settings</div>
             </div>
-            <TabsList className=" w-fit border-0 bg-transparent">
-              {machine.type === "comfy-deploy-serverless" && (
-                <>
-                  <TabsTrigger
-                    value="environment"
-                    className="rounded-none border-transparent border-b-2 bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                  >
-                    Environment
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="auto-scaling"
-                    className="rounded-none border-transparent border-b-2 bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-                  >
-                    Auto Scaling
-                  </TabsTrigger>
-                </>
-              )}
-              <TabsTrigger
-                value="advanced"
-                className="rounded-none border-transparent border-b-2 bg-transparent px-4 py-2 data-[state=active]:border-primary data-[state=active]:bg-transparent"
-              >
-                Advanced
-              </TabsTrigger>
-            </TabsList>
           </div>
-          <Card className="mb-20 flex flex-col rounded-[16px] px-2 pb-2">
-            {isServerless ? (
-              <ServerlessSettings
-                machine={machine}
-                formRef={formRef}
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
-              />
-            ) : (
-              <ClassicSettings
-                machine={machine}
-                formRef={formRef}
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
-              />
+          <div className="relative mt-4">
+            {machine.type === "comfy-deploy-serverless" && (
+              <>
+                <Link
+                  to="/machines/$machineId"
+                  params={{ machineId: machine.id }}
+                  search={{ view: undefined }}
+                  className={cn(
+                    "p-4 py-2 text-muted-foreground text-sm",
+                    view === "environment" && "text-foreground",
+                  )}
+                >
+                  Environment
+                </Link>
+                <Link
+                  to="/machines/$machineId"
+                  params={{ machineId: machine.id }}
+                  search={{ view: "autoscaling" }}
+                  className={cn(
+                    "p-4 py-2 text-muted-foreground text-sm",
+                    view === "autoscaling" && "text-foreground",
+                  )}
+                >
+                  Auto Scaling
+                </Link>
+              </>
             )}
-          </Card>
-        </Tabs>
+            <Link
+              to="/machines/$machineId"
+              params={{ machineId: machine.id }}
+              search={{ view: "advanced" }}
+              className={cn(
+                "p-4 py-2 text-muted-foreground text-sm",
+                view === "advanced" && "text-foreground",
+              )}
+            >
+              Advanced
+            </Link>
+
+            {/* Animated underline */}
+            <motion.div
+              className="-bottom-1 absolute h-0.5 bg-primary"
+              initial={false}
+              animate={{
+                width: "100px",
+                x:
+                  view === "advanced"
+                    ? "calc(200% + 24px)"
+                    : view === "autoscaling"
+                      ? "calc(100% + 21px)"
+                      : "6px",
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 500,
+                damping: 30,
+              }}
+            />
+          </div>
+        </div>
+        <Card className="mb-20 flex flex-col rounded-[16px] px-2 pb-2">
+          {isServerless ? (
+            <ServerlessSettings
+              machine={machine}
+              formRef={formRef}
+              isLoading={isLoading}
+              setIsLoading={setIsLoading}
+              view={view}
+            />
+          ) : (
+            <ClassicSettings
+              machine={machine}
+              formRef={formRef}
+              isLoading={isLoading}
+              setIsLoading={setIsLoading}
+              view={view}
+            />
+          )}
+        </Card>
       </div>
     </div>
   );
@@ -130,21 +169,19 @@ function ClassicSettings({
   formRef,
   isLoading,
   setIsLoading,
+  view,
 }: {
   machine: any;
   formRef: RefObject<HTMLFormElement | null>;
   isLoading: boolean;
   setIsLoading: (value: boolean) => void;
+  view: string;
 }) {
   return (
     <>
-      <TabsContent value="environment">
-        Not available for classic machines.
-      </TabsContent>
-      <TabsContent value="auto-scaling">
-        Not available for classic machines.
-      </TabsContent>
-      <TabsContent value="advanced">
+      {view === "environment" && <div>Not available for classic machines.</div>}
+      {view === "autoscaling" && <div>Not available for classic machines.</div>}
+      {view === "advanced" && (
         <AutoForm
           formRef={formRef}
           className="md:px-2"
@@ -180,7 +217,7 @@ function ClassicSettings({
             }
           }}
         />
-      </TabsContent>
+      )}
     </>
   );
 }
@@ -192,11 +229,13 @@ function ServerlessSettings({
   formRef,
   isLoading,
   setIsLoading,
+  view,
 }: {
   machine: any;
   formRef: RefObject<HTMLFormElement | null>;
   isLoading: boolean;
   setIsLoading: (value: boolean) => void;
+  view: string;
 }) {
   const [isFormDirty, setIsFormDirty] = useState(false);
   const controls = useAnimation();
@@ -312,37 +351,10 @@ function ServerlessSettings({
     }
   };
 
-  useEffect(() => {
-    if (status === "blocked") {
-      controls.start({
-        x: [0, -8, 12, -15, 8, -10, 5, -3, 2, -1, 0],
-        y: [0, 4, -9, 6, -12, 8, -3, 5, -2, 1, 0],
-        filter: [
-          "blur(0px)",
-          "blur(2px)",
-          "blur(2px)",
-          "blur(3px)",
-          "blur(2px)",
-          "blur(2px)",
-          "blur(1px)",
-          "blur(2px)",
-          "blur(1px)",
-          "blur(1px)",
-          "blur(0px)",
-        ],
-        transition: {
-          duration: 0.4,
-          ease: easeOut,
-        },
-      });
-      // reset();
-    }
-  }, [status]);
-
   return (
     <>
       <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)}>
-        <TabsContent value="environment">
+        {view === "environment" && (
           <div className="space-y-4 p-2">
             <div>
               <h3 className="font-medium text-sm">ComfyUI Version</h3>
@@ -356,9 +368,9 @@ function ServerlessSettings({
               onChange={(value) => form.setValue("docker_command_steps", value)}
             />
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="auto-scaling">
+        {view === "autoscaling" && (
           <div className="space-y-1 p-2">
             <div className="mb-4">
               <Badge className="font-medium text-sm">GPU</Badge>
@@ -439,9 +451,9 @@ function ServerlessSettings({
               </AccordionItem>
             </Accordion> */}
           </div>
-        </TabsContent>
+        )}
 
-        <TabsContent value="advanced">
+        {view === "advanced" && (
           <div className="space-y-10 p-2">
             <div className="flex flex-col gap-2">
               <h3 className="font-medium text-sm">Builder Version</h3>
@@ -591,7 +603,7 @@ function ServerlessSettings({
               </AccordionItem>
             </Accordion>
           </div>
-        </TabsContent>
+        )}
       </form>
 
       <AnimatePresence>

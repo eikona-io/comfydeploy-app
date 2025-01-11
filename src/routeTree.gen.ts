@@ -28,7 +28,9 @@ import { Route as AuthSignInImport } from './routes/auth/sign-in'
 import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
 import { Route as MachinesMachineIdIndexImport } from './routes/machines/$machineId/index'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
+import { Route as MachinesMachineIdActivityImport } from './routes/machines/$machineId/activity'
 import { Route as MachinesMachineIdMachineVersionIdImport } from './routes/machines/$machineId/$machineVersionId'
+import { Route as MachinesMachineIdHistoryIndexImport } from './routes/machines/$machineId/history/index'
 
 // Create/Update Routes
 
@@ -145,10 +147,23 @@ const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
   import('./routes/workflows/$workflowId/$view.lazy').then((d) => d.Route),
 )
 
+const MachinesMachineIdActivityRoute = MachinesMachineIdActivityImport.update({
+  id: '/machines/$machineId/activity',
+  path: '/machines/$machineId/activity',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const MachinesMachineIdMachineVersionIdRoute =
   MachinesMachineIdMachineVersionIdImport.update({
     id: '/machines/$machineId/$machineVersionId',
     path: '/machines/$machineId/$machineVersionId',
+    getParentRoute: () => rootRoute,
+  } as any)
+
+const MachinesMachineIdHistoryIndexRoute =
+  MachinesMachineIdHistoryIndexImport.update({
+    id: '/machines/$machineId/history/',
+    path: '/machines/$machineId/history/',
     getParentRoute: () => rootRoute,
   } as any)
 
@@ -261,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MachinesMachineIdMachineVersionIdImport
       parentRoute: typeof rootRoute
     }
+    '/machines/$machineId/activity': {
+      id: '/machines/$machineId/activity'
+      path: '/machines/$machineId/activity'
+      fullPath: '/machines/$machineId/activity'
+      preLoaderRoute: typeof MachinesMachineIdActivityImport
+      parentRoute: typeof rootRoute
+    }
     '/workflows/$workflowId/$view': {
       id: '/workflows/$workflowId/$view'
       path: '/workflows/$workflowId/$view'
@@ -280,6 +302,13 @@ declare module '@tanstack/react-router' {
       path: '/organization-profile/organization-members'
       fullPath: '/organization-profile/organization-members'
       preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/history/': {
+      id: '/machines/$machineId/history/'
+      path: '/machines/$machineId/history'
+      fullPath: '/machines/$machineId/history'
+      preLoaderRoute: typeof MachinesMachineIdHistoryIndexImport
       parentRoute: typeof rootRoute
     }
   }
@@ -303,9 +332,11 @@ export interface FileRoutesByFullPath {
   '/organization-profile': typeof OrganizationProfileIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
+  '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
+  '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -324,9 +355,11 @@ export interface FileRoutesByTo {
   '/organization-profile': typeof OrganizationProfileIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
+  '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
+  '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
 
 export interface FileRoutesById {
@@ -346,9 +379,11 @@ export interface FileRoutesById {
   '/organization-profile/': typeof OrganizationProfileIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
+  '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId/': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members/': typeof OrganizationProfileOrganizationMembersIndexRoute
+  '/machines/$machineId/history/': typeof MachinesMachineIdHistoryIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -369,9 +404,11 @@ export interface FileRouteTypes {
     | '/organization-profile'
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
+    | '/machines/$machineId/activity'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
+    | '/machines/$machineId/history'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -389,9 +426,11 @@ export interface FileRouteTypes {
     | '/organization-profile'
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
+    | '/machines/$machineId/activity'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
+    | '/machines/$machineId/history'
   id:
     | '__root__'
     | '/'
@@ -409,9 +448,11 @@ export interface FileRouteTypes {
     | '/organization-profile/'
     | '/workflows/'
     | '/machines/$machineId/$machineVersionId'
+    | '/machines/$machineId/activity'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId/'
     | '/organization-profile/organization-members/'
+    | '/machines/$machineId/history/'
   fileRoutesById: FileRoutesById
 }
 
@@ -431,9 +472,11 @@ export interface RootRouteChildren {
   OrganizationProfileIndexRoute: typeof OrganizationProfileIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   MachinesMachineIdMachineVersionIdRoute: typeof MachinesMachineIdMachineVersionIdRoute
+  MachinesMachineIdActivityRoute: typeof MachinesMachineIdActivityRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
   MachinesMachineIdIndexRoute: typeof MachinesMachineIdIndexRoute
   OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute
+  MachinesMachineIdHistoryIndexRoute: typeof MachinesMachineIdHistoryIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -453,10 +496,12 @@ const rootRouteChildren: RootRouteChildren = {
   WorkflowsIndexRoute: WorkflowsIndexRoute,
   MachinesMachineIdMachineVersionIdRoute:
     MachinesMachineIdMachineVersionIdRoute,
+  MachinesMachineIdActivityRoute: MachinesMachineIdActivityRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
   MachinesMachineIdIndexRoute: MachinesMachineIdIndexRoute,
   OrganizationProfileOrganizationMembersIndexRoute:
     OrganizationProfileOrganizationMembersIndexRoute,
+  MachinesMachineIdHistoryIndexRoute: MachinesMachineIdHistoryIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -484,9 +529,11 @@ export const routeTree = rootRoute
         "/organization-profile/",
         "/workflows/",
         "/machines/$machineId/$machineVersionId",
+        "/machines/$machineId/activity",
         "/workflows/$workflowId/$view",
         "/machines/$machineId/",
-        "/organization-profile/organization-members/"
+        "/organization-profile/organization-members/",
+        "/machines/$machineId/history/"
       ]
     },
     "/": {
@@ -534,6 +581,9 @@ export const routeTree = rootRoute
     "/machines/$machineId/$machineVersionId": {
       "filePath": "machines/$machineId/$machineVersionId.tsx"
     },
+    "/machines/$machineId/activity": {
+      "filePath": "machines/$machineId/activity.tsx"
+    },
     "/workflows/$workflowId/$view": {
       "filePath": "workflows/$workflowId/$view.tsx"
     },
@@ -542,6 +592,9 @@ export const routeTree = rootRoute
     },
     "/organization-profile/organization-members/": {
       "filePath": "organization-profile/organization-members/index.tsx"
+    },
+    "/machines/$machineId/history/": {
+      "filePath": "machines/$machineId/history/index.tsx"
     }
   }
 }

@@ -84,9 +84,8 @@ export function MachineVersionDetail({
           </Link>
           <ChevronRight className="h-4 w-4" />
           <Link
-            to={`/machines/${machine.id}`}
+            to={`/machines/${machine.id}/history`}
             params={{ machineId: machine.id }}
-            search={{ view: "history" }}
             className="text-gray-500 text-sm"
           >
             History
