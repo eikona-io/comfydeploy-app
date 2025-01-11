@@ -24,10 +24,10 @@ export function SelectionBox({
     <div
       className={cn(
         "flex cursor-pointer flex-col justify-center rounded-lg border p-4 transition-all duration-200",
-        "hover:border-gray-400",
+        "hover:border-gray-400 hover:bg-gray-50",
         disabled && "cursor-not-allowed opacity-50",
         selected
-          ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
+          ? "border-blue-500 ring-2 ring-blue-500 ring-offset-2 bg-blue-100/50 opacity-100"
           : "border-gray-200 opacity-60",
         className,
       )}

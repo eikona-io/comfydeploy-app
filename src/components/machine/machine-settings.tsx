@@ -66,9 +66,6 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
   const isServerless = machine.type === "comfy-deploy-serverless";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const handleSave = async () => {
-    await formRef.current?.requestSubmit();
-  };
 
   return (
     <div>
@@ -105,7 +102,7 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
               </TabsTrigger>
             </TabsList>
           </div>
-          <Card className="flex flex-col rounded-[16px] px-2 pb-2 mb-20">
+          <Card className="mb-20 flex flex-col rounded-[16px] px-2 pb-2">
             {isServerless ? (
               <ServerlessSettings
                 machine={machine}
