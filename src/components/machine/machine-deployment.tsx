@@ -196,7 +196,7 @@ export const LoadingMachineVerSkeleton = () => {
 export function MachineDeployment(props: { machine: any }) {
   const { machine } = props;
   const query = useMachineVersions(machine.id);
-  const [estimatedSize, setEstimatedSize] = useState(90);
+  const [estimatedSize, setEstimatedSize] = useState(41);
 
   useEffect(() => {
     const updateSize = () => {
