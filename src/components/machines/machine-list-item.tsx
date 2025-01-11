@@ -49,6 +49,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 export const CPU_MEMORY_MAP: Record<string, string> = {
   T4: "16GB",
   A10G: "24GB",
+  L40S: "48GB",
   L4: "24GB",
   A100: "40GB",
   "A100-80GB": "80GB",

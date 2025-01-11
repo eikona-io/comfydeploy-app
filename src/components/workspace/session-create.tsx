@@ -52,6 +52,7 @@ export function SessionCreate({
             ["T4", undefined, "T4 (16GB)"],
             ["A10G", undefined, "A10G (24GB)"],
             ["L4", undefined, "L4 (24GB)"],
+            ["L40S", "business", "L40S (48GB)"],
             ["A100", "business", "A100 (40GB)"],
             ["A100-80GB", "business", "A100-80GB (80GB)"],
             ["H100", "business", "H100 (80GB)"],

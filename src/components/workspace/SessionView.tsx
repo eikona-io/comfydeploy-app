@@ -234,6 +234,7 @@ export function SessionCreator(props: {
             ["T4", , "T4 (16GB)"],
             ["A10G", , "A10G (24GB)"],
             ["L4", , "L4 (24GB)"],
+            ["L40S", , "L40S (48GB)"],
             ["A100", "business", "A100 (40GB)"],
             ["A100-80GB", "business", "A100-80GB (80GB)"],
             ["H100", "business", "H100 (80GB)"],

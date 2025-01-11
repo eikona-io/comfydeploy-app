@@ -64,6 +64,7 @@ export type GpuTypes =
   | "CPU"
   | "T4"
   | "A10G"
+  | "L40S"
   | "L4"
   | "A100"
   | "A100-80GB"
@@ -112,6 +113,17 @@ export const gpuOptions: GpuOption[] = [
       regular: "Best for production workloads and training",
     },
     isForFreePlan: true,
+    isHidden: false,
+  },
+  {
+    id: "L40S",
+    name: "L40S",
+    ram: "48GB",
+    description: {
+      bold: "High-performance GPU.",
+      regular: "Best for large-scale AI training and inference",
+    },
+    isForFreePlan: false,
     isHidden: false,
   },
   {

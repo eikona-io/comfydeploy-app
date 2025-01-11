@@ -74,9 +74,9 @@ const sections: Section[] = [
         tiers: {
           Basic: "T4, L4, A10G",
           Pro: "T4, L4, A10G",
-          Business: "T4, L4, A10G, A100, A100-80GB, H100",
-          ["Creator"]: "T4, L4, A10G, A100, A100-80GB, H100",
-          Enterprise: "T4, L4, A10G, A100, A100-80GB, H100",
+          Business: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
+          ["Creator"]: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
+          Enterprise: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
         },
       },
       {
