@@ -244,11 +244,8 @@ function ServerlessSettings({
     return () => subscription.unsubscribe();
   }, [form, machine]);
 
-  console.log("isFormDirty", isFormDirty);
-
   const { proceed, reset, status, next } = useBlocker({
-    shouldBlockFn: () => isFormDirty,
-    withResolver: true,
+    condition: !!isFormDirty,
   });
 
   useEffect(() => {
