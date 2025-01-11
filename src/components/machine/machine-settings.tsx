@@ -244,8 +244,12 @@ function ServerlessSettings({
     return () => subscription.unsubscribe();
   }, [form, machine]);
 
-  const { proceed, reset, status, next } = useBlocker({
-    condition: !!isFormDirty,
+  useBlocker({
+    // condition: !!isFormDirty,
+    shouldBlockFn: ({ current, next }) => {
+      return !!isFormDirty;
+    },
+    // withResolver: true,
   });
 
   useEffect(() => {
@@ -308,7 +312,7 @@ function ServerlessSettings({
           ease: easeOut,
         },
       });
-      reset();
+      // reset();
     }
   }, [status]);
 
