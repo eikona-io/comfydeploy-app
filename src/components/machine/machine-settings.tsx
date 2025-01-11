@@ -284,9 +284,14 @@ function ServerlessSettings({
     enableBeforeUnload: () => {
       return !!isFormDirty;
     },
-    // condition: !!isFormDirty,
     shouldBlockFn: ({ current, next }) => {
-      if (isFormDirty) {
+      // Ignore navigation if it's just changing the view parameter or going to base machine URL
+      const isSafeNavigation =
+        current.pathname === next.pathname &&
+        (Object.keys(next.search).length === 0 || // base route
+          (Object.keys(next.search).length === 1 && "view" in next.search)); // view change
+
+      if (isFormDirty && !isSafeNavigation) {
         controls.start({
           x: [0, -8, 12, -15, 8, -10, 5, -3, 2, -1, 0],
           y: [0, 4, -9, 6, -12, 8, -3, 5, -2, 1, 0],
@@ -310,7 +315,7 @@ function ServerlessSettings({
         });
       }
 
-      return !!isFormDirty;
+      return !!isFormDirty && !isSafeNavigation;
     },
   });
 
