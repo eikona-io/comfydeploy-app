@@ -693,23 +693,36 @@ function CustomNodeSetupWrapper({
     firstTimeSelectGPU: false,
   }));
 
+  // Handle incoming value changes (including form reset)
   useEffect(() => {
-    if (value && !isEqual(value, validation.docker_command_steps)) {
-      setValidation((prev) => ({
-        ...prev,
-        docker_command_steps: value,
-      }));
-    }
+    setValidation((prev) => ({
+      ...prev,
+      docker_command_steps: value || { steps: [] },
+    }));
   }, [value]);
 
-  useEffect(() => {
-    if (!isEqual(validation.docker_command_steps, value)) {
-      onChange(validation.docker_command_steps);
+  // Handle outgoing changes
+  const handleValidationChange = (
+    newValidation:
+      | MachineStepValidation
+      | ((prev: MachineStepValidation) => MachineStepValidation),
+  ) => {
+    const nextValidation =
+      typeof newValidation === "function"
+        ? newValidation(validation)
+        : newValidation;
+
+    setValidation(nextValidation);
+    if (!isEqual(nextValidation.docker_command_steps, value)) {
+      onChange(nextValidation.docker_command_steps);
     }
-  }, [validation.docker_command_steps, value, onChange]);
+  };
 
   return (
-    <CustomNodeSetup validation={validation} setValidation={setValidation} />
+    <CustomNodeSetup
+      validation={validation}
+      setValidation={handleValidationChange}
+    />
   );
 }
 
