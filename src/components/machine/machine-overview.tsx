@@ -340,7 +340,7 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
           Current version configuration, custom nodes, dependencies, and more.
         </CardDescription>
       </div>
-      <div className="flex flex-col ">
+      <div className="flex flex-col">
         <MachineVersionListItem
           machineVersion={machineVersion}
           machine={machine}

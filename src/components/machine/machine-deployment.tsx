@@ -254,10 +254,12 @@ export function MachineDeployment(props: { machine: any }) {
           className="!h-full fab-machine-list w-full"
           queryResult={query}
           renderItem={(machineVersion) => (
-            <MachineVersionListItem
-              machineVersion={machineVersion}
-              machine={machine}
-            />
+            <div className="flex flex-col">
+              <MachineVersionListItem
+                machineVersion={machineVersion}
+                machine={machine}
+              />
+            </div>
           )}
           estimateSize={estimatedSize}
           renderLoading={() => <LoadingMachineVerSkeleton />}
