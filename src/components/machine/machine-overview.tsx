@@ -1,4 +1,4 @@
-import { MachineVersionList } from "@/components/machine/machine-deployment";
+import { MachineVersionListItem } from "@/components/machine/machine-deployment";
 import {
   CPU_MEMORY_MAP,
   MachineListItemEvents,
@@ -335,33 +335,38 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
       <div className="flex flex-col">
         <div className="flex items-center justify-between px-2 font-semibold text-xl">
           Machine History
-          <Link
-            to="/machines/$machineId"
-            params={{ machineId: machine.id }}
-            search={{ view: "history" }}
-          >
-            <div className="flex items-center gap-2 font-normal text-muted-foreground text-sm hover:text-foreground">
-              View All
-              <GitBranch className="h-4 w-4" />
-            </div>
-          </Link>
         </div>
         <CardDescription className="px-2">
           Current version configuration, custom nodes, dependencies, and more.
         </CardDescription>
       </div>
-      <div className="flex flex-col gap-2">
-        <MachineVersionList machineVersion={machineVersion} machine={machine} />
+      <div className="flex flex-col ">
+        <MachineVersionListItem
+          machineVersion={machineVersion}
+          machine={machine}
+        />
         {versions
           .filter((version) => version.id !== machineVersion.id)
           .slice(0, 2)
           .map((version) => (
-            <MachineVersionList
+            <MachineVersionListItem
               key={version.id}
               machineVersion={version}
               machine={machine}
             />
           ))}
+      </div>
+      <div className="flex justify-end">
+        <Link
+          to="/machines/$machineId"
+          params={{ machineId: machine.id }}
+          search={{ view: "history" }}
+        >
+          <div className="flex items-center gap-2 font-normal text-muted-foreground text-sm hover:text-foreground">
+            View All
+            <GitBranch className="h-4 w-4" />
+          </div>
+        </Link>
       </div>
     </div>
   );

@@ -103,7 +103,7 @@ const UserInfoForDeployment = ({ machineVersion }: { machineVersion: any }) => {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-gray-500 text-sm">
+      <span className="text-gray-500 text-xs">
         {formatShortDistanceToNow(new Date(machineVersion.created_at))} by{" "}
         {user.username ?? `${user.first_name} ${user.last_name}`}
       </span>
@@ -254,7 +254,7 @@ export function MachineDeployment(props: { machine: any }) {
           className="!h-full fab-machine-list w-full"
           queryResult={query}
           renderItem={(machineVersion) => (
-            <MachineVersionList
+            <MachineVersionListItem
               machineVersion={machineVersion}
               machine={machine}
             />
@@ -267,7 +267,7 @@ export function MachineDeployment(props: { machine: any }) {
   );
 }
 
-export function MachineVersionList({
+export function MachineVersionListItem({
   machineVersion,
   machine,
 }: {
@@ -315,24 +315,24 @@ export function MachineVersionList({
   return (
     <div
       key={machineVersion.id}
-      className="border bg-white p-4 shadow-sm rounded-[8px]"
+      className="px-4 cursor-pointer border-b hover:bg-gray-100"
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigate({
+          to: "/machines/$machineId/$machineVersionId",
+          params: {
+            machineVersionId: machineVersion.id,
+          },
+        });
+      }}
     >
       <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-4 md:gap-x-4 md:items-center">
         {/* ID and Version */}
-        <div
-          className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer"
-          onClick={() => {
-            navigate({
-              to: "/machines/$machineId/$machineVersionId",
-              params: {
-                machineVersionId: machineVersion.id,
-              },
-            });
-          }}
-        >
-          <div className="font-medium font-mono text-2xs truncate">
+        <div className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer">
+          {/* <div className="font-medium font-mono text-2xs truncate">
             {machineVersion.id.slice(0, 8)}
-          </div>
+          </div> */}
           <div className="flex flex-row gap-x-2 items-center">
             <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
               v{machineVersion.version}
@@ -352,16 +352,19 @@ export function MachineVersionList({
         <hr className=" border-gray-200 border-t md:hidden" />
 
         {/* Status and Time */}
-        <div className="grid min-w-0 grid-cols-[auto,1fr] items-center gap-x-1.5">
-          <MachineStatusBadge
-            status={machineVersion.status}
-            createdAt={machineVersion.created_at}
-          />
-          {machineVersion.status === "building" ? (
-            <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />
-          ) : (
-            <div className="w-[14px] shrink-0" />
-          )}
+        <div className="flex flex-row gap-4">
+          <div className="grid min-w-0 grid-cols-[auto,1fr] items-center gap-x-1.5">
+            <MachineStatusBadge
+              status={machineVersion.status}
+              createdAt={machineVersion.created_at}
+            />
+            {machineVersion.status === "building" ? (
+              <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />
+            ) : (
+              <div className="w-[14px] shrink-0" />
+            )}
+          </div>
+
           <span className="truncate text-gray-500 text-sm">
             {machineVersion.status === "building"
               ? differenceInSeconds(
@@ -393,11 +396,11 @@ export function MachineVersionList({
         <div className="grid grid-cols-[auto,1fr] items-center gap-x-2 min-w-0">
           <HardDrive className="h-[14px] w-[14px] shrink-0" />
           <div className="grid grid-cols-10 items-center">
-            <span className="text-sm text-gray-600 truncate">
+            <span className="text-xs text-gray-600 truncate">
               {machineVersion.gpu}
             </span>
 
-            <Badge
+            {/* <Badge
               variant="indigo"
               className="font-mono !text-[10px] w-fit whitespace-nowrap cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
               onClick={() => {
@@ -409,10 +412,10 @@ export function MachineVersionList({
             >
               ComfyUI - {machineVersion.comfyui_version.slice(0, 10)}
               <ExternalLink className="h-3 w-3" />
-            </Badge>
+            </Badge> */}
           </div>
-          <Library className="h-[14px] w-[14px] shrink-0" />
-          <CustomNodeList machine={machineVersion} numOfNodes={2} />
+          {/* <Library className="h-[14px] w-[14px] shrink-0" /> */}
+          {/* <CustomNodeList machine={machineVersion} numOfNodes={2} /> */}
         </div>
 
         <hr className="border-gray-200 border-t md:hidden" />
@@ -490,7 +493,11 @@ function InstantRollback({
               machine.status === "building"
             }
             className="text-red-500"
-            onClick={() => setRollbackAlertOpen(true)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setRollbackAlertOpen(true);
+            }}
           >
             Rollback
             <DropdownMenuShortcut>
@@ -508,7 +515,9 @@ function InstantRollback({
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
           <DropdownMenuItem
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               navigate({
                 to: "/machines/$machineId/$machineVersionId",
                 params: {

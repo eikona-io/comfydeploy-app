@@ -105,7 +105,7 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
               </TabsTrigger>
             </TabsList>
           </div>
-          <Card className="flex flex-col rounded-[10px] px-2">
+          <Card className="flex flex-col rounded-[16px] px-2 pb-2 mb-20">
             {isServerless ? (
               <ServerlessSettings
                 machine={machine}
@@ -245,11 +245,37 @@ function ServerlessSettings({
   }, [form, machine]);
 
   useBlocker({
-    // condition: !!isFormDirty,
-    shouldBlockFn: ({ current, next }) => {
+    enableBeforeUnload: () => {
       return !!isFormDirty;
     },
-    // withResolver: true,
+    // condition: !!isFormDirty,
+    shouldBlockFn: ({ current, next }) => {
+      if (isFormDirty) {
+        controls.start({
+          x: [0, -8, 12, -15, 8, -10, 5, -3, 2, -1, 0],
+          y: [0, 4, -9, 6, -12, 8, -3, 5, -2, 1, 0],
+          filter: [
+            "blur(0px)",
+            "blur(2px)",
+            "blur(2px)",
+            "blur(3px)",
+            "blur(2px)",
+            "blur(2px)",
+            "blur(1px)",
+            "blur(2px)",
+            "blur(1px)",
+            "blur(1px)",
+            "blur(0px)",
+          ],
+          transition: {
+            duration: 0.4,
+            ease: easeOut,
+          },
+        });
+      }
+
+      return !!isFormDirty;
+    },
   });
 
   useEffect(() => {
@@ -336,69 +362,85 @@ function ServerlessSettings({
         </TabsContent>
 
         <TabsContent value="auto-scaling">
-          <div className="space-y-10 p-2">
-            <div>
-              <h3 className="font-medium text-sm">GPU</h3>
+          <div className="space-y-1 p-2">
+            <div className="mb-4">
+              <Badge className="font-medium text-sm">GPU</Badge>
               <GPUSelectBox
                 value={form.watch("gpu")}
                 onChange={(value) => form.setValue("gpu", value)}
               />
             </div>
 
-            <Accordion type="single" defaultValue="concurrency" className="">
+            {/* <Accordion type="single" defaultValue="concurrency" className="">
               <AccordionItem value="concurrency">
                 <AccordionTrigger className="py-4">
                   GPU Configuration
                 </AccordionTrigger>
-                <AccordionContent className="space-y-6">
-                  <div>
-                    <h3 className="font-medium text-sm">Max Parallel GPU</h3>
-                    <MaxParallelGPUSlider
-                      value={form.watch("concurrency_limit")}
-                      onChange={(value) =>
-                        form.setValue("concurrency_limit", value)
-                      }
-                    />
-                  </div>
-                  <div>
-                    <h3 className="mb-2 font-medium text-sm">Keep Always On</h3>
-                    <MaxAlwaysOnSlider
-                      value={form.watch("keep_warm") || 0}
-                      onChange={(value) => form.setValue("keep_warm", value)}
-                    />
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="timeout">
+                <AccordionContent className="space-y-6"> */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col items-start justify-between">
+                <div className="flex flex-col gap-2">
+                  <Badge className="font-medium text-sm">
+                    Max Parallel GPU
+                  </Badge>
+                  {/* <div>
+                        Increase the concurrency limit for the machine to handle
+                        more gpu intensive tasks at the same time.
+                      </div> */}
+                </div>
+                <div className="w-full">
+                  <MaxParallelGPUSlider
+                    value={form.watch("concurrency_limit")}
+                    onChange={(value) =>
+                      form.setValue("concurrency_limit", value)
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col items-start justify-between">
+                <div className="flex flex-col gap-2">
+                  <Badge className="mb-2 font-medium text-sm">
+                    Keep Always On
+                  </Badge>
+                  {/* <div>
+                        Increase the concurrency limit for the machine to handle
+                        more gpu intensive tasks at the same time.
+                      </div> */}
+                </div>
+                <div className="w-full">
+                  <MaxAlwaysOnSlider
+                    value={form.watch("keep_warm") || 0}
+                    onChange={(value) => form.setValue("keep_warm", value)}
+                  />
+                </div>
+              </div>
+              {/* </AccordionContent>
+              </AccordionItem> */}
+              {/* <AccordionItem value="timeout">
                 <AccordionTrigger className="py-4">
                   Timeout Settings
                 </AccordionTrigger>
-                <AccordionContent className="space-y-6">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                      <h3 className="mb-2 font-medium text-sm">
-                        Workflow Timeout
-                      </h3>
-                      <WorkflowTimeOut
-                        value={form.watch("run_timeout")}
-                        onChange={(value) =>
-                          form.setValue("run_timeout", value)
-                        }
-                      />
-                    </div>
-                    <div>
-                      <h3 className="mb-2 font-medium text-sm">Warm Time</h3>
-                      <WarmTime
-                        value={form.watch("idle_timeout")}
-                        onChange={(value) =>
-                          form.setValue("idle_timeout", value)
-                        }
-                      />
-                    </div>
-                  </div>
-                </AccordionContent>
+                <AccordionContent className="space-y-6"> */}
+              <div>
+                <Badge className="mb-2 font-medium text-sm">
+                  Workflow Timeout
+                </Badge>
+                <WorkflowTimeOut
+                  value={form.watch("run_timeout")}
+                  onChange={(value) => form.setValue("run_timeout", value)}
+                />
+              </div>
+              <div>
+                <Badge className="mb-2 font-medium text-sm">Warm Time</Badge>
+                <WarmTime
+                  value={form.watch("idle_timeout")}
+                  onChange={(value) => form.setValue("idle_timeout", value)}
+                />
+              </div>
+            </div>
+            {/* </AccordionContent>
               </AccordionItem>
-            </Accordion>
+            </Accordion> */}
           </div>
         </TabsContent>
 
@@ -483,13 +525,13 @@ function ServerlessSettings({
                       to 1 container before spinning up a new container.
                     </p>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  {/* <div className="flex flex-col gap-2">
                     <h3 className="font-medium text-sm">Websocket timeout</h3>
                     <WebSocketTimeout
                       value={form.watch("ws_timeout")}
                       onChange={(value) => form.setValue("ws_timeout", value)}
                     />
-                  </div>
+                  </div> */}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="custom">
@@ -793,6 +835,7 @@ function RangeSlider({
   return (
     <div className="flex flex-col gap-1">
       <div className="flex flex-row items-center gap-4">
+        <span className="text-muted-foreground text-xs">{min}</span>
         <Slider
           showTooltip={true}
           min={min}
@@ -802,6 +845,7 @@ function RangeSlider({
           onValueChange={(value) => onChange(value[0])}
           className="w-full"
         />
+        <span className="text-muted-foreground text-xs">{max}</span>
         <Input
           className="w-20"
           type="number"
@@ -821,11 +865,11 @@ function RangeSlider({
           }}
         />
       </div>
-      <div className="flex w-[calc(100%-90px)] justify-between px-1 text-muted-foreground text-sm leading-tight">
+      {/* <div className="flex w-[calc(100%-90px)] justify-between px-1 text-muted-foreground text-sm leading-tight">
         <span>{min}</span>
         <span>Current: {value || min}</span>
         <span>{max}</span>
-      </div>
+      </div> */}
       {description && (
         <span className="text-muted-foreground text-sm">{description}</span>
       )}
@@ -867,7 +911,7 @@ function MaxParallelGPUSlider({
       onChange={onChange}
       min={1}
       max={maxGPU}
-      description="Increase the concurrency limit for the machine to handle more gpu intensive tasks at the same time."
+      // description=""
     />
   );
 }
@@ -1031,30 +1075,28 @@ function MaxAlwaysOnSlider({
   return (
     <div>
       {maxAlwaysOn === 0 ? (
-        <Alert variant="warning" className="border-blue-500 bg-blue-500/10">
-          <AlertCircleIcon className="!text-blue-500 h-4 w-4" />
-          <AlertTitle className="text-blue-500">Limited Feature</AlertTitle>
-          <AlertDescription className="text-blue-500">
-            This feature is limited with your current plan. Please consult with
-            support if you need to increase the limit.
-          </AlertDescription>
-        </Alert>
+        <div className="text-muted-foreground text-sm">
+          This feature is limited with your current plan. Please consult with
+          support if you need to increase the limit.
+        </div>
       ) : (
-        <RangeSlider
-          value={value}
-          onChange={onChange}
-          min={0}
-          max={maxAlwaysOn}
-        />
+        <>
+          <RangeSlider
+            value={value}
+            onChange={onChange}
+            min={0}
+            max={maxAlwaysOn}
+          />
+          {/* <Alert variant="warning" className="mt-2 bg-yellow-500/10">
+            <AlertCircleIcon className="h-4 w-4" />
+            <AlertTitle>Advanced Feature</AlertTitle>
+            <AlertDescription>
+              This is an advanced feature. Keeping machines always-on will
+              continuously incur GPU costs until you reduce the value.
+            </AlertDescription>
+          </Alert> */}
+        </>
       )}
-      <Alert variant="warning" className="mt-2 bg-yellow-500/10">
-        <AlertCircleIcon className="h-4 w-4" />
-        <AlertTitle>Advanced Feature</AlertTitle>
-        <AlertDescription>
-          This is an advanced feature. Keeping machines always-on will
-          continuously incur GPU costs until you reduce the value.
-        </AlertDescription>
-      </Alert>
     </div>
   );
 }

@@ -40,7 +40,7 @@ const Slider = React.forwardRef<
         <TooltipProvider delayDuration={0}>
           <Tooltip open={isHovering}>
             <TooltipTrigger asChild>
-              <SliderPrimitive.Thumb className="block h-2 w-4 hover:h-4 transition-all rounded-full border-2 border-primary bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+              <SliderPrimitive.Thumb className="block h-4 w-4  transition-all rounded-full border-2 border-primary bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
             </TooltipTrigger>
             <TooltipContent side="top" className="bg-black text-white">
               <p>{Array.isArray(value) ? value[0] : value}</p>
@@ -48,7 +48,7 @@ const Slider = React.forwardRef<
           </Tooltip>
         </TooltipProvider>
       ) : (
-        <SliderPrimitive.Thumb className="block h-2 w-4 hover:h-4 transition-all rounded-full border-2 border-primary bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+        <SliderPrimitive.Thumb className="block h-4 w-4 transition-all rounded-full border-2 border-primary bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
       )}
     </SliderPrimitive.Root>
   );

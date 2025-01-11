@@ -705,12 +705,12 @@ function CustomNodeCard({
       <div className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm">
         <div className="flex items-center justify-between">
           <div className="flex min-w-0 flex-1 flex-col">
-            <span className="font-medium">Custom Command</span>
-            <div className="mt-2 rounded bg-gray-100 p-2">
-              <pre className="whitespace-pre-wrap font-mono text-gray-600 text-xs">
-                {node.data as string}
-              </pre>
-            </div>
+            {/* <span className="font-medium">Custom Command</span> */}
+            {/* <div className="mt-2 rounded bg-gray-100 p-2"> */}
+            <pre className="whitespace-pre-wrap font-mono text-gray-600 text-xs">
+              $ {node.data as string}
+            </pre>
+            {/* </div> */}
           </div>
           <Button
             type="button"
