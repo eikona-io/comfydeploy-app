@@ -8,11 +8,11 @@ import {
   MachineOverview,
 } from "@/components/machine/machine-overview";
 import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import { useEffect } from "react";
+import { MachineActivity } from "./machine-activity";
 
 export default function MachinePage({
   params,
@@ -67,10 +67,12 @@ export default function MachinePage({
                 <MachineVersionBadge machine={machine} isExpanded={true} />
               )}
             </Link>
-            {view === "history" && (
+            {view && (
               <>
                 <ChevronRight className="h-4 w-4" />
-                <span className="text-gray-500 text-sm">History</span>
+                <span className="text-gray-500 text-sm">
+                  {view.charAt(0).toUpperCase() + view.slice(1)}
+                </span>
               </>
             )}
           </div>
@@ -85,6 +87,8 @@ export default function MachinePage({
             switch (view) {
               case "history":
                 return <MachineDeployment machine={machine} />;
+              case "activity":
+                return <MachineActivity machine={machine} />;
               default:
                 return <MachineOverview machine={machine} />;
             }
