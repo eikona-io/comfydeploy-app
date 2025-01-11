@@ -76,8 +76,8 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
       <div>
         <div className="sticky top-[57px] z-10 flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur-sm">
           <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-between px-2">
-              <div className="font-medium">Settings</div>
+            <div className="flex items-center">
+              <div className="font-medium text-xl">Settings</div>
             </div>
           </div>
           <div className="relative mt-4">
@@ -129,7 +129,7 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
                   view === "advanced"
                     ? "calc(200% + 24px)"
                     : view === "autoscaling"
-                      ? "calc(100% + 21px)"
+                      ? "calc(100% + 20px)"
                       : "6px",
               }}
               transition={{
