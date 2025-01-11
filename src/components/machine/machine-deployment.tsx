@@ -200,7 +200,7 @@ export function MachineDeployment(props: { machine: any }) {
 
   useEffect(() => {
     const updateSize = () => {
-      setEstimatedSize(window.innerWidth < 768 ? 330 : 90);
+      setEstimatedSize(window.innerWidth < 768 ? 330 : 41);
     };
 
     updateSize();
