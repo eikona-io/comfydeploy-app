@@ -216,7 +216,7 @@ export function MachineList() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId: machine.id },
-              search: { view: "overview" },
+              search: { view: undefined },
             });
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
@@ -258,7 +258,7 @@ export function MachineList() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId: machine.id },
-              search: { view: "deployments" },
+              search: { view: "history" },
             });
 
             return {}; // Return empty object since we're handling navigation manually
@@ -675,7 +675,7 @@ function CloneMachineDialog({
                     machineId: res.id,
                   },
                   search: {
-                    view: "deployments",
+                    view: "history",
                   },
                 });
               },
@@ -784,7 +784,7 @@ function RebuildMachineDialog({
                   navigate({
                     to: "/machines/$machineId",
                     params: { machineId: machine.id },
-                    search: { view: "deployments" },
+                    search: { view: "history" },
                   });
                 } catch {
                   toast.error("Failed to rebuild machine");

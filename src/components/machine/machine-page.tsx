@@ -1,17 +1,13 @@
-import { MachineDeployment } from "@/components/machine/machine-deployment";
+import {
+  LoadingMachineVerSkeleton,
+  MachineDeployment,
+} from "@/components/machine/machine-deployment";
 import {
   LastActiveEvent,
   MachineCostEstimate,
   MachineOverview,
 } from "@/components/machine/machine-overview";
 import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
-import { Portal } from "@/components/ui/custom/portal";
-import {
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-  useSidebar,
-} from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
@@ -45,35 +41,14 @@ export default function MachinePage({
     }
   }, [machine?.status, navigate, params.machine_id]);
 
-  const isDockerCommandStepsNull =
-    machine?.docker_command_steps === null &&
-    machine?.type === "comfy-deploy-serverless";
-
   if (isLoading || !machine) {
     return (
-      <div className="mx-auto w-full max-w-[1500px] md:p-4">
-        <Skeleton className="m-4 h-10 w-48 rounded-[8px]" />
-        <div className="flex flex-row gap-3 p-4 pb-2">
-          <Skeleton className="h-10 w-24 rounded-[8px]" />
-          <Skeleton className="h-10 w-24 rounded-[8px]" />
+      <>
+        <div className="h-[57px] w-full border-b bg-[#fcfcfc] shadow-sm" />
+        <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1200px] px-2 py-4 md:px-4">
+          <LoadingMachineVerSkeleton />
         </div>
-        <div className="grid grid-cols-1 gap-4 p-4 lg:grid-cols-2">
-          <div className="space-y-4">
-            <Skeleton className="h-[200px] w-full rounded-[8px]" />
-            <Skeleton className="h-[300px] w-full rounded-[8px]" />
-            <Skeleton className="h-[300px] w-full rounded-[8px]" />
-          </div>
-
-          <div className="space-y-4">
-            <Skeleton className="h-[408px] w-full rounded-[8px]" />
-            <Skeleton className="h-[408px] w-full rounded-[8px]" />
-          </div>
-        </div>
-
-        <div className="p-4 pt-0">
-          <Skeleton className="h-[500px] w-full rounded-[8px]" />
-        </div>
-      </div>
+      </>
     );
   }
 

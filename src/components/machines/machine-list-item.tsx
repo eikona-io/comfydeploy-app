@@ -506,11 +506,11 @@ const MachineListActionBar = ({
           <Separator orientation="vertical" className="h-4" />
         </>
       )}
-      <Link href={`/machines/${machine.id}?view=deployments`}>
+      <Link href={`/machines/${machine.id}?view=history`}>
         <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
           {isExpanded && (
             <span className="mr-2 font-normal text-muted-foreground text-xs">
-              Deployments
+              History
             </span>
           )}
           <GitBranch className="h-4 w-4 text-muted-foreground" />

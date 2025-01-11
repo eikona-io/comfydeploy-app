@@ -154,7 +154,7 @@ const MachineStatusBadge = ({
   );
 };
 
-const LoadingSkeleton = () => {
+export const LoadingMachineVerSkeleton = () => {
   return (
     <>
       {[...Array(5)].map((_, i) => (
@@ -222,7 +222,7 @@ export function MachineDeployment(props: { machine: any }) {
   if (query.isLoading) {
     return (
       <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
-        <LoadingSkeleton />
+        <LoadingMachineVerSkeleton />
       </div>
     );
   }
@@ -260,7 +260,7 @@ export function MachineDeployment(props: { machine: any }) {
             />
           )}
           estimateSize={estimatedSize}
-          renderLoading={() => <LoadingSkeleton />}
+          renderLoading={() => <LoadingMachineVerSkeleton />}
         />
       </div>
     </>
