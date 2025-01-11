@@ -313,21 +313,12 @@ export function MachineVersionListItem({
   }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
   return (
-    <div
+    <a
       key={machineVersion.id}
-      className="px-4 cursor-pointer border-b hover:bg-gray-100"
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        navigate({
-          to: "/machines/$machineId/$machineVersionId",
-          params: {
-            machineVersionId: machineVersion.id,
-          },
-        });
-      }}
+      className="cursor-pointer border-b px-4 hover:bg-gray-100"
+      href={`/machines/${machine.id}/${machineVersion.id}`}
     >
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-4 md:gap-x-4 md:items-center">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(100px,1fr)_minmax(250px,auto)] gap-4 md:gap-x-4 md:items-center">
         {/* ID and Version */}
         <div className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer">
           {/* <div className="font-medium font-mono text-2xs truncate">
@@ -393,35 +384,15 @@ export function MachineVersionListItem({
         <hr className=" border-gray-200 border-t md:hidden" />
 
         {/* GPU and Nodes */}
-        <div className="grid grid-cols-[auto,1fr] items-center gap-x-2 min-w-0">
+        <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
           <HardDrive className="h-[14px] w-[14px] shrink-0" />
-          <div className="grid grid-cols-10 items-center">
-            <span className="text-xs text-gray-600 truncate">
-              {machineVersion.gpu}
-            </span>
-
-            {/* <Badge
-              variant="indigo"
-              className="font-mono !text-[10px] w-fit whitespace-nowrap cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-              onClick={() => {
-                window.open(
-                  `https://github.com/comfyanonymous/ComfyUI/commit/${machineVersion.comfyui_version}`,
-                  "_blank",
-                );
-              }}
-            >
-              ComfyUI - {machineVersion.comfyui_version.slice(0, 10)}
-              <ExternalLink className="h-3 w-3" />
-            </Badge> */}
+          <div className="flex items-center">
+            <span className="text-xs text-gray-600">{machineVersion.gpu}</span>
           </div>
-          {/* <Library className="h-[14px] w-[14px] shrink-0" /> */}
-          {/* <CustomNodeList machine={machineVersion} numOfNodes={2} /> */}
         </div>
 
-        <hr className="border-gray-200 border-t md:hidden" />
-
         {/* User Info and Actions */}
-        <div className="justify-self-end flex flex-row gap-x-2 shrink-0">
+        <div className="justify-self-end flex flex-row gap-x-2 items-center">
           <UserInfoForDeployment machineVersion={machineVersion} />
           <InstantRollback
             machineVersion={machineVersion}
@@ -430,7 +401,7 @@ export function MachineVersionListItem({
           />
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 
