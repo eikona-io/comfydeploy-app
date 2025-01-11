@@ -61,6 +61,15 @@ type DefaultCustomNodeData = {
   description: string;
 };
 
+type DefaultCustomNodeStats = Record<
+  string,
+  {
+    stars: number;
+    last_update: string;
+    author_account_age_days: number;
+  }
+>;
+
 const BLACKLIST = [
   "https://github.com/ltdrdata/ComfyUI-Manager",
   "https://github.com/kulsisme/openart-comfyui-deploy",
@@ -95,6 +104,20 @@ export function CustomNodeSetup({
       );
       const json = await response.json();
       return json.custom_nodes;
+    },
+    staleTime: 60 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: defaultCustomNodeStats } = useQuery<DefaultCustomNodeStats>({
+    queryKey: ["custom-node-stats"],
+    queryFn: async () => {
+      const response = await fetch(
+        "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/refs/heads/main/github-stats.json",
+      );
+      const json = await response.json();
+      return json;
     },
     staleTime: 60 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
@@ -321,6 +344,26 @@ export function CustomNodeSetup({
                                     >
                                       <ExternalLink size={12} />
                                     </Link>
+                                    <span className="mx-2 text-muted-foreground">
+                                      •
+                                    </span>
+                                    <Star
+                                      size={12}
+                                      className="mr-1 fill-yellow-400 text-yellow-400"
+                                    />
+                                    <span className="text-2xs text-gray-500 leading-snug">
+                                      {
+                                        defaultCustomNodeStats?.[
+                                          Object.keys(
+                                            defaultCustomNodeStats || {},
+                                          ).find(
+                                            (key) =>
+                                              key.toLowerCase() ===
+                                              nodeRefLower,
+                                          ) ?? ""
+                                        ]?.stars
+                                      }
+                                    </span>
                                   </div>
                                 </div>
                                 <div className="flex flex-col">
@@ -609,7 +652,7 @@ function SelectedNodeList({
                 reorder the nodes.
               </span>
             )}
-            <div className="flex max-h-[518px] flex-col gap-2 overflow-y-auto overflow-x-hidden">
+            <div className="flex max-h-[518px] flex-col gap-1 overflow-y-auto overflow-x-hidden">
               {validation.docker_command_steps.steps.length === 0 ? (
                 <div className="text-gray-500 text-sm">No nodes selected.</div>
               ) : (
@@ -736,15 +779,15 @@ function CustomNodeCard({
   return (
     <div
       key={node.data.url}
-      className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm"
+      className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 px-2 py-1 text-sm"
     >
       <div className="flex items-center justify-between">
         <div className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="flex-[2] truncate font-medium">
+          <span className="flex-[2] truncate font-medium text-xs">
             {node.data.name}
           </span>
           <div className="flex min-w-fit flex-1 items-center">
-            <span className="truncate text-gray-500 text-xs">
+            <span className="truncate text-2xs text-gray-500">
               {node.data.url.split("/").slice(-2)[0]}
             </span>
             <Link
@@ -767,11 +810,9 @@ function CustomNodeCard({
         </Button>
       </div>
 
-      <Separator className="my-2" />
-
       {node.data && (
         <div className="flex items-center justify-between gap-2">
-          <div className="flex w-full items-center gap-2 text-gray-500 text-xs leading-snug">
+          <div className="flex w-full items-center gap-2 text-2xs text-gray-500 leading-snug">
             <span className="whitespace-nowrap font-medium">
               {isHashChanged || editingHash === node.data.url
                 ? "Custom hash"
@@ -796,29 +837,11 @@ function CustomNodeCard({
               />
             ) : (
               <div className="flex min-w-0 flex-1 items-center gap-1">
-                <code className="shrink-0 rounded bg-gray-100 px-1 py-0.5 text-2xs">
+                <code className="shrink-0 rounded bg-gray-100 px-1 py-0.5 text-[10px]">
                   <span className={cn(isHashChanged && "text-amber-600")}>
                     {node.data.hash?.slice(0, 7)}
                   </span>
                 </code>
-                {!isHashChanged && !editingHash && (
-                  <>
-                    <span className="shrink-0 text-gray-300">•</span>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Star
-                        size={12}
-                        className="fill-yellow-400 text-yellow-400"
-                      />
-                      <span>
-                        {node.data.meta?.stargazers_count?.toLocaleString()}
-                      </span>
-                    </div>
-                    <span className="shrink-0 text-gray-300">•</span>
-                    <span className="w-24 truncate">
-                      {node.data.meta?.message}
-                    </span>
-                  </>
-                )}
               </div>
             )}
           </div>
