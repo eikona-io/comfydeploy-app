@@ -1,4 +1,0 @@
-[start]
-  onlyIncludeFiles = ['./dist','server.ts']
-  runImage = 'oven/bun:1.1.43-distroless'
-  cmd = "bun run server.ts"
