@@ -13,14 +13,8 @@ export const columnSchema = z.object({
   status: z.enum(STATUS),
   origin: z.enum(ORIGIN),
   workflow_id: z.string(),
-  workflow: z.object({
-    id: z.string(),
-    name: z.string(),
-  }),
-  machine: z.object({
-    name: z.string(),
-  }),
-  workflow_version: z.string(),
+  machine_id: z.string(),
+  workflow_version_id: z.string(),
   duration: z.number(),
   user_id: z.string(),
 });
@@ -49,6 +43,7 @@ export const columnFilterSchema = z.object({
     .pipe(z.enum(ORIGIN).array())
     .optional(),
   workflow_id: z.string().optional(),
+  machine_id: z.string().optional(),
   duration: z
     .string()
     .transform((val) => val.split(SLIDER_DELIMITER))

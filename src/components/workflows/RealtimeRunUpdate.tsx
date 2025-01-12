@@ -17,7 +17,7 @@ export function useRealtimeWorkflowUpdate2(workflow_id: string) {
       const data = update as any;
 
       queryClient.setQueryData(
-        ["workflow", workflow_id, "runs"],
+        ["v2", "workflow", workflow_id, "runs"],
         (oldData: any) => {
           // console.log("oldData", oldData);
           if (!oldData) return oldData;

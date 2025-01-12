@@ -29,6 +29,7 @@ import { type ReactNode, useEffect, useRef, useState } from "react";
 // import Markdown from "react-markdown";
 // import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
+import { AssetsBrowserPopup } from "../workspace/assets-browser-drawer";
 
 export function SharePageComponent(props: {
   inputs: any[];
@@ -109,9 +110,9 @@ export function SharePageComponent(props: {
         <CardContent className="flex w-full flex-col gap-4 p-4">
           {sharedDeployment?.description && (
             <ScrollArea className="relative rounded-md bg-slate-100 p-2 [&>[data-radix-scroll-area-viewport]]:max-h-36">
-              <DisplaySharePageSheet
+              {/* <DisplaySharePageSheet
                 mdString={sharedDeployment.description || ""}
-              />
+              /> */}
               {/* <Markdown remarkPlugins={[remarkGfm]} className="prose "> */}
               {sharedDeployment?.description}
               {/* </Markdown> */}
@@ -155,6 +156,8 @@ export function SharePageComponent(props: {
           </Tabs>
         </CardContent>
       </Card>
+
+      <AssetsBrowserPopup />
     </div>
   );
 }

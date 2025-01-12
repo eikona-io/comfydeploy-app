@@ -53,6 +53,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
+import { MachineSettingsWrapper } from "../machine/machine-settings";
 
 // Add this type
 export type ComfyUIOption = {
@@ -65,6 +66,7 @@ export type GpuTypes =
   | "CPU"
   | "T4"
   | "A10G"
+  | "L40S"
   | "L4"
   | "A100"
   | "A100-80GB"
@@ -113,6 +115,17 @@ export const gpuOptions: GpuOption[] = [
       regular: "Best for production workloads and training",
     },
     isForFreePlan: true,
+    isHidden: false,
+  },
+  {
+    id: "L40S",
+    name: "L40S",
+    ram: "48GB",
+    description: {
+      bold: "High-performance GPU.",
+      regular: "Best for large-scale AI training and inference",
+    },
+    isForFreePlan: false,
     isHidden: false,
   },
   {
@@ -553,6 +566,50 @@ export function WorkflowImportNewMachineSetup({
     }
     return showAllGpu || !gpu.isHidden;
   });
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div>
+        <div className="mb-2">
+          <span className="font-medium text-sm">Machine Name </span>
+          <span className="text-red-500">*</span>
+        </div>
+        <Input
+          placeholder="Machine name..."
+          value={validation.machineName}
+          onChange={(e) =>
+            setValidation({ ...validation, machineName: e.target.value })
+          }
+        />
+      </div>
+
+      <MachineSettingsWrapper
+        title={<div className="font-medium text-sm">Configuration</div>}
+        onValueChange={(key, value) => {
+          // setValidation({ ...validation, [key]
+          console.log(key, value);
+          if (key === "comfyui_version") {
+            setValidation({
+              ...validation,
+              comfyUiHash: value,
+            });
+          } else if (key === "gpu") {
+            setValidation({
+              ...validation,
+              gpuType: value,
+            });
+          }
+        }}
+        machine={{
+          id: "new",
+          type: "comfy-deploy-serverless",
+          comfyui_version: comfyui_hash,
+          name: validation.machineName,
+          gpu: validation.gpuType,
+        }}
+      />
+    </div>
+  );
 
   return (
     <div className="relative flex flex-col gap-4">

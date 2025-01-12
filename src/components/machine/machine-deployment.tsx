@@ -103,7 +103,7 @@ const UserInfoForDeployment = ({ machineVersion }: { machineVersion: any }) => {
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-gray-500 text-sm">
+      <span className="text-gray-500 text-xs">
         {formatShortDistanceToNow(new Date(machineVersion.created_at))} by{" "}
         {user.username ?? `${user.first_name} ${user.last_name}`}
       </span>
@@ -154,7 +154,7 @@ const MachineStatusBadge = ({
   );
 };
 
-const LoadingSkeleton = () => {
+export const LoadingMachineVerSkeleton = () => {
   return (
     <>
       {[...Array(5)].map((_, i) => (
@@ -196,11 +196,11 @@ const LoadingSkeleton = () => {
 export function MachineDeployment(props: { machine: any }) {
   const { machine } = props;
   const query = useMachineVersions(machine.id);
-  const [estimatedSize, setEstimatedSize] = useState(90);
+  const [estimatedSize, setEstimatedSize] = useState(41);
 
   useEffect(() => {
     const updateSize = () => {
-      setEstimatedSize(window.innerWidth < 768 ? 330 : 90);
+      setEstimatedSize(window.innerWidth < 768 ? 330 : 41);
     };
 
     updateSize();
@@ -222,7 +222,7 @@ export function MachineDeployment(props: { machine: any }) {
   if (query.isLoading) {
     return (
       <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1500px] px-2 py-4 md:px-4">
-        <LoadingSkeleton />
+        <LoadingMachineVerSkeleton />
       </div>
     );
   }
@@ -237,6 +237,9 @@ export function MachineDeployment(props: { machine: any }) {
 
   return (
     <>
+      <h3 className="px-2 pt-4 font-semibold text-xl md:px-4">
+        Machine History
+      </h3>
       <a
         href="https://www.comfydeploy.com/docs/v2/machines/versioning"
         target="_blank"
@@ -251,20 +254,22 @@ export function MachineDeployment(props: { machine: any }) {
           className="!h-full fab-machine-list w-full"
           queryResult={query}
           renderItem={(machineVersion) => (
-            <MachineVersionList
-              machineVersion={machineVersion}
-              machine={machine}
-            />
+            <div className="flex flex-col">
+              <MachineVersionListItem
+                machineVersion={machineVersion}
+                machine={machine}
+              />
+            </div>
           )}
           estimateSize={estimatedSize}
-          renderLoading={() => <LoadingSkeleton />}
+          renderLoading={() => <LoadingMachineVerSkeleton />}
         />
       </div>
     </>
   );
 }
 
-function MachineVersionList({
+export function MachineVersionListItem({
   machineVersion,
   machine,
 }: {
@@ -310,26 +315,17 @@ function MachineVersionList({
   }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
   return (
-    <div
+    <a
       key={machineVersion.id}
-      className="border bg-white p-4 shadow-sm rounded-[8px]"
+      className="cursor-pointer border-b px-4 hover:bg-gray-100"
+      href={`/machines/${machine.id}/${machineVersion.id}`}
     >
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(180px,2fr)_auto] gap-4 md:gap-x-4 md:items-center">
+      <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(100px,1fr)_minmax(250px,auto)] gap-4 md:gap-x-4 md:items-center">
         {/* ID and Version */}
-        <div
-          className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer"
-          onClick={() => {
-            navigate({
-              to: "/machines/$machineId/$machineVersionId",
-              params: {
-                machineVersionId: machineVersion.id,
-              },
-            });
-          }}
-        >
-          <div className="font-medium font-mono text-2xs truncate">
+        <div className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer">
+          {/* <div className="font-medium font-mono text-2xs truncate">
             {machineVersion.id.slice(0, 8)}
-          </div>
+          </div> */}
           <div className="flex flex-row gap-x-2 items-center">
             <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
               v{machineVersion.version}
@@ -349,16 +345,19 @@ function MachineVersionList({
         <hr className=" border-gray-200 border-t md:hidden" />
 
         {/* Status and Time */}
-        <div className="grid min-w-0 grid-cols-[auto,1fr] items-center gap-x-1.5">
-          <MachineStatusBadge
-            status={machineVersion.status}
-            createdAt={machineVersion.created_at}
-          />
-          {machineVersion.status === "building" ? (
-            <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />
-          ) : (
-            <div className="w-[14px] shrink-0" />
-          )}
+        <div className="flex flex-row gap-4">
+          <div className="grid min-w-0 grid-cols-[auto,1fr] items-center gap-x-1.5">
+            <MachineStatusBadge
+              status={machineVersion.status}
+              createdAt={machineVersion.created_at}
+            />
+            {machineVersion.status === "building" ? (
+              <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />
+            ) : (
+              <div className="w-[14px] shrink-0" />
+            )}
+          </div>
+
           <span className="truncate text-gray-500 text-sm">
             {machineVersion.status === "building"
               ? differenceInSeconds(
@@ -387,35 +386,15 @@ function MachineVersionList({
         <hr className=" border-gray-200 border-t md:hidden" />
 
         {/* GPU and Nodes */}
-        <div className="grid grid-cols-[auto,1fr] items-center gap-x-2 min-w-0">
+        <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
           <HardDrive className="h-[14px] w-[14px] shrink-0" />
-          <div className="grid grid-cols-10 items-center">
-            <span className="text-sm text-gray-600 truncate">
-              {machineVersion.gpu}
-            </span>
-
-            <Badge
-              variant="indigo"
-              className="font-mono !text-[10px] w-fit whitespace-nowrap cursor-pointer opacity-80 hover:opacity-100 transition-opacity"
-              onClick={() => {
-                window.open(
-                  `https://github.com/comfyanonymous/ComfyUI/commit/${machineVersion.comfyui_version}`,
-                  "_blank",
-                );
-              }}
-            >
-              ComfyUI - {machineVersion.comfyui_version.slice(0, 10)}
-              <ExternalLink className="h-3 w-3" />
-            </Badge>
+          <div className="flex items-center">
+            <span className="text-xs text-gray-600">{machineVersion.gpu}</span>
           </div>
-          <Library className="h-[14px] w-[14px] shrink-0" />
-          <CustomNodeList machine={machineVersion} numOfNodes={2} />
         </div>
 
-        <hr className="border-gray-200 border-t md:hidden" />
-
         {/* User Info and Actions */}
-        <div className="justify-self-end flex flex-row gap-x-2 shrink-0">
+        <div className="justify-self-end flex flex-row gap-x-2 items-center">
           <UserInfoForDeployment machineVersion={machineVersion} />
           <InstantRollback
             machineVersion={machineVersion}
@@ -424,7 +403,7 @@ function MachineVersionList({
           />
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 
@@ -471,7 +450,7 @@ function InstantRollback({
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon">
             <Ellipsis className="h-4 w-4" />
           </Button>
@@ -487,7 +466,11 @@ function InstantRollback({
               machine.status === "building"
             }
             className="text-red-500"
-            onClick={() => setRollbackAlertOpen(true)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setRollbackAlertOpen(true);
+            }}
           >
             Rollback
             <DropdownMenuShortcut>
@@ -505,7 +488,9 @@ function InstantRollback({
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
           <DropdownMenuItem
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               navigate({
                 to: "/machines/$machineId/$machineVersionId",
                 params: {

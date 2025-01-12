@@ -226,7 +226,7 @@ export function RunWorkflowInline({
   default_values?: Record<string, any>;
   hideRunButton?: boolean;
   hideInputs?: boolean;
-  runOrigin?: WorkflowRunOriginType;
+  runOrigin?: any;
   blocking?: boolean;
   model_id?: string;
 }) {

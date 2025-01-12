@@ -9,14 +9,6 @@ import {
 import { CPU_MEMORY_MAP } from "@/components/machines/machine-list-item";
 import { Badge } from "@/components/ui/badge";
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -25,22 +17,22 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useMachineVersion } from "@/hooks/use-machine";
+import { useMachine, useMachineVersion } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { differenceInSeconds } from "date-fns";
 import {
-  CircleArrowUp,
+  ChevronRight,
   Clock,
   ExternalLink,
   FileClock,
   HardDrive,
   Layers,
   Library,
+  Loader2,
   MemoryStick,
-  RefreshCw,
   Thermometer,
   Ticket,
 } from "lucide-react";
@@ -49,7 +41,9 @@ import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import "./machine-overview-style.css";
 import { Responsive, WidthProvider } from "react-grid-layout";
-import { Button } from "../ui/button";
+import { ShineBorder } from "../magicui/shine-border";
+import { LastActiveEvent, MachineCostEstimate } from "./machine-overview";
+import { MachineVersionBadge } from "./machine-version-badge";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -75,66 +69,69 @@ export function MachineVersionDetail({
   if (isLoading || machineVersionLoading) return <div>Loading...</div>;
 
   return (
-    <div className="mx-auto w-full max-w-[1500px] md:p-4">
-      <h1 className="p-4 font-medium text-2xl">{machine.name}</h1>
-
-      <div className="flex flex-row items-center justify-between px-4 py-2">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink
-                onClick={() =>
-                  navigate({
-                    to: "/machines/$machineId",
-                    params: { machineId: machine.id },
-                    search: { view: "deployments" },
-                  })
-                }
-                className="cursor-pointer"
-              >
-                Deployments
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>v{machineVersion.version}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
-        {machine.machine_version_id === machineVersion.id && (
-          <div className="flex flex-row items-center gap-2 rounded-sm bg-green-500 px-3 py-2 text-green-50 text-xs">
-            <CircleArrowUp className="h-4 w-4" />
-            Current Version
-          </div>
-        )}
+    <div className="mx-auto w-full">
+      <div className="sticky top-0 z-50 flex flex-row justify-between border-gray-200 border-b bg-[#fcfcfc] p-4 shadow-sm">
+        <div className="flex flex-row items-center gap-4">
+          <Link
+            to={`/machines/${machine.id}`}
+            params={{ machineId: machine.id }}
+            className="flex flex-row items-center gap-2 font-medium text-md"
+          >
+            {machine.name}
+            {machine.machine_version_id && (
+              <MachineVersionBadge machine={machine} isExpanded={true} />
+            )}
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <Link
+            to={`/machines/${machine.id}/history`}
+            params={{ machineId: machine.id }}
+            className="text-gray-500 text-sm"
+          >
+            History
+          </Link>
+          <ChevronRight className="h-4 w-4" />
+          <span className="text-gray-500 text-sm">
+            v{machineVersion.version}
+          </span>
+        </div>
+        <div className="flex flex-row gap-2">
+          <MachineCostEstimate machineId={machine.id} />
+          <LastActiveEvent machineId={machine.id} />
+        </div>
       </div>
 
-      <ResponsiveGridLayout
-        className="layout"
-        layouts={{ lg: defaultLayout }}
-        breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-        cols={{ lg: 2, md: 2, sm: 1, xs: 1, xxs: 1 }}
-        rowHeight={50}
-        isResizable={false}
-        isDraggable={false}
-      >
-        <div key="info">
-          <MachineInfo machineVersion={machineVersion} />
-        </div>
-        <div key="status">
-          <MachineOverviewStatus machineVersion={machineVersion} />
-        </div>
-        <div key="customNodes">
-          <MachineCustomNodes machineVersion={machineVersion} />
-        </div>
-        <div key="buildLog">
-          <MachineVersionBuildLog
-            machine={machine}
-            machineVersion={machineVersion}
-          />
-        </div>
-      </ResponsiveGridLayout>
+      <div className="mx-auto max-w-[1200px]">
+        <ResponsiveGridLayout
+          className="layout"
+          layouts={{ lg: defaultLayout }}
+          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+          cols={{ lg: 2, md: 2, sm: 1, xs: 1, xxs: 1 }}
+          rowHeight={50}
+          isResizable={false}
+          isDraggable={false}
+        >
+          <div key="info">
+            <MachineInfo machineVersion={machineVersion} />
+          </div>
+          <div key="status">
+            <MachineOverviewStatus machineVersion={machineVersion} />
+          </div>
+          <div key="customNodes">
+            {machine.machine_version_id === machineVersion.id ? (
+              <CurrentMachineCustomNodes machineId={machine.id} />
+            ) : (
+              <MachineCustomNodes machineVersion={machineVersion} />
+            )}
+          </div>
+          <div key="buildLog">
+            <MachineVersionBuildLog
+              machine={machine}
+              machineVersion={machineVersion}
+            />
+          </div>
+        </ResponsiveGridLayout>
+      </div>
     </div>
   );
 }
@@ -496,6 +493,229 @@ function MachineCustomNodes({ machineVersion }: { machineVersion: any }) {
   } catch (error) {
     console.error("Error parsing dependencies:", error);
     return renderCard([], []);
+  }
+}
+
+function CurrentMachineCustomNodes({ machineId }: { machineId: string }) {
+  const { data: machine } = useMachine(machineId);
+
+  if (!machine) return null;
+
+  const getNodeBadgeProps = (machineStatus: string, nodeIsFailed: boolean) => {
+    switch (machineStatus) {
+      case "building":
+        return {
+          variant: "secondary" as const,
+          label: "Installing",
+          icon: <Loader2 className="mr-1 h-3 w-3 animate-spin" />,
+          className: "animate-pulse",
+        };
+      case "error":
+        return {
+          variant: "destructive" as const,
+          label: "Failed",
+          className: "",
+        };
+      case "ready":
+        return nodeIsFailed
+          ? {
+              variant: "destructive" as const,
+              label: "Failed",
+              className: "",
+            }
+          : {
+              variant: "outline" as const,
+              label: "Imported",
+              className: "",
+            };
+      default:
+        return {
+          variant: "outline" as const,
+          label: "Unknown",
+          className: "",
+        };
+    }
+  };
+
+  const renderCard = (
+    nodes: any[] = [],
+    commands: any[] = [],
+    hasFailedNodes = false,
+  ) => {
+    const content = (
+      <Card className="flex h-full w-full flex-col rounded-[10px]">
+        <CardHeader className="flex-none pb-4">
+          <CardTitle className="flex items-center justify-between font-semibold text-xl">
+            Custom Nodes & Commands
+            <div className="flex items-center">
+              <Library className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-hidden">
+          {nodes.length === 0 && commands.length === 0 ? (
+            <div className="py-4 text-center text-muted-foreground text-sm">
+              No custom nodes or commands installed
+            </div>
+          ) : (
+            <ScrollArea className="h-full">
+              <div className="flex flex-col">
+                {nodes.map((node, index) => {
+                  const badgeProps = getNodeBadgeProps(
+                    machine.status,
+                    node.isFailed,
+                  );
+                  return (
+                    <div
+                      key={node.id}
+                      className={cn(
+                        "flex w-full flex-row items-center justify-between rounded-[4px] p-1 transition-all hover:bg-gray-100",
+                        index % 2 === 1 && "bg-gray-50",
+                        node.isFailed && "bg-red-50",
+                      )}
+                    >
+                      <Link
+                        onClick={() => {
+                          window.open(
+                            `${node.data.url}/commit/${node.data.hash}`,
+                            "_blank",
+                          );
+                        }}
+                        className="flex flex-row items-center gap-2 text-sm"
+                      >
+                        <span className="flex-1 truncate">
+                          {node.data.name}
+                        </span>
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                      <div className="flex flex-row items-center gap-2">
+                        <span className="hidden max-w-[100px] truncate font-mono text-2xs text-muted-foreground md:block">
+                          {node.data.hash}
+                        </span>
+                        <Badge
+                          variant={badgeProps.variant}
+                          className={cn(
+                            "!text-2xs !font-semibold !leading-tight px-3",
+                            badgeProps.className,
+                          )}
+                        >
+                          {badgeProps.icon}
+                          {badgeProps.label}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+                {commands.map((command, index) => (
+                  <div
+                    key={command.id}
+                    className={cn(
+                      "flex w-full flex-row items-center justify-between rounded-[4px] p-1 transition-all",
+                      (index + nodes.length) % 2 === 1 && "bg-gray-50",
+                    )}
+                  >
+                    <div className="flex-1 flex flex-row items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground flex items-center">
+                        <span className="text-gray-400 mr-1.5">$</span>
+                        <span
+                          className="truncate max-w-[300px] inline-block"
+                          title={command.data}
+                        >
+                          {command.data}
+                        </span>
+                      </span>
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className="!text-2xs !font-semibold !leading-tight px-3 flex-shrink-0 ml-2"
+                    >
+                      Command
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
+    );
+
+    return hasFailedNodes ? (
+      <ShineBorder
+        color="red"
+        className="h-full w-full p-0"
+        borderRadius={10}
+        borderWidth={2}
+      >
+        {content}
+      </ShineBorder>
+    ) : (
+      content
+    );
+  };
+
+  // Handle new format (docker_command_steps)
+  if (machine.docker_command_steps) {
+    const failedNodePaths = useMemo(() => {
+      try {
+        return new Set(
+          JSON.parse(machine.import_failed_logs || "[]").map((log: any) => {
+            const match = log.logs.match(/: (.+)$/);
+            return match ? match[1] : "";
+          }),
+        );
+      } catch (error) {
+        console.error("Error parsing failed logs:", error);
+        return new Set();
+      }
+    }, [machine.import_failed_logs]);
+
+    const customNodes = useMemo(() => {
+      return machine.docker_command_steps.steps
+        .filter((node: any) => node.type === "custom-node")
+        .map((node: any) => ({
+          ...node,
+          isFailed: failedNodePaths.has(
+            `/comfyui/custom_nodes/${node.data?.url.split("/").pop()}`,
+          ),
+        }));
+    }, [machine.docker_command_steps.steps, failedNodePaths]);
+
+    const commands = useMemo(() => {
+      return machine.docker_command_steps.steps.filter(
+        (node: any) => node.type === "commands",
+      );
+    }, [machine.docker_command_steps.steps]);
+
+    return renderCard(
+      customNodes,
+      commands,
+      customNodes.some((node: any) => node.isFailed),
+    );
+  }
+
+  // Handle old format (dependencies)
+  try {
+    const dependencies =
+      typeof machine.dependencies === "string"
+        ? JSON.parse(machine.dependencies)
+        : machine.dependencies || {};
+
+    const customNodes = Object.entries(dependencies.custom_nodes || {}).map(
+      ([_, node]: [string, any]) => ({
+        id: node.url,
+        data: {
+          url: node.url,
+          hash: node.hash,
+          name: node.name || node.url.split("/").pop(),
+        },
+      }),
+    );
+
+    return renderCard(customNodes);
+  } catch (error) {
+    console.error("Error parsing dependencies:", error);
+    return renderCard();
   }
 }
 

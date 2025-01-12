@@ -66,11 +66,12 @@ export function App({
   return (
     <>
       <BlurIn
+        duration={0.2}
         variant={{
           hidden: { filter: "blur(10px)", opacity: 0, x: 0, y: 10 },
           visible: { filter: "blur(0px)", opacity: 1, x: 0, y: 0 },
         }}
-        className="pointer-events-none absolute bottom-0 z-10 mx-auto mb-2 flex w-full flex-col items-center gap-2 md:bottom-2"
+        className="pointer-events-none absolute bottom-0 z-50 mx-auto mb-2 flex w-full flex-col items-center gap-2 md:bottom-2"
       >
         <Card className="pointer-events-auto w-fit rounded-2xl p-1 shadow-lg">
           <div className="flex items-center justify-center gap-2">

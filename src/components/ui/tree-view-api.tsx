@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import * as AccordionPrimitive from "@radix-ui/react-accordion";
-import { FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
+import { File as FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react";
 import type React from "react";
 import {
   createContext,

@@ -23,7 +23,7 @@ import { useAuthStore } from "@/lib/auth-store";
 import { machineGPUOptions } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { EventSourcePolyfill } from "event-source-polyfill";
-import { Folder, Image, List, Plus, Wrench } from "lucide-react";
+import { Eye, Folder, Image, List, Plus, Wrench, X } from "lucide-react";
 import { Info } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { useQueryState } from "nuqs";
@@ -33,6 +33,7 @@ import { z } from "zod";
 import { AssetBrowser } from "../asset-browser";
 import { ModelList } from "../storage/model-list";
 import { ModelListHeader, ModelListView } from "../storage/model-list-view";
+import { SidebarMenuButton } from "../ui/sidebar";
 import { Skeleton } from "../ui/skeleton";
 import { App } from "./App";
 import { useLogStore } from "./LogContext";
@@ -44,6 +45,7 @@ import Workspace, { useAssetsBrowserStore } from "./Workspace";
 // import { WorkspaceProvider } from "./WorkspaceContext";
 import { useCDStore } from "./Workspace";
 import { sendEventToCD } from "./sendEventToCD";
+import { SessionCreate } from "./session-create";
 
 const staticUrl = process.env.COMFYUI_FRONTEND_URL!;
 console.log(staticUrl);
@@ -205,7 +207,7 @@ export function SessionCreator(props: {
   // ];
 
   const [sessionId, setSessionId] = useQueryState("sessionId", {
-    defaultValue: "preview",
+    defaultValue: "",
   });
 
   const { open, ui, setOpen } = useUpdateServerActionDialog({
@@ -232,6 +234,7 @@ export function SessionCreator(props: {
             ["T4", , "T4 (16GB)"],
             ["A10G", , "A10G (24GB)"],
             ["L4", , "L4 (24GB)"],
+            ["L40S", , "L40S (48GB)"],
             ["A100", "business", "A100 (40GB)"],
             ["A100-80GB", "business", "A100-80GB (80GB)"],
             ["H100", "business", "H100 (80GB)"],
@@ -279,7 +282,7 @@ export function SessionCreator(props: {
       return;
     }
     if (sessionId && !session) {
-      setSessionId("preview");
+      setSessionId("");
     }
 
     // if (session) {
@@ -330,7 +333,7 @@ export function SessionCreator(props: {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <div className="mx-2 flex cursor-help items-center gap-1">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-gray-600 text-sm">
                           Preview Mode
                         </span>
                         <Info className="h-4 w-4 text-gray-400" />
@@ -345,7 +348,21 @@ export function SessionCreator(props: {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+
                 <Button
+                  variant="default"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  Icon={X}
+                  iconPlacement="left"
+                  onClick={() => {
+                    setSessionId("");
+                  }}
+                >
+                  Close Preview
+                </Button>
+
+                {/* <Button
                   variant="default"
                   size="sm"
                   className="flex items-center gap-1"
@@ -362,8 +379,8 @@ export function SessionCreator(props: {
                   }}
                 >
                   Session
-                </Button>
-                <ModelsButton isPreview={true} />
+                </Button> */}
+                {/* <ModelsButton isPreview={true} /> */}
               </div>
             </App>
           </div>
@@ -419,7 +436,30 @@ export function SessionCreator(props: {
     );
   }
 
-  return <>{ui}</>;
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="flex items-center gap-2">
+        {/* <SidebarMenuButton> */}
+        <SessionCreate
+          btnSize="sm"
+          workflowId={props.workflowId}
+          setSessionId={setSessionId}
+          btnText="Start ComfyUI"
+        />
+        {/* </SidebarMenuButton> */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="flex flex-row gap-1"
+          onClick={() => {
+            setSessionId("preview");
+          }}
+        >
+          Preview Workflow <Eye size={16} />
+        </Button>
+      </div>
+    </div>
+  );
 }
 
 function useLogListener({ sessionId }: { sessionId: string }) {

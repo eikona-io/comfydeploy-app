@@ -64,10 +64,12 @@ import { Drawer } from "vaul";
 import { create } from "zustand";
 import { AssetBrowser } from "../asset-browser";
 import { UploadZone } from "../upload/upload-zone";
+import { AssetsBrowserPopup } from "./assets-browser-drawer";
 import {
   SessionIncrementDialog,
   useSessionIncrementStore,
 } from "./increase-session";
+
 // import { useCurrentWorkflow } from "@/components/useCurrentWorkflow";
 // import { useMachineStore } from "@/repo/components/ui/custom/workspace/DevSelectMachine";
 
@@ -137,7 +139,7 @@ export default function Workspace({
   const { value: selectedVersion } = useSelectedVersion(workflowId);
 
   const [sessionId] = useQueryState("sessionId", {
-    defaultValue: "preview",
+    defaultValue: "",
   });
 
   const isDraftDifferent = useMemo(() => {
@@ -325,6 +327,7 @@ export default function Workspace({
               icon: "pi-clock",
               tooltip: "Increase the timeout of your current session",
               label: "Increase Timeout",
+              btnClasses: "p-button-success",
               event: "increase-session",
               eventData: {},
             },
@@ -485,56 +488,3 @@ export const useAssetsBrowserStore = create<AssetsBrowserState>((set) => ({
   targetNodeData: null,
   setTargetNodeData: (targetNodeData) => set({ targetNodeData }),
 }));
-
-function AssetsBrowserPopup() {
-  const { open, setOpen, targetNodeData } = useAssetsBrowserStore();
-  const isMobile = useMediaQuery("(max-width: 768px)");
-
-  return (
-    <Drawer.Root
-      open={open}
-      onOpenChange={(open) => setOpen(open)}
-      direction={isMobile ? "bottom" : "right"}
-    >
-      <Drawer.Portal>
-        <Drawer.Content
-          className={cn(
-            isMobile
-              ? "fixed right-0 bottom-0 left-0 mt-24 flex h-[96%] flex-col rounded-t-[10px] bg-white md:top-0 md:right-0 md:bottom-0 md:h-full md:w-[400px] md:rounded-l-[10px] md:rounded-tr-none"
-              : "fixed top-2 right-2 bottom-2 z-10 flex w-[500px] outline-none",
-          )}
-          style={
-            {
-              "--initial-transform": "calc(100% + 8px)",
-            } as React.CSSProperties
-          }
-        >
-          <div className="flex h-full w-full grow flex-col rounded-[16px] bg-zinc-50 p-5">
-            <AssetBrowser
-              onItemClick={(asset) => {
-                if (targetNodeData?.node) {
-                  // If we have target node data, update the existing node
-                  console.log(targetNodeData);
-
-                  sendEventToCD("update_widget", {
-                    nodeId: targetNodeData.node,
-                    widgetName: targetNodeData.inputName,
-                    value: asset.url,
-                  });
-                  useAssetsBrowserStore.getState().setTargetNodeData(null);
-                } else {
-                  // Otherwise create a new node (existing behavior)
-                  sendEventToCD("add_node", {
-                    type: "ComfyUIDeployExternalImage",
-                    widgets_values: ["input_image", "", "", asset.url],
-                  });
-                }
-                setOpen(false); // Close the drawer after selection
-              }}
-            />
-          </div>
-        </Drawer.Content>
-      </Drawer.Portal>
-    </Drawer.Root>
-  );
-}

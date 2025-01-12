@@ -8,8 +8,12 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
 import { useUserInfo } from "@/hooks/use-user-info";
+import { api } from "@/lib/api";
 import { UTCDate } from "@date-fns/utc";
+import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { format, formatDistanceToNow } from "date-fns";
 import { Check, Minus, X } from "lucide-react";
@@ -28,7 +32,7 @@ export const columns: ColumnDef<ColumnSchema>[] = [
       const value = row.getValue("id") as string;
       return (
         <TextWithTooltip
-          className="font-mono text-[11px] max-w-[85px]"
+          className="max-w-[85px] font-mono text-[11px]"
           text={value}
         />
       );
@@ -44,35 +48,41 @@ export const columns: ColumnDef<ColumnSchema>[] = [
       <DataTableColumnHeader column={column} title="Date" className="text-xs" />
     ),
     cell: ({ row }) => {
-      const date = new Date(row.getValue("created_at"));
+      const utcDate = new Date(row.getValue("created_at"));
+      const localDate = new Date(
+        utcDate.getTime() - utcDate.getTimezoneOffset() * 60000,
+      );
+
       return (
         <HoverCard openDelay={0} closeDelay={0}>
           <HoverCardTrigger asChild>
             <div className="whitespace-nowrap">
-              {formatDistanceToNow(date, { addSuffix: true })}
+              {formatDistanceToNow(localDate, { addSuffix: true })}
             </div>
           </HoverCardTrigger>
           <HoverCardContent
             side="right"
             align="start"
             alignOffset={-4}
-            className="p-2 w-auto z-10"
+            className="z-10 w-auto p-2"
           >
             <dl className="flex flex-col gap-1">
-              <div className="flex gap-4 text-sm justify-between items-center">
+              <div className="flex items-center justify-between gap-4 text-sm">
                 <dt className="text-muted-foreground text-xs">Timestamp</dt>
-                <dd className="font-mono truncate text-xs">{date.getTime()}</dd>
-              </div>
-              <div className="flex gap-4 text-sm justify-between items-center">
-                <dt className="text-muted-foreground text-xs">UTC</dt>
-                <dd className="font-mono truncate text-xs">
-                  {format(new UTCDate(date), "LLL dd, y HH:mm:ss")}
+                <dd className="truncate font-mono text-xs">
+                  {localDate.getTime()}
                 </dd>
               </div>
-              <div className="flex gap-4 text-sm justify-between items-center">
+              <div className="flex items-center justify-between gap-4 text-sm">
+                <dt className="text-muted-foreground text-xs">UTC</dt>
+                <dd className="truncate font-mono text-xs">
+                  {format(new UTCDate(localDate), "LLL dd, y HH:mm:ss")}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 text-sm">
                 <dt className="text-muted-foreground text-xs">{timezone}</dt>
-                <dd className="font-mono truncate text-xs">
-                  {format(date, "LLL dd, y HH:mm:ss")}
+                <dd className="truncate font-mono text-xs">
+                  {format(localDate, "LLL dd, y HH:mm:ss")}
                 </dd>
               </div>
             </dl>
@@ -115,12 +125,18 @@ export const columns: ColumnDef<ColumnSchema>[] = [
     },
   },
   {
-    accessorKey: "machine",
+    accessorKey: "machine_id",
     header: "Machine",
-    accessorFn: (row) => row.machine.name,
+    accessorFn: (row) => row.machine_id,
     cell: ({ row }) => {
-      const value = row.getValue("machine") as string;
-      return <TextWithTooltip className="max-w-[200px]" text={value} />;
+      const value = row.getValue("machine_id") as string;
+      const { data: machine, isLoading } = useMachine(value);
+
+      if (isLoading) return <Skeleton className="h-5 w-20" />;
+
+      if (!machine) return null;
+
+      return <TextWithTooltip className="max-w-[200px]" text={machine.name} />;
     },
     meta: {
       headerClassName: "h-5 text-xs",
@@ -151,12 +167,18 @@ export const columns: ColumnDef<ColumnSchema>[] = [
     },
   },
   {
-    accessorKey: "workflow name",
+    accessorKey: "workflow_id",
     header: "Workflow Name",
-    accessorFn: (row) => row.workflow?.name,
+    accessorFn: (row) => row.workflow_id,
     cell: ({ row }) => {
-      const value = row.getValue("workflow name") as string;
-      return <TextWithTooltip className="max-w-[200px]" text={value} />;
+      const value = row.getValue("workflow_id") as string;
+      const { workflow, isLoading } = useCurrentWorkflow(value);
+
+      if (isLoading) return <Skeleton className="h-5 w-20" />;
+
+      if (!workflow) return null;
+
+      return <TextWithTooltip className="max-w-[200px]" text={workflow.name} />;
     },
     meta: {
       headerClassName: "h-5 text-xs max-w-[120px]",
@@ -165,10 +187,24 @@ export const columns: ColumnDef<ColumnSchema>[] = [
   {
     accessorKey: "version",
     header: "Workflow Version",
-    accessorFn: (row) => row.workflow_version,
+    accessorFn: (row) => row.workflow_version_id,
     cell: ({ row }) => {
       const value = row.getValue("version") as string;
-      return <Badge variant={"outline"}>{`v${value}`}</Badge>;
+      const { data: version, isLoading } = useQuery({
+        queryKey: ["workflow-version", value],
+        queryFn: async ({ queryKey }) => {
+          const response = await api({ url: queryKey.join("/") });
+          return response;
+        },
+      });
+
+      if (isLoading) return <Skeleton className="h-5 w-20" />;
+
+      if (!version) return null;
+
+      if (!version.version) return "-";
+
+      return <Badge variant={"outline"}>{`v${version.version}`}</Badge>;
     },
     meta: {
       headerClassName: "h-5 text-xs max-w-[60px]",
@@ -214,18 +250,6 @@ export const columns: ColumnDef<ColumnSchema>[] = [
             </Badge>
           );
       }
-    },
-    meta: {
-      headerClassName: "h-5 text-xs",
-    },
-  },
-  {
-    accessorKey: "workflow_id",
-    header: "Workflow ID",
-    accessorFn: (row) => row.workflow?.id,
-    cell: ({ row }) => {
-      const value = row.getValue("workflow_id") as string;
-      return <TextWithTooltip className="max-w-[200px]" text={value} />;
     },
     meta: {
       headerClassName: "h-5 text-xs",

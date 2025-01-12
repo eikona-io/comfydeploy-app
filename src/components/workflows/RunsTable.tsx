@@ -421,9 +421,9 @@ function RunRow({
         <span className="col-span-1 text-2xs text-gray-500">
           #{truncatedId}
         </span>
-        {/* <Suspense fallback={}> */}
-        <DisplayVersion versionId={run.workflow_version_id} />
-        {/* </Suspense> */}
+        <span className="col-span-2">
+          <DisplayVersion versionId={run.workflow_version_id} />
+        </span>
         <span className="col-span-2">
           {run.gpu && (
             <Badge className="w-fit rounded-[10px] text-2xs text-gray-500">

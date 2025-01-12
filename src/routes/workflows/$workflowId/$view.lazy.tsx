@@ -137,12 +137,14 @@ function WorkflowPageComponent() {
         <PaddingLayout>
           <div className={cn("h-full w-full")}>
             {workflow?.selected_machine_id && version?.id && (
-              <SharePageComponent
-                runOrigin={"manual"}
-                machine_id={workflow?.selected_machine_id}
-                workflow_version_id={version?.id}
-                inputs={getInputsFromWorkflowAPI(version?.workflow_api)}
-              />
+              <RealtimeWorkflowProvider workflowId={workflowId}>
+                <SharePageComponent
+                  runOrigin={"manual"}
+                  machine_id={workflow?.selected_machine_id}
+                  workflow_version_id={version?.id}
+                  inputs={getInputsFromWorkflowAPI(version?.workflow_api)}
+                />
+              </RealtimeWorkflowProvider>
             )}
           </div>
         </PaddingLayout>
@@ -220,13 +222,13 @@ function WorkflowPageComponent() {
                             sessionSelected?.tunnel_url ||
                             process.env.COMFYUI_FRONTEND_URL
                           }
-                          className="mt-2"
+                          className=""
                           btnsClassName="gap-1"
                         />
-                        <SidebarMenu className="mt-2">
+                        <SidebarMenu className="">
                           <SidebarMenuItem>
                             <div className="flex items-center gap-0.5">
-                              <SidebarMenuButton>
+                              {/* <SidebarMenuButton>
                                 <SessionCreate
                                   workflowId={workflowId}
                                   setSessionId={setSessionId}
@@ -236,7 +238,7 @@ function WorkflowPageComponent() {
                                     <Plus size={16} /> Create Session
                                   </div>
                                 </SessionCreate>
-                              </SidebarMenuButton>
+                              </SidebarMenuButton> */}
                               {currentView === "workspace" &&
                                 tab === "workspace" &&
                                 sessionSelected && (

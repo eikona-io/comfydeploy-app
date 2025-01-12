@@ -1,5 +1,6 @@
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
+import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useUpdateServerActionDialog } from "../auto-form/auto-form-dialog";
@@ -51,6 +52,7 @@ export function SessionCreate({
             ["T4", undefined, "T4 (16GB)"],
             ["A10G", undefined, "A10G (24GB)"],
             ["L4", undefined, "L4 (24GB)"],
+            ["L40S", "business", "L40S (48GB)"],
             ["A100", "business", "A100 (40GB)"],
             ["A100-80GB", "business", "A100-80GB (80GB)"],
             ["H100", "business", "H100 (80GB)"],
@@ -102,7 +104,7 @@ export function SessionCreate({
       )}
       {!asChild && (
         <Button
-          className="flex-auto"
+          className="flex-auto gap-1"
           onClick={() =>
             setOpen({
               gpu: (localStorage.getItem("lastGPUSelection") ||
@@ -115,6 +117,7 @@ export function SessionCreate({
           size={btnSize}
         >
           {btnText}
+          <Plus size={16} />
         </Button>
       )}
     </>

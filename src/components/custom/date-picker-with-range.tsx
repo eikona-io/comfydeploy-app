@@ -1,6 +1,6 @@
 "use client";
 
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import * as React from "react";
 import type { DateRange } from "react-day-picker";
@@ -85,6 +85,10 @@ export function DatePickerWithRange({
               selected={date}
               onSelect={setDate}
               numberOfMonths={1}
+              disabled={{
+                after: new Date(),
+                before: addDays(new Date(), -30),
+              }}
             />
           </div>
           <Separator />

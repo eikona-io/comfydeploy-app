@@ -33,6 +33,8 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+const MAX_BARS = 100; // Adjust this number based on your performance needs
+
 export function TimelineChart({
   data,
   className,
@@ -47,15 +49,26 @@ export function TimelineChart({
   const [refAreaRight, setRefAreaRight] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
 
+  // Filter data if the range exceeds one month
+  const filteredData = useMemo(() => {
+    if (data.length <= MAX_BARS) return data;
+
+    // Calculate the step size to evenly sample the data
+    const step = Math.ceil(data.length / MAX_BARS);
+
+    // Sample the data evenly
+    return data.filter((_, index) => index % step === 0);
+  }, [data]);
+
   // TODO: check why timestamp cannot be a number
   // FIXME: move to server
   const chart = useMemo(
     () =>
-      data.map((item) => ({
+      filteredData.map((item) => ({
         ...item,
         date: new Date(item.timestamp).toString(),
       })),
-    [data],
+    [filteredData],
   );
 
   const interval = useMemo(() => {

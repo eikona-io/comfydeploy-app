@@ -3,6 +3,7 @@ export const GPU = [
   "T4",
   "L4",
   "A10G",
+  "L40S",
   "A100",
   "A100-80GB",
   "H100",
@@ -20,11 +21,7 @@ export const STATUS = [
   "cancelled",
 ] as const;
 
-export const ORIGIN = [
-  "manual",
-  "api",
-  "public-share",
-] as const;
+export const ORIGIN = ["manual", "api", "public-share"] as const;
 
 export const MACHINE_TYPE = [
   "classic",

@@ -49,6 +49,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 export const CPU_MEMORY_MAP: Record<string, string> = {
   T4: "16GB",
   A10G: "24GB",
+  L40S: "48GB",
   L4: "24GB",
   A100: "40GB",
   "A100-80GB": "80GB",
@@ -491,24 +492,13 @@ const MachineListActionBar = ({
 }) => {
   return (
     <>
-      <Link href={`/machines/${machine.id}`}>
-        <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
-          {isExpanded && (
-            <span className="mr-2 font-normal text-muted-foreground text-xs">
-              Dashboard
-            </span>
-          )}
-          <LineChart className="h-4 w-4 text-muted-foreground" />
-        </Button>
-      </Link>
-      <Separator orientation="vertical" className="h-4" />
       {!isDockerCommandStepsNull && (
         <>
           <Link href={`/machines/${machine.id}?view=settings`}>
             <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
               {isExpanded && (
                 <span className="mr-2 font-normal text-muted-foreground text-xs">
-                  Edit
+                  Settings
                 </span>
               )}
               <Settings className="h-4 w-4 text-muted-foreground" />
@@ -517,11 +507,11 @@ const MachineListActionBar = ({
           <Separator orientation="vertical" className="h-4" />
         </>
       )}
-      <Link href={`/machines/${machine.id}?view=deployments`}>
+      <Link href={`/machines/${machine.id}?view=history`}>
         <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
           {isExpanded && (
             <span className="mr-2 font-normal text-muted-foreground text-xs">
-              Deployments
+              History
             </span>
           )}
           <GitBranch className="h-4 w-4 text-muted-foreground" />

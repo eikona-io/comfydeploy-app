@@ -216,7 +216,7 @@ export function MachineList() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId: machine.id },
-              search: { view: "overview" },
+              search: { view: undefined },
             });
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
@@ -258,7 +258,7 @@ export function MachineList() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId: machine.id },
-              search: { view: "deployments" },
+              search: { view: "history" },
             });
 
             return {}; // Return empty object since we're handling navigation manually
@@ -368,21 +368,21 @@ export function MachineItemActionList({
               Rebuild
             </Button>
 
-            <Button
+            {/* <Button
               variant="outline"
               disabled={isDockerCommandStepsNull}
               onClick={() => setCloneModalOpen(true)}
             >
               <Copy className="mr-2 h-4 w-4" />
               Clone
-            </Button>
+            </Button> */}
           </>
         )}
 
-        <Button variant="destructive" onClick={() => setDeleteModalOpen(true)}>
+        {/* <Button variant="destructive" onClick={() => setDeleteModalOpen(true)}>
           <Trash2 className="mr-2 h-4 w-4" />
           Delete
-        </Button>
+        </Button> */}
       </div>
     );
   };
@@ -675,7 +675,7 @@ function CloneMachineDialog({
                     machineId: res.id,
                   },
                   search: {
-                    view: "deployments",
+                    view: "history",
                   },
                 });
               },
@@ -784,7 +784,7 @@ function RebuildMachineDialog({
                   navigate({
                     to: "/machines/$machineId",
                     params: { machineId: machine.id },
-                    search: { view: "deployments" },
+                    search: { view: "history" },
                   });
                 } catch {
                   toast.error("Failed to rebuild machine");
