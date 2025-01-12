@@ -85,7 +85,7 @@ function RootComponent() {
           <Toaster richColors closeButton={true} />
         </div>
       </Providers>
-      <TanStackRouterDevtools position="bottom-right" />
+      {/* <TanStackRouterDevtools position="bottom-right" /> */}
     </SidebarProvider>
   );
 }

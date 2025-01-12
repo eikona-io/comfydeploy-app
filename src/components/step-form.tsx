@@ -1,9 +1,17 @@
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 export interface Step<T> {
@@ -89,76 +97,133 @@ export function StepForm<T>({
     }, 300);
   };
 
+  const handleBreadcrumbClick = (targetStep: number) => {
+    if (isNavigating) return;
+
+    let currentCheck = Math.min(step, targetStep);
+    const endStep = Math.max(step, targetStep);
+
+    while (currentCheck < endStep) {
+      const validationResult = steps[currentCheck].validate(validation);
+      if (!validationResult.isValid) {
+        if (validationResult.error) {
+          toast.error(validationResult.error);
+        }
+        return;
+      }
+      currentCheck++;
+    }
+
+    setStep(targetStep);
+  };
+
   const CurrentStepComponent = steps[step].component;
 
-  const calculateProgress = () => {
+  const progress = useMemo(() => {
     const navigation = getStepNavigation(step, validation);
-    const totalSteps = steps.length - 1;
-    const currentStepNumber = step;
+    const accessibleSteps = steps.filter((_, index) => {
+      let currentCheck = 0;
+      const visitedSteps = new Set<number>();
+
+      while (currentCheck < index) {
+        if (visitedSteps.has(currentCheck)) return false;
+        visitedSteps.add(currentCheck);
+
+        const nav = getStepNavigation(currentCheck, validation);
+        if (nav.next !== index && nav.next !== currentCheck + 1) return false;
+        currentCheck++;
+      }
+      return true;
+    });
+
+    const totalSteps = accessibleSteps.length - 1;
+    const currentStepIndex = accessibleSteps.indexOf(steps[step]);
 
     return navigation.next === null
       ? 100
-      : Math.round((currentStepNumber / totalSteps) * 100);
-  };
+      : Math.round((currentStepIndex / totalSteps) * 100);
+  }, [step, validation, steps, getStepNavigation]);
+
+  if (!steps.length) {
+    return null; // or some fallback UI
+  }
 
   return (
     <div className="relative flex min-h-screen w-full flex-col">
       {!hideProgressBar && (
-        <div className="sticky top-0 left-0 z-50 w-full">
-          <div className="relative">
-            <Progress
-              value={calculateProgress()}
-              className="h-2 rounded-none"
-            />
+        <div className="sticky top-0 left-0 z-50 w-full max-w-5xl mx-auto mt-10">
+          <div className="relative bg-background  overflow-hidden">
+            <Breadcrumb>
+              <BreadcrumbList>
+                {steps.map((stepItem, index) => {
+                  const isStepAccessible = (targetIndex: number) => {
+                    let currentCheck = 0;
+                    const visitedSteps = new Set<number>();
 
-            <div className="-bottom-10 absolute hidden w-full justify-between px-4 md:flex">
-              {steps.map((stepItem, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "rounded-full px-3 py-1 text-xs transition-all duration-300",
-                    index === step
-                      ? "opacity-0"
-                      : "bg-muted text-muted-foreground opacity-30",
-                  )}
-                >
-                  {stepItem.title}
-                </div>
-              ))}
-            </div>
+                    while (currentCheck < targetIndex) {
+                      if (visitedSteps.has(currentCheck)) return false;
+                      visitedSteps.add(currentCheck);
 
-            <div
-              className="-bottom-10 absolute z-10 transform transition-all duration-300 ease-out"
-              style={{
-                left:
-                  calculateProgress() === 100
-                    ? "auto"
-                    : `${calculateProgress()}%`,
-                right: calculateProgress() === 100 ? "0" : "auto",
-                transform:
-                  calculateProgress() === 100
-                    ? "translateX(-5%)"
-                    : calculateProgress() === 0
-                      ? "translateX(5%)"
-                      : "translateX(-50%)",
-                maxWidth: "90%",
-                minWidth: "max-content",
-              }}
-            >
-              <div className="relative">
-                <div
-                  className={cn(
-                    "-top-2 -translate-x-1/2 -translate-y-full absolute left-1/2 transform",
-                    calculateProgress() === 0 && "hidden",
-                  )}
-                >
-                  <div className="border-x-[8px] border-x-transparent border-b-[8px] border-b-primary" />
-                </div>
-                <div className="rounded-full bg-primary px-3 py-1 text-primary-foreground text-xs">
-                  {steps[step].title}
-                </div>
-              </div>
-            </div>
+                      const nav = getStepNavigation(currentCheck, validation);
+                      if (
+                        nav.next !== targetIndex &&
+                        nav.next !== currentCheck + 1
+                      )
+                        return false;
+                      currentCheck++;
+                    }
+                    return true;
+                  };
+
+                  const isAccessible = isStepAccessible(index);
+                  const hasNextAccessibleStep = steps
+                    .slice(index + 1)
+                    .some((_, i) => isStepAccessible(index + 1 + i));
+
+                  return isAccessible ? (
+                    <BreadcrumbItem key={index}>
+                      <BreadcrumbLink
+                        onClick={
+                          index !== step
+                            ? () => handleBreadcrumbClick(index)
+                            : undefined
+                        }
+                        className={cn(
+                          "cursor-pointer relative",
+                          index === step ? "text-primary" : "",
+                        )}
+                      >
+                        <motion.span
+                          animate={{
+                            fontVariationSettings:
+                              index === step ? "'wght' 700" : "'wght' 400",
+                          }}
+                          transition={{
+                            type: "spring",
+                            bounce: 0.2,
+                            duration: 0.2,
+                          }}
+                        >
+                          {stepItem.title}
+                        </motion.span>
+                        {index === step && (
+                          <motion.div
+                            layoutId="underline"
+                            className="absolute bottom-0 left-0 right-0 h-[1px] bg-current"
+                            transition={{
+                              type: "spring",
+                              bounce: 0.2,
+                              duration: 0.6,
+                            }}
+                          />
+                        )}
+                      </BreadcrumbLink>
+                      {hasNextAccessibleStep && <BreadcrumbSeparator />}
+                    </BreadcrumbItem>
+                  ) : null;
+                })}
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
         </div>
       )}
