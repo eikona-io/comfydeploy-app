@@ -38,7 +38,7 @@ import { useMachineVersion, useMachineVersions } from "@/hooks/use-machine";
 import { useUserInfo } from "@/hooks/use-user-info";
 import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { differenceInSeconds } from "date-fns";
 import {
   CheckCircle,
@@ -315,10 +315,10 @@ export function MachineVersionListItem({
   }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
   return (
-    <a
+    <Link
       key={machineVersion.id}
       className="cursor-pointer border-b px-4 hover:bg-gray-100"
-      href={`/machines/${machine.id}/${machineVersion.id}`}
+      to={`/machines/${machine.id}/${machineVersion.id}`}
     >
       <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(100px,1fr)_minmax(250px,auto)] gap-4 md:gap-x-4 md:items-center">
         {/* ID and Version */}
@@ -403,7 +403,7 @@ export function MachineVersionListItem({
           />
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
 
