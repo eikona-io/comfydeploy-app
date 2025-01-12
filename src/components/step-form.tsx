@@ -151,7 +151,7 @@ export function StepForm<T>({
   return (
     <div className="relative flex min-h-screen w-full flex-col">
       {!hideProgressBar && (
-        <div className="sticky top-0 left-0 z-50 w-full max-w-5xl mx-auto mt-10">
+        <div className="sticky top-0 left-0 z-50 w-full max-w-5xl mx-auto mt-10 px-2">
           <div className="relative bg-background  overflow-hidden">
             <Breadcrumb>
               <BreadcrumbList>
@@ -238,7 +238,7 @@ export function StepForm<T>({
               exit={{ filter: "blur(2px)", opacity: 0, y: -20 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              <h1 className="mb-4 font-medium text-xl">{steps[step].title}</h1>
+              {/* <h1 className="mb-4 font-medium text-xl">{steps[step].title}</h1> */}
               <CurrentStepComponent
                 validation={validation}
                 setValidation={setValidation}

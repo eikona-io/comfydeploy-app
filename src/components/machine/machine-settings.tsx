@@ -37,7 +37,14 @@ import {
   Lock,
   Save,
 } from "lucide-react";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import { useQueryState } from "nuqs";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
@@ -63,81 +70,95 @@ import { Slider } from "../ui/slider";
 import { Switch } from "../ui/switch";
 import { ExtraDockerCommands } from "./extra-docker-commands";
 
-export function MachineSettingsWrapper({ machine }: { machine: any }) {
+export function MachineSettingsWrapper({
+  machine,
+  onValueChange,
+  title,
+}: {
+  machine: any;
+  onValueChange?: (key: string, value: any) => void;
+  title?: ReactNode;
+}) {
   const isServerless = machine.type === "comfy-deploy-serverless";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { view = isServerless ? "environment" : "advanced" } = useSearch({
-    from: "/machines/$machineId/",
+  // const view = isServerless ? "environment" : "advanced";
+  // const { view = isServerless ? "environment" : "advanced" } = useSearch({
+  //   from: "/machines/$machineId/",
+  // });
+
+  const [view, setView] = useQueryState("machine-settings-view", {
+    defaultValue: isServerless ? "environment" : "advanced",
   });
+
+  const isNew = machine.id === "new";
 
   return (
     <div>
       <div>
-        <div className="sticky top-[57px] z-10 flex h-12 items-center justify-between bg-background/80 px-4 backdrop-blur-sm">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center">
-              <div className="font-medium text-xl">Settings</div>
+        <div className="sticky top-[57px] z-10 flex h-12 items-center justify-between bg-background/80 backdrop-blur-sm">
+          {title ?? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center">
+                <div className="font-medium text-xl">Settings</div>
+              </div>
             </div>
-          </div>
-          <div className="relative mt-4">
+          )}
+          <div className="relative mt-4 pr-4">
             {machine.type === "comfy-deploy-serverless" && (
               <>
-                <Link
-                  to="/machines/$machineId"
-                  params={{ machineId: machine.id }}
-                  search={{ view: undefined }}
+                <button
+                  type="button"
+                  onClick={() => setView(null)}
                   className={cn(
-                    "p-4 py-2 text-muted-foreground text-sm",
+                    "p-4 py-0 text-muted-foreground text-sm",
                     view === "environment" && "text-foreground",
                   )}
                 >
                   Environment
-                </Link>
-                <Link
-                  to="/machines/$machineId"
-                  params={{ machineId: machine.id }}
-                  search={{ view: "autoscaling" }}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setView("autoscaling")}
                   className={cn(
-                    "p-4 py-2 text-muted-foreground text-sm",
+                    "p-4 py-0 text-muted-foreground text-sm",
                     view === "autoscaling" && "text-foreground",
                   )}
                 >
                   Auto Scaling
-                </Link>
+                </button>
+                {!isNew && (
+                  <button
+                    type="button"
+                    onClick={() => setView("advanced")}
+                    className={cn(
+                      "p-4 py-0 text-muted-foreground text-sm",
+                      view === "advanced" && "text-foreground",
+                    )}
+                  >
+                    Advanced
+                  </button>
+                )}
+                {/* Animated underline */}
+                <motion.div
+                  className="-bottom-1 absolute h-0.5 bg-primary"
+                  initial={false}
+                  animate={{
+                    width: "100px",
+                    x:
+                      view === "advanced"
+                        ? "calc(200% + 24px)"
+                        : view === "autoscaling"
+                          ? "calc(100% + 20px)"
+                          : "6px",
+                  }}
+                  transition={{
+                    ease: "easeInOut",
+                    duration: 0.2,
+                  }}
+                />
               </>
             )}
-            <Link
-              to="/machines/$machineId"
-              params={{ machineId: machine.id }}
-              search={{ view: "advanced" }}
-              className={cn(
-                "p-4 py-2 text-muted-foreground text-sm",
-                view === "advanced" && "text-foreground",
-              )}
-            >
-              Advanced
-            </Link>
-
-            {/* Animated underline */}
-            <motion.div
-              className="-bottom-1 absolute h-0.5 bg-primary"
-              initial={false}
-              animate={{
-                width: "100px",
-                x:
-                  view === "advanced"
-                    ? "calc(200% + 24px)"
-                    : view === "autoscaling"
-                      ? "calc(100% + 20px)"
-                      : "6px",
-              }}
-              transition={{
-                type: "spring",
-                stiffness: 500,
-                damping: 30,
-              }}
-            />
           </div>
         </div>
         <Card className="mb-20 flex flex-col rounded-[16px] px-2 pb-2">
@@ -148,6 +169,7 @@ export function MachineSettingsWrapper({ machine }: { machine: any }) {
               isLoading={isLoading}
               setIsLoading={setIsLoading}
               view={view}
+              onValueChange={onValueChange}
             />
           ) : (
             <ClassicSettings
@@ -230,15 +252,19 @@ function ServerlessSettings({
   isLoading,
   setIsLoading,
   view,
+  onValueChange,
 }: {
   machine: any;
   formRef: RefObject<HTMLFormElement | null>;
   isLoading: boolean;
   setIsLoading: (value: boolean) => void;
   view: string;
+  onValueChange?: (key: string, value: any) => void;
 }) {
   const [isFormDirty, setIsFormDirty] = useState(false);
   const controls = useAnimation();
+
+  const isNew = machine.id === "new";
 
   const form = useForm<FormData>({
     resolver: zodResolver(serverlessFormSchema),
@@ -271,20 +297,29 @@ function ServerlessSettings({
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       const formValues = form.getValues();
+      if (name) onValueChange?.(name, formValues[name as keyof FormData]);
+      if (isNew) return;
       const isDirty = Object.keys(formValues).some((key) => {
-        return formValues[key as keyof FormData] !== machine[key];
+        const newValue = formValues[key as keyof FormData];
+        const oldValue = machine[key];
+        const hasChanged = newValue !== oldValue;
+        // if (hasChanged) {
+        //   onValueChange?.(key, newValue);
+        // }
+        return hasChanged;
       });
       setIsFormDirty(isDirty);
     });
 
     return () => subscription.unsubscribe();
-  }, [form, machine]);
+  }, [form, machine, onValueChange]);
 
   useBlocker({
     enableBeforeUnload: () => {
-      return !!isFormDirty;
+      return !!isFormDirty && !isNew;
     },
     shouldBlockFn: ({ current, next }) => {
+      if (isNew) return false;
       // Ignore navigation if it's just changing the view parameter or going to base machine URL
       const isSafeNavigation =
         current.pathname === next.pathname &&
@@ -368,10 +403,14 @@ function ServerlessSettings({
                 onChange={(value) => form.setValue("comfyui_version", value)}
               />
             </div>
-            <CustomNodeSetupWrapper
-              value={form.watch("docker_command_steps")}
-              onChange={(value) => form.setValue("docker_command_steps", value)}
-            />
+            {!isNew && (
+              <CustomNodeSetupWrapper
+                value={form.watch("docker_command_steps")}
+                onChange={(value) =>
+                  form.setValue("docker_command_steps", value)
+                }
+              />
+            )}
           </div>
         )}
 
@@ -385,76 +424,69 @@ function ServerlessSettings({
               />
             </div>
 
-            {/* <Accordion type="single" defaultValue="concurrency" className="">
-              <AccordionItem value="concurrency">
-                <AccordionTrigger className="py-4">
-                  GPU Configuration
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6"> */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col items-start justify-between">
-                <div className="flex flex-col gap-2">
-                  <Badge className="font-medium text-sm">
-                    Max Parallel GPU
-                  </Badge>
-                  {/* <div>
+            {!isNew && (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex flex-col items-start justify-between">
+                  <div className="flex flex-col gap-2">
+                    <Badge className="font-medium text-sm">
+                      Max Parallel GPU
+                    </Badge>
+                    {/* <div>
                         Increase the concurrency limit for the machine to handle
                         more gpu intensive tasks at the same time.
                       </div> */}
+                  </div>
+                  <div className="w-full">
+                    <MaxParallelGPUSlider
+                      value={form.watch("concurrency_limit")}
+                      onChange={(value) =>
+                        form.setValue("concurrency_limit", value)
+                      }
+                    />
+                  </div>
                 </div>
-                <div className="w-full">
-                  <MaxParallelGPUSlider
-                    value={form.watch("concurrency_limit")}
-                    onChange={(value) =>
-                      form.setValue("concurrency_limit", value)
-                    }
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col items-start justify-between">
-                <div className="flex flex-col gap-2">
-                  <Badge className="mb-2 font-medium text-sm">
-                    Keep Always On
-                  </Badge>
-                  {/* <div>
+                <div className="flex flex-col items-start justify-between">
+                  <div className="flex flex-col gap-2">
+                    <Badge className="mb-2 font-medium text-sm">
+                      Keep Always On
+                    </Badge>
+                    {/* <div>
                         Increase the concurrency limit for the machine to handle
                         more gpu intensive tasks at the same time.
                       </div> */}
+                  </div>
+                  <div className="w-full">
+                    <MaxAlwaysOnSlider
+                      value={form.watch("keep_warm") || 0}
+                      onChange={(value) => form.setValue("keep_warm", value)}
+                    />
+                  </div>
                 </div>
-                <div className="w-full">
-                  <MaxAlwaysOnSlider
-                    value={form.watch("keep_warm") || 0}
-                    onChange={(value) => form.setValue("keep_warm", value)}
-                  />
-                </div>
-              </div>
-              {/* </AccordionContent>
+                {/* </AccordionContent>
               </AccordionItem> */}
-              {/* <AccordionItem value="timeout">
+                {/* <AccordionItem value="timeout">
                 <AccordionTrigger className="py-4">
                   Timeout Settings
                 </AccordionTrigger>
                 <AccordionContent className="space-y-6"> */}
-              <div>
-                <Badge className="mb-2 font-medium text-sm">
-                  Workflow Timeout
-                </Badge>
-                <WorkflowTimeOut
-                  value={form.watch("run_timeout")}
-                  onChange={(value) => form.setValue("run_timeout", value)}
-                />
+                <div>
+                  <Badge className="mb-2 font-medium text-sm">
+                    Workflow Timeout
+                  </Badge>
+                  <WorkflowTimeOut
+                    value={form.watch("run_timeout")}
+                    onChange={(value) => form.setValue("run_timeout", value)}
+                  />
+                </div>
+                <div>
+                  <Badge className="mb-2 font-medium text-sm">Warm Time</Badge>
+                  <WarmTime
+                    value={form.watch("idle_timeout")}
+                    onChange={(value) => form.setValue("idle_timeout", value)}
+                  />
+                </div>
               </div>
-              <div>
-                <Badge className="mb-2 font-medium text-sm">Warm Time</Badge>
-                <WarmTime
-                  value={form.watch("idle_timeout")}
-                  onChange={(value) => form.setValue("idle_timeout", value)}
-                />
-              </div>
-            </div>
-            {/* </AccordionContent>
-              </AccordionItem>
-            </Accordion> */}
+            )}
           </div>
         )}
 
