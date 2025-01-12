@@ -38,7 +38,7 @@ import { getRelativeTime } from "@/lib/get-relative-time";
 // import { uploadFile } from "@/lib/uploadFile";
 import { useAuth } from "@clerk/clerk-react";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { FileIcon, LinkIcon, Pen, Plus, Trash } from "lucide-react";
 import React, {
   forwardRef,
@@ -383,6 +383,10 @@ export function ModelList(props: { apiEndpoint: string }) {
     setSelectedCategories,
   } = useModelBrowser();
 
+  const { data: ctx } = useQuery<any>({
+    queryKey: ["platform", "plan"],
+  });
+
   useKeyboardShortcut(
     "c",
     () => {
@@ -619,6 +623,8 @@ export function ModelList(props: { apiEndpoint: string }) {
     ],
   });
 
+  const privateModelsAvailable = ctx?.features.priavteModels;
+
   const renderTreeElements = (elements: ModelItem[]) => {
     return elements.map((element) => {
       if (element.type === "folder" && element.children) {
@@ -629,97 +635,22 @@ export function ModelList(props: { apiEndpoint: string }) {
             element={element.name || "Unnamed Folder"}
             value={element.dir}
             tail={
-              <div
-                className="h-fit min-h-0 p-1 opacity-0 transition-all group-hover:opacity-100"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.stopImmediatePropagation();
-                  setAddModelModalOpen(true);
-                  setInsertModalPath(element.dir);
-                }}
-              >
-                <Plus className="h-4 w-4 " />
-              </div>
-              // <DropdownMenu>
-              //   <DropdownMenuTrigger asChild>
-              //     <div className="transition-all opacity-0 group-hover:opacity-100 p-1 h-fit min-h-0">
-              //       <Plus className="w-4 h-4 "></Plus>
-              //     </div>
-              //   </DropdownMenuTrigger>
-              //   <DropdownMenuContent className="w-48">
-              //     <DropdownMenuLabel>Add models from</DropdownMenuLabel>
-              //     <DropdownMenuItem
-              //       onClick={(e) => {
-              //         e.preventDefault();
-              //         e.stopPropagation();
-              //         e.nativeEvent.stopImmediatePropagation();
-              //         setInsertModalSource("huggingface");
-              //         setInsertModalPath(element.dir);
-              //       }}
-              //     >
-              //       <img
-              //         src="https://huggingface.co/favicon.ico"
-              //         className="w-4 h-4 mr-2"
-              //       ></img>
-              //       <span>Hugging Face</span>
-              //     </DropdownMenuItem>
-              //     <DropdownMenuItem
-              //       onClick={(e) => {
-              //         e.preventDefault();
-              //         e.stopPropagation();
-              //         e.nativeEvent.stopImmediatePropagation();
-              //         setInsertModalSource("civitai");
-              //         setInsertModalPath(element.dir);
-              //       }}
-              //     >
-              //       <img
-              //         src="https://civitai.com/favicon.ico"
-              //         className="w-4 h-4 mr-2"
-              //       ></img>
-              //       <span>CivitAI</span>
-              //     </DropdownMenuItem>
-              //     <DropdownMenuItem
-              //       onClick={(e) => {
-              //         e.preventDefault();
-              //         e.stopPropagation();
-              //         e.nativeEvent.stopImmediatePropagation();
-              //         setInsertModalSource("comfymanager");
-              //         setInsertModalPath(element.dir);
-              //       }}
-              //     >
-              //       <img
-              //         src="https://storage.googleapis.com/comfy-assets/favicon.ico"
-              //         className="w-4 h-4 mr-2"
-              //       ></img>
-              //       <span>ComfyUI Manager</span>
-              //     </DropdownMenuItem>
-              //     <DropdownMenuItem
-              //       onClick={(e) => {
-              //         e.preventDefault();
-              //         e.stopPropagation();
-              //         e.nativeEvent.stopImmediatePropagation();
-              //         setInsertModalSource("link");
-              //         setInsertModalPath(element.dir);
-              //       }}
-              //     >
-              //       <Link className="w-4 h-4 mr-2"></Link>
-              //       <span>Link</span>
-              //     </DropdownMenuItem>
-              //     <DropdownMenuItem
-              //       onClick={(e) => {
-              //         e.preventDefault();
-              //         e.stopPropagation();
-              //         e.nativeEvent.stopImmediatePropagation();
-              //         setInsertModalSource("local");
-              //         setInsertModalPath(element.dir);
-              //       }}
-              //     >
-              //       <FileIcon className="w-4 h-4 mr-2"></FileIcon>
-              //       <span>Local</span>
-              //     </DropdownMenuItem>
-              //   </DropdownMenuContent>
-              // </DropdownMenu>
+              privateModelsAvailable ? (
+                <div
+                  className="h-fit min-h-0 p-1 opacity-0 transition-all group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.nativeEvent.stopImmediatePropagation();
+                    setAddModelModalOpen(true);
+                    setInsertModalPath(element.dir);
+                  }}
+                >
+                  <Plus className="h-4 w-4 " />
+                </div>
+              ) : (
+                <></>
+              )
             }
           >
             {renderTreeElements(element.children)}

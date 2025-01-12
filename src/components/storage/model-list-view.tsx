@@ -41,12 +41,17 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { sendInetrnalEventToCD as sendInternalEventToCD } from "@/components/workspace/sendEventToCD";
 import { useLocalStorage } from "@/lib/useLocalStorage";
 import { toast } from "sonner";
-import { useDebounce } from "use-debounce";
 
 import { useModels } from "@/hooks/use-model";
+import { useDebounce } from "use-debounce";
 
 type RetryResponse = {
   id: string;
@@ -902,15 +907,35 @@ export function ModelListView(props: {
             ))}
           </div>
 
-          <Button
-            className="h-6 min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
-            size="sm"
-            Icon={Plus}
-            onClick={() => setAddModelModalOpen(true)}
-            iconPlacement="right"
-          >
-            Add
-          </Button>
+          {!ctx.features.priavteModels ? (
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  className="h-6 min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
+                  size="sm"
+                  disabled={true}
+                  Icon={Plus}
+                  onClick={() => setAddModelModalOpen(true)}
+                  iconPlacement="right"
+                >
+                  Add
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Private models are not available on your plan
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              className="h-6 min-h-0 p-1 px-2 text-xs opacity-100 transition-all"
+              size="sm"
+              Icon={Plus}
+              onClick={() => setAddModelModalOpen(true)}
+              iconPlacement="right"
+            >
+              Add
+            </Button>
+          )}
         </div>
 
         <div className="relative">
@@ -942,12 +967,6 @@ export function ModelListView(props: {
       <div className="h-full overflow-y-auto pr-2 scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent">
         <ul className="space-y-1">{props.children}</ul>
       </div>
-
-      {!ctx.features.priavteModels && (
-        <div className="absolute top-0 left-0 z-50 flex h-full w-full items-center justify-center bg-white/60 text-center text-muted-foreground text-sm">
-          Private models are not available on your plan
-        </div>
-      )}
     </div>
   );
 }
