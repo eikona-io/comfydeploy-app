@@ -100,10 +100,18 @@ export function StepForm<T>({
   const handleBreadcrumbClick = (targetStep: number) => {
     if (isNavigating) return;
 
-    let currentCheck = Math.min(step, targetStep);
-    const endStep = Math.max(step, targetStep);
+    // If going backwards, skip validation
+    if (targetStep < step) {
+      setStep(targetStep);
+      return;
+    }
 
-    while (currentCheck < endStep) {
+    // If going forwards, validate only accessible steps in between
+    let currentCheck = step;
+    while (currentCheck < targetStep) {
+      const navigation = getStepNavigation(currentCheck, validation);
+
+      // Validate current step
       const validationResult = steps[currentCheck].validate(validation);
       if (!validationResult.isValid) {
         if (validationResult.error) {
@@ -111,7 +119,13 @@ export function StepForm<T>({
         }
         return;
       }
-      currentCheck++;
+
+      // Check if next step is accessible
+      if (navigation.next === null || navigation.next > targetStep) {
+        return; // Target step is not accessible from this path
+      }
+
+      currentCheck = navigation.next;
     }
 
     setStep(targetStep);
@@ -151,7 +165,7 @@ export function StepForm<T>({
   return (
     <div className="relative flex min-h-screen w-full flex-col">
       {!hideProgressBar && (
-        <div className="sticky top-0 left-0 z-50 w-full max-w-5xl mx-auto mt-10 px-2">
+        <div className="sticky top-0 left-0 z-50 w-full max-w-5xl mx-auto mt-10">
           <div className="relative bg-background  overflow-hidden">
             <Breadcrumb>
               <BreadcrumbList>
@@ -238,7 +252,7 @@ export function StepForm<T>({
               exit={{ filter: "blur(2px)", opacity: 0, y: -20 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
             >
-              {/* <h1 className="mb-4 font-medium text-xl">{steps[step].title}</h1> */}
+              <h1 className="mb-4 font-medium text-xl">{steps[step].title}</h1>
               <CurrentStepComponent
                 validation={validation}
                 setValidation={setValidation}

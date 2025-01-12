@@ -346,7 +346,7 @@ export function MachineVersionListItem({
 
         {/* Status and Time */}
         <div className="flex flex-row gap-4">
-          <div className="grid min-w-0 grid-cols-[auto,1fr] items-center gap-x-1.5">
+          <div className="flex min-w-0  items-center gap-x-1.5">
             <MachineStatusBadge
               status={machineVersion.status}
               createdAt={machineVersion.created_at}

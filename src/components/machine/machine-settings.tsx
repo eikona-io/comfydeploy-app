@@ -403,14 +403,12 @@ function ServerlessSettings({
                 onChange={(value) => form.setValue("comfyui_version", value)}
               />
             </div>
-            {!isNew && (
-              <CustomNodeSetupWrapper
-                value={form.watch("docker_command_steps")}
-                onChange={(value) =>
-                  form.setValue("docker_command_steps", value)
-                }
-              />
-            )}
+            {/* {!isNew && ( */}
+            <CustomNodeSetupWrapper
+              value={form.watch("docker_command_steps")}
+              onChange={(value) => form.setValue("docker_command_steps", value)}
+            />
+            {/* )} */}
           </div>
         )}
 

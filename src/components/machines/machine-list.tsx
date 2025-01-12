@@ -310,15 +310,15 @@ export function MachineList() {
               }
             },
           },
-          {
-            name: "Serverless Machine (Custom)",
-            icon: CloudCog,
-            onClick: () => {
-              if (!sub?.features.machineLimited) {
-                setOpenServerlessDialog(true);
-              }
-            },
-          },
+          // {
+          //   name: "Serverless Machine (Custom)",
+          //   icon: CloudCog,
+          //   onClick: () => {
+          //     if (!sub?.features.machineLimited) {
+          //       setOpenServerlessDialog(true);
+          //     }
+          //   },
+          // },
           {
             name: "Custom Machine",
             icon: Server,

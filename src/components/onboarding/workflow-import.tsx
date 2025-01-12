@@ -32,11 +32,12 @@ import { useNavigate } from "@tanstack/react-router";
 import { Circle, CircleCheckBig } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import type { DockerCommandSteps } from "../machines/machine-create";
 
 // Add these interfaces
 export interface StepValidation {
-  workflowName: string;
-  importOption: "import" | "default";
+  workflowName?: string;
+  importOption?: "import" | "default";
   importJson?: string;
   workflowJson?: string;
   workflowApi?: string;
@@ -54,6 +55,9 @@ export interface StepValidation {
   selectedConflictingNodes?: {
     [nodeName: string]: ConflictingNodeInfo[];
   };
+
+  docker_command_steps?: DockerCommandSteps;
+  isEditingHashOrAddingCommands?: boolean;
 }
 
 interface StepNavigation {
@@ -304,6 +308,16 @@ export default function WorkflowImport() {
       },
       actions: {
         onNext: async () => {
+          const docker_commands = convertToDockerSteps(
+            validation.dependencies?.custom_nodes,
+            validation.selectedConflictingNodes,
+          );
+
+          setValidation({
+            ...validation,
+            docker_command_steps: docker_commands,
+          });
+
           return true;
         },
       },
@@ -354,10 +368,10 @@ export default function WorkflowImport() {
               throw new Error("Missing required fields");
             }
 
-            const docker_commands = convertToDockerSteps(
-              validation.dependencies?.custom_nodes,
-              validation.selectedConflictingNodes,
-            );
+            // const docker_commands = convertToDockerSteps(
+            //   validation.dependencies?.custom_nodes,
+            //   validation.selectedConflictingNodes,
+            // );
 
             const response = await api({
               url: "machine/serverless",
@@ -367,7 +381,7 @@ export default function WorkflowImport() {
                   name: validation.machineName,
                   comfyui_version: validation.comfyUiHash,
                   gpu: validation.gpuType,
-                  docker_command_steps: docker_commands,
+                  docker_command_steps: validation.docker_command_steps,
                 }),
               },
             });

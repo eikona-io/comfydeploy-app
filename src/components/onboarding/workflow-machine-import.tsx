@@ -525,6 +525,11 @@ export function WorkflowImportNewMachineSetup({
               ...validation,
               gpuType: value,
             });
+          } else if (key === "docker_command_steps") {
+            setValidation({
+              ...validation,
+              docker_command_steps: value,
+            });
           }
         }}
         machine={{
@@ -533,187 +538,9 @@ export function WorkflowImportNewMachineSetup({
           comfyui_version: comfyui_hash,
           name: validation.machineName,
           gpu: validation.gpuType,
+          docker_command_steps: validation.docker_command_steps,
         }}
       />
-    </div>
-  );
-
-  return (
-    <div className="relative flex flex-col gap-4">
-      <AdvanceSettings validation={validation} setValidation={setValidation} />
-      <div>
-        <div className="mb-2">
-          <span className="font-medium text-sm">Machine Name </span>
-          <span className="text-red-500">*</span>
-        </div>
-        <Input
-          placeholder="Machine name..."
-          value={validation.machineName}
-          onChange={(e) =>
-            setValidation({ ...validation, machineName: e.target.value })
-          }
-        />
-      </div>
-
-      <div>
-        <div className="mb-2">
-          <span className="font-medium text-sm">GPU </span>
-          <span className="text-red-500">*</span>
-        </div>
-        <div className="flex flex-col gap-2">
-          <AnimatePresence>
-            {visibleGpus.map((gpu) => (
-              <motion.div
-                key={gpu.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div
-                  onClick={() => {
-                    if (!sub?.plans?.plans && !gpu.isForFreePlan) {
-                      return;
-                    }
-                    setValidation({
-                      ...validation,
-                      gpuType: gpu.id,
-                      firstTimeSelectGPU: true,
-                    });
-                    setShowAllGpu(false); // Collapse after selection
-                  }}
-                  className={cn(
-                    "cursor-pointer rounded-lg border p-4 transition-all duration-200",
-                    "hover:border-gray-400",
-                    validation.gpuType === gpu.id
-                      ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
-                      : "border-gray-200 opacity-60",
-                    !sub?.plans?.plans &&
-                      !gpu.isForFreePlan &&
-                      "cursor-not-allowed",
-                  )}
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="flex flex-row items-center gap-1 font-medium">
-                      {gpu.name}
-                      {!sub?.plans?.plans && !gpu.isForFreePlan && (
-                        <Lock className="h-3 w-3" />
-                      )}
-                    </span>
-                    <span className="text-gray-600 text-sm">{gpu.ram}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="max-w-[70%] text-[11px] text-gray-400">
-                      <span className="font-medium text-gray-600">
-                        {gpu.description.bold}
-                      </span>{" "}
-                      {gpu.description.regular}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Show/Hide button - show it always */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <Button
-              variant="ghost"
-              className="mt-2 w-full text-muted-foreground text-xs hover:text-primary"
-              onClick={() => setShowAllGpu(!showAllGpu)}
-            >
-              <div className="flex items-center gap-2">
-                {showAllGpu ? (
-                  <>
-                    Show Less <ChevronUp className="h-3 w-3" />
-                  </>
-                ) : (
-                  <>
-                    {validation.gpuType ? (
-                      <>Change GPU Selection</>
-                    ) : (
-                      <>Show More Options</>
-                    )}{" "}
-                    <ChevronDown className="h-3 w-3" />
-                  </>
-                )}
-              </div>
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-2">
-          <span className="font-medium text-sm">ComfyUI Version </span>
-          <span className="text-red-500">*</span>
-        </div>
-        <div className="flex flex-col gap-2">
-          {comfyUIOptions.map((option) => (
-            <div
-              key={option.id}
-              onClick={() => {
-                setValidation({
-                  ...validation,
-                  selectedComfyOption: option.id,
-                  comfyUiHash:
-                    option.id === "custom"
-                      ? validation.comfyUiHash
-                      : option.hash || "",
-                });
-              }}
-              className={cn(
-                "cursor-pointer rounded-lg border p-4 transition-all duration-200",
-                "hover:border-gray-400",
-                validation.selectedComfyOption === option.id
-                  ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
-                  : "border-gray-200 opacity-60",
-              )}
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <span className="font-medium">{option.name}</span>
-                {option.id !== "custom" && (
-                  <Link
-                    href={`https://github.com/comfyanonymous/ComfyUI/commits/${option.hash}`}
-                    target="_blank"
-                    className="text-muted-foreground"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                )}
-              </div>
-              <div className="flex items-center justify-between">
-                {option.id === "custom" ? (
-                  <Input
-                    className="w-full font-mono text-[11px]"
-                    placeholder="Enter commit hash..."
-                    value={validation.comfyUiHash || ""}
-                    onChange={(e) => {
-                      setValidation({
-                        ...validation,
-                        selectedComfyOption: "custom",
-                        comfyUiHash: e.target.value,
-                      });
-                    }}
-                  />
-                ) : (
-                  <span className="text-[11px] text-gray-400">
-                    {option.id === "latest" && isLoading ? (
-                      <Skeleton className="h-4 w-24" />
-                    ) : (
-                      <span className="font-mono">{option.hash}</span>
-                    )}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
