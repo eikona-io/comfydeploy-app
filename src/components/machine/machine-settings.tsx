@@ -117,27 +117,30 @@ export function MachineSettingsWrapper({
                 >
                   Environment
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setView("autoscaling")}
-                  className={cn(
-                    "p-4 py-0 text-muted-foreground text-sm",
-                    view === "autoscaling" && "text-foreground",
-                  )}
-                >
-                  Auto Scaling
-                </button>
+
                 {!isNew && (
-                  <button
-                    type="button"
-                    onClick={() => setView("advanced")}
-                    className={cn(
-                      "p-4 py-0 text-muted-foreground text-sm",
-                      view === "advanced" && "text-foreground",
-                    )}
-                  >
-                    Advanced
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setView("autoscaling")}
+                      className={cn(
+                        "p-4 py-0 text-muted-foreground text-sm",
+                        view === "autoscaling" && "text-foreground",
+                      )}
+                    >
+                      Auto Scaling
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setView("advanced")}
+                      className={cn(
+                        "p-4 py-0 text-muted-foreground text-sm",
+                        view === "advanced" && "text-foreground",
+                      )}
+                    >
+                      Advanced
+                    </button>
+                  </>
                 )}
                 {/* Animated underline */}
                 <motion.div
@@ -395,13 +398,22 @@ function ServerlessSettings({
     <>
       <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)}>
         {view === "environment" && (
-          <div className="space-y-4 p-2">
-            <div>
-              <h3 className="font-medium text-sm">ComfyUI Version</h3>
-              <ComfyUIVersionSelectBox
-                value={form.watch("comfyui_version")}
-                onChange={(value) => form.setValue("comfyui_version", value)}
-              />
+          <div className="space-y-4 p-2 pt-4">
+            <div className="flex flex-row gap-2">
+              <div className="w-full">
+                <Badge className="font-medium text-sm">ComfyUI Version</Badge>
+                <ComfyUIVersionSelectBox
+                  value={form.watch("comfyui_version")}
+                  onChange={(value) => form.setValue("comfyui_version", value)}
+                />
+              </div>
+              <div className="w-full">
+                <Badge className="font-medium text-sm">GPU</Badge>
+                <GPUSelectBox
+                  value={form.watch("gpu")}
+                  onChange={(value) => form.setValue("gpu", value)}
+                />
+              </div>
             </div>
             {/* {!isNew && ( */}
             <CustomNodeSetupWrapper
@@ -413,86 +425,76 @@ function ServerlessSettings({
         )}
 
         {view === "autoscaling" && (
-          <div className="space-y-1 p-2">
-            <div className="mb-4">
-              <Badge className="font-medium text-sm">GPU</Badge>
-              <GPUSelectBox
-                value={form.watch("gpu")}
-                onChange={(value) => form.setValue("gpu", value)}
-              />
-            </div>
-
-            {!isNew && (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex flex-col items-start justify-between">
-                  <div className="flex flex-col gap-2">
-                    <Badge className="font-medium text-sm">
-                      Max Parallel GPU
-                    </Badge>
-                    {/* <div>
+          <div className="space-y-1 p-2 pt-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="flex flex-col items-start justify-between">
+                <div className="flex flex-col gap-2">
+                  <Badge className="font-medium text-sm">
+                    Max Parallel GPU
+                  </Badge>
+                  {/* <div>
                         Increase the concurrency limit for the machine to handle
                         more gpu intensive tasks at the same time.
                       </div> */}
-                  </div>
-                  <div className="w-full">
-                    <MaxParallelGPUSlider
-                      value={form.watch("concurrency_limit")}
-                      onChange={(value) =>
-                        form.setValue("concurrency_limit", value)
-                      }
-                    />
-                  </div>
                 </div>
-                <div className="flex flex-col items-start justify-between">
-                  <div className="flex flex-col gap-2">
-                    <Badge className="mb-2 font-medium text-sm">
-                      Keep Always On
-                    </Badge>
-                    {/* <div>
+                <div className="w-full">
+                  <MaxParallelGPUSlider
+                    value={form.watch("concurrency_limit")}
+                    onChange={(value) =>
+                      form.setValue("concurrency_limit", value)
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col items-start justify-between">
+                <div className="flex flex-col gap-2">
+                  <Badge className="mb-2 font-medium text-sm">
+                    Keep Always On
+                  </Badge>
+                  {/* <div>
                         Increase the concurrency limit for the machine to handle
                         more gpu intensive tasks at the same time.
                       </div> */}
-                  </div>
-                  <div className="w-full">
-                    <MaxAlwaysOnSlider
-                      value={form.watch("keep_warm") || 0}
-                      onChange={(value) => form.setValue("keep_warm", value)}
-                    />
-                  </div>
                 </div>
-                {/* </AccordionContent>
+                <div className="w-full">
+                  <MaxAlwaysOnSlider
+                    value={form.watch("keep_warm") || 0}
+                    onChange={(value) => form.setValue("keep_warm", value)}
+                  />
+                </div>
+              </div>
+              {/* </AccordionContent>
               </AccordionItem> */}
-                {/* <AccordionItem value="timeout">
+              {/* <AccordionItem value="timeout">
                 <AccordionTrigger className="py-4">
                   Timeout Settings
                 </AccordionTrigger>
                 <AccordionContent className="space-y-6"> */}
-                <div>
-                  <Badge className="mb-2 font-medium text-sm">
-                    Workflow Timeout
-                  </Badge>
-                  <WorkflowTimeOut
-                    value={form.watch("run_timeout")}
-                    onChange={(value) => form.setValue("run_timeout", value)}
-                  />
-                </div>
-                <div>
-                  <Badge className="mb-2 font-medium text-sm">Warm Time</Badge>
-                  <WarmTime
-                    value={form.watch("idle_timeout")}
-                    onChange={(value) => form.setValue("idle_timeout", value)}
-                  />
-                </div>
+              <div>
+                <Badge className="mb-2 font-medium text-sm">
+                  Workflow Timeout
+                </Badge>
+                <WorkflowTimeOut
+                  value={form.watch("run_timeout")}
+                  onChange={(value) => form.setValue("run_timeout", value)}
+                />
               </div>
-            )}
+              <div>
+                <Badge className="mb-2 font-medium text-sm">Warm Time</Badge>
+                <WarmTime
+                  value={form.watch("idle_timeout")}
+                  onChange={(value) => form.setValue("idle_timeout", value)}
+                />
+              </div>
+            </div>
           </div>
         )}
 
         {view === "advanced" && (
-          <div className="space-y-10 p-2">
+          <div className="space-y-10 p-2 pt-4">
             <div className="flex flex-col gap-2">
               <h3 className="font-medium text-sm">Builder Version</h3>
-              <BuilderVersionPicker
+              <BuilderVersionSelectBox
                 value={form.watch("machine_builder_version") || "4"}
                 onChange={(value) =>
                   form.setValue(
@@ -703,66 +705,65 @@ function ComfyUIVersionSelectBox({
   const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
     "https://github.com/comfyanonymous/ComfyUI",
   );
+  const [customValue, setCustomValue] = useState(value || "");
 
   const options = [
     { label: "Recommended", value: comfyui_hash },
-    { label: "Latest", value: latestComfyUI?.commit.sha || "" },
-    { label: "Custom", value: "", isCustom: true },
+    { label: "Latest", value: latestComfyUI?.commit.sha || comfyui_hash },
+    { label: "Custom", value: "custom" },
   ];
 
-  const recommendedOption = options.find((opt) => opt.label === "Recommended");
-  const selectedOption = options.find(
-    (opt) => opt.value === value && !opt.isCustom,
-  );
-  const isCustomSelected = !selectedOption && value;
+  // Determine if we should show custom by checking if value matches any predefined options
+  const isCustom =
+    value === "" ||
+    (value && !options.slice(0, 2).some((opt) => opt.value === value));
+  const selectedValue = isCustom ? "custom" : value || comfyui_hash;
 
   return (
-    <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-2">
-      {options.map((option) => (
-        <SelectionBox
-          key={option.label}
-          selected={Boolean(
-            (option.isCustom && isCustomSelected) ||
-              (!option.isCustom && value === option.value),
-          )}
-          onClick={() => {
-            if (option.isCustom) {
-              onChange(value ?? "");
-            } else {
-              onChange(option.value);
-            }
+    <div className="mt-2 space-y-2">
+      <Select
+        value={selectedValue}
+        onValueChange={(newValue) => {
+          if (newValue === "custom") {
+            // Set an empty string to trigger the custom input
+            onChange("");
+            setCustomValue(isCustom ? value || "" : "");
+          } else {
+            onChange(newValue);
+            setCustomValue(newValue);
+          }
+        }}
+      >
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select version" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option) => (
+            <SelectItem key={option.label} value={option.value}>
+              <div className="flex w-full items-center justify-between">
+                <span>{option.label}</span>
+                {option.value !== "custom" && (
+                  <span className="ml-2 font-mono text-muted-foreground text-xs">
+                    ({option.value.slice(0, 7)})
+                  </span>
+                )}
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      {selectedValue === "custom" && (
+        <Input
+          className="font-mono text-xs bg-gray-100"
+          placeholder="Enter ComfyUI hash..."
+          value={customValue}
+          onChange={(e) => {
+            setCustomValue(e.target.value);
+            onChange(e.target.value);
           }}
-          leftHeader={
-            <span className="font-medium text-sm">{option.label}</span>
-          }
-          rightHeader={
-            <a
-              href={`https://github.com/comfyanonymous/ComfyUI/commit/${option.value}`}
-              target="_blank"
-              rel="noreferrer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <ExternalLinkIcon className="h-3 w-3" />
-            </a>
-          }
-          description={
-            option.isCustom ? (
-              <Input
-                className="w-full rounded-[8px] font-mono text-[11px]"
-                placeholder="ComfyUI hash..."
-                value={isCustomSelected ? value : ""}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  onChange(newValue || (recommendedOption?.value ?? ""));
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <span className="truncate break-all">{option.value}</span>
-            )
-          }
         />
-      ))}
+      )}
     </div>
   );
 }
@@ -828,30 +829,54 @@ function GPUSelectBox({
   const isBusiness = sub?.plans?.plans?.includes("business");
 
   return (
-    <div className="mt-2 grid grid-cols-2 gap-2 lg:grid-cols-3">
-      {gpuConfig.map((gpu) => {
-        const isDisabled = !isBusiness && gpu.tier === "business";
-        return (
-          <SelectionBox
-            key={gpu.id}
-            selected={value === gpu.id}
-            disabled={isDisabled}
-            onClick={() =>
-              !isDisabled &&
-              onChange(gpu.id as (typeof machineGPUOptions)[number])
-            }
-            leftHeader={
-              <span className="flex items-center gap-1 font-medium text-sm">
-                {gpu.gpuName} {isDisabled && <Lock className="h-3 w-3" />}
-              </span>
-            }
-            rightHeader={
-              <span className="text-gray-500 text-sm">{gpu.ram}</span>
-            }
-            description={`$${gpu.pricePerSec?.toFixed(6)} / sec`}
-          />
-        );
-      })}
+    <div className="mt-2">
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select GPU">
+            {value && (
+              <div className="truncate">
+                {gpuConfig.find((gpu) => gpu.id === value)?.gpuName}
+              </div>
+            )}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {gpuConfig.map((gpu) => {
+            const isDisabled = !isBusiness && gpu.tier === "business";
+            return (
+              <SelectItem
+                key={gpu.id}
+                value={gpu.id}
+                disabled={isDisabled}
+                className="w-full pr-8"
+              >
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="truncate">
+                    <span>{gpu.gpuName}</span>
+                    {isDisabled && (
+                      <Badge
+                        variant="outline"
+                        className="ml-2 font-normal text-xs"
+                      >
+                        <Lock className="h-3 w-3 mr-1" />
+                        Business
+                      </Badge>
+                    )}
+                  </div>
+                  <div className="ml-auto flex items-center gap-2 shrink-0">
+                    <span className="text-muted-foreground text-sm">
+                      {gpu.ram}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      ${gpu.pricePerSec?.toFixed(6)}/s
+                    </span>
+                  </div>
+                </div>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
     </div>
   );
 }
@@ -1165,10 +1190,13 @@ function WebSocketTimeout({
   );
 }
 
-function BuilderVersionPicker({
+function BuilderVersionSelectBox({
   value,
   onChange,
-}: { value: string; onChange: (value: string) => void }) {
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
   const builderVersions = [
     {
       value: "2",
@@ -1194,29 +1222,68 @@ function BuilderVersionPicker({
   ];
 
   return (
-    <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-3">
-      {builderVersions.map((version) => (
-        <SelectionBox
-          key={version.value}
-          selected={value === version.value}
-          disabled={version.disabled}
-          onClick={() => !version.disabled && onChange(version.value)}
-          leftHeader={
-            <span className="font-medium text-sm">{version.label}</span>
-          }
-          rightHeader={
-            <Badge
-              variant={
-                version.status === "deprecated" ? "destructive" : "green"
-              }
-              className="text-xs"
+    <div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-full">
+          <SelectValue placeholder="Select version">
+            {value && (
+              <div className="flex items-center gap-2 w-full pr-4">
+                <div className="truncate">
+                  {builderVersions.find((v) => v.value === value)?.label}
+                </div>
+                <div className="ml-auto shrink-0">
+                  <Badge
+                    variant={
+                      builderVersions.find((v) => v.value === value)?.status ===
+                      "deprecated"
+                        ? "destructive"
+                        : "green"
+                    }
+                    className="text-xs"
+                  >
+                    {builderVersions.find((v) => v.value === value)?.status}
+                  </Badge>
+                </div>
+              </div>
+            )}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {builderVersions.map((version) => (
+            <SelectItem
+              key={version.value}
+              value={version.value}
+              disabled={version.disabled}
+              className="w-full pr-8"
             >
-              {version.status}
-            </Badge>
-          }
-          description={version.description}
-        />
-      ))}
+              <div className="flex items-center gap-2 w-full">
+                <div className="truncate">
+                  <span className="font-medium">{version.label}</span>
+                </div>
+                <div className="ml-auto flex items-center gap-2 shrink-0">
+                  {version.status && (
+                    <Badge
+                      variant={
+                        version.status === "deprecated"
+                          ? "destructive"
+                          : "green"
+                      }
+                      className="text-xs"
+                    >
+                      {version.status}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {value && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          {builderVersions.find((v) => v.value === value)?.description}
+        </p>
+      )}
     </div>
   );
 }
