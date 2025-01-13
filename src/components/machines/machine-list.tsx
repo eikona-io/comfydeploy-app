@@ -310,15 +310,6 @@ export function MachineList() {
               }
             },
           },
-          // {
-          //   name: "Serverless Machine (Custom)",
-          //   icon: CloudCog,
-          //   onClick: () => {
-          //     if (!sub?.features.machineLimited) {
-          //       setOpenServerlessDialog(true);
-          //     }
-          //   },
-          // },
           {
             name: "Custom Machine",
             icon: Server,
@@ -326,6 +317,10 @@ export function MachineList() {
               if (!sub?.features.machineLimited) {
                 setOpenCustomDialog(true);
               }
+            },
+            disabled: {
+              disabled: !sub?.plans.plans,
+              disabledText: "Upgrade to create custom machines.",
             },
           },
         ]}

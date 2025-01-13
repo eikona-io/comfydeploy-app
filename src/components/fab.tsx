@@ -19,6 +19,7 @@ interface FabItemProps {
   name: string;
   icon: LucideIcon;
   onClick: () => void;
+  disabled?: FabDisabledProps;
 }
 
 // New type for main item when subItems exist
@@ -132,20 +133,38 @@ export function Fab(props: FinalFabProps) {
                     duration: 0.2,
                   }}
                 >
-                  <div className="rounded-[8px] bg-white px-3 py-1 font-medium text-xs shadow-md">
-                    {item.name}
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-12 w-12 rounded-sm shadow-md"
-                    onClick={() => {
-                      setIsSubMenuOpen(false);
-                      item.onClick();
-                    }}
-                  >
-                    <item.icon className="h-5 w-5" />
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-[8px] bg-white px-3 py-1 font-medium text-xs shadow-md">
+                            {item.name}
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className={cn(
+                              "h-12 w-12 rounded-sm shadow-md",
+                              item.disabled?.disabled &&
+                                "cursor-not-allowed opacity-80",
+                            )}
+                            onClick={() => {
+                              if (item.disabled?.disabled) return;
+                              setIsSubMenuOpen(false);
+                              item.onClick();
+                            }}
+                          >
+                            <item.icon className="h-5 w-5" />
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      {item.disabled?.disabled && (
+                        <TooltipContent side="left">
+                          <p>{item.disabled.disabledText}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
                 </motion.div>
               ))}
             </motion.div>
