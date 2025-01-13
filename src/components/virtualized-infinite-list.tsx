@@ -14,6 +14,7 @@ interface VirtualizedInfiniteListProps<T> {
   estimateSize?: number;
   header?: React.ReactNode;
   className?: string;
+  containerClassName?: string;
 }
 
 export function VirtualizedInfiniteList<T>({
@@ -24,6 +25,7 @@ export function VirtualizedInfiniteList<T>({
   header,
   estimateSize = 50,
   className,
+  containerClassName,
 }: VirtualizedInfiniteListProps<T>) {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = queryResult;
 
@@ -76,6 +78,7 @@ export function VirtualizedInfiniteList<T>({
           width: "100%",
           position: "relative",
         }}
+        className={containerClassName}
       >
         {rowVirtualizer.getVirtualItems().map((virtualRow) => {
           const item = flatData[virtualRow.index];
