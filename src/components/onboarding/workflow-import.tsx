@@ -5,11 +5,12 @@ import type {
 import {
   type GpuTypes,
   WorkflowImportCustomNodeSetup,
-  WorkflowImportMachine,
-  WorkflowImportNewMachineSetup,
+  WorkflowImportMachineSetup,
+  WorkflowImportSelectedMachine,
   convertToDockerSteps,
   findFirstDuplicateNode,
 } from "@/components/onboarding/workflow-machine-import";
+import type { NodeData } from "@/components/onboarding/workflow-machine-import";
 import { WorkflowModelCheck } from "@/components/onboarding/workflow-model-check";
 import {
   type Step,
@@ -42,6 +43,9 @@ export interface StepValidation {
   workflowApi?: string;
   selectedMachineId?: string;
   machineOption?: "existing" | "new";
+  existingMachine?: any;
+  machineConfig?: any; // only for existing machine
+  existingMachineMissingNodes?: NodeData[];
   // Add more fields as needed for future steps
 
   machineName?: string;
@@ -245,7 +249,7 @@ export default function WorkflowImport() {
     {
       id: 3,
       title: "Select Machine",
-      component: WorkflowImportMachine,
+      component: WorkflowImportSelectedMachine,
       validate: (validation) => {
         if (
           validation.machineOption === "existing" &&
@@ -315,7 +319,7 @@ export default function WorkflowImport() {
     {
       id: 5,
       title: "Machine Settings",
-      component: WorkflowImportNewMachineSetup,
+      component: WorkflowImportMachineSetup,
       validate: (validation) => {
         if (!validation.machineName?.trim()) {
           return { isValid: false, error: "Please enter a machine name" };
@@ -336,39 +340,52 @@ export default function WorkflowImport() {
       actions: {
         onNext: async (validation) => {
           try {
-            if (validation.machineOption === "existing") {
-            }
-
+            let response: any;
             // Type guard to ensure required fields exist
-            if (
-              !validation.machineName ||
-              !validation.comfyUiHash ||
-              !validation.gpuType
-            ) {
-              throw new Error("Missing required fields");
+            if (validation.machineOption === "existing") {
+              if (!validation.selectedMachineId) {
+                throw new Error("missing machine id");
+              }
+              console.log("existing: ", validation.machineConfig);
+
+              response = await api({
+                url: `machine/serverless/${validation.selectedMachineId}`,
+                init: {
+                  method: "PATCH",
+                  body: JSON.stringify(validation.machineConfig),
+                },
+              });
+            } else {
+              // New machine
+              if (
+                !validation.machineName ||
+                !validation.comfyUiHash ||
+                !validation.gpuType
+              ) {
+                throw new Error("Missing required fields");
+              }
+
+              const docker_commands = convertToDockerSteps(
+                validation.dependencies?.custom_nodes,
+                validation.selectedConflictingNodes,
+              );
+
+              response = await api({
+                url: "machine/serverless",
+                init: {
+                  method: "POST",
+                  body: JSON.stringify({
+                    name: validation.machineName,
+                    comfyui_version: validation.comfyUiHash,
+                    gpu: validation.gpuType,
+                    docker_command_steps: docker_commands,
+                  }),
+                },
+              });
             }
-
-            const docker_commands = convertToDockerSteps(
-              validation.dependencies?.custom_nodes,
-              validation.selectedConflictingNodes,
-            );
-
-            const response = await api({
-              url: "machine/serverless",
-              init: {
-                method: "POST",
-                body: JSON.stringify({
-                  name: validation.machineName,
-                  comfyui_version: validation.comfyUiHash,
-                  gpu: validation.gpuType,
-                  docker_command_steps: docker_commands,
-                }),
-              },
-            });
 
             toast.success(`${validation.machineName} created successfully!`);
             const machineId = response.id;
-
             // Create workflow with the new machine ID
             const workflowResult = await createWorkflow(machineId);
 
@@ -386,7 +403,7 @@ export default function WorkflowImport() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId },
-              search: { view: "deployments" },
+              search: { view: undefined },
             });
 
             return true;

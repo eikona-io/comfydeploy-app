@@ -14,6 +14,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { getBranchInfo } from "@/hooks/use-github-branch-info";
+import type { BranchInfoData } from "@/hooks/use-github-branch-info";
 import { cn } from "@/lib/utils";
 import {
   DndContext,
@@ -51,7 +52,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
-type DefaultCustomNodeData = {
+export type DefaultCustomNodeData = {
   title: string;
   author: string;
   reference: string;
@@ -91,6 +92,31 @@ function isCustomNodeData(
 ): step is DockerCommandStep & { data: CustomNodeData } {
   return step.type === "custom-node";
 }
+
+export const createDockerCommandStep = (
+  node: DefaultCustomNodeData,
+  branchInfo: BranchInfoData,
+): DockerCommandStep => {
+  return {
+    id: crypto.randomUUID().slice(0, 10), // Add unique ID
+    type: "custom-node",
+    data: {
+      name: node.title,
+      url: node.reference,
+      files: node.files,
+      install_type: "git-clone",
+      pip: node.pip,
+      hash: branchInfo?.commit.sha, // Optional hash
+      meta: {
+        message: branchInfo?.commit.commit.message,
+        committer: branchInfo?.commit.commit?.committer,
+        latest_hash: branchInfo?.commit.sha,
+        stargazers_count: branchInfo?.stargazers_count,
+        commit_url: branchInfo?.commit?.html_url,
+      },
+    },
+  };
+};
 
 export function CustomNodeSetup({
   validation,
@@ -146,25 +172,7 @@ export function CustomNodeSetup({
         docker_command_steps: {
           steps: [
             ...validation.docker_command_steps.steps,
-            {
-              id: crypto.randomUUID().slice(0, 10), // Add unique ID
-              type: "custom-node",
-              data: {
-                name: node.title,
-                url: node.reference,
-                files: node.files,
-                install_type: "git-clone",
-                pip: node.pip,
-                hash: branchInfo?.commit.sha, // Optional hash
-                meta: {
-                  message: branchInfo?.commit.commit.message,
-                  committer: branchInfo?.commit.commit?.committer,
-                  latest_hash: branchInfo?.commit.sha,
-                  stargazers_count: branchInfo?.stargazers_count,
-                  commit_url: branchInfo?.commit?.html_url,
-                },
-              },
-            },
+            createDockerCommandStep(node, branchInfo),
           ],
         },
       });

@@ -67,7 +67,7 @@ const BranchInfoSchema = z.object({
   stargazers_count: z.number(),
 });
 
-type BranchInfoData = z.infer<typeof BranchInfoSchema>;
+export type BranchInfoData = z.infer<typeof BranchInfoSchema>;
 
 type GitUrl<T extends string | string[]> = T;
 type BranchInfoResult<T extends string | string[]> = T extends string[]

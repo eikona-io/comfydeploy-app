@@ -50,7 +50,7 @@ import {
   Settings2,
   Star,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { MachineSettingsWrapper } from "../machine/machine-settings";
@@ -188,7 +188,7 @@ type NodeMeta = {
 };
 
 // Helper type for node data
-type NodeData = {
+export type NodeData = {
   name: string;
   hash?: string;
   url: string;
@@ -260,7 +260,7 @@ export function convertToDockerSteps(
   };
 }
 
-export function WorkflowImportMachine({
+export function WorkflowImportSelectedMachine({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
@@ -294,7 +294,7 @@ export function WorkflowImportMachine({
           content={
             <div className="flex flex-col gap-4">
               <span className="text-muted-foreground">
-                Non-existing custom nodes will be added to the machine.
+                Non-existing custom nodes will be added to your machine.
               </span>
               <ExistingMachine
                 validation={validation}
@@ -356,9 +356,9 @@ function ExistingMachine({
     machineDockerSteps: any,
     validation: StepValidation,
   ) => {
-    const matchingNodes: string[] = [];
-    const missingNodes: string[] = [];
-    const machineNodeUrls = machineDockerSteps?.steps?.map((node) =>
+    const matchingNodes: NodeData[] = [];
+    const missingNodes: NodeData[] = [];
+    const machineNodeUrls = machineDockerSteps?.steps?.map((node: any) =>
       node?.data?.url?.toLowerCase(),
     );
 
@@ -367,14 +367,14 @@ function ExistingMachine({
       validation.selectedConflictingNodes,
     );
 
-    for (const url of uniqueUrls.keys()) {
+    for (const [url, nodeData] of uniqueUrls) {
       const isMatched = machineNodeUrls.some(
         (mnUrl: string) => mnUrl === url.toLowerCase(),
       );
       if (isMatched) {
-        matchingNodes.push(url);
+        matchingNodes.push(nodeData);
       } else {
-        missingNodes.push(url);
+        missingNodes.push(nodeData);
       }
     }
 
@@ -441,6 +441,7 @@ function ExistingMachine({
                     setValidation({
                       ...validation,
                       selectedMachineId: checked ? item.id : "",
+                      existingMachineMissingNodes: nodeComparison.missingNodes,
                     });
                   }}
                 />
@@ -483,9 +484,12 @@ function ExistingMachine({
                       <TooltipContent>
                         <p className="font-medium">Missing Custom Nodes:</p>
                         <ul className="text-xs">
-                          {nodeComparison.missingNodes.map((url, i) => (
-                            <li key={i} className="text-muted-foreground">
-                              • {url.split("/").pop()}
+                          {nodeComparison.missingNodes.map((node, i) => (
+                            <li
+                              key={node.url}
+                              className="text-muted-foreground"
+                            >
+                              • {node.url.split("/").pop()}
                             </li>
                           ))}
                         </ul>
@@ -531,63 +535,100 @@ function ExistingMachine({
   );
 }
 
-export function WorkflowImportNewMachineSetup({
+export function WorkflowImportMachineSetup({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
-  const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
-    "https://github.com/comfyanonymous/ComfyUI",
-  );
-  const sub = useCurrentPlan();
-
-  const comfyUIOptions: ComfyUIOption[] = [
-    {
-      id: "recommended",
-      name: "Recommended",
-      hash: comfyui_hash,
-    },
-    {
-      id: "latest",
-      name: "Latest",
-      hash: latestComfyUI?.commit.sha || null,
-    },
-    {
-      id: "custom",
-      name: "Custom",
-      hash: null,
-    },
-  ];
-
-  const [showAllGpu, setShowAllGpu] = useState(false);
-
-  const visibleGpus = gpuOptions.filter((gpu) => {
-    if (validation.firstTimeSelectGPU && validation.gpuType && !showAllGpu) {
-      return gpu.id === validation.gpuType;
-    }
-    return showAllGpu || !gpu.isHidden;
+  const useExistingMachine = !!validation.selectedMachineId;
+  const { data: existingMachine } = useQuery<any>({
+    queryKey: ["machine", validation.selectedMachineId],
+    enabled: useExistingMachine,
   });
+
+  // Wait for existing machine data if we're using one
+  if (useExistingMachine && !existingMachine) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  // Initialize machine config whenever existingMachine changes
+  const machineConfig =
+    useExistingMachine && existingMachine
+      ? {
+          ...existingMachine,
+          docker_command_steps: {
+            steps: [
+              ...(existingMachine?.docker_command_steps?.steps || []),
+              ...(validation.existingMachineMissingNodes?.map((node) => ({
+                id: crypto.randomUUID().slice(0, 10),
+                type: "custom-node",
+                data: {
+                  name: node.name,
+                  url: node.url,
+                  files: [],
+                  install_type: "git-clone",
+                  pip: node.pip,
+                  hash: node.meta?.latest_hash,
+                  meta: node.meta,
+                },
+              })) || []),
+            ],
+          },
+          comfyui_version: existingMachine.comfyui_version,
+          gpu: existingMachine.gpu,
+          name: existingMachine.name,
+        }
+      : {
+          id: "new",
+          type: "comfy-deploy-serverless",
+          comfyui_version: validation.comfyUiHash || comfyui_hash,
+          name: validation.machineName,
+          gpu: validation.gpuType,
+          docker_command_steps: { steps: [] },
+        };
+
+  if (!validation.machineConfig) {
+    validation.machineConfig = machineConfig;
+    validation.machineName = machineConfig.name;
+  }
 
   return (
     <div className="flex flex-col gap-2">
       <div>
-        <div className="mb-2">
-          <span className="font-medium text-sm">Machine Name </span>
-          <span className="text-red-500">*</span>
-        </div>
-        <Input
-          placeholder="Machine name..."
-          value={validation.machineName}
-          onChange={(e) =>
-            setValidation({ ...validation, machineName: e.target.value })
-          }
-        />
+        {useExistingMachine ? (
+          <h1 className="bold font-medium text-2xl">{existingMachine.name}</h1>
+        ) : (
+          <div>
+            <div className="mb-2">
+              <span className="font-medium text-sm">Machine Name </span>
+              <span className="text-red-500">*</span>
+            </div>
+            <Input
+              placeholder="Machine name..."
+              value={validation.machineName}
+              onChange={(e) =>
+                setValidation({ ...validation, machineName: e.target.value })
+              }
+            />
+          </div>
+        )}
       </div>
-
       <MachineSettingsWrapper
         title={<div className="font-medium text-sm">Configuration</div>}
         onValueChange={(key, value) => {
-          // setValidation({ ...validation, [key]
-          console.log(key, value);
+          if (useExistingMachine) {
+            console.log("updating existing machine: ", key, value);
+            setValidation((prev) => ({
+              ...prev,
+              machineConfig: {
+                ...machineConfig,
+                [key]: value,
+              },
+            }));
+          }
           if (key === "comfyui_version") {
             setValidation({
               ...validation,
@@ -600,193 +641,9 @@ export function WorkflowImportNewMachineSetup({
             });
           }
         }}
-        machine={{
-          id: "new",
-          type: "comfy-deploy-serverless",
-          comfyui_version: comfyui_hash,
-          name: validation.machineName,
-          gpu: validation.gpuType,
-        }}
+        machine={machineConfig}
+        disableUnsavedChangesWarningServerless={true}
       />
-    </div>
-  );
-
-  return (
-    <div className="relative flex flex-col gap-4">
-      <AdvanceSettings validation={validation} setValidation={setValidation} />
-      <div>
-        <div className="mb-2">
-          <span className="font-medium text-sm">Machine Name </span>
-          <span className="text-red-500">*</span>
-        </div>
-        <Input
-          placeholder="Machine name..."
-          value={validation.machineName}
-          onChange={(e) =>
-            setValidation({ ...validation, machineName: e.target.value })
-          }
-        />
-      </div>
-
-      <div>
-        <div className="mb-2">
-          <span className="font-medium text-sm">GPU </span>
-          <span className="text-red-500">*</span>
-        </div>
-        <div className="flex flex-col gap-2">
-          <AnimatePresence>
-            {visibleGpus.map((gpu) => (
-              <motion.div
-                key={gpu.id}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <div
-                  onClick={() => {
-                    if (!sub?.plans?.plans && !gpu.isForFreePlan) {
-                      return;
-                    }
-                    setValidation({
-                      ...validation,
-                      gpuType: gpu.id,
-                      firstTimeSelectGPU: true,
-                    });
-                    setShowAllGpu(false); // Collapse after selection
-                  }}
-                  className={cn(
-                    "cursor-pointer rounded-lg border p-4 transition-all duration-200",
-                    "hover:border-gray-400",
-                    validation.gpuType === gpu.id
-                      ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
-                      : "border-gray-200 opacity-60",
-                    !sub?.plans?.plans &&
-                      !gpu.isForFreePlan &&
-                      "cursor-not-allowed",
-                  )}
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <span className="flex flex-row items-center gap-1 font-medium">
-                      {gpu.name}
-                      {!sub?.plans?.plans && !gpu.isForFreePlan && (
-                        <Lock className="h-3 w-3" />
-                      )}
-                    </span>
-                    <span className="text-gray-600 text-sm">{gpu.ram}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="max-w-[70%] text-[11px] text-gray-400">
-                      <span className="font-medium text-gray-600">
-                        {gpu.description.bold}
-                      </span>{" "}
-                      {gpu.description.regular}
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-
-          {/* Show/Hide button - show it always */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <Button
-              variant="ghost"
-              className="mt-2 w-full text-muted-foreground text-xs hover:text-primary"
-              onClick={() => setShowAllGpu(!showAllGpu)}
-            >
-              <div className="flex items-center gap-2">
-                {showAllGpu ? (
-                  <>
-                    Show Less <ChevronUp className="h-3 w-3" />
-                  </>
-                ) : (
-                  <>
-                    {validation.gpuType ? (
-                      <>Change GPU Selection</>
-                    ) : (
-                      <>Show More Options</>
-                    )}{" "}
-                    <ChevronDown className="h-3 w-3" />
-                  </>
-                )}
-              </div>
-            </Button>
-          </motion.div>
-        </div>
-      </div>
-
-      <div>
-        <div className="mb-2">
-          <span className="font-medium text-sm">ComfyUI Version </span>
-          <span className="text-red-500">*</span>
-        </div>
-        <div className="flex flex-col gap-2">
-          {comfyUIOptions.map((option) => (
-            <div
-              key={option.id}
-              onClick={() => {
-                setValidation({
-                  ...validation,
-                  selectedComfyOption: option.id,
-                  comfyUiHash:
-                    option.id === "custom"
-                      ? validation.comfyUiHash
-                      : option.hash || "",
-                });
-              }}
-              className={cn(
-                "cursor-pointer rounded-lg border p-4 transition-all duration-200",
-                "hover:border-gray-400",
-                validation.selectedComfyOption === option.id
-                  ? "border-gray-500 ring-2 ring-gray-500 ring-offset-2"
-                  : "border-gray-200 opacity-60",
-              )}
-            >
-              <div className="mb-1 flex items-center justify-between">
-                <span className="font-medium">{option.name}</span>
-                {option.id !== "custom" && (
-                  <Link
-                    href={`https://github.com/comfyanonymous/ComfyUI/commits/${option.hash}`}
-                    target="_blank"
-                    className="text-muted-foreground"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </Link>
-                )}
-              </div>
-              <div className="flex items-center justify-between">
-                {option.id === "custom" ? (
-                  <Input
-                    className="w-full font-mono text-[11px]"
-                    placeholder="Enter commit hash..."
-                    value={validation.comfyUiHash || ""}
-                    onChange={(e) => {
-                      setValidation({
-                        ...validation,
-                        selectedComfyOption: "custom",
-                        comfyUiHash: e.target.value,
-                      });
-                    }}
-                  />
-                ) : (
-                  <span className="text-[11px] text-gray-400">
-                    {option.id === "latest" && isLoading ? (
-                      <Skeleton className="h-4 w-24" />
-                    ) : (
-                      <span className="font-mono">{option.hash}</span>
-                    )}
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
