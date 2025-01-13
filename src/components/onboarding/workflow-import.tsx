@@ -333,6 +333,7 @@ export default function WorkflowImport() {
             let response: any;
             // Type guard to ensure required fields exist
             if (validation.machineOption === "existing") {
+              console.log("existing start");
               if (!validation.selectedMachineId) {
                 throw new Error("missing machine id");
               }
