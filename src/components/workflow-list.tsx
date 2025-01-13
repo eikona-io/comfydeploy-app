@@ -62,6 +62,7 @@ import { useCurrentPlan, useCurrentPlanQuery } from "@/hooks/use-current-plan";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { toast } from "sonner";
 import { useWorkflowList } from "../hooks/use-workflow-list";
+import { UserIcon } from "./run/SharePageComponent";
 
 export function useWorkflowVersion(
   workflow_id?: string,
@@ -524,8 +525,11 @@ function WorkflowCard({
               </Badge>
             )}
           </div>
-          <div className="flex flex-row justify-between opacity-50">
-            <div className="flex items-center gap-2 truncate text-xs">
+          <div className="flex flex-row justify-between">
+            <div className="flex items-center gap-2 truncate text-xs text-muted-foreground">
+              {workflow.user_id && (
+                <UserIcon user_id={workflow.user_id} className="h-4 w-4" />
+              )}
               {workflow.user_name || "Unknown"}
             </div>
             <div className="shrink-0 text-xs">
