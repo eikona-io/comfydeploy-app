@@ -1,7 +1,4 @@
-import {
-  LoadingMachineVerSkeleton,
-  MachineDeployment,
-} from "@/components/machine/machine-deployment";
+import { LoadingMachineVerSkeleton } from "@/components/machine/machine-deployment";
 import {
   LastActiveEvent,
   MachineCostEstimate,
@@ -10,9 +7,7 @@ import {
 import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
 import { useEffect } from "react";
-import { MachineActivity } from "./machine-activity";
 
 export default function MachinePage({
   params,

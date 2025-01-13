@@ -1,34 +1,13 @@
 import { MachineVersionListItem } from "@/components/machine/machine-deployment";
 import {
-  CPU_MEMORY_MAP,
-  MachineListItemEvents,
   getLastActiveText,
   isMachineDeprecated,
   useHasActiveEvents,
 } from "@/components/machines/machine-list-item";
-import { ShineBorder } from "@/components/magicui/shine-border";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { CardDescription } from "@/components/ui/card";
 import {
   useMachineEvents,
   useMachineVersion,
@@ -36,133 +15,26 @@ import {
   useMachineVersionsAll,
 } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { differenceInMilliseconds, max } from "date-fns";
-import { motion } from "framer-motion";
 import {
-  Activity,
   AlertCircle,
-  Box,
-  CheckCircle2,
   DollarSign,
   ExternalLink,
   GitBranch,
-  LineChart,
-  Loader2,
-  Save,
-  Table as TableIcon,
-  Workflow,
   X,
-  Zap,
 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useIsAdminOnly } from "../permissions";
-import { MachineSettingsWrapper } from "./machine-settings";
-// const ResponsiveGridLayout = WidthProvider(Responsive);
-
-// -----------------------hooks-----------------------
-
-const calculateTotalUpEventTime = (events: any[] | undefined): string => {
-  if (!events || events.length === 0) return "Never";
-
-  const eventTimes = events.map((event) => ({
-    start: event.start_time ? new Date(event.start_time) : null,
-    end: event.end_time ? new Date(event.end_time) : new Date(),
-  }));
-
-  eventTimes.sort(
-    (a, b) => (a.start?.getTime() || 0) - (b.start?.getTime() || 0),
-  );
-
-  let totalDuration = 0;
-  let currentStart: Date | null = null;
-  let currentEnd: Date | null = null;
-
-  for (const { start, end } of eventTimes) {
-    if (!start) continue;
-
-    if (!currentStart || (currentEnd && start > currentEnd)) {
-      if (currentStart && currentEnd) {
-        totalDuration += differenceInMilliseconds(currentEnd, currentStart);
-      }
-      currentStart = start;
-      currentEnd = end;
-    } else if (currentEnd) {
-      currentEnd = max([currentEnd, end]);
-    }
-  }
-
-  if (currentStart && currentEnd) {
-    totalDuration += differenceInMilliseconds(currentEnd, currentStart);
-  }
-
-  const totalSeconds = Math.floor(totalDuration / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-
-  const parts = [];
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-  if (seconds > 0) parts.push(`${seconds}s`);
-
-  return parts.join(" ") || "0s";
-};
-
-function getFromLS(key: string) {
-  if (typeof window !== "undefined") {
-    const ls = JSON.parse(localStorage.getItem("machine-layouts") || "{}");
-    return ls[key];
-  }
-  return null;
-}
-
-function saveToLS(key: string, value: any) {
-  if (typeof window !== "undefined") {
-    const ls = JSON.parse(localStorage.getItem("machine-layouts") || "{}");
-    ls[key] = value;
-    localStorage.setItem("machine-layouts", JSON.stringify(ls));
-  }
-}
-
-function deleteFromLS(key: string) {
-  if (typeof window !== "undefined") {
-    const ls = JSON.parse(localStorage.getItem("machine-layouts") || "{}");
-    delete ls[key];
-    localStorage.setItem("machine-layouts", JSON.stringify(ls));
-  }
-}
+import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // -----------------------components-----------------------
 
 export function MachineOverview({ machine }: { machine: any }) {
-  const defaultLayout = [
-    { i: "status", x: 0, y: 0, w: 1, h: 6 },
-    { i: "customNodes", x: 0, y: 6, w: 1, h: 6 },
-    { i: "workflowDeployment", x: 0, y: 2, w: 1, h: 6 },
-    { i: "containerGraph", x: 1, y: 1, w: 1, h: 7 },
-    { i: "containerTable", x: 1, y: 2, w: 2, h: 8 },
-  ];
-
-  const [layout, setLayout] = useState(() => {
-    const savedLayout = getFromLS(machine.id);
-    return savedLayout || defaultLayout;
-  });
-  const [isEditingLayout, setIsEditingLayout] = useState(false);
-  const navigate = useNavigate();
   const { data: machineVersionsAll, isLoading: isLoadingVersions } =
     useMachineVersionsAll(machine.id);
-  const handleLayoutChange = (newLayout: any) => {
-    if (!isEditingLayout) return;
-    setLayout(newLayout);
-  };
-  const sub = useCurrentPlan();
 
   const isDeprecated = isMachineDeprecated(machine);
-  const isDockerCommandStepsNull =
-    machine?.docker_command_steps === null &&
-    machine.type === "comfy-deploy-serverless";
 
   const isLatestVersion = useMemo(() => {
     if (isLoadingVersions || !machineVersionsAll) return true;
@@ -319,8 +191,21 @@ function MachineAlert({
 
 // -----------------------cards-----------------------
 
+const MachineVersionSkeleton = () => {
+  return (
+    <div className="grid grid-cols-4 border-b px-4 py-2">
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-6 w-8" /> {/* For "v6" */}
+        <Skeleton className="h-5 w-16" /> {/* For "Ready" status */}
+      </div>
+      <Skeleton className="h-5 w-24" /> {/* For "43s (7d ago)" */}
+      <Skeleton className="h-5 w-8" /> {/* For "L4" */}
+      <Skeleton className="h-5 w-32" /> {/* For "7d ago by Karrix Lee" */}
+    </div>
+  );
+};
+
 function MachineVersionWrapper({ machine }: { machine: any }) {
-  const [isHovered, setIsHovered] = useState(true);
   const { data: machineVersion, isLoading: isLoadingMachineVersion } =
     useMachineVersion(machine.id, machine.machine_version_id);
   const { data: machineVersions, isLoading: isLoadingMachineVersions } =
@@ -345,16 +230,23 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
           machineVersion={machineVersion}
           machine={machine}
         />
-        {versions
-          .filter((version) => version.id !== machineVersion.id)
-          .slice(0, 2)
-          .map((version) => (
-            <MachineVersionListItem
-              key={version.id}
-              machineVersion={version}
-              machine={machine}
-            />
-          ))}
+        {isLoadingMachineVersions ? (
+          <>
+            <MachineVersionSkeleton />
+            <MachineVersionSkeleton />
+          </>
+        ) : (
+          versions
+            .filter((version) => version.id !== machineVersion.id)
+            .slice(0, 2)
+            .map((version) => (
+              <MachineVersionListItem
+                key={version.id}
+                machineVersion={version}
+                machine={machine}
+              />
+            ))
+        )}
       </div>
       <div className="flex justify-end">
         <Link
