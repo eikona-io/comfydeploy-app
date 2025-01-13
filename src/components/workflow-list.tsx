@@ -44,7 +44,7 @@ import {
 } from "@/components/workflow-api";
 
 import { DialogTemplate } from "@/components/dialog-template";
-import { FileURLRender } from "@/components/output-render";
+// import { FileURLRender } from "@/components/output-render";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@clerk/clerk-react";
@@ -63,6 +63,7 @@ import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { toast } from "sonner";
 import { useWorkflowList } from "../hooks/use-workflow-list";
 import { UserIcon } from "./run/SharePageComponent";
+import { FileURLRender } from "./workflows/OutputRender";
 
 export function useWorkflowVersion(
   workflow_id?: string,
