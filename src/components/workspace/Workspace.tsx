@@ -134,7 +134,7 @@ export default function Workspace({
   useEffect(() => {
     setWorkflow(workflowJson);
     currentWorkflowRef.current = workflowJson;
-  }, [workflowId]);
+  }, [workflowId, workflowJson]);
 
   const { value: selectedVersion } = useSelectedVersion(workflowId);
 

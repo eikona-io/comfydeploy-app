@@ -28,6 +28,7 @@ export function WorkspaceClientWrapper({
   const { data: versions, isLoading: isLoadingVersions } = useQuery({
     enabled: !!props.workflow_id,
     queryKey: ["workflow", props.workflow_id, "versions"],
+    queryKeyHashFn: (queryKey) => [...queryKey, "latest"].toString(),
     meta: {
       limit: 1,
     },
