@@ -319,7 +319,7 @@ export function MachineList() {
               }
             },
             disabled: {
-              disabled: !sub?.plans.plans,
+              disabled: !sub?.sub?.plan,
               disabledText: "Upgrade to create custom machines.",
             },
           },
