@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { UserIcon } from "../run/SharePageComponent";
 
 // -------------------------constants-------------------------
 
@@ -228,8 +229,9 @@ export function MachineListItem({
             </div>
 
             {!isExpanded && (
-              <div className="ml-3 flex flex-row items-center gap-1 font-medium text-2xs">
+              <div className="ml-4 flex flex-row items-center gap-2 font-medium text-2xs">
                 {/* <HardDrive className="h-[14px] w-[14px]" /> */}
+                <UserIcon user_id={machine.user_id} className="h-4 w-4" />
                 {machine.gpu && (
                   <Badge
                     variant={"emerald"}

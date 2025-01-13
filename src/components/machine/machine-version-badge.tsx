@@ -41,7 +41,7 @@ export function MachineVersionBadge({
         variant={isLatestVersion ? "blue" : "yellow"}
         className={cn(
           "!text-[11px] !font-semibold !py-0",
-          isExpanded ? "!py-0.5 ml-1" : "!py-0 ml-2",
+          isExpanded ? "!py-0.5 " : "!py-0 ",
         )}
       >
         {isLatestVersion ? (

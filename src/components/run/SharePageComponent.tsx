@@ -169,7 +169,10 @@ type UserIconData = {
   last_name?: string;
 };
 
-function UserIcon({ user_id }: { user_id: string }) {
+export function UserIcon({
+  user_id,
+  className,
+}: { user_id: string; className?: string }) {
   const { data: userData } = useQuery<UserIconData>({
     queryKey: ["user", user_id],
   });
@@ -178,7 +181,7 @@ function UserIcon({ user_id }: { user_id: string }) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Avatar className="h-8 w-8">
+          <Avatar className={cn("h-8 w-8", className)}>
             <AvatarImage src={userData?.image_url || ""} />
             <AvatarFallback>
               <Skeleton className="h-full w-full" />
