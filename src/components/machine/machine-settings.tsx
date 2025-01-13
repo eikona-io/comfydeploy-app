@@ -709,7 +709,7 @@ function ComfyUIVersionSelectBox({
 
   const options = [
     { label: "Recommended", value: comfyui_hash },
-    { label: "Latest", value: latestComfyUI?.commit.sha || comfyui_hash },
+    { label: "Latest", value: latestComfyUI?.commit.sha || "..." },
     { label: "Custom", value: "custom" },
   ];
 
