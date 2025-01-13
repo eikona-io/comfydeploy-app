@@ -323,6 +323,7 @@ export function SessionCreator(props: {
         >
           <div className="flex h-full w-full flex-col">
             <Workspace
+              key={props.workflowId}
               nativeMode={false}
               endpoint={staticUrl}
               workflowJson={props.workflowLatestVersion.workflow}
@@ -408,6 +409,7 @@ export function SessionCreator(props: {
         > */}
         <div className="flex h-full w-full flex-col">
           <Workspace
+            key={props.workflowId}
             nativeMode={true}
             endpoint={url}
             workflowJson={props.workflowLatestVersion.workflow}

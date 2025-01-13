@@ -132,16 +132,19 @@ export function MachineList() {
         />
       </ActiveMachineProvider>
       <VirtualizedInfiniteList
-        className="!h-full fab-machine-list w-full"
+        className="!h-full fab-machine-list w-full rounded-3xl border max-w-[1200px] mx-auto"
+        containerClassName="divide-y divide-border"
         queryResult={query}
-        renderItem={(machine) => (
+        renderItem={(machine, index) => (
           <MachineListItem
             key={machine.id}
+            index={index}
             machine={machine}
             isExpanded={expandedMachineId === machine.id}
             setIsExpanded={(expanded) =>
               setExpandedMachineId(expanded ? machine.id : null)
             }
+            className={cn(expandedMachineId === machine.id && "border-b")}
             machineActionItemList={
               <MachineItemActionList
                 machine={machine}
@@ -156,9 +159,7 @@ export function MachineList() {
         renderItemClassName={(machine) =>
           cn(
             "z-0 transition-all duration-200",
-            machine &&
-              expandedMachineId === machine.id &&
-              "z-10 drop-shadow-md",
+            machine && expandedMachineId === machine.id && "z-[1]",
           )
         }
         renderLoading={() => {
@@ -187,7 +188,7 @@ export function MachineList() {
             </div>
           ));
         }}
-        estimateSize={90}
+        estimateSize={80}
       />
 
       <InsertModal
@@ -311,21 +312,16 @@ export function MachineList() {
             },
           },
           {
-            name: "Serverless Machine (Custom)",
-            icon: CloudCog,
-            onClick: () => {
-              if (!sub?.features.machineLimited) {
-                setOpenServerlessDialog(true);
-              }
-            },
-          },
-          {
             name: "Custom Machine",
             icon: Server,
             onClick: () => {
               if (!sub?.features.machineLimited) {
                 setOpenCustomDialog(true);
               }
+            },
+            disabled: {
+              disabled: !sub?.sub?.plan,
+              disabledText: "Upgrade to create custom machines.",
             },
           },
         ]}

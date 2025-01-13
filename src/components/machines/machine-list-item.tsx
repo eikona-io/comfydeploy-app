@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { UserIcon } from "../run/SharePageComponent";
 
 // -------------------------constants-------------------------
 
@@ -132,11 +133,15 @@ export function MachineListItem({
   isExpanded,
   setIsExpanded,
   machineActionItemList,
+  index,
+  className,
 }: {
   machine: any;
   isExpanded: boolean;
   setIsExpanded: (isExpanded: boolean) => void;
   machineActionItemList: React.ReactNode;
+  index: number;
+  className?: string;
 }) {
   const { data: events, isLoading } = useMachineEvents(machine.id);
   const { hasActiveEvents } = useHasActiveEvents(machine.id);
@@ -161,7 +166,7 @@ export function MachineListItem({
   const content = (
     <div
       className={cn(
-        "group relative flex min-h-[80px] w-full flex-col items-center overflow-hidden rounded-sm border bg-white p-4 shadow-sm",
+        "group relative flex min-h-[80px] w-full flex-col items-center overflow-hidden rounded-none bg-white p-4",
         isStale && "bg-gray-50 contrast-75",
         machine.status === "error" && "bg-red-100",
         machine.import_failed_logs &&
@@ -169,6 +174,8 @@ export function MachineListItem({
           "bg-yellow-50",
         isDeprecated && !isStale && "bg-yellow-50",
         hasActiveEvents && "bg-green-50/80",
+        index % 2 === 0 && "bg-gray-50",
+        className,
       )}
     >
       <BuildProgressWrapper
@@ -221,18 +228,43 @@ export function MachineListItem({
               )}
             </div>
 
-            {!isExpanded && machine.gpu && (
-              <div className="flex flex-row items-center gap-1 font-medium text-2xs">
-                <HardDrive className="h-[14px] w-[14px]" />
-                <span className="whitespace-nowrap">{machine.gpu}</span>
+            {!isExpanded && (
+              <div className="ml-4 flex flex-row items-center gap-2 font-medium text-2xs">
+                {/* <HardDrive className="h-[14px] w-[14px]" /> */}
+                <UserIcon user_id={machine.user_id} className="h-4 w-4" />
+                {machine.gpu && (
+                  <Badge
+                    variant={"emerald"}
+                    className={cn("!text-[11px] !font-semibold !py-0 ")}
+                  >
+                    {machine.gpu}
+                  </Badge>
+                )}
                 {machine.machine_version_id && (
                   <MachineVersionBadge machine={machine} isExpanded={false} />
+                )}
+                {machine.type && machine.type !== "comfy-deploy-serverless" && (
+                  <Badge
+                    variant={"outline"}
+                    className="!text-2xs !font-semibold !py-0 !text-[11px] w-fit whitespace-nowrap"
+                  >
+                    {(() => {
+                      switch (machine.type) {
+                        case "comfy-deploy-serverless":
+                          return "serverless";
+                        case "runpod-serverless":
+                          return "runpod";
+                        default:
+                          return machine.type;
+                      }
+                    })()}
+                  </Badge>
                 )}
               </div>
             )}
           </div>
 
-          {!isExpanded && (
+          {/* {!isExpanded && (
             <>
               <div className="hidden xl:block">
                 <MachineListItemDeployments
@@ -249,69 +281,49 @@ export function MachineListItem({
                 />
               </div>
             </>
-          )}
+          )} */}
         </div>
+        <Link
+          to={"/machines/$machineId"}
+          className="absolute inset-0 z-[2] h-full w-full hover:bg-gray-20"
+          params={{ machineId: machine.id }}
+          search={{ view: undefined }}
+        />
         <div className="flex w-full flex-row items-center justify-end gap-2">
-          {isExpanded && (
-            <div className="hidden items-center space-x-2 xl:flex">
-              <MachineListActionBar
-                machine={machine}
-                isExpanded={true}
-                isDockerCommandStepsNull={isDockerCommandStepsNull}
-              />
-            </div>
-          )}
-          {!isExpanded && (
-            <>
-              <div className="hidden xl:block xl:w-full xl:max-w-[250px]">
+          <div className="flex flex-row items-center gap-2 z-10">
+            {!isExpanded && (
+              <div className="hidden xl:block min-w-40 xl:w-full xl:max-w-[250px]">
                 <MachineListItemEvents
                   isExpanded={false}
                   events={{ data: events, isLoading }}
                   machine={machine}
                 />
               </div>
-              {machine.machine_version && (
-                <Badge
-                  variant={"outline"}
-                  className="!text-[11px] !font-semibold !font-mono"
-                >
-                  v{machine.machine_version}
-                </Badge>
-              )}
-              {machine.type && (
-                <Badge
-                  variant={"outline"}
-                  className="!text-2xs !font-semibold hidden xl:block"
-                >
-                  {machine.type === "comfy-deploy-serverless"
-                    ? "serverless"
-                    : machine.type}
-                </Badge>
-              )}
-            </>
-          )}
-          <Badge
-            variant={hasActiveEvents ? "green" : "secondary"}
-            className="!text-2xs !font-semibold flex items-center gap-1"
-          >
-            {hasActiveEvents ? (
-              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
-            ) : (
-              <Pause className="h-3 w-3 text-muted-foreground" />
             )}
-            {hasActiveEvents ? "Running" : "Idle"}
-          </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsExpanded(!isExpanded)}
-          >
-            <ChevronDown
-              className={`h-4 w-4 transition-transform duration-200 ${
-                isExpanded ? "rotate-180" : ""
-              }`}
-            />
-          </Button>
+            <Badge
+              variant={hasActiveEvents ? "green" : "secondary"}
+              className="!text-2xs !font-semibold flex items-center gap-1"
+            >
+              {hasActiveEvents ? (
+                <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-green-500" />
+              ) : (
+                <Pause className="h-3 w-3 text-muted-foreground" />
+              )}
+              {hasActiveEvents ? "Running" : "Idle"}
+            </Badge>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="min-w-12 h-12"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              <ChevronDown
+                className={`h-4 w-4 transition-transform duration-200 ${
+                  isExpanded ? "rotate-180" : ""
+                }`}
+              />
+            </Button>
+          </div>
         </div>
       </div>
 

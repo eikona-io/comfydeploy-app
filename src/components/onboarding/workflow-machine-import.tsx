@@ -587,7 +587,7 @@ export function WorkflowImportMachineSetup({
           comfyui_version: validation.comfyUiHash || comfyui_hash,
           name: validation.machineName,
           gpu: validation.gpuType,
-          docker_command_steps: { steps: [] },
+          docker_command_steps: validation.docker_command_steps,
         };
 
   if (!validation.machineConfig) {
@@ -638,6 +638,11 @@ export function WorkflowImportMachineSetup({
             setValidation({
               ...validation,
               gpuType: value,
+            });
+          } else if (key === "docker_command_steps") {
+            setValidation({
+              ...validation,
+              docker_command_steps: value,
             });
           }
         }}

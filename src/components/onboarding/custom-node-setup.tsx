@@ -750,28 +750,100 @@ function CustomNodeCard({
   setValidation: (validation: MachineStepValidation) => void;
   validation: MachineStepValidation;
 }) {
+  const [editingCommand, setEditingCommand] = useState<string | null>(null);
+
   // Handle command type
   if (node.type === "commands") {
     return (
       <div className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 flex-col">
-            {/* <span className="font-medium">Custom Command</span> */}
-            {/* <div className="mt-2 rounded bg-gray-100 p-2"> */}
-            <pre className="whitespace-pre-wrap font-mono text-gray-600 text-xs">
-              $ {node.data as string}
-            </pre>
-            {/* </div> */}
+            {editingCommand === node.id ? (
+              <Textarea
+                autoFocus
+                defaultValue={node.data as string}
+                className="min-h-[60px] font-mono text-xs"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.metaKey) {
+                    setValidation({
+                      ...validation,
+                      isEditingHashOrAddingCommands: false,
+                      docker_command_steps: {
+                        steps: validation.docker_command_steps.steps.map(
+                          (step) =>
+                            step.id === node.id
+                              ? { ...step, data: e.currentTarget.value }
+                              : step,
+                        ),
+                      },
+                    });
+                    setEditingCommand(null);
+                  }
+                }}
+              />
+            ) : (
+              <pre className="whitespace-pre-wrap font-mono text-gray-600 text-xs">
+                $ {node.data as string}
+              </pre>
+            )}
           </div>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
-            onClick={() => handleRemoveNode(node)}
-          >
-            <Minus size={14} />
-          </Button>
+          <div className="flex">
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className={cn(
+                "text-gray-500",
+                editingCommand !== node.id &&
+                  "opacity-0 transition-opacity duration-200 hover:text-gray-700 group-hover:opacity-100",
+              )}
+              onClick={(e) => {
+                if (editingCommand === node.id) {
+                  // Find the textarea element and get its value
+                  const textarea =
+                    e.currentTarget.parentElement?.parentElement?.querySelector(
+                      "textarea",
+                    );
+                  if (textarea) {
+                    setValidation({
+                      ...validation,
+                      isEditingHashOrAddingCommands: false,
+                      docker_command_steps: {
+                        steps: validation.docker_command_steps.steps.map(
+                          (step) =>
+                            step.id === node.id
+                              ? { ...step, data: textarea.value }
+                              : step,
+                        ),
+                      },
+                    });
+                    setEditingCommand(null);
+                  }
+                } else {
+                  setValidation({
+                    ...validation,
+                    isEditingHashOrAddingCommands: true,
+                  });
+                  setEditingCommand(node.id);
+                }
+              }}
+            >
+              {editingCommand === node.id ? (
+                <Save size={14} />
+              ) : (
+                <Pencil size={14} />
+              )}
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
+              onClick={() => handleRemoveNode(node)}
+            >
+              <Minus size={14} />
+            </Button>
+          </div>
         </div>
       </div>
     );
