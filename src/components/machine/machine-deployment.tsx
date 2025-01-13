@@ -315,85 +315,90 @@ export function MachineVersionListItem({
   }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
   return (
-    <Link
-      key={machineVersion.id}
-      className="cursor-pointer border-b px-4 hover:bg-gray-100"
-      to={`/machines/${machine.id}/${machineVersion.id}`}
-    >
+    <div className="border-b px-4 hover:bg-gray-100">
       <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(100px,1fr)_minmax(250px,auto)] gap-4 md:gap-x-4 md:items-center">
-        {/* ID and Version */}
-        <div className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer">
-          {/* <div className="font-medium font-mono text-2xs truncate">
-            {machineVersion.id.slice(0, 8)}
-          </div> */}
-          <div className="flex flex-row gap-x-2 items-center">
-            <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
-              v{machineVersion.version}
+        {/* Wrap only the content that should be clickable in Link */}
+        <Link
+          key={machineVersion.id}
+          className="contents"
+          to={`/machines/${machine.id}/${machineVersion.id}`}
+        >
+          {/* ID and Version */}
+          <div className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer">
+            {/* <div className="font-medium font-mono text-2xs truncate">
+              {machineVersion.id.slice(0, 8)}
+            </div> */}
+            <div className="flex flex-row gap-x-2 items-center">
+              <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
+                v{machineVersion.version}
+              </div>
+              {machineVersion.id === machine.machine_version_id && (
+                <Badge
+                  variant="green"
+                  className="flex items-center gap-x-1 !text-2xs"
+                >
+                  <CircleArrowUp className="h-3 w-3" />
+                  <span>Current</span>
+                </Badge>
+              )}
             </div>
-            {machineVersion.id === machine.machine_version_id && (
-              <Badge
-                variant="green"
-                className="flex items-center gap-x-1 !text-2xs"
-              >
-                <CircleArrowUp className="h-3 w-3" />
-                <span>Current</span>
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        <hr className=" border-gray-200 border-t md:hidden" />
-
-        {/* Status and Time */}
-        <div className="flex flex-row gap-4">
-          <div className="flex min-w-0  items-center gap-x-1.5">
-            <MachineStatusBadge
-              status={machineVersion.status}
-              createdAt={machineVersion.created_at}
-            />
-            {machineVersion.status === "building" ? (
-              <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />
-            ) : (
-              <div className="w-[14px] shrink-0" />
-            )}
           </div>
 
-          <span className="truncate text-gray-500 text-sm">
-            {machineVersion.status === "building"
-              ? differenceInSeconds(
-                  new Date(),
-                  new Date(machineVersion.created_at),
-                ) > 3600
-                ? "-"
-                : formatExactTime(
-                    buildStartTime
-                      ? differenceInSeconds(new Date(), buildStartTime)
-                      : 0,
-                  )
-              : machineVersion.created_at === machineVersion.updated_at
-                ? "-"
-                : `${formatExactTime(
-                    differenceInSeconds(
+          <hr className="border-gray-200 border-t md:hidden" />
+
+          {/* Status and Time */}
+          <div className="flex flex-row gap-4">
+            <div className="flex min-w-0  items-center gap-x-1.5">
+              <MachineStatusBadge
+                status={machineVersion.status}
+                createdAt={machineVersion.created_at}
+              />
+              {machineVersion.status === "building" ? (
+                <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />
+              ) : (
+                <div className="w-[14px] shrink-0" />
+              )}
+            </div>
+
+            <span className="truncate text-gray-500 text-sm">
+              {machineVersion.status === "building"
+                ? differenceInSeconds(
+                    new Date(),
+                    new Date(machineVersion.created_at),
+                  ) > 3600
+                  ? "-"
+                  : formatExactTime(
+                      buildStartTime
+                        ? differenceInSeconds(new Date(), buildStartTime)
+                        : 0,
+                    )
+                : machineVersion.created_at === machineVersion.updated_at
+                  ? "-"
+                  : `${formatExactTime(
+                      differenceInSeconds(
+                        new Date(machineVersion.updated_at),
+                        new Date(machineVersion.created_at),
+                      ),
+                    )} (${formatShortDistanceToNow(
                       new Date(machineVersion.updated_at),
-                      new Date(machineVersion.created_at),
-                    ),
-                  )} (${formatShortDistanceToNow(
-                    new Date(machineVersion.updated_at),
-                  )})`}
-          </span>
-        </div>
-
-        <hr className=" border-gray-200 border-t md:hidden" />
-
-        {/* GPU and Nodes */}
-        <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
-          <HardDrive className="h-[14px] w-[14px] shrink-0" />
-          <div className="flex items-center">
-            <span className="text-xs text-gray-600">{machineVersion.gpu}</span>
+                    )})`}
+            </span>
           </div>
-        </div>
 
-        {/* User Info and Actions */}
+          <hr className="border-gray-200 border-t md:hidden" />
+
+          {/* GPU and Nodes */}
+          <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
+            <HardDrive className="h-[14px] w-[14px] shrink-0" />
+            <div className="flex items-center">
+              <span className="text-xs text-gray-600">
+                {machineVersion.gpu}
+              </span>
+            </div>
+          </div>
+        </Link>
+
+        {/* Keep interactive elements outside of Link */}
         <div className="justify-self-end flex flex-row gap-x-2 items-center">
           <UserInfoForDeployment machineVersion={machineVersion} />
           <InstantRollback
@@ -403,7 +408,7 @@ export function MachineVersionListItem({
           />
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
