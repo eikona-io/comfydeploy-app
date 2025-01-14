@@ -94,6 +94,30 @@ export function MachineVersionDetail({
           <span className="text-gray-500 text-sm">
             v{machineVersion.version}
           </span>
+          <Badge
+            variant={
+              machineVersion.status === "building"
+                ? "yellow"
+                : machineVersion.status === "error"
+                  ? "red"
+                  : "green"
+            }
+          >
+            <div
+              className={`h-[6px] w-[6px] animate-pulse rounded-full bg-${
+                machineVersion.status === "building"
+                  ? "yellow"
+                  : machineVersion.status === "error"
+                    ? "red"
+                    : "green"
+              }-500`}
+            />
+            {machineVersion.status === "building"
+              ? "Building"
+              : machineVersion.status === "error"
+                ? "Error"
+                : "Ready"}
+          </Badge>
         </div>
         <div className="flex flex-row gap-2">
           <MachineCostEstimate machineId={machine.id} />

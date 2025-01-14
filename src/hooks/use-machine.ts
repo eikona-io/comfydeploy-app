@@ -81,5 +81,6 @@ export function useMachineVersion(
       "versions",
       machine_version_id,
     ],
+    refetchInterval: 5000,
   });
 }
