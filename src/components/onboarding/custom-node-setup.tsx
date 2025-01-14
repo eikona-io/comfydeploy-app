@@ -802,7 +802,7 @@ function CustomNodeCard({
   // Handle command type
   if (node.type === "commands") {
     return (
-      <div className="group flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm">
+      <div className="group relative flex flex-col rounded-[6px] border border-gray-200 bg-gray-50 p-2 text-sm">
         <div className="flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 flex-col">
             {editingCommand === node.id ? (
@@ -881,17 +881,19 @@ function CustomNodeCard({
                 <Pencil size={14} />
               )}
             </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
-              onClick={() => handleRemoveNode(node)}
-            >
-              <Minus size={14} />
-            </Button>
           </div>
         </div>
+        {editingCommand !== node.id && (
+          <div className="-top-2 -right-2 absolute">
+            <button
+              type="button"
+              onClick={() => handleRemoveNode(node)}
+              className="shrink-0 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+            >
+              <Minus size={12} />
+            </button>
+          </div>
+        )}
       </div>
     );
   }
