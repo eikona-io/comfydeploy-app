@@ -235,7 +235,9 @@ export function MachineListItem({
                 {machine.gpu && (
                   <Badge
                     variant={"emerald"}
-                    className={cn("!text-[11px] !font-semibold !py-0 ")}
+                    className={cn(
+                      "!text-[11px] !font-semibold !py-0 whitespace-nowrap",
+                    )}
                   >
                     {machine.gpu}
                   </Badge>
