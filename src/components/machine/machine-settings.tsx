@@ -721,15 +721,23 @@ function ComfyUIVersionSelectBox({
 
   const options = [
     { label: "Recommended", value: comfyui_hash },
-    { label: "Latest", value: latestComfyUI?.commit.sha || "..." },
+    { label: "Latest", value: latestComfyUI?.commit.sha || comfyui_hash },
     { label: "Custom", value: "custom" },
   ];
 
-  // Determine if we should show custom by checking if value matches any predefined options
+  // Only check for custom if we have loaded the latest hash
   const isCustom =
-    value === "" ||
-    (value && !options.slice(0, 2).some((opt) => opt.value === value));
-  const selectedValue = isCustom ? "custom" : value || comfyui_hash;
+    !isLoading &&
+    value &&
+    !options.slice(0, 2).some((opt) => opt.value === value);
+
+  // Don't change selection while loading
+  const selectedValue =
+    isLoading && value === latestComfyUI?.commit.sha
+      ? "latest"
+      : isCustom
+        ? "custom"
+        : value || comfyui_hash;
 
   return (
     <div className="mt-2 space-y-2">
@@ -737,9 +745,11 @@ function ComfyUIVersionSelectBox({
         value={selectedValue}
         onValueChange={(newValue) => {
           if (newValue === "custom") {
-            // Set an empty string to trigger the custom input
             onChange("");
             setCustomValue(isCustom ? value || "" : "");
+          } else if (newValue === "latest" && latestComfyUI?.commit.sha) {
+            onChange(latestComfyUI.commit.sha);
+            setCustomValue(latestComfyUI.commit.sha);
           } else {
             onChange(newValue);
             setCustomValue(newValue);
@@ -747,7 +757,16 @@ function ComfyUIVersionSelectBox({
         }}
       >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select version" />
+          <SelectValue placeholder="Select version">
+            {isLoading && selectedValue === "latest" ? (
+              <div className="flex items-center gap-2">
+                <span>Latest</span>
+                <span className="text-muted-foreground">(loading...)</span>
+              </div>
+            ) : (
+              options.find((opt) => opt.value === selectedValue)?.label
+            )}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {options.map((option) => (
@@ -756,7 +775,9 @@ function ComfyUIVersionSelectBox({
                 <span>{option.label}</span>
                 {option.value !== "custom" && (
                   <span className="ml-2 font-mono text-muted-foreground text-xs">
-                    ({option.value.slice(0, 7)})
+                    {isLoading && option.label === "Latest"
+                      ? "(loading...)"
+                      : `(${option.value.slice(0, 7)})`}
                   </span>
                 )}
               </div>
