@@ -735,7 +735,7 @@ function ComfyUIVersionSelectBox({
   const selectedValue =
     isLoading && value === latestComfyUI?.commit.sha
       ? "latest"
-      : isCustom
+      : isCustom || value === ""
         ? "custom"
         : value || comfyui_hash;
 
@@ -745,11 +745,12 @@ function ComfyUIVersionSelectBox({
         value={selectedValue}
         onValueChange={(newValue) => {
           if (newValue === "custom") {
+            setCustomValue("");
             onChange("");
-            setCustomValue(isCustom ? value || "" : "");
           } else if (newValue === "latest" && latestComfyUI?.commit.sha) {
-            onChange(latestComfyUI.commit.sha);
-            setCustomValue(latestComfyUI.commit.sha);
+            const latestHash = latestComfyUI.commit.sha;
+            onChange(latestHash);
+            setCustomValue(latestHash);
           } else {
             onChange(newValue);
             setCustomValue(newValue);
