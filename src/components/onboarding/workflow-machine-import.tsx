@@ -368,7 +368,7 @@ function ExistingMachine({
     );
 
     for (const [url, nodeData] of uniqueUrls) {
-      const isMatched = machineNodeUrls.some(
+      const isMatched = machineNodeUrls?.some(
         (mnUrl: string) => mnUrl === url.toLowerCase(),
       );
       if (isMatched) {
