@@ -74,11 +74,14 @@ export function MachineSettingsWrapper({
   machine,
   onValueChange,
   title,
+  disableUnsavedChangesWarningServerless = false,
 }: {
   machine: any;
   onValueChange?: (key: string, value: any) => void;
   title?: ReactNode;
+  disableUnsavedChangesWarningServerless?: boolean;
 }) {
+  console.log("machine inside: ", machine);
   const isServerless = machine.type === "comfy-deploy-serverless";
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -173,6 +176,9 @@ export function MachineSettingsWrapper({
               setIsLoading={setIsLoading}
               view={view}
               onValueChange={onValueChange}
+              disableUnsavedChangesWarning={
+                disableUnsavedChangesWarningServerless
+              }
             />
           ) : (
             <ClassicSettings
@@ -256,6 +262,7 @@ function ServerlessSettings({
   setIsLoading,
   view,
   onValueChange,
+  disableUnsavedChangesWarning = false,
 }: {
   machine: any;
   formRef: RefObject<HTMLFormElement | null>;
@@ -263,6 +270,7 @@ function ServerlessSettings({
   setIsLoading: (value: boolean) => void;
   view: string;
   onValueChange?: (key: string, value: any) => void;
+  disableUnsavedChangesWarning?: boolean;
 }) {
   const [isFormDirty, setIsFormDirty] = useState(false);
   const controls = useAnimation();
@@ -303,34 +311,32 @@ function ServerlessSettings({
       const formValues = form.getValues();
       if (name) onValueChange?.(name, formValues[name as keyof FormData]);
       if (isNew) return;
+
       const isDirty = Object.keys(formValues).some((key) => {
         const newValue = formValues[key as keyof FormData];
         const oldValue = machine[key];
-        const hasChanged = newValue !== oldValue;
-        // if (hasChanged) {
-        //   onValueChange?.(key, newValue);
-        // }
-        return hasChanged;
+        return newValue !== oldValue;
       });
       setIsFormDirty(isDirty);
     });
 
     return () => subscription.unsubscribe();
-  }, [form, machine, onValueChange]);
+  }, [form, machine, onValueChange, disableUnsavedChangesWarning]);
 
   useBlocker({
     enableBeforeUnload: () => {
-      return !!isFormDirty && !isNew;
+      return !disableUnsavedChangesWarning && !!isFormDirty && !isNew;
     },
     shouldBlockFn: ({ current, next }) => {
-      if (isNew) return false;
+      if (isNew || disableUnsavedChangesWarning) return false;
+
       // Ignore navigation if it's just changing the view parameter or going to base machine URL
       const isSafeNavigation =
         current.pathname === next.pathname &&
         (Object.keys(next.search).length === 0 || // base route
           (Object.keys(next.search).length === 1 && "view" in next.search)); // view change
 
-      if (isFormDirty && !isSafeNavigation) {
+      if (!disableUnsavedChangesWarning && isFormDirty && !isSafeNavigation) {
         controls.start({
           x: [0, -8, 12, -15, 8, -10, 5, -3, 2, -1, 0],
           y: [0, 4, -9, 6, -12, 8, -3, 5, -2, 1, 0],
@@ -354,7 +360,9 @@ function ServerlessSettings({
         });
       }
 
-      return !!isFormDirty && !isSafeNavigation;
+      return (
+        !disableUnsavedChangesWarning && !!isFormDirty && !isSafeNavigation
+      );
     },
   });
 
@@ -656,7 +664,7 @@ function ServerlessSettings({
       </form>
 
       <AnimatePresence>
-        {isFormDirty && (
+        {!disableUnsavedChangesWarning && isFormDirty && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

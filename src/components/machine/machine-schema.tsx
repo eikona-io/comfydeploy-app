@@ -262,7 +262,7 @@ export const sharedMachineConfig: FieldConfig<
   machine_builder_version: {
     fieldType: "select",
     description:
-      "v2 is deprecated, v3 is recommended, for new users, v4 is in beta, request v2 API access in /settings",
+      "v2 is deprecated, v3 is old, v4 is reccomended and requires v2 API in /settings (default on for new users)",
     group: "Advance",
   },
 

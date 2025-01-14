@@ -3,6 +3,7 @@ import { generateDependencyGraphJson } from "comfyui-json";
 const BLACKLISTED_CUSTOM_NODES = [
   "https://github.com/bennykok/comfyui-deploy",
   // Add more blacklisted nodes here
+  "https://github.com/audioscavenger/ComfyUI-Thumbnails",
   "https://github.com/mrhan1993/ComfyUI-Fooocus",
 ];
 
@@ -15,6 +16,13 @@ export type CustomNodeInfo = {
   install_type?: string; // Make install_type optional
   node?: { inputs: Record<string, any>; class_type?: string }[]; // Add node property
   pip?: string[]; // Add pip property
+  meta?: {
+    message?: string;
+    committer?: any;
+    latest_hash?: string;
+    stargazers_count?: number;
+    commit_url?: string;
+  };
 };
 
 export type ConflictingNodeInfo = {
@@ -24,6 +32,13 @@ export type ConflictingNodeInfo = {
   install_type: string;
   pip?: string[];
   hash?: string | null;
+  meta?: {
+    message?: string;
+    committer?: any;
+    latest_hash?: string;
+    stargazers_count?: number;
+    commit_url?: string;
+  };
 };
 
 export type WorkflowDependencies = {

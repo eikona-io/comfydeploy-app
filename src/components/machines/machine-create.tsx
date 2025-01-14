@@ -2,7 +2,7 @@ import { CustomNodeSetup } from "@/components/onboarding/custom-node-setup";
 import {
   type ComfyUIOption,
   type GpuTypes,
-  WorkflowImportNewMachineSetup,
+  WorkflowImportMachineSetup,
   gpuOptions,
 } from "@/components/onboarding/workflow-machine-import";
 import {
@@ -104,7 +104,7 @@ export function MachineCreate() {
     {
       id: 1,
       title: "Create Machine",
-      component: WorkflowImportNewMachineSetup,
+      component: WorkflowImportMachineSetup,
       validate: (validation) => {
         const {
           machineName,

@@ -5,11 +5,12 @@ import type {
 import {
   type GpuTypes,
   WorkflowImportCustomNodeSetup,
-  WorkflowImportMachine,
-  WorkflowImportNewMachineSetup,
+  WorkflowImportMachineSetup,
+  WorkflowImportSelectedMachine,
   convertToDockerSteps,
   findFirstDuplicateNode,
 } from "@/components/onboarding/workflow-machine-import";
+import type { NodeData } from "@/components/onboarding/workflow-machine-import";
 import { WorkflowModelCheck } from "@/components/onboarding/workflow-model-check";
 import {
   type Step,
@@ -43,6 +44,9 @@ export interface StepValidation {
   workflowApi?: string;
   selectedMachineId?: string;
   machineOption?: "existing" | "new";
+  existingMachine?: any;
+  machineConfig?: any; // only for existing machine
+  existingMachineMissingNodes?: NodeData[];
   // Add more fields as needed for future steps
 
   machineName?: string;
@@ -72,24 +76,19 @@ function getStepNavigation(
   switch (currentStep) {
     case 0: // Create Workflow
       return {
-        next: 1,
+        next: validation.importOption === "default" ? 2 : 1,
         prev: null,
       };
 
-    case 1: // Select Machine
+    case 1: // Custom Node Setup
       return {
-        next:
-          validation.machineOption === "new"
-            ? validation.importOption === "default"
-              ? 4
-              : 2 // Skip Custom Node Setup for empty workflows
-            : null, // End flow for existing/none machine
+        next: 2,
         prev: 0,
       };
 
-    case 2: // Custom Node Setup
+    case 2: // Select Machine
       return {
-        next: 3,
+        next: validation.importOption === "default" ? 4 : 3,
         prev: 1,
       };
 
@@ -185,70 +184,9 @@ export default function WorkflowImport() {
         },
       },
     },
-    {
-      id: 2,
-      title: "Select Machine",
-      component: WorkflowImportMachine,
-      validate: (validation) => {
-        if (
-          validation.machineOption === "existing" &&
-          !validation.selectedMachineId
-        ) {
-          return { isValid: false, error: "Please select a machine" };
-        }
-        return { isValid: true };
-      },
-      actions: {
-        onNext: async (validation) => {
-          try {
-            switch (validation.machineOption) {
-              case "existing":
-                // console.log(validation);
-                // console.log(validation.workflowApi);
-                // console.log(validation.workflowJson);
-
-                // Execute the promise with toast and handle navigation
-                toast.promise(
-                  createWorkflow(validation.selectedMachineId || undefined),
-                  {
-                    loading: "Creating workflow...",
-                    success: (data) => {
-                      console.log(data);
-                      if (data.workflow_id) {
-                        navigate({
-                          to: "/workflows/$workflowId/$view",
-                          params: {
-                            workflowId: data.workflow_id,
-                            view: "workspace",
-                          },
-                          search: { view: undefined },
-                        });
-                      }
-                      return `Workflow "${validation.workflowName}" has been created!`;
-                    },
-                    error: (err) => `Failed to create workflow: ${err.message}`,
-                  },
-                );
-
-                return true;
-
-              case "new":
-                // Maybe store some state and continue to next step
-                return true;
-
-              default:
-                return false;
-            }
-          } catch (error) {
-            toast.error(`Failed to create workflow: ${error}`);
-            return false;
-          }
-        },
-      },
-    },
     // Add more steps as needed:
     {
-      id: 3,
+      id: 2,
       title: "Custom Node Setup",
       component: WorkflowImportCustomNodeSetup,
       validate: (validation) => {
@@ -323,6 +261,39 @@ export default function WorkflowImport() {
       },
     },
     {
+      id: 3,
+      title: "Select Machine",
+      component: WorkflowImportSelectedMachine,
+      validate: (validation) => {
+        if (
+          validation.machineOption === "existing" &&
+          !validation.selectedMachineId
+        ) {
+          return { isValid: false, error: "Please select a machine" };
+        }
+        return { isValid: true };
+      },
+      actions: {
+        onNext: async (validation) => {
+          try {
+            switch (validation.machineOption) {
+              case "existing":
+                return true;
+              case "new":
+                // Maybe store some state and continue to next step
+                return true;
+
+              default:
+                return false;
+            }
+          } catch (error) {
+            toast.error(`Failed to create workflow: ${error}`);
+            return false;
+          }
+        },
+      },
+    },
+    {
       id: 4,
       title: "Model Checking (Beta)",
       component: WorkflowModelCheck,
@@ -338,7 +309,7 @@ export default function WorkflowImport() {
     {
       id: 5,
       title: "Machine Settings",
-      component: WorkflowImportNewMachineSetup,
+      component: WorkflowImportMachineSetup,
       validate: (validation) => {
         if (!validation.machineName?.trim()) {
           return { isValid: false, error: "Please enter a machine name" };
@@ -359,36 +330,47 @@ export default function WorkflowImport() {
       actions: {
         onNext: async (validation) => {
           try {
+            let response: any;
             // Type guard to ensure required fields exist
-            if (
-              !validation.machineName ||
-              !validation.comfyUiHash ||
-              !validation.gpuType
-            ) {
-              throw new Error("Missing required fields");
+            if (validation.machineOption === "existing") {
+              if (!validation.selectedMachineId) {
+                throw new Error("missing machine id");
+              }
+              console.log("existing: ", validation.machineConfig);
+
+              response = await api({
+                url: `machine/serverless/${validation.selectedMachineId}`,
+                init: {
+                  method: "PATCH",
+                  body: JSON.stringify(validation.machineConfig),
+                },
+              });
+            } else {
+              // New machine
+              if (
+                !validation.machineName ||
+                !validation.comfyUiHash ||
+                !validation.gpuType
+              ) {
+                throw new Error("Missing required fields");
+              }
+
+              response = await api({
+                url: "machine/serverless",
+                init: {
+                  method: "POST",
+                  body: JSON.stringify({
+                    name: validation.machineName,
+                    comfyui_version: validation.comfyUiHash,
+                    gpu: validation.gpuType,
+                    docker_command_steps: validation.docker_command_steps,
+                  }),
+                },
+              });
             }
-
-            // const docker_commands = convertToDockerSteps(
-            //   validation.dependencies?.custom_nodes,
-            //   validation.selectedConflictingNodes,
-            // );
-
-            const response = await api({
-              url: "machine/serverless",
-              init: {
-                method: "POST",
-                body: JSON.stringify({
-                  name: validation.machineName,
-                  comfyui_version: validation.comfyUiHash,
-                  gpu: validation.gpuType,
-                  docker_command_steps: validation.docker_command_steps,
-                }),
-              },
-            });
 
             toast.success(`${validation.machineName} created successfully!`);
             const machineId = response.id;
-
             // Create workflow with the new machine ID
             const workflowResult = await createWorkflow(machineId);
 
@@ -406,7 +388,7 @@ export default function WorkflowImport() {
             navigate({
               to: "/machines/$machineId",
               params: { machineId },
-              search: { view: "deployments" },
+              search: { view: undefined },
             });
 
             return true;
@@ -604,7 +586,7 @@ function DefaultOption({
                     <img
                       src={template.workflowImageUrl}
                       className="h-full w-full object-cover"
-                      alt={`${template.workflowName} example`}
+                      alt={`$template.workflowNameexample`}
                     />
                   </div>
 

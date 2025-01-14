@@ -130,7 +130,7 @@ export function useModels() {
       });
       setIsPrivateModelRefreshing(false);
       disableCacheRef.current = false;
-      toast.success("Private Models Refreshed");
+      // toast.success("Private Models Refreshed");
       return {
         structure: contents.structure as VolFSStructure,
         models: contents.models as any[],
@@ -152,7 +152,7 @@ export function useModels() {
       });
       setIsPublicModelRefreshing(false);
       disableCacheRef.current = false;
-      toast.success("Public Models Refreshed");
+      // toast.success("Public Models Refreshed");
       return {
         structure: contents.structure as VolFSStructure,
         models: contents.models as any[],
