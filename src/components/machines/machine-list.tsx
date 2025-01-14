@@ -125,14 +125,8 @@ export function MachineList() {
             </div>
           </div>
         ))}
-      <ActiveMachineProvider>
-        <ActiveMachineList
-          machineActionItemList={<></>}
-          hide={!!debouncedSearchValue}
-        />
-      </ActiveMachineProvider>
       <VirtualizedInfiniteList
-        className="!h-full fab-machine-list w-full rounded-3xl border max-w-[1200px] mx-auto"
+        className="!h-full fab-machine-list mx-auto w-full max-w-[1200px] rounded-3xl border"
         containerClassName="divide-y divide-border"
         queryResult={query}
         renderItem={(machine, index) => (

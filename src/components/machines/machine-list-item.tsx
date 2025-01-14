@@ -145,7 +145,6 @@ export function MachineListItem({
 }) {
   const { data: events, isLoading } = useMachineEvents(machine.id);
   const { hasActiveEvents } = useHasActiveEvents(machine.id);
-  const modalBuilderEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
 
   const isStale = useMemo(() => {
     if (machine.status === "building") {
@@ -159,31 +158,16 @@ export function MachineListItem({
   }, [machine.status, machine.updated_at]);
 
   const isDeprecated = isMachineDeprecated(machine);
-  const isDockerCommandStepsNull =
-    machine?.docker_command_steps === null &&
-    machine?.type === "comfy-deploy-serverless";
 
   const content = (
     <div
       className={cn(
         "group relative flex min-h-[80px] w-full flex-col items-center overflow-hidden rounded-none bg-white p-4",
         isStale && "bg-gray-50 contrast-75",
-        machine.status === "error" && "bg-red-100",
-        machine.import_failed_logs &&
-          JSON.parse(machine.import_failed_logs).length > 0 &&
-          "bg-yellow-50",
-        isDeprecated && !isStale && "bg-yellow-50",
-        hasActiveEvents && "bg-green-50/80",
         index % 2 === 0 && "bg-gray-50",
         className,
       )}
     >
-      <BuildProgressWrapper
-        machine={machine}
-        modalBuilderEndpoint={modalBuilderEndpoint}
-        isStale={isStale}
-      />
-
       <div className="z-[2] flex w-full flex-row justify-between">
         <div className="flex flex-row items-center gap-4">
           <div className="flex flex-col justify-center">
@@ -480,93 +464,8 @@ export function MachineListItem({
     </div>
   );
 
-  // Conditionally wrap with ShineBorder
-  return hasActiveEvents ? (
-    <ShineBorder
-      color="green"
-      className="w-full p-[2px]"
-      borderRadius={14}
-      borderWidth={2}
-    >
-      {content}
-    </ShineBorder>
-  ) : (
-    content
-  );
+  return content;
 }
-
-const MachineListActionBar = ({
-  machine,
-  isExpanded,
-  isDockerCommandStepsNull,
-}: {
-  machine: any;
-  isExpanded: boolean;
-  isDockerCommandStepsNull: boolean;
-}) => {
-  return (
-    <>
-      {!isDockerCommandStepsNull && (
-        <>
-          <Link href={`/machines/${machine.id}?view=settings`}>
-            <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
-              {isExpanded && (
-                <span className="mr-2 font-normal text-muted-foreground text-xs">
-                  Settings
-                </span>
-              )}
-              <Settings className="h-4 w-4 text-muted-foreground" />
-            </Button>
-          </Link>
-          <Separator orientation="vertical" className="h-4" />
-        </>
-      )}
-      <Link href={`/machines/${machine.id}?view=history`}>
-        <Button variant="ghost" size={isExpanded ? "sm" : "icon"}>
-          {isExpanded && (
-            <span className="mr-2 font-normal text-muted-foreground text-xs">
-              History
-            </span>
-          )}
-          <GitBranch className="h-4 w-4 text-muted-foreground" />
-        </Button>
-      </Link>
-    </>
-  );
-};
-
-const BuildProgressWrapper = ({
-  machine,
-  modalBuilderEndpoint,
-  isStale,
-}: {
-  machine: any;
-  modalBuilderEndpoint: string | undefined;
-  isStale: boolean;
-}) => {
-  if (
-    !modalBuilderEndpoint ||
-    machine.type !== "comfy-deploy-serverless" ||
-    isStale ||
-    machine.status !== "building"
-  ) {
-    return null;
-  }
-
-  const progress = getMachineBuildProgress({
-    machine_id: machine.id,
-    endpoint: modalBuilderEndpoint,
-    instance_id: machine.build_machine_instance_id,
-    machine,
-  });
-
-  return (
-    <div
-      className="absolute inset-0 z-[1] bg-orange-300/50 transition-[width] duration-1000 ease-in-out"
-      style={{ width: `${progress}%` }}
-    />
-  );
-};
 
 export function MachineListItemEvents({
   isExpanded,
