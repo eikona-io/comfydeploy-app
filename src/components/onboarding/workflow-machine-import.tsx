@@ -619,32 +619,27 @@ export function WorkflowImportMachineSetup({
       <MachineSettingsWrapper
         title={<div className="font-medium text-sm">Configuration</div>}
         onValueChange={(key, value) => {
-          if (useExistingMachine) {
-            console.log("updating: ", key, value);
-            setValidation((prev) => ({
-              ...prev,
-              machineConfig: {
+          setValidation((prev) => {
+            const updates: Partial<StepValidation> = {};
+            if (useExistingMachine) {
+              updates.machineConfig = {
                 ...prev.machineConfig,
                 [key]: value,
-              },
-            }));
-          }
-          if (key === "comfyui_version") {
-            setValidation({
-              ...validation,
-              comfyUiHash: value,
-            });
-          } else if (key === "gpu") {
-            setValidation({
-              ...validation,
-              gpuType: value,
-            });
-          } else if (key === "docker_command_steps") {
-            setValidation({
-              ...validation,
-              docker_command_steps: value,
-            });
-          }
+              };
+            }
+            // Always update the specific fields
+            if (key === "comfyui_version") {
+              updates.comfyUiHash = value;
+            } else if (key === "gpu") {
+              updates.gpuType = value;
+            } else if (key === "docker_command_steps") {
+              updates.docker_command_steps = value;
+            }
+            return {
+              ...prev,
+              ...updates,
+            };
+          });
         }}
         machine={machineConfig}
         disableUnsavedChangesWarningServerless={true}
