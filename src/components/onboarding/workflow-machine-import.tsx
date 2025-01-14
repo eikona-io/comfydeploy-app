@@ -620,10 +620,11 @@ export function WorkflowImportMachineSetup({
         title={<div className="font-medium text-sm">Configuration</div>}
         onValueChange={(key, value) => {
           if (useExistingMachine) {
+            console.log("updating: ", key, value);
             setValidation((prev) => ({
               ...prev,
               machineConfig: {
-                ...machineConfig,
+                ...prev.machineConfig,
                 [key]: value,
               },
             }));

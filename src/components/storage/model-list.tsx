@@ -510,7 +510,7 @@ export function ModelList(props: { apiEndpoint: string }) {
   const fileTree = useMemo<ModelItem[]>(() => {
     const tree: Record<string, any> = {};
 
-    filteredModels.forEach((model) => {
+    for (const model of filteredModels) {
       // remove leading slash
       const normalizedPath = model.path.startsWith("/")
         ? model.path.slice(1)
@@ -518,7 +518,7 @@ export function ModelList(props: { apiEndpoint: string }) {
       const pathParts = normalizedPath.split("/");
       let currentLevel = tree;
 
-      pathParts.forEach((part, index) => {
+      for (const [index, part] of pathParts.entries()) {
         // console.log(model);
         if (!currentLevel[part]) {
           currentLevel[part] = {
@@ -543,8 +543,8 @@ export function ModelList(props: { apiEndpoint: string }) {
           // For the last part (file), update with model properties
           Object.assign(currentLevel[part], model);
         }
-      });
-    });
+      }
+    }
 
     const convertToArray = (obj: Record<string, any>): any[] => {
       return Object.values(obj).map((item: any) => {
@@ -656,102 +656,101 @@ export function ModelList(props: { apiEndpoint: string }) {
             {renderTreeElements(element.children)}
           </Folder>
         );
-      } else {
-        return (
-          <TooltipProvider key={element.dir}>
-            <Tooltip>
-              <TooltipTrigger>
-                <File
-                  value={element.dir}
-                  className="@container truncate text-ellipsis"
-                  handleSelect={() => {
-                    handleModelClick(element as any);
-                  }}
-                  tail={
-                    <div className="flex items-center gap-1">
-                      {/* NOTE: currently not returning size on initial*/}
-                      {element.model.size && (
-                        <span className="@lg:flex hidden text-muted-foreground text-xs">
-                          {formatFileSize(element.model.size)}
-                        </span>
-                      )}
-                      {element.isPrivate && (
-                        <div className="flex h-fit min-h-0 w-0 items-center gap-1 p-1 opacity-0 transition-all group-hover:w-[60px] group-hover:opacity-100">
-                          <div
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-
-                              setOpenRename({
-                                newFilename: element.name,
-                                fileEntry: {
-                                  path: element.path,
-                                  type: 0,
-                                  mtime: 0,
-                                  size: 0,
-                                  model: element,
-                                },
-                              });
-                            }}
-                            className="h-fit min-h-0 p-1 opacity-0 transition-all group-hover:opacity-100"
-                          >
-                            <Pen className="h-4 w-4 " />
-                          </div>
-                          <div
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-                              setOpen({
-                                fileEntry: {
-                                  path: element.path,
-                                  type: 0,
-                                  mtime: 0,
-                                  size: 0,
-                                  model: element as any,
-                                },
-                              });
-                            }}
-                            className="h-fit min-h-0 p-1 text-red-500 opacity-0 transition-all group-hover:opacity-100"
-                          >
-                            <Trash className="h-4 w-4 " />
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex gap-1">
-                        {element.isPrivate && (
-                          <Badge
-                            variant={"outline"}
-                            className="!text-[10px] bg-orange-500 px-1 py-0 text-white hover:bg-orange-600"
-                          >
-                            Private
-                          </Badge>
-                        )}
-                        {element.isPublic && (
-                          <Badge
-                            variant={"outline"}
-                            className="!text-[10px] bg-green-500 px-1 py-0 text-white hover:bg-green-600"
-                          >
-                            Public
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  }
-                >
-                  <p className="flex-1 overflow-hidden overflow-ellipsis text-left">
-                    {element.name || "Unnamed File"}
-                  </p>
-                </File>
-              </TooltipTrigger>
-              <TooltipContent>
-                <ModelItemHoverDetails model={element.model} />
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
       }
+      return (
+        <TooltipProvider key={element.dir}>
+          <Tooltip>
+            <TooltipTrigger>
+              <File
+                value={element.dir}
+                className="@container truncate text-ellipsis"
+                handleSelect={() => {
+                  handleModelClick(element as any);
+                }}
+                tail={
+                  <div className="flex items-center gap-1">
+                    {/* NOTE: currently not returning size on initial*/}
+                    {element.model.size && (
+                      <span className="@lg:flex hidden text-muted-foreground text-xs">
+                        {formatFileSize(element.model.size)}
+                      </span>
+                    )}
+                    {element.isPrivate && (
+                      <div className="flex h-fit min-h-0 w-0 items-center gap-1 p-1 opacity-0 transition-all group-hover:w-[60px] group-hover:opacity-100">
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.nativeEvent.stopImmediatePropagation();
+
+                            setOpenRename({
+                              newFilename: element.name,
+                              fileEntry: {
+                                path: element.path,
+                                type: 0,
+                                mtime: 0,
+                                size: 0,
+                                model: element,
+                              },
+                            });
+                          }}
+                          className="h-fit min-h-0 p-1 opacity-0 transition-all group-hover:opacity-100"
+                        >
+                          <Pen className="h-4 w-4 " />
+                        </div>
+                        <div
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            e.nativeEvent.stopImmediatePropagation();
+                            setOpen({
+                              fileEntry: {
+                                path: element.path,
+                                type: 0,
+                                mtime: 0,
+                                size: 0,
+                                model: element as any,
+                              },
+                            });
+                          }}
+                          className="h-fit min-h-0 p-1 text-red-500 opacity-0 transition-all group-hover:opacity-100"
+                        >
+                          <Trash className="h-4 w-4 " />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex gap-1">
+                      {element.isPrivate && (
+                        <Badge
+                          variant={"outline"}
+                          className="!text-[10px] bg-orange-500 px-1 py-0 text-white hover:bg-orange-600"
+                        >
+                          Private
+                        </Badge>
+                      )}
+                      {element.isPublic && (
+                        <Badge
+                          variant={"outline"}
+                          className="!text-[10px] bg-green-500 px-1 py-0 text-white hover:bg-green-600"
+                        >
+                          Public
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                }
+              >
+                <p className="flex-1 overflow-hidden overflow-ellipsis text-left">
+                  {element.name || "Unnamed File"}
+                </p>
+              </File>
+            </TooltipTrigger>
+            <TooltipContent>
+              <ModelItemHoverDetails model={element.model} />
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
     });
   };
 

@@ -76,7 +76,7 @@ function getStepNavigation(
   switch (currentStep) {
     case 0: // Create Workflow
       return {
-        next: 1,
+        next: validation.importOption === "default" ? 2 : 1,
         prev: null,
       };
 
@@ -332,67 +332,68 @@ export default function WorkflowImport() {
           try {
             let response: any;
             // Type guard to ensure required fields exist
-            if (validation.machineOption === "existing") {
-              console.log("existing start");
-              if (!validation.selectedMachineId) {
-                throw new Error("missing machine id");
-              }
-              console.log("existing: ", validation.machineConfig);
+            console.log("validation: ", validation.machineConfig);
+            // if (validation.machineOption === "existing") {
+            //   console.log("existing start");
+            //   if (!validation.selectedMachineId) {
+            //     throw new Error("missing machine id");
+            //   }
+            //   console.log("existing: ", validation.machineConfig);
 
-              response = await api({
-                url: `machine/serverless/${validation.selectedMachineId}`,
-                init: {
-                  method: "PATCH",
-                  body: JSON.stringify(validation.machineConfig),
-                },
-              });
-            } else {
-              // New machine
-              if (
-                !validation.machineName ||
-                !validation.comfyUiHash ||
-                !validation.gpuType
-              ) {
-                throw new Error("Missing required fields");
-              }
+            //   response = await api({
+            //     url: `machine/serverless/${validation.selectedMachineId}`,
+            //     init: {
+            //       method: "PATCH",
+            //       body: JSON.stringify(validation.machineConfig),
+            //     },
+            //   });
+            // } else {
+            //   // New machine
+            //   if (
+            //     !validation.machineName ||
+            //     !validation.comfyUiHash ||
+            //     !validation.gpuType
+            //   ) {
+            //     throw new Error("Missing required fields");
+            //   }
 
-              response = await api({
-                url: "machine/serverless",
-                init: {
-                  method: "POST",
-                  body: JSON.stringify({
-                    name: validation.machineName,
-                    comfyui_version: validation.comfyUiHash,
-                    gpu: validation.gpuType,
-                    docker_command_steps: validation.docker_command_steps,
-                  }),
-                },
-              });
-            }
+            //   response = await api({
+            //     url: "machine/serverless",
+            //     init: {
+            //       method: "POST",
+            //       body: JSON.stringify({
+            //         name: validation.machineName,
+            //         comfyui_version: validation.comfyUiHash,
+            //         gpu: validation.gpuType,
+            //         docker_command_steps: validation.docker_command_steps,
+            //       }),
+            //     },
+            //   });
+            // }
 
-            toast.success(`${validation.machineName} created successfully!`);
-            const machineId = response.id;
-            // Create workflow with the new machine ID
-            const workflowResult = await createWorkflow(machineId);
+            // toast.success(`${validation.machineName} created successfully!`);
+            // const machineId = response.id;
+            // // Create workflow with the new machine ID
+            // const workflowResult = await createWorkflow(machineId);
 
-            toast.success(
-              `Workflow "${validation.workflowName}" created successfully!`,
-            );
-            if (workflowResult.workflow_id) {
-              window.open(
-                `/workflows/${workflowResult.workflow_id}/workspace`,
-                "_blank",
-              );
-            }
+            // toast.success(
+            //   `Workflow "${validation.workflowName}" created successfully!`,
+            // );
+            // if (workflowResult.workflow_id) {
+            //   window.open(
+            //     `/workflows/${workflowResult.workflow_id}/workspace`,
+            //     "_blank",
+            //   );
+            // }
 
-            toast.info("Redirecting to machine page...");
-            navigate({
-              to: "/machines/$machineId",
-              params: { machineId },
-              search: { view: undefined },
-            });
+            // toast.info("Redirecting to machine page...");
+            // navigate({
+            //   to: "/machines/$machineId",
+            //   params: { machineId },
+            //   search: { view: undefined },
+            // });
 
-            return true;
+            // return true;
           } catch (error) {
             toast.error(`Failed to create: ${error}`);
             return false;

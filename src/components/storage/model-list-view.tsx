@@ -448,7 +448,7 @@ const modelBrowserState = create<{
   ) => set({ insertModalSource }),
 
   filter: "",
-  viewMode: "mixed",
+  viewMode: "private",
   // isMinimized: false,
   selectedCategories: [],
   setFilter: (filter: string) => set({ filter }),
@@ -894,7 +894,7 @@ export function ModelListView(props: {
       <>
         <div className="flex items-center justify-between">
           <div className="flex space-x-1">
-            {["mixed", "private", "public"].map((mode) => (
+            {["private", "mixed", "public"].map((mode) => (
               <Button
                 key={mode}
                 variant={viewMode === mode ? "default" : "outline"}
@@ -964,7 +964,7 @@ export function ModelListView(props: {
           ))}
         </div>
       </>
-      <div className="h-full overflow-y-auto pr-2 scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent">
+      <div className="scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent h-full overflow-y-auto pr-2">
         <ul className="space-y-1">{props.children}</ul>
       </div>
     </div>
