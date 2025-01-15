@@ -469,6 +469,7 @@ function SelectedNodeList({
   handleRemoveNode: (node: DockerCommandStep) => void;
 }) {
   const [editingHash, setEditingHash] = useState<string | null>(null);
+  const [editingCommand, setEditingCommand] = useState<string | null>(null);
   const [scriptMode, setScriptMode] = useState(false);
   const [showNewCommand, setShowNewCommand] = useState(false);
   const [commandText, setCommandText] = useState("");
@@ -716,6 +717,8 @@ function SelectedNodeList({
                     key={node.id}
                     node={node}
                     editingHash={editingHash}
+                    editingCommand={editingCommand}
+                    setEditingCommand={setEditingCommand}
                     handleSaveHash={handleSaveHash}
                     handleStartEdit={handleStartEdit}
                     handleRemoveNode={handleRemoveNode}
@@ -735,6 +738,8 @@ function SelectedNodeList({
 function SortableCustomNodeCard(props: {
   node: DockerCommandStep;
   editingHash: string | null;
+  editingCommand: string | null;
+  setEditingCommand: (command: string | null) => void;
   handleSaveHash: (node: DockerCommandStep, value: string) => void;
   handleStartEdit: (node: DockerCommandStep) => void;
   handleRemoveNode: (node: DockerCommandStep) => void;
@@ -751,7 +756,10 @@ function SortableCustomNodeCard(props: {
   } = useSortable({
     id: props.node.id,
     disabled:
-      isCustomNodeData(props.node) && props.editingHash === props.node.data.url,
+      (isCustomNodeData(props.node) &&
+        props.editingHash === props.node.data.url) ||
+      (props.node.type === "commands" &&
+        props.editingCommand === props.node.id),
   });
 
   const style = {
@@ -783,6 +791,8 @@ function SortableCustomNodeCard(props: {
 function CustomNodeCard({
   node,
   editingHash,
+  editingCommand,
+  setEditingCommand,
   handleSaveHash,
   handleStartEdit,
   handleRemoveNode,
@@ -791,14 +801,14 @@ function CustomNodeCard({
 }: {
   node: DockerCommandStep;
   editingHash: string | null;
+  editingCommand: string | null;
+  setEditingCommand: (command: string | null) => void;
   handleSaveHash: (node: DockerCommandStep, value: string) => void;
   handleStartEdit: (node: DockerCommandStep) => void;
   handleRemoveNode: (node: DockerCommandStep) => void;
   setValidation: (validation: MachineStepValidation) => void;
   validation: MachineStepValidation;
 }) {
-  const [editingCommand, setEditingCommand] = useState<string | null>(null);
-
   // Handle command type
   if (node.type === "commands") {
     return (
