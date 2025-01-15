@@ -88,8 +88,8 @@ function getStepNavigation(
 
     case 2: // Select Machine
       return {
-        next: validation.importOption === "default" ? 4 : 3,
-        prev: validation.importOption === "default" ? null : 0,
+        next: validation.importOption === "default" ? null : 3,
+        prev: validation.importOption === "default" ? 0 : 1,
       };
 
     case 3: // Model Checking
