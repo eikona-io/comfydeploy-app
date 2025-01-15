@@ -702,6 +702,10 @@ function ComfyUIVersionSelectBox({
   const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
     "https://github.com/comfyanonymous/ComfyUI",
   );
+  useEffect(() => {
+    setCustomValue(value || "");
+  }, [value]);
+
   const [customValue, setCustomValue] = useState(value || "");
 
   const options = [
