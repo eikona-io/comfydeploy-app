@@ -366,11 +366,12 @@ function ServerlessSettings({
   const handleSubmit = async (data: FormData) => {
     try {
       setIsLoading(true);
+      const { name, ...filteredData } = data;
       await api({
         url: `machine/serverless/${machine.id}`,
         init: {
           method: "PATCH",
-          body: JSON.stringify(data),
+          body: JSON.stringify(filteredData),
         },
       });
       toast.success("Updated successfully!");
