@@ -1,7 +1,6 @@
 import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
 import { MachineStatus } from "@/components/machines/machine-status";
-import { ShineBorder } from "@/components/magicui/shine-border";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,14 +11,12 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
-import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMachineEvents } from "@/hooks/use-machine";
-import { getMachineBuildProgress } from "@/hooks/use-machine-build-progress";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   addHours,
   differenceInHours,
@@ -33,17 +30,29 @@ import {
   ChevronDown,
   Clock,
   ExternalLink,
-  GitBranch,
   HardDrive,
-  LineChart,
+  Info,
   MemoryStick,
   Pause,
-  Settings,
   Zap,
 } from "lucide-react";
 import { useMemo } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { UserIcon } from "../run/SharePageComponent";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { toast } from "sonner";
 
 // -------------------------constants-------------------------
 
@@ -250,24 +259,7 @@ export function MachineListItem({
             )}
           </div>
 
-          {/* {!isExpanded && (
-            <>
-              <div className="hidden xl:block">
-                <MachineListItemDeployments
-                  machine={machine}
-                  isExpanded={false}
-                />
-              </div>
-
-              <div className="hidden items-center space-x-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 xl:flex">
-                <MachineListActionBar
-                  machine={machine}
-                  isExpanded={false}
-                  isDockerCommandStepsNull={isDockerCommandStepsNull}
-                />
-              </div>
-            </>
-          )} */}
+          <MigrateOldMachineDialog machine={machine} />
         </div>
         <Link
           to={"/machines/$machineId"}
@@ -465,6 +457,123 @@ export function MachineListItem({
   );
 
   return content;
+}
+
+function MigrateOldMachineDialog({ machine }: { machine: any }) {
+  const navigate = useNavigate();
+  const shouldShowDialog =
+    machine.machine_builder_version &&
+    Number(machine.machine_builder_version) < 4 &&
+    machine.type === "comfy-deploy-serverless" &&
+    machine.docker_command_steps &&
+    machine.status === "ready";
+
+  if (!shouldShowDialog) return null;
+
+  const handleUpgrade = async () => {
+    // Create a copy of the machine object
+    const updatedMachine = {
+      ...machine,
+      machine_builder_version: "4", // Update builder version to 4
+      docker_command_steps: {
+        ...machine.docker_command_steps,
+        steps: machine.docker_command_steps.steps.filter(
+          (step) =>
+            !step.data.url
+              .toLowerCase()
+              .includes("github.com/bennykok/comfyui-deploy"),
+        ),
+      },
+    };
+
+    try {
+      await callServerPromise(
+        api({
+          url: `machine/serverless/${machine.id}`,
+          init: {
+            method: "PATCH",
+            body: JSON.stringify({
+              machine_builder_version: "4",
+              docker_command_steps: updatedMachine.docker_command_steps,
+              is_trigger_rebuild: true,
+            }),
+          },
+        }),
+        {
+          loadingText: "Upgrading machine to v4...",
+        },
+      );
+      toast.success("Upgrade machine successfully");
+      toast.info("Redirecting to machine page...");
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      navigate({
+        to: "/machines/$machineId/history",
+        params: { machineId: machine.id },
+      });
+    } catch {
+      toast.error("Failed to rebuild machine");
+    }
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger className="z-[3]">
+        <div className="flex cursor-pointer items-center gap-2 rounded-md border border-yellow-200 border-dashed bg-yellow-50 px-2.5 py-1.5 transition-colors duration-200 hover:bg-yellow-100">
+          <Info className="h-3.5 w-3.5 shrink-0 text-yellow-600" />
+          <span className="whitespace-nowrap font-medium text-xs text-yellow-700">
+            Update required
+          </span>
+        </div>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Upgrade Machine to v4</AlertDialogTitle>
+          <AlertDialogDescription className="space-y-2">
+            <p>
+              We'll upgrade your machine to v4 to ensure compatibility and
+              access to the latest features. This process:
+            </p>
+            <ul className="list-disc pl-4 text-sm">
+              <li>Upgrade comfy deploy node to latest version</li>
+              <li>Preserves your custom nodes</li>
+            </ul>
+
+            <Alert variant="warning" className="mt-2 bg-yellow-50">
+              <AlertCircleIcon className="h-4 w-4" />
+              <AlertTitle>Production Deployments</AlertTitle>
+              <AlertDescription>
+                If you have any active production deployments using this
+                machine, it is{" "}
+                <span className="font-semibold">
+                  recommended to clone a new machine{" "}
+                </span>
+                and migrate to make sure your workflows are not affected.
+              </AlertDescription>
+            </Alert>
+
+            <p className="text-muted-foreground text-sm">
+              Need help? Join our{" "}
+              <a
+                href="https://discord.gg/ygb6VZwaMt"
+                className="text-primary hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Discord community
+              </a>{" "}
+              for support.
+            </p>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction onClick={handleUpgrade}>
+            Upgrade Machine
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 export function MachineListItemEvents({

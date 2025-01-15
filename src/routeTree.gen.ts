@@ -8,6 +8,8 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
+import { createFileRoute } from '@tanstack/react-router'
+
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
@@ -26,11 +28,16 @@ import { Route as AnalyticsIndexImport } from './routes/analytics/index'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
 import { Route as AuthSignInImport } from './routes/auth/sign-in'
 import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
-import { Route as MachinesMachineIdIndexImport } from './routes/machines/$machineId/index'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
 import { Route as MachinesMachineIdActivityImport } from './routes/machines/$machineId/activity'
 import { Route as MachinesMachineIdMachineVersionIdImport } from './routes/machines/$machineId/$machineVersionId'
 import { Route as MachinesMachineIdHistoryIndexImport } from './routes/machines/$machineId/history/index'
+
+// Create Virtual Routes
+
+const MachinesMachineIdIndexLazyImport = createFileRoute(
+  '/machines/$machineId/',
+)()
 
 // Create/Update Routes
 
@@ -124,20 +131,22 @@ const AuthSignInRoute = AuthSignInImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const MachinesMachineIdIndexLazyRoute = MachinesMachineIdIndexLazyImport.update(
+  {
+    id: '/machines/$machineId/',
+    path: '/machines/$machineId/',
+    getParentRoute: () => rootRoute,
+  } as any,
+).lazy(() =>
+  import('./routes/machines/$machineId/index.lazy').then((d) => d.Route),
+)
+
 const OrganizationProfileOrganizationMembersIndexRoute =
   OrganizationProfileOrganizationMembersIndexImport.update({
     id: '/organization-profile/organization-members/',
     path: '/organization-profile/organization-members/',
     getParentRoute: () => rootRoute,
   } as any)
-
-const MachinesMachineIdIndexRoute = MachinesMachineIdIndexImport.update({
-  id: '/machines/$machineId/',
-  path: '/machines/$machineId/',
-  getParentRoute: () => rootRoute,
-} as any).lazy(() =>
-  import('./routes/machines/$machineId/index.lazy').then((d) => d.Route),
-)
 
 const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
   id: '/workflows/$workflowId/$view',
@@ -290,18 +299,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorkflowsWorkflowIdViewImport
       parentRoute: typeof rootRoute
     }
-    '/machines/$machineId/': {
-      id: '/machines/$machineId/'
-      path: '/machines/$machineId'
-      fullPath: '/machines/$machineId'
-      preLoaderRoute: typeof MachinesMachineIdIndexImport
-      parentRoute: typeof rootRoute
-    }
     '/organization-profile/organization-members/': {
       id: '/organization-profile/organization-members/'
       path: '/organization-profile/organization-members'
       fullPath: '/organization-profile/organization-members'
       preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/': {
+      id: '/machines/$machineId/'
+      path: '/machines/$machineId'
+      fullPath: '/machines/$machineId'
+      preLoaderRoute: typeof MachinesMachineIdIndexLazyImport
       parentRoute: typeof rootRoute
     }
     '/machines/$machineId/history/': {
@@ -334,8 +343,8 @@ export interface FileRoutesByFullPath {
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
-  '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
+  '/machines/$machineId': typeof MachinesMachineIdIndexLazyRoute
   '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -357,8 +366,8 @@ export interface FileRoutesByTo {
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
-  '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
+  '/machines/$machineId': typeof MachinesMachineIdIndexLazyRoute
   '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -381,8 +390,8 @@ export interface FileRoutesById {
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
-  '/machines/$machineId/': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members/': typeof OrganizationProfileOrganizationMembersIndexRoute
+  '/machines/$machineId/': typeof MachinesMachineIdIndexLazyRoute
   '/machines/$machineId/history/': typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -406,8 +415,8 @@ export interface FileRouteTypes {
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
     | '/workflows/$workflowId/$view'
-    | '/machines/$machineId'
     | '/organization-profile/organization-members'
+    | '/machines/$machineId'
     | '/machines/$machineId/history'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -428,8 +437,8 @@ export interface FileRouteTypes {
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
     | '/workflows/$workflowId/$view'
-    | '/machines/$machineId'
     | '/organization-profile/organization-members'
+    | '/machines/$machineId'
     | '/machines/$machineId/history'
   id:
     | '__root__'
@@ -450,8 +459,8 @@ export interface FileRouteTypes {
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
     | '/workflows/$workflowId/$view'
-    | '/machines/$machineId/'
     | '/organization-profile/organization-members/'
+    | '/machines/$machineId/'
     | '/machines/$machineId/history/'
   fileRoutesById: FileRoutesById
 }
@@ -474,8 +483,8 @@ export interface RootRouteChildren {
   MachinesMachineIdMachineVersionIdRoute: typeof MachinesMachineIdMachineVersionIdRoute
   MachinesMachineIdActivityRoute: typeof MachinesMachineIdActivityRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
-  MachinesMachineIdIndexRoute: typeof MachinesMachineIdIndexRoute
   OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute
+  MachinesMachineIdIndexLazyRoute: typeof MachinesMachineIdIndexLazyRoute
   MachinesMachineIdHistoryIndexRoute: typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -498,9 +507,9 @@ const rootRouteChildren: RootRouteChildren = {
     MachinesMachineIdMachineVersionIdRoute,
   MachinesMachineIdActivityRoute: MachinesMachineIdActivityRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
-  MachinesMachineIdIndexRoute: MachinesMachineIdIndexRoute,
   OrganizationProfileOrganizationMembersIndexRoute:
     OrganizationProfileOrganizationMembersIndexRoute,
+  MachinesMachineIdIndexLazyRoute: MachinesMachineIdIndexLazyRoute,
   MachinesMachineIdHistoryIndexRoute: MachinesMachineIdHistoryIndexRoute,
 }
 
@@ -531,8 +540,8 @@ export const routeTree = rootRoute
         "/machines/$machineId/$machineVersionId",
         "/machines/$machineId/activity",
         "/workflows/$workflowId/$view",
-        "/machines/$machineId/",
         "/organization-profile/organization-members/",
+        "/machines/$machineId/",
         "/machines/$machineId/history/"
       ]
     },
@@ -587,11 +596,11 @@ export const routeTree = rootRoute
     "/workflows/$workflowId/$view": {
       "filePath": "workflows/$workflowId/$view.tsx"
     },
-    "/machines/$machineId/": {
-      "filePath": "machines/$machineId/index.tsx"
-    },
     "/organization-profile/organization-members/": {
       "filePath": "organization-profile/organization-members/index.tsx"
+    },
+    "/machines/$machineId/": {
+      "filePath": "machines/$machineId/index.lazy.tsx"
     },
     "/machines/$machineId/history/": {
       "filePath": "machines/$machineId/history/index.tsx"

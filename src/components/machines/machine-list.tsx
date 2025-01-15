@@ -161,7 +161,7 @@ export function MachineList() {
             return [...Array(4)].map((_, i) => (
               <div
                 key={i}
-                className="mb-2 flex h-[80px] w-full animate-pulse items-center justify-between rounded-md border bg-white p-4"
+                className="flex h-[80px] w-full animate-pulse items-center justify-between border bg-white p-4"
               >
                 <div className="flex items-center gap-4">
                   <div className="flex flex-col gap-2">
@@ -776,7 +776,6 @@ function RebuildMachineDialog({
                   navigate({
                     to: "/machines/$machineId",
                     params: { machineId: machine.id },
-                    search: { view: "history" },
                   });
                 } catch {
                   toast.error("Failed to rebuild machine");
