@@ -654,17 +654,15 @@ export function DiffViewer({
   }
 
   return (
-    <div className="mt-4 space-y-2">
-      <ScrollArea className="max-h-[500px] space-y-2 pb-3">
-        {changes.map((change, index) => (
-          <div
-            key={index}
-            className="rounded-lg border border-gray-100 bg-white p-4"
-          >
-            <ChangeItem change={change} />
-          </div>
-        ))}
-      </ScrollArea>
+    <div className="mt-4 max-h-[500px] space-y-2 overflow-y-auto pb-3">
+      {changes.map((change, index) => (
+        <div
+          key={index}
+          className="rounded-lg border border-gray-100 bg-white p-4"
+        >
+          <ChangeItem change={change} />
+        </div>
+      ))}
     </div>
   );
 }
