@@ -156,6 +156,12 @@ export function MachineCreate() {
           disabled={!formValues?.name.trim()}
           onClick={async () => {
             const { id, ...filteredData } = formValues;
+            if (filteredData.machine_builder_version < 4) {
+              toast.warning(
+                "Required to upgrade to builder v4 for better compatibility...",
+              );
+              filteredData.machine_builder_version = 4;
+            }
 
             try {
               const response = await api({
