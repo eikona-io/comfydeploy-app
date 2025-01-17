@@ -849,7 +849,9 @@ function GPUSelectBox({
 }) {
   const { gpuConfig } = useGPUConfig();
   const sub = useCurrentPlan() as SubscriptionPlan;
-  const isBusiness = sub?.plans?.plans?.includes("business");
+  const isBusiness =
+    sub?.plans?.plans?.includes("business") ||
+    sub?.plans?.plans?.includes("creator");
 
   return (
     <div className="mt-2">
