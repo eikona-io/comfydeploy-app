@@ -592,9 +592,9 @@ export function ModelList(props: { apiEndpoint: string }) {
           url: `file/${data.fileEntry.model.id}/rename`,
           init: {
             method: "POST",
-          },
-          params: {
-            filename: data.newFilename,
+            body: JSON.stringify({
+              filename: data.newFilename,
+            }),
           },
         }),
         {
