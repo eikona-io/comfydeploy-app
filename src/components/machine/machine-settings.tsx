@@ -243,7 +243,11 @@ function ClassicSettings({
               setIsLoading(false);
             }
           }}
-        />
+        >
+          <div className="flex justify-end">
+            <Button type="submit">Save</Button>
+          </div>
+        </AutoForm>
       )}
     </>
   );
