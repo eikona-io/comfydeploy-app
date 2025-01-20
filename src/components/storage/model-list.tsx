@@ -604,7 +604,10 @@ export function ModelList(props: { apiEndpoint: string }) {
     },
     mutateFn: () => refetchPrivateVolume(),
     formSchema: z.object({
-      newFilename: z.string().min(1),
+      newFilename: z
+        .string()
+        .min(1, "Filename is required")
+        .regex(CustomModelFilenameRegex, CustomModelFilenameError),
       fileEntry: z.object({
         path: z.string().min(1),
         type: z.number(),
