@@ -143,7 +143,6 @@ export function MachineList() {
               machineActionItemList={
                 <MachineItemActionList
                   machine={machine}
-                  sub={sub}
                   refetch={async () => {
                     await query.refetch();
                   }}
@@ -329,55 +328,18 @@ export function MachineList() {
 export function MachineItemActionList({
   machine,
   refetch,
-  sub,
-  isDetailedButton = false,
 }: {
   machine: any;
   refetch: () => void;
-  sub: any;
-  isDetailedButton?: boolean;
 }) {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [cloneModalOpen, setCloneModalOpen] = useState(false);
   const [rebuildModalOpen, setRebuildModalOpen] = useState(false);
+  const navigate = useNavigate({ from: "/machines" });
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
   const isDockerCommandStepsNull =
     machine.docker_command_steps === null &&
     machine.type === "comfy-deploy-serverless";
-
-  const DetailedButton = () => {
-    return (
-      <div className="flex flex-row gap-2">
-        {machine.type === "comfy-deploy-serverless" && (
-          <>
-            <Button
-              variant="outline"
-              disabled={isDockerCommandStepsNull}
-              onClick={() => setRebuildModalOpen(true)}
-            >
-              <RefreshCcw className="mr-2 h-4 w-4" />
-              Rebuild
-            </Button>
-
-            {/* <Button
-              variant="outline"
-              disabled={isDockerCommandStepsNull}
-              onClick={() => setCloneModalOpen(true)}
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              Clone
-            </Button> */}
-          </>
-        )}
-
-        {/* <Button variant="destructive" onClick={() => setDeleteModalOpen(true)}>
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </Button> */}
-      </div>
-    );
-  };
 
   const IconOnlyButton = () => {
     return (
@@ -403,7 +365,12 @@ export function MachineItemActionList({
                   variant="ghost"
                   size="icon"
                   disabled={isDockerCommandStepsNull}
-                  onClick={() => setCloneModalOpen(true)}
+                  onClick={() => {
+                    navigate({
+                      to: "/machines",
+                      search: { view: "create", machineId: machine.id },
+                    });
+                  }}
                 >
                   <Copy className="h-[14px] w-[14px]" />
                 </Button>
@@ -431,18 +398,7 @@ export function MachineItemActionList({
 
   return (
     <div className="flex flex-row">
-      {isDetailedButton ? (
-        <>
-          <div className="hidden md:block">
-            <DetailedButton />
-          </div>
-          <div className="flex md:hidden">
-            <IconOnlyButton />
-          </div>
-        </>
-      ) : (
-        <IconOnlyButton />
-      )}
+      <IconOnlyButton />
 
       <DeleteMachineDialog
         machine={machine}
@@ -450,13 +406,6 @@ export function MachineItemActionList({
         planRefetch={refetchPlan}
         dialogOpen={deleteModalOpen}
         setDialogOpen={setDeleteModalOpen}
-      />
-      <CloneMachineDialog
-        machine={machine}
-        refetch={refetch}
-        dialogOpen={cloneModalOpen}
-        setDialogOpen={setCloneModalOpen}
-        sub={sub}
       />
       <RebuildMachineDialog
         machine={machine}
@@ -470,7 +419,7 @@ export function MachineItemActionList({
 
 interface MachineDialogProps {
   machine: any;
-  refetch: () => void;
+  refetch?: () => void;
   dialogOpen: boolean;
   setDialogOpen: (dialogOpen: boolean) => void;
 }
@@ -579,129 +528,14 @@ function DeleteMachineDialog({
   );
 }
 
-function CloneMachineDialog({
-  machine,
-  refetch,
-  dialogOpen,
-  setDialogOpen,
-  sub,
-}: MachineDialogProps & { sub: any }) {
-  const navigate = useNavigate();
-
-  return (
-    <InsertModal
-      hideButton
-      keepDialogWhenSubmit={true}
-      open={dialogOpen && !sub?.features.machineLimited}
-      setOpen={setDialogOpen}
-      disabled={sub?.features.machineLimited}
-      dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
-      containerClassName="flex-col"
-      tooltip={
-        sub?.features.machineLimited
-          ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
-          : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
-      }
-      data={{
-        name: `${machine.name} (Clone)`,
-        extra_docker_commands: machine.extra_docker_commands,
-        gpu: machine.gpu,
-        allow_concurrent_inputs: machine.allow_concurrent_inputs,
-        docker_command_steps: machine.docker_command_steps,
-        run_timeout: machine.run_timeout,
-        concurrency_limit: machine.concurrency_limit,
-        idle_timeout: machine.idle_timeout,
-        comfyui_version: machine.comfyui_version,
-        install_custom_node_with_gpu: machine.install_custom_node_with_gpu,
-        ws_timeout: machine.ws_timeout,
-        machine_builder_version: machine.machine_builder_version,
-        base_docker_image: machine.base_docker_image,
-        extra_args: machine.extra_args,
-        prestart_command: machine.prestart_command,
-        python_version: machine.python_version,
-      }}
-      title="Clone Machine"
-      description="Clone the selected machine with the same configuration."
-      serverAction={async (data) => {
-        if (data.docker_command_steps?.steps) {
-          const duplicateNode = hasDuplicateCustomNodeURLs(
-            data.docker_command_steps.steps,
-          );
-          if (duplicateNode) {
-            toast.error(
-              `Duplicate custom-node (${duplicateNode}) is found. Please check your dependencies.`,
-            );
-            return;
-          }
-        }
-        setDialogOpen(false);
-
-        try {
-          const res = await callServerPromise(
-            api({
-              url: "machine/serverless",
-              init: {
-                method: "POST",
-                body: JSON.stringify(data),
-              },
-            }),
-            {
-              loadingText: "Cloning machine",
-            },
-          );
-
-          if (!res) {
-            throw new Error("Failed to clone machine");
-          }
-
-          await refetch();
-          setDialogOpen(false);
-
-          toast.success("Cloned successfully!", {
-            action: {
-              label: "Checkout",
-              onClick: () => {
-                navigate({
-                  to: "/machines/$machineId",
-                  params: {
-                    machineId: res.id,
-                  },
-                  search: {
-                    view: "history",
-                  },
-                });
-              },
-            },
-          });
-        } catch (error) {
-          console.error("Clone error:", error);
-          throw error;
-        }
-      }}
-      formSchema={serverlessFormSchema}
-      fieldConfig={sharedMachineConfig}
-    />
-  );
-}
-
-function RebuildMachineDialog({
+export function RebuildMachineDialog({
   machine,
   refetch,
   dialogOpen,
   setDialogOpen,
 }: MachineDialogProps) {
   const navigate = useNavigate();
-  const { data } = useQuery<{
-    version: string;
-    changelog: string;
-  }>({
-    queryKey: ["modal", "version"],
-  });
-
-  const isNewerVersion = semver.gt(
-    data?.version ?? "0.0.0",
-    machine.machine_version ?? "0.0.0",
-  );
+  const oldVersion = machine.machine_builder_version < 4;
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -713,26 +547,30 @@ function RebuildMachineDialog({
           <DialogDescription className="text-primary">
             Rebuild the machine to get the latest version of the machine builder
             or resolve any build issues.
-            {isNewerVersion && (
-              <div className="mt-2 border-t bg-gray-50 p-2 text-sm opacity-80">
-                New version available{" "}
-                <Badge variant={"green"}>v{data?.version}</Badge>, rebuilding
-                will upgrade your machine version{" "}
-                {machine.machine_version && (
-                  <>
-                    from{" "}
-                    <Badge variant={"rose"}>v{machine.machine_version}</Badge>
-                  </>
-                )}
-                , suggest creating a new machine for experimentation
-                <div className="prose mt-2 text-xs">
-                  Changelog
-                  <ul>
-                    {data?.changelog?.split("\n").map((change, index) => (
-                      <li key={index}>{change}</li>
-                    ))}
-                  </ul>
+            {oldVersion && (
+              <div className="mt-4 rounded-md border-2 border-yellow-500/20 bg-yellow-500/10 p-3">
+                <div className="flex items-center gap-2 text-yellow-700">
+                  <CloudCog className="h-5 w-5" />
+                  <span className="font-semibold">Version Update Required</span>
                 </div>
+                <p className="mt-1 text-yellow-700">
+                  Your current version{" "}
+                  <Badge
+                    variant="red"
+                    className="border-yellow-500 text-yellow-700"
+                  >
+                    v{machine.machine_builder_version}
+                  </Badge>{" "}
+                  is <span className="font-semibold">no longer supported</span>.
+                  The machine will be automatically upgraded to{" "}
+                  <Badge
+                    variant="green"
+                    className="border-yellow-500 text-yellow-700"
+                  >
+                    v4
+                  </Badge>{" "}
+                  after rebuild.
+                </p>
               </div>
             )}
           </DialogDescription>
@@ -763,6 +601,9 @@ function RebuildMachineDialog({
                         method: "PATCH",
                         body: JSON.stringify({
                           is_trigger_rebuild: true,
+                          ...(oldVersion && {
+                            machine_builder_version: 4,
+                          }),
                         }),
                       },
                     }),

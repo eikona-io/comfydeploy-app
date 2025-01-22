@@ -56,6 +56,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { RebuildMachineDialog } from "../machines/machine-list";
 
 export function formatExactTime(seconds: number): string {
   if (seconds < 60) return `${seconds}s`;
@@ -316,7 +317,7 @@ export function MachineVersionListItem({
 
   return (
     <div className="border-b px-4 hover:bg-gray-100">
-      <div className="grid grid-cols-1 md:grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(100px,1fr)_minmax(250px,auto)] gap-4 md:gap-x-4 md:items-center">
+      <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(100px,1fr)_minmax(250px,auto)] items-center gap-x-4">
         {/* Wrap only the content that should be clickable in Link */}
         <Link
           key={machineVersion.id}
@@ -325,9 +326,6 @@ export function MachineVersionListItem({
         >
           {/* ID and Version */}
           <div className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer">
-            {/* <div className="font-medium font-mono text-2xs truncate">
-              {machineVersion.id.slice(0, 8)}
-            </div> */}
             <div className="flex flex-row gap-x-2 items-center">
               <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
                 v{machineVersion.version}
@@ -344,11 +342,9 @@ export function MachineVersionListItem({
             </div>
           </div>
 
-          <hr className="border-gray-200 border-t md:hidden" />
-
           {/* Status and Time */}
           <div className="flex flex-row gap-4">
-            <div className="flex min-w-0  items-center gap-x-1.5">
+            <div className="flex min-w-0 items-center gap-x-1.5">
               <MachineStatusBadge
                 status={machineVersion.status}
                 createdAt={machineVersion.created_at}
@@ -385,8 +381,6 @@ export function MachineVersionListItem({
             </span>
           </div>
 
-          <hr className="border-gray-200 border-t md:hidden" />
-
           {/* GPU and Nodes */}
           <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
             <HardDrive className="h-[14px] w-[14px] shrink-0" />
@@ -422,6 +416,7 @@ function InstantRollback({
   isBusinessOrEnterprise: boolean;
 }) {
   const [rollbackAlertOpen, setRollbackAlertOpen] = useState(false);
+  const [rebuildAlertOpen, setRebuildAlertOpen] = useState(false);
   const { data: currentMachineVersion } = useMachineVersion(
     machine.id,
     machine.machine_version_id,
@@ -492,6 +487,16 @@ function InstantRollback({
               <CircleArrowUp className="w-4 h-4" />
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
+          <DropdownMenuItem
+            disabled={machineVersion.id !== machine.machine_version_id}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setRebuildAlertOpen(true);
+            }}
+          >
+            Rebuild
+          </DropdownMenuItem>
           <DropdownMenuItem
             onClick={(e) => {
               e.preventDefault();
@@ -615,6 +620,12 @@ function InstantRollback({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <RebuildMachineDialog
+        machine={machine}
+        dialogOpen={rebuildAlertOpen}
+        setDialogOpen={setRebuildAlertOpen}
+      />
     </>
   );
 }
