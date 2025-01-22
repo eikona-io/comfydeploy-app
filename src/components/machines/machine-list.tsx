@@ -419,7 +419,7 @@ export function MachineItemActionList({
 
 interface MachineDialogProps {
   machine: any;
-  refetch: () => void;
+  refetch?: () => void;
   dialogOpen: boolean;
   setDialogOpen: (dialogOpen: boolean) => void;
 }
@@ -528,7 +528,7 @@ function DeleteMachineDialog({
   );
 }
 
-function RebuildMachineDialog({
+export function RebuildMachineDialog({
   machine,
   refetch,
   dialogOpen,
