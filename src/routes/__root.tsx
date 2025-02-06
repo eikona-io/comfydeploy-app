@@ -27,17 +27,19 @@ type Context = {
   auth?: ReturnType<typeof useAuth>;
 };
 
+const publicRoutes = ["/home", "/auth/sign-in", "/waitlist"];
+
 export const Route = createRootRouteWithContext<Context>()({
   component: RootComponent,
-  beforeLoad: ({ context, location }) => {
-    if (!context.auth?.isLoaded) {
-      return;
-    }
+  beforeLoad: async ({ context, location }) => {
+    // if (!context.auth?.isLoaded) {
+    //   return;
+    // }
 
+    // Define public routes that don't require authentication
     if (
-      context.auth &&
-      !context.auth.isSignedIn &&
-      location.pathname !== "/auth/sign-in"
+      !context.auth?.isSignedIn &&
+      !publicRoutes.includes(location.pathname)
     ) {
       throw redirect({
         to: "/auth/sign-in",
@@ -69,9 +71,9 @@ function RootComponent() {
   return (
     <SidebarProvider>
       <Providers>
-        <SignedOut>
+        {/* <SignedOut>
           <RedirectToSignIn />
-        </SignedOut>
+        </SignedOut> */}
         <SignedIn>
           <AppSidebar />
         </SignedIn>
