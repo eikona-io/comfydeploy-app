@@ -248,28 +248,13 @@ export function UsageTable(props: {
   startTimeOverride?: Date;
   endTimeOverride?: Date;
 }) {
-  // const sub = await getCurrentPlanWithAuth();
-
-  // const { userId, orgId } = await auth();
-  // // if (!sub?.subscription_id) return null;
-  // if (!userId) return null;
-
-  // const {
-  //   usage: usageDetails,
-  //   startTime,
-  //   endTime,
-  // } = await getCurrentUsageDetails(
-  //   props.startTimeOverride,
-  //   props.endTimeOverride,
-  // );
-
-  // const totalCost = usageDetails.reduce(
-  //   (sum, event) => sum + getGPUEventCost(event),
-  //   0,
-  // );
-
   const { data: usage } = useSuspenseQuery<any>({
-    queryKey: ["platform", "usage"],
+    queryKey: [
+      "platform",
+      "usage",
+      props.startTimeOverride?.toISOString(),
+      props.endTimeOverride?.toISOString(),
+    ],
     meta: {
       params: {
         start_time: props.startTimeOverride?.toISOString(),
