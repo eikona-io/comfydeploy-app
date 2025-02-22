@@ -415,18 +415,16 @@ export function UsageBreakdown({
   const { startDate, endDate } = useMemo(() => {
     if (startTimeOverride && endTimeOverride) {
       return {
-        startDate: new Date(startTimeOverride * 1000)
-          .toISOString()
-          .split("T")[0],
-        endDate: new Date(endTimeOverride * 1000).toISOString().split("T")[0],
+        startDate: new Date(startTimeOverride * 1000).toISOString(),
+        endDate: new Date(endTimeOverride * 1000).toISOString(),
       };
     }
     const end = new Date();
     const start = new Date();
     start.setDate(start.getDate() - 180);
     return {
-      startDate: start.toISOString().split("T")[0],
-      endDate: end.toISOString().split("T")[0],
+      startDate: start.toISOString(),
+      endDate: end.toISOString(),
     };
   }, [startTimeOverride, endTimeOverride]);
 
@@ -571,8 +569,8 @@ export function UsageTable(props: {
     queryKeyHashFn: (queryKey) =>
       [
         ...queryKey,
-        props.startTimeOverride?.toISOString().split("T")[0],
-        props.endTimeOverride?.toISOString().split("T")[0],
+        props.startTimeOverride?.toISOString(),
+        props.endTimeOverride?.toISOString(),
       ].toString(),
     meta: {
       params: {
