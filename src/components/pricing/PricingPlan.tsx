@@ -51,7 +51,7 @@ type TierFeature = {
   Basic?: string | JSX.Element | boolean | number;
   Pro?: string | JSX.Element | boolean | number;
   Business?: string | JSX.Element | boolean | number;
-  ["Creator"]?: string | JSX.Element | boolean | number;
+  ["Deployment"]?: string | JSX.Element | boolean | number;
   Enterprise?: string | JSX.Element | boolean | number;
 };
 
@@ -75,7 +75,7 @@ const sections: Section[] = [
           Basic: "T4, L4, A10G",
           Pro: "T4, L4, A10G",
           Business: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
-          ["Creator"]: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
+          ["Deployment"]: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
           Enterprise: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
         },
       },
@@ -98,7 +98,7 @@ const sections: Section[] = [
               <TooltipContent>See the GPU pricing table below</TooltipContent>
             </Tooltip>
           ),
-          ["Creator"]: (
+          ["Deployment"]: (
             <Tooltip>
               <TooltipTrigger className="flex items-center justify-center gap-2">
                 $5 credit + usage <Info size={14} />
@@ -129,7 +129,7 @@ const sections: Section[] = [
         tiers: {
           Basic: DefaultFeatureLimits.free.workflow.toString(),
           Pro: DefaultFeatureLimits.pro.workflow.toString(),
-          ["Creator"]: DefaultFeatureLimits.creator.workflow.toString(),
+          ["Deployment"]: DefaultFeatureLimits.creator.workflow.toString(),
           Business: DefaultFeatureLimits.business.workflow.toString(),
           Enterprise: "Custom",
         },
@@ -139,7 +139,7 @@ const sections: Section[] = [
         tiers: {
           Basic: DefaultFeatureLimits.free.machine.toString(),
           Pro: DefaultFeatureLimits.pro.machine.toString(),
-          ["Creator"]: DefaultFeatureLimits.creator.machine.toString(),
+          ["Deployment"]: DefaultFeatureLimits.creator.machine.toString(),
           Business: DefaultFeatureLimits.business.machine.toString(),
           Enterprise: "Custom",
         },
@@ -149,7 +149,7 @@ const sections: Section[] = [
         tiers: {
           Basic: 10,
           Pro: 10,
-          ["Creator"]: 10,
+          ["Deployment"]: 10,
           Business: "Custom",
           Enterprise: "Custom",
         },
@@ -159,7 +159,7 @@ const sections: Section[] = [
         tiers: {
           Basic: "Unlimited",
           Pro: "Unlimited",
-          ["Creator"]: "Unlimited",
+          ["Deployment"]: "Unlimited",
           Business: "Unlimited",
           Enterprise: "Custom",
         },
@@ -169,7 +169,7 @@ const sections: Section[] = [
         tiers: {
           Basic: "Public models only",
           Pro: "Unlimited",
-          ["Creator"]: "Unlimited",
+          ["Deployment"]: "Unlimited",
           Business: "Unlimited",
           Enterprise: "Custom",
         },
@@ -179,7 +179,7 @@ const sections: Section[] = [
         tiers: {
           Basic: "1 GB",
           Pro: "Unlimited",
-          ["Creator"]: "Unlimited",
+          ["Deployment"]: "Unlimited",
           Business: "100 GB",
           Enterprise: "Custom",
         },
@@ -189,7 +189,7 @@ const sections: Section[] = [
         tiers: {
           Basic: false,
           Pro: true,
-          ["Creator"]: "3",
+          ["Deployment"]: "3",
           Business: "Custom",
           Enterprise: "Custom",
         },
@@ -199,7 +199,7 @@ const sections: Section[] = [
         tiers: {
           Basic: false,
           Pro: true,
-          ["Creator"]: true,
+          ["Deployment"]: true,
           Business: true,
           Enterprise: true,
         },
@@ -209,7 +209,7 @@ const sections: Section[] = [
         tiers: {
           Basic: true,
           Pro: true,
-          ["Creator"]: true,
+          ["Deployment"]: true,
           Business: true,
           Enterprise: true,
         },
@@ -219,7 +219,7 @@ const sections: Section[] = [
         tiers: {
           Basic: false,
           Pro: false,
-          ["Creator"]: false,
+          ["Deployment"]: false,
           Business: true,
           Enterprise: true,
         },
@@ -229,7 +229,7 @@ const sections: Section[] = [
       //   tiers: {
       //     Basic: false,
       //     Pro: false,
-      //     ["Creator"]: true,
+      //     ["Deployment"]: true,
       //     Business: true,
       //     Enterprise: true,
       //   },
@@ -239,7 +239,7 @@ const sections: Section[] = [
         tiers: {
           Basic: true,
           Pro: true,
-          ["Creator"]: true,
+          ["Deployment"]: true,
           Business: true,
           Enterprise: true,
         },
@@ -249,7 +249,7 @@ const sections: Section[] = [
         tiers: {
           Basic: true,
           Pro: true,
-          ["Creator"]: true,
+          ["Deployment"]: true,
           Business: true,
           Enterprise: true,
         },
@@ -285,7 +285,7 @@ const sections: Section[] = [
         tiers: {
           Basic: false,
           Pro: false,
-          ["Creator"]: false,
+          ["Deployment"]: false,
           Business: false,
           Enterprise: true,
         },
