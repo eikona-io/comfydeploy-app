@@ -332,6 +332,7 @@ export function PricingList(props: { trial?: boolean }) {
   const { data: gpuPricing, isLoading: gpuPricingLoading } = useGPUPricing();
 
   const ready = search?.ready;
+  const targetPlan = search?.plan;
 
   const plansMapping = _sub?.plans?.plans
     ? _sub?.plans?.plans?.map((plan: string) => {
@@ -374,6 +375,10 @@ export function PricingList(props: { trial?: boolean }) {
     tiers = tiersNew;
   } else if (ready) {
     tiers = tiersNew;
+  }
+
+  if (targetPlan === "deployment" && ready) {
+    tiers = tiersOld_2;
   }
 
   // isOldProPlan = true;
