@@ -297,7 +297,7 @@ function RouteComponent() {
         </div>
         {/* Total Summary Card */}
         <div className="mb-6 rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <div className="text-sm text-muted-foreground">Total Usage</div>
               <div className="font-semibold text-2xl">
@@ -335,10 +335,16 @@ function RouteComponent() {
             <div>
               <div className="text-sm text-muted-foreground">Final Total</div>
               <div className="mt-1 text-2xl font-semibold">
-                $
-                {selectedInvoice?.total?.toFixed(4) ??
-                  usage?.final_cost?.toFixed(4) ??
-                  "0.00"}
+                {selectedPeriod === "current" ? (
+                  <span className="text-muted-foreground">TBD</span>
+                ) : (
+                  <>
+                    $
+                    {selectedInvoice?.total?.toFixed(4) ??
+                      usage?.final_cost?.toFixed(4) ??
+                      "0.00"}
+                  </>
+                )}
               </div>
             </div>
           </div>
