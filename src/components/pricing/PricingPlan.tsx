@@ -358,17 +358,16 @@ export function PricingList(props: { trial?: boolean }) {
 
   const isOldProPlan = plans.includes("pro"); // $20
   const isOldBusinessPlan = plans.some((plan) =>
-    ["creator", "creator_monthly", "creator_yearly"].includes(plan),
+    [
+      "creator",
+      "creator_monthly",
+      "creator_yearly",
+      "deployment_yearly",
+      "deployment_monthly",
+    ].includes(plan),
   ); // $100
   const isNewBusinessPlan = plans.some((plan) =>
-    [
-      "business",
-      "business_monthly",
-      "deployment",
-      "deployment_monthly",
-      "business_yearly",
-      "deployment_yearly",
-    ].includes(plan),
+    ["business", "business_monthly", "business_yearly"].includes(plan),
   ); // $998
 
   // isOldBusinessPlan = true;
