@@ -362,6 +362,7 @@ export function PricingList(props: { trial?: boolean }) {
       "creator",
       "creator_monthly",
       "creator_yearly",
+      "deployment",
       "deployment_yearly",
       "deployment_monthly",
     ].includes(plan),
