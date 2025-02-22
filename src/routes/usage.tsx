@@ -38,9 +38,9 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
+  CreditCard,
   ExternalLink,
   Grid2X2,
-  CreditCard,
   Wallet,
 } from "lucide-react";
 import { type ReactNode, Suspense, memo, useMemo } from "react";
@@ -172,7 +172,7 @@ function RouteComponent() {
 
   return (
     <div className="bg-white py-4">
-      <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
         <Suspense
           fallback={<Skeleton className="h-[28px] w-full max-w-[800px]" />}
         >
