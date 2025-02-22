@@ -1056,6 +1056,12 @@ function TimeSelect({
     ws_pro: [],
     business: ["pro", "business"],
     creator: ["pro", "business", "creator"],
+    deployment: ["pro", "business", "creator"],
+    deployment_monthly: ["pro", "business", "creator"],
+    deployment_yearly: ["pro", "business", "creator"],
+    business_monthly: ["pro", "business", "creator"],
+    business_yearly: ["pro", "business", "creator"],
+    creator_monthly: ["pro", "business", "creator"],
   };
 
   const sub = useCurrentPlan();
