@@ -565,8 +565,8 @@ export function UsageTable(props: {
     queryKeyHashFn: (queryKey) =>
       [
         ...queryKey,
-        props.startTimeOverride?.toISOString(),
-        props.endTimeOverride?.toISOString(),
+        props.startTimeOverride?.toISOString().split("T")[0],
+        props.endTimeOverride?.toISOString().split("T")[0],
       ].toString(),
     meta: {
       params: {
