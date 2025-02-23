@@ -267,8 +267,10 @@ function ServerlessSettings({
     mode: "onChange",
     defaultValues: {
       // env
-      comfyui_version: machine.comfyui_version,
-      docker_command_steps: machine.docker_command_steps,
+      comfyui_version: machine.comfyui_version || comfyui_hash,
+      docker_command_steps: machine.docker_command_steps || {
+        steps: [],
+      },
 
       // auto scaling
       gpu: machine.gpu,
