@@ -7,6 +7,11 @@ import {
   FileIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  PlusIcon,
+  RefreshCcw,
+  MoreHorizontal,
+  Trash2,
+  Search,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -16,6 +21,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface FileEntry {
   path: string;
@@ -86,17 +106,31 @@ function buildTree(files: FileEntry[], isPrivate: boolean): TreeNode[] {
   return root;
 }
 
+interface CreateFolderData {
+  parentPath: string;
+  folderName: string;
+}
+
+interface FileOperations {
+  createFolder: (data: CreateFolderData) => Promise<void>;
+  deleteFile: (path: string) => Promise<void>;
+  moveFile: (from: string, to: string) => Promise<void>;
+}
+
 function TreeNode({
   node,
   search,
   parentMatched = false,
+  operations,
 }: {
   node: TreeNode;
   search: string;
   parentMatched?: boolean;
+  operations: FileOperations;
 }) {
-  // Start folders open during search, closed otherwise
   const [isOpen, setIsOpen] = useState(!!search);
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   // Check if this node or any of its children match
   const nodeMatches = node.name.toLowerCase().includes(search.toLowerCase());
@@ -118,39 +152,100 @@ function TreeNode({
     return null;
   }
 
+  const handleCreateFolder = async () => {
+    try {
+      await operations.createFolder({
+        parentPath: node.path,
+        folderName: newFolderName,
+      });
+      setShowNewFolderDialog(false);
+      setNewFolderName("");
+      toast.success("Folder created successfully");
+    } catch (error) {
+      toast.error("Failed to create folder");
+    }
+  };
+
   return (
     <div>
-      <button
-        type="button"
-        className={cn(
-          "flex w-full cursor-pointer items-center gap-2 rounded px-2 py-1 hover:bg-accent",
-          nodeMatches && search && "bg-accent/50",
-        )}
-        onClick={() => setIsOpen(!isOpen)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            setIsOpen(!isOpen);
-          }
-        }}
-        tabIndex={0}
-      >
-        {node.type === 2 ? (
-          <>
-            {shouldBeOpen ? (
-              <ChevronDownIcon className="h-4 w-4" />
+      <div className="group flex items-center gap-2">
+        <button
+          type="button"
+          className="flex flex-1 items-center gap-2 rounded px-2 py-1 hover:bg-accent"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          {node.type === 2 ? (
+            <>
+              {shouldBeOpen ? (
+                <ChevronDownIcon className="h-4 w-4" />
+              ) : (
+                <ChevronRightIcon className="h-4 w-4" />
+              )}
+              <FolderIcon className="h-4 w-4" />
+            </>
+          ) : (
+            <>
+              <span className="w-4" />
+              <FileIcon className="h-4 w-4" />
+            </>
+          )}
+          <span>{node.name}</span>
+        </button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {node.type === 2 ? (
+              <>
+                <DropdownMenuItem onClick={() => setShowNewFolderDialog(true)}>
+                  New Folder
+                </DropdownMenuItem>
+                <DropdownMenuItem>Upload Model</DropdownMenuItem>
+              </>
             ) : (
-              <ChevronRightIcon className="h-4 w-4" />
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={() => operations.deleteFile(node.path)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
             )}
-            <FolderIcon className="h-4 w-4" />
-          </>
-        ) : (
-          <>
-            <span className="w-4" />
-            <FileIcon className="h-4 w-4" />
-          </>
-        )}
-        <span>{node.name}</span>
-      </button>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Folder</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <Input
+              placeholder="Folder name"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowNewFolderDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateFolder}>Create</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {shouldBeOpen && node.children.length > 0 && (
         <div className="ml-6">
@@ -160,6 +255,7 @@ function TreeNode({
               node={child}
               search={search}
               parentMatched={nodeMatches || parentMatched}
+              operations={operations}
             />
           ))}
         </div>
@@ -255,8 +351,11 @@ function mergeNodes(
 }
 
 export function FolderTree({ className }: FolderTreeProps) {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ModelFilter>("private");
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
 
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery({
     queryKey: ["volume", "private-models"],
@@ -288,29 +387,98 @@ export function FolderTree({ className }: FolderTreeProps) {
     filter === "public" || filter === "all",
   );
 
+  const createFolderMutation = useMutation({
+    mutationFn: async (data: CreateFolderData) => {
+      await api({
+        url: "volume/create-folder",
+        method: "POST",
+        body: data,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["volume"] });
+    },
+  });
+
+  const deleteFileMutation = useMutation({
+    mutationFn: async (path: string) => {
+      await api({
+        url: "volume/delete",
+        method: "DELETE",
+        body: { path },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["volume"] });
+    },
+  });
+
+  const operations: FileOperations = {
+    createFolder: createFolderMutation.mutateAsync,
+    deleteFile: deleteFileMutation.mutateAsync,
+    moveFile: async (from, to) => {
+      // To be implemented
+    },
+  };
+
+  const handleCreateFolder = async () => {
+    try {
+      await operations.createFolder({
+        parentPath: "", // Empty string for root level
+        folderName: newFolderName,
+      });
+      setShowNewFolderDialog(false);
+      setNewFolderName("");
+      toast.success("Folder created successfully");
+    } catch (error) {
+      toast.error("Failed to create folder");
+    }
+  };
+
   return (
     <div className={cn("flex h-full flex-col gap-4", className)}>
-      <div className="flex gap-2">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Models</h2>
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() =>
+              queryClient.invalidateQueries({ queryKey: ["volume"] })
+            }
+          >
+            <RefreshCcw className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setShowNewFolderDialog(true)}
+          >
+            <PlusIcon className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search files and folders..."
+          placeholder="Search models..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1"
+          className="pl-9"
         />
-        <Select
-          value={filter}
-          onValueChange={(v) => setFilter(v as ModelFilter)}
-        >
-          <SelectTrigger className="w-[120px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="private">Private</SelectItem>
-            <SelectItem value="public">Public</SelectItem>
-            <SelectItem value="all">All</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
+
+      <Select value={filter} onValueChange={(v) => setFilter(v as ModelFilter)}>
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="private">Private</SelectItem>
+          <SelectItem value="public">Public</SelectItem>
+          <SelectItem value="all">All</SelectItem>
+        </SelectContent>
+      </Select>
 
       <div className="flex-1 overflow-auto">
         {isLoadingPrivate || isLoadingPublic ? (
@@ -318,11 +486,40 @@ export function FolderTree({ className }: FolderTreeProps) {
         ) : (
           <div className="flex flex-col">
             {mergedTree.map((node) => (
-              <TreeNode key={node.path} node={node} search={search} />
+              <TreeNode
+                key={node.path}
+                node={node}
+                search={search}
+                operations={operations}
+              />
             ))}
           </div>
         )}
       </div>
+
+      <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Folder</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <Input
+              placeholder="Folder name"
+              value={newFolderName}
+              onChange={(e) => setNewFolderName(e.target.value)}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowNewFolderDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateFolder}>Create</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
