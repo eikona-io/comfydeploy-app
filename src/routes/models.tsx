@@ -1,16 +1,26 @@
 import { PaddingLayout } from "@/components/PaddingLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createFileRoute } from "@tanstack/react-router";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { FolderTree } from "@/components/models/folder-tree";
+import { AddModelDialog } from "@/components/models/add-model-dialog";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/models")({
   component: StoragePage,
 });
 
 export function StoragePage() {
+  const [showAddModel, setShowAddModel] = useState(false);
+  const [selectedFolderPath, setSelectedFolderPath] = useState("");
+
+  const handleAddModel = (folderPath: string) => {
+    setSelectedFolderPath(folderPath);
+    setShowAddModel(true);
+  };
+
   return (
-    <PaddingLayout className="flex h-full w-full gap-2 py-10">
+    <PaddingLayout className="flex h-full w-full flex-col gap-4 py-10">
       <div className="flex h-full flex-1 flex-col gap-2 rounded-md border border-gray-200 bg-muted/20 p-4">
         <Suspense
           fallback={
@@ -24,9 +34,15 @@ export function StoragePage() {
             </div>
           }
         >
-          <FolderTree />
+          <FolderTree onAddModel={handleAddModel} />
         </Suspense>
       </div>
+
+      <AddModelDialog
+        open={showAddModel}
+        onOpenChange={setShowAddModel}
+        initialFolderPath={selectedFolderPath}
+      />
     </PaddingLayout>
   );
 }

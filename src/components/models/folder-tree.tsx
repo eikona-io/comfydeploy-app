@@ -12,6 +12,8 @@ import {
   MoreHorizontal,
   Trash2,
   Search,
+  FolderPlus,
+  Upload,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -46,6 +48,7 @@ interface FileEntry {
 
 interface FolderTreeProps {
   className?: string;
+  onAddModel?: (folderPath: string) => void;
 }
 
 interface TreeNode {
@@ -122,11 +125,13 @@ function TreeNode({
   search,
   parentMatched = false,
   operations,
+  onAddModel,
 }: {
   node: TreeNode;
   search: string;
   parentMatched?: boolean;
   operations: FileOperations;
+  onAddModel: (folderPath: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(!!search);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
@@ -206,9 +211,13 @@ function TreeNode({
             {node.type === 2 ? (
               <>
                 <DropdownMenuItem onClick={() => setShowNewFolderDialog(true)}>
+                  <FolderPlus className="mr-2 h-4 w-4" />
                   New Folder
                 </DropdownMenuItem>
-                <DropdownMenuItem>Upload Model</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAddModel(node.path)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Model
+                </DropdownMenuItem>
               </>
             ) : (
               <DropdownMenuItem
@@ -256,28 +265,12 @@ function TreeNode({
               search={search}
               parentMatched={nodeMatches || parentMatched}
               operations={operations}
+              onAddModel={onAddModel}
             />
           ))}
         </div>
       )}
     </div>
-  );
-}
-
-// Helper function to check if a node or any of its descendants match the search
-function searchHasMatchingDescendant(node: TreeNode, search: string): boolean {
-  if (!search) return false;
-
-  // Check direct children first for performance
-  for (const child of node.children) {
-    if (child.name.toLowerCase().includes(search.toLowerCase())) {
-      return true;
-    }
-  }
-
-  // Then check descendants recursively
-  return node.children.some((child) =>
-    searchHasMatchingDescendant(child, search),
   );
 }
 
@@ -321,41 +314,31 @@ function mergeNodes(
         const existingNode = result[existingNodeIndex];
         // If both are folders, merge their children
         if (existingNode.type === 2 && publicNode.type === 2) {
-          // When merging children, maintain the same visibility rules
           const mergedChildren = mergeNodes(
             existingNode.children,
             publicNode.children,
             showPrivate,
             showPublic,
           );
-
-          // Only update children if we have merged results
           if (mergedChildren.length > 0) {
             existingNode.children = mergedChildren;
           }
         }
-        // If they're files with the same path, skip the public one
-        // as we've already seen this path
       }
     }
   }
 
-  // Filter out empty folders unless they match the current visibility rules
-  return result.filter(
-    (node) =>
-      node.type === 1 || // Always keep files
-      (node.type === 2 && // For folders:
-        (node.children.length > 0 || // Keep if has children
-          shouldIncludeNode(node))), // or matches visibility rules
-  );
+  return result;
 }
 
-export function FolderTree({ className }: FolderTreeProps) {
+export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<ModelFilter>("private");
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [frontendFolderPaths, setFrontendFolderPaths] = useState<string[]>([]);
+  const [showAddModelDialog, setShowAddModelDialog] = useState(false);
 
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery({
     queryKey: ["volume", "private-models"],
@@ -380,8 +363,43 @@ export function FolderTree({ className }: FolderTreeProps) {
   const privateTree = privateFiles ? buildTree(privateFiles, true) : [];
   const publicTree = publicFiles ? buildTree(publicFiles, false) : [];
 
+  // Inject frontend folders into the tree
+  const injectFrontendFolders = (tree: TreeNode[]): TreeNode[] => {
+    const result = [...tree];
+
+    for (const path of frontendFolderPaths) {
+      const parts = path.split("/");
+      let currentLevel = result;
+
+      for (const [index, part] of parts.entries()) {
+        const isLast = index === parts.length - 1;
+        const existingNode = currentLevel.find((node) => node.name === part);
+
+        if (existingNode) {
+          if (!isLast) {
+            currentLevel = existingNode.children;
+          }
+        } else {
+          const newNode: TreeNode = {
+            name: part,
+            path: parts.slice(0, index + 1).join("/"),
+            type: 2,
+            children: [],
+            mtime: Date.now(),
+            size: 0,
+            isPrivate: true,
+          };
+          currentLevel.push(newNode);
+          currentLevel = newNode.children;
+        }
+      }
+    }
+
+    return result;
+  };
+
   const mergedTree = mergeNodes(
-    privateTree,
+    injectFrontendFolders(privateTree),
     publicTree,
     filter === "private" || filter === "all",
     filter === "public" || filter === "all",
@@ -391,8 +409,10 @@ export function FolderTree({ className }: FolderTreeProps) {
     mutationFn: async (data: CreateFolderData) => {
       await api({
         url: "volume/create-folder",
-        method: "POST",
-        body: data,
+        init: {
+          method: "POST",
+          body: JSON.stringify(data),
+        },
       });
     },
     onSuccess: () => {
@@ -404,8 +424,10 @@ export function FolderTree({ className }: FolderTreeProps) {
     mutationFn: async (path: string) => {
       await api({
         url: "volume/delete",
-        method: "DELETE",
-        body: { path },
+        init: {
+          method: "DELETE",
+          body: JSON.stringify({ path }),
+        },
       });
     },
     onSuccess: () => {
@@ -414,7 +436,13 @@ export function FolderTree({ className }: FolderTreeProps) {
   });
 
   const operations: FileOperations = {
-    createFolder: createFolderMutation.mutateAsync,
+    createFolder: async (data: CreateFolderData) => {
+      const newPath = data.parentPath
+        ? `${data.parentPath}/${data.folderName}`
+        : data.folderName;
+
+      setFrontendFolderPaths((prev) => [...prev, newPath]);
+    },
     deleteFile: deleteFileMutation.mutateAsync,
     moveFile: async (from, to) => {
       // To be implemented
@@ -438,7 +466,7 @@ export function FolderTree({ className }: FolderTreeProps) {
   return (
     <div className={cn("flex h-full flex-col gap-4", className)}>
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Models</h2>
+        <h2 className="font-semibold text-lg">Models</h2>
         <div className="flex gap-2">
           <Button
             variant="ghost"
@@ -454,13 +482,13 @@ export function FolderTree({ className }: FolderTreeProps) {
             size="icon"
             onClick={() => setShowNewFolderDialog(true)}
           >
-            <PlusIcon className="h-4 w-4" />
+            <FolderPlus className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search models..."
           value={search}
@@ -491,6 +519,7 @@ export function FolderTree({ className }: FolderTreeProps) {
                 node={node}
                 search={search}
                 operations={operations}
+                onAddModel={onAddModel}
               />
             ))}
           </div>
