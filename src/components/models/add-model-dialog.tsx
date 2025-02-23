@@ -112,7 +112,7 @@ export function AddModelDialog({
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <label htmlFor="url" className="text-sm font-medium">
+            <label htmlFor="url" className="font-medium text-sm">
               Model URL
             </label>
             <Input
@@ -125,7 +125,7 @@ export function AddModelDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="filename" className="text-sm font-medium">
+            <label htmlFor="filename" className="font-medium text-sm">
               Filename (Optional)
             </label>
             <Input
@@ -137,7 +137,7 @@ export function AddModelDialog({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="folder" className="text-sm font-medium">
+            <label htmlFor="folder" className="font-medium text-sm">
               Folder Path
             </label>
             <Input
