@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { Suspense, useState } from "react";
 import { FolderTree } from "@/components/models/folder-tree";
-import { AddModelDialog } from "@/components/models/add-model-dialog";
+import { AddModelDialog } from "@/components/models/add-model-dialog/index";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/models")({

@@ -1,0 +1,114 @@
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import type { VerifyHFRepoResponse, AddModelRequest } from "@/types/models";
+import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
+import { FolderPathDisplay } from "./folder-path-display";
+
+interface HuggingfaceFormProps {
+  onSubmit: (request: AddModelRequest) => void;
+  folderPath: string;
+  className?: string;
+}
+
+export function HuggingfaceForm({
+  onSubmit,
+  folderPath,
+  className,
+}: HuggingfaceFormProps) {
+  const [repoId, setRepoId] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const [validation, setValidation] = useState<VerifyHFRepoResponse | null>(
+    null,
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  const debouncedRepoId = useDebounce(repoId, 500);
+
+  useEffect(() => {
+    if (!debouncedRepoId) {
+      setValidation(null);
+      return;
+    }
+    validateRepo(debouncedRepoId);
+  }, [debouncedRepoId]);
+
+  const validateRepo = async (id: string) => {
+    setIsValidating(true);
+    setError(null);
+
+    try {
+      const response = await api({
+        url: "volume/validate/huggingface",
+        init: {
+          method: "POST",
+          body: JSON.stringify({ repo_id: id }),
+        },
+      });
+
+      setValidation(response);
+    } catch (err) {
+      setError("Failed to validate repository");
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!validation?.exists) return;
+
+    onSubmit({
+      source: "huggingface",
+      folderPath,
+      huggingface: {
+        repoId: repoId,
+      },
+    });
+  };
+
+  return (
+    <div className={cn("flex flex-col gap-4", className)}>
+      <FolderPathDisplay path={folderPath} />
+
+      <div className="relative">
+        <Input
+          placeholder="Enter repository ID (e.g. stabilityai/stable-diffusion-xl-base-1.0)"
+          value={repoId}
+          onChange={(e) => setRepoId(e.target.value)}
+          className={cn(
+            "pr-10",
+            validation?.exists && "border-green-500",
+            validation && !validation.exists && "border-red-500",
+          )}
+        />
+        <div className="-translate-y-1/2 absolute top-1/2 right-3">
+          {isValidating ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : validation?.exists ? (
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          ) : validation ? (
+            <XCircle className="h-4 w-4 text-red-500" />
+          ) : null}
+        </div>
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Button
+        onClick={handleSubmit}
+        disabled={!validation?.exists}
+        className="mt-2"
+      >
+        Add Model
+      </Button>
+    </div>
+  );
+}

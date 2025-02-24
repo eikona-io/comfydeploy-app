@@ -48,7 +48,7 @@ interface FileEntry {
 
 interface FolderTreeProps {
   className?: string;
-  onAddModel?: (folderPath: string) => void;
+  onAddModel: (folderPath: string) => void;
 }
 
 interface TreeNode {
