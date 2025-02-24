@@ -1005,11 +1005,18 @@ function MaxParallelGPUSlider({
   const planHierarchy: Record<string, { max: number }> = {
     basic: { max: 1 },
     pro: { max: 3 },
-    ws_basic: { max: 1 },
-    ws_pro: { max: 3 },
     business: { max: 10 },
     enterprise: { max: 10 },
     creator: { max: 10 },
+    // for new plans
+    creator_legacy_monthly: { max: 3 },
+    creator_monthly: { max: 1 },
+    creator_yearly: { max: 1 },
+    deployment: { max: 5 },
+    deployment_monthly: { max: 5 },
+    deployment_yearly: { max: 5 },
+    business_monthly: { max: 10 },
+    business_yearly: { max: 10 },
   };
 
   let maxGPU = planHierarchy[plan as keyof typeof planHierarchy]?.max || 1;
