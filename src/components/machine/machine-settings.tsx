@@ -267,8 +267,10 @@ function ServerlessSettings({
     mode: "onChange",
     defaultValues: {
       // env
-      comfyui_version: machine.comfyui_version,
-      docker_command_steps: machine.docker_command_steps,
+      comfyui_version: machine.comfyui_version || comfyui_hash,
+      docker_command_steps: machine.docker_command_steps || {
+        steps: [],
+      },
 
       // auto scaling
       gpu: machine.gpu,
@@ -861,9 +863,13 @@ function GPUSelectBox({
 }) {
   const { gpuConfig } = useGPUConfig();
   const sub = useCurrentPlan() as SubscriptionPlan;
-  const isBusiness =
-    sub?.plans?.plans?.includes("business") ||
-    sub?.plans?.plans?.includes("creator");
+  console.log(sub);
+  const isBusiness = sub?.plans?.plans?.some(
+    (plan) =>
+      plan.includes("business") ||
+      plan.includes("creator") ||
+      plan.includes("deployment"),
+  );
 
   return (
     <div className="mt-2">
@@ -999,11 +1005,18 @@ function MaxParallelGPUSlider({
   const planHierarchy: Record<string, { max: number }> = {
     basic: { max: 1 },
     pro: { max: 3 },
-    ws_basic: { max: 1 },
-    ws_pro: { max: 3 },
     business: { max: 10 },
     enterprise: { max: 10 },
     creator: { max: 10 },
+    // for new plans
+    creator_legacy_monthly: { max: 3 },
+    creator_monthly: { max: 1 },
+    creator_yearly: { max: 1 },
+    deployment: { max: 5 },
+    deployment_monthly: { max: 5 },
+    deployment_yearly: { max: 5 },
+    business_monthly: { max: 10 },
+    business_yearly: { max: 10 },
   };
 
   let maxGPU = planHierarchy[plan as keyof typeof planHierarchy]?.max || 1;
@@ -1052,6 +1065,13 @@ function TimeSelect({
     ws_pro: [],
     business: ["pro", "business"],
     creator: ["pro", "business", "creator"],
+    deployment: ["pro", "business", "creator"],
+    deployment_monthly: ["pro", "business", "creator"],
+    deployment_yearly: ["pro", "business", "creator"],
+    business_monthly: ["pro", "business", "creator"],
+    business_yearly: ["pro", "business", "creator"],
+    creator_monthly: ["pro", "business", "creator"],
+    creator_legacy_monthly: ["pro"],
   };
 
   const sub = useCurrentPlan();

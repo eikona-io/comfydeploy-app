@@ -171,7 +171,7 @@ function RouteComponent() {
   //   (selectedInvoice ? 0 : (usage?.free_tier_credit ?? 0) / 100);
 
   return (
-    <div className="bg-white py-4">
+    <div className="bg-white py-4 w-full">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
         <Suspense
           fallback={<Skeleton className="h-[28px] w-full max-w-[800px]" />}
