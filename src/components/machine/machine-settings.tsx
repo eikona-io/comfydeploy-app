@@ -1064,6 +1064,7 @@ function TimeSelect({
     business_monthly: ["pro", "business", "creator"],
     business_yearly: ["pro", "business", "creator"],
     creator_monthly: ["pro", "business", "creator"],
+    creator_legacy_monthly: ["pro"],
   };
 
   const sub = useCurrentPlan();

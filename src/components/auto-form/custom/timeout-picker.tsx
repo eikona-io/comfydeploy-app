@@ -52,6 +52,7 @@ export default function AutoFormTimeoutPicker({
     business_yearly: ["pro", "business", "creator"],
     creator_monthly: ["pro", "business", "creator"],
     creator_yearly: ["pro", "business", "creator"],
+    creator_legacy_monthly: ["pro"],
   } satisfies Record<string, string[]>;
 
   // Check if the current plan meets or exceeds the required plan
