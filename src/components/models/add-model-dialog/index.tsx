@@ -10,6 +10,8 @@ import { SourceSelector } from "./source-selector";
 import { HuggingfaceForm } from "./huggingface-form";
 import { CivitaiForm } from "./civitai-form";
 import { LinkForm } from "./link-form";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 interface AddModelDialogProps {
   open: boolean;
@@ -30,9 +32,29 @@ export function AddModelDialog({
     setSelectedSource(source);
   };
 
-  const handleSubmit = (request: AddModelRequest) => {
-    // TODO: Handle the model addition
-    console.log("Adding model:", request);
+  const handleSubmit = async (request: AddModelRequest) => {
+    try {
+      const response = await api({
+        url: "volume/model",
+        init: {
+          method: "POST",
+          body: JSON.stringify(request),
+        },
+      });
+
+      // Show success toast with the message from the API
+      toast.success(response.message || "Model added successfully");
+
+      // Close the dialog after successful submission
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error adding model:", error);
+
+      // Show error toast
+      toast.error(
+        error instanceof Error ? error.message : "Failed to add model",
+      );
+    }
   };
 
   const renderForm = () => {

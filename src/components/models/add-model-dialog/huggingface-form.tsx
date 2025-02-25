@@ -26,16 +26,22 @@ export function HuggingfaceForm({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [modelPath, setModelPath] = useState(folderPath);
 
   const debouncedRepoId = useDebounce(repoId, 500);
 
   useEffect(() => {
     if (!debouncedRepoId) {
       setValidation(null);
+      setModelPath(folderPath);
       return;
     }
     validateRepo(debouncedRepoId);
-  }, [debouncedRepoId]);
+
+    // Update the model path when repo ID changes
+    const lastPart = debouncedRepoId.split("/").pop() || "";
+    setModelPath(`${folderPath}/${lastPart}`);
+  }, [debouncedRepoId, folderPath]);
 
   const validateRepo = async (id: string) => {
     setIsValidating(true);
@@ -95,6 +101,15 @@ export function HuggingfaceForm({
           ) : null}
         </div>
       </div>
+
+      {validation?.exists && (
+        <Alert className="border-green-200 bg-green-50">
+          <AlertDescription className="text-green-800">
+            Model will be added to:{" "}
+            <span className="font-medium">{modelPath}</span>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {error && (
         <Alert variant="destructive">

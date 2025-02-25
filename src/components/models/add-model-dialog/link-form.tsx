@@ -1,36 +1,28 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { cn } from "@/lib/utils";
+import type { AddModelRequest } from "@/types/models";
 import { FolderPathDisplay } from "./folder-path-display";
+import { cn } from "@/lib/utils";
 
 interface LinkFormProps {
-  onSubmit: (model: {
-    source: string;
-    folderPath: string;
-    filename: string;
-    downloadLink: string;
-  }) => void;
+  onSubmit: (request: AddModelRequest) => void;
   folderPath: string;
   className?: string;
 }
 
 export function LinkForm({ onSubmit, folderPath, className }: LinkFormProps) {
-  const [url, setUrl] = useState("");
+  const [downloadLink, setDownloadLink] = useState("");
   const [filename, setFilename] = useState("");
-  const [isValidating, setIsValidating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = () => {
-    if (!url || !filename) return;
+    if (!downloadLink || !filename) return;
 
     onSubmit({
       source: "link",
       folderPath,
       filename,
-      downloadLink: url,
+      downloadLink,
     });
   };
 
@@ -38,14 +30,20 @@ export function LinkForm({ onSubmit, folderPath, className }: LinkFormProps) {
     <div className={cn("flex flex-col gap-4", className)}>
       <FolderPathDisplay path={folderPath} />
 
-      <Input
-        placeholder="Enter model URL"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-      />
+      <div className="flex flex-col gap-2">
+        <label htmlFor="downloadLink" className="font-medium text-sm">
+          Download URL
+        </label>
+        <Input
+          id="downloadLink"
+          placeholder="Enter direct download URL"
+          value={downloadLink}
+          onChange={(e) => setDownloadLink(e.target.value)}
+        />
+      </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="filename" className="text-sm font-medium">
+        <label htmlFor="filename" className="font-medium text-sm">
           Filename
         </label>
         <Input
@@ -56,15 +54,9 @@ export function LinkForm({ onSubmit, folderPath, className }: LinkFormProps) {
         />
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
       <Button
         onClick={handleSubmit}
-        disabled={!url || !filename}
+        disabled={!downloadLink || !filename}
         className="mt-2"
       >
         Add Model
