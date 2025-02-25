@@ -171,6 +171,13 @@ function TreeNode({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCreateFolder();
+    }
+  };
+
   return (
     <div>
       <div className="group flex items-center gap-2">
@@ -242,6 +249,7 @@ function TreeNode({
               placeholder="Folder name"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
             <div className="flex justify-end gap-2">
               <Button
@@ -463,6 +471,13 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleCreateFolder();
+    }
+  };
+
   return (
     <div className={cn("flex h-full flex-col gap-4", className)}>
       <div className="flex items-center justify-between">
@@ -536,6 +551,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
               placeholder="Folder name"
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
+              onKeyDown={handleKeyDown}
             />
             <div className="flex justify-end gap-2">
               <Button

@@ -27,12 +27,17 @@ export function AddModelDialog({
   const [selectedSource, setSelectedSource] = useState<ModelSource | null>(
     null,
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSourceSelect = (source: ModelSource) => {
     setSelectedSource(source);
   };
 
   const handleSubmit = async (request: AddModelRequest) => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+
     try {
       const response = await api({
         url: "volume/model",
@@ -54,6 +59,8 @@ export function AddModelDialog({
       toast.error(
         error instanceof Error ? error.message : "Failed to add model",
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -64,15 +71,24 @@ export function AddModelDialog({
           <HuggingfaceForm
             onSubmit={handleSubmit}
             folderPath={initialFolderPath}
+            isSubmitting={isSubmitting}
           />
         );
       case "civitai":
         return (
-          <CivitaiForm onSubmit={handleSubmit} folderPath={initialFolderPath} />
+          <CivitaiForm
+            onSubmit={handleSubmit}
+            folderPath={initialFolderPath}
+            isSubmitting={isSubmitting}
+          />
         );
       case "link":
         return (
-          <LinkForm onSubmit={handleSubmit} folderPath={initialFolderPath} />
+          <LinkForm
+            onSubmit={handleSubmit}
+            folderPath={initialFolderPath}
+            isSubmitting={isSubmitting}
+          />
         );
       default:
         return null;
@@ -80,7 +96,14 @@ export function AddModelDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(newOpen) => {
+        // Prevent closing the dialog while submitting
+        if (isSubmitting && !newOpen) return;
+        onOpenChange(newOpen);
+      }}
+    >
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Add Model</DialogTitle>
@@ -90,6 +113,7 @@ export function AddModelDialog({
           <SourceSelector
             selected={selectedSource}
             onSelect={handleSourceSelect}
+            disabled={isSubmitting}
           />
           {renderForm()}
         </div>

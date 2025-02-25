@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { AddModelRequest } from "@/types/models";
@@ -26,12 +26,22 @@ export function LinkForm({ onSubmit, folderPath, className }: LinkFormProps) {
     });
   };
 
+  const handleFormSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (downloadLink && filename) {
+      handleSubmit();
+    }
+  };
+
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <form
+      onSubmit={handleFormSubmit}
+      className={cn("flex flex-col gap-4", className)}
+    >
       <FolderPathDisplay path={folderPath} />
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="downloadLink" className="font-medium text-sm">
+        <label htmlFor="downloadLink" className="text-sm font-medium">
           Download URL
         </label>
         <Input
@@ -43,7 +53,7 @@ export function LinkForm({ onSubmit, folderPath, className }: LinkFormProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="filename" className="font-medium text-sm">
+        <label htmlFor="filename" className="text-sm font-medium">
           Filename
         </label>
         <Input
@@ -55,12 +65,12 @@ export function LinkForm({ onSubmit, folderPath, className }: LinkFormProps) {
       </div>
 
       <Button
-        onClick={handleSubmit}
+        type="submit"
         disabled={!downloadLink || !filename}
         className="mt-2"
       >
         Add Model
       </Button>
-    </div>
+    </form>
   );
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -122,8 +122,18 @@ export function CivitaiForm({
     });
   };
 
+  const handleFormSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (validation?.exists && filename) {
+      handleSubmit();
+    }
+  };
+
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <form
+      onSubmit={handleFormSubmit}
+      className={cn("flex flex-col gap-4", className)}
+    >
       <FolderPathDisplay path={folderPath} />
 
       <div className="relative">
@@ -158,7 +168,7 @@ export function CivitaiForm({
           </div>
 
           <div className="flex flex-col gap-2">
-            <label htmlFor="filename" className="font-medium text-sm">
+            <label htmlFor="filename" className="text-sm font-medium">
               Filename
             </label>
             <Input
@@ -178,12 +188,12 @@ export function CivitaiForm({
       )}
 
       <Button
-        onClick={handleSubmit}
+        type="submit"
         disabled={!validation?.exists || !filename}
         className="mt-2"
       >
         Add Model
       </Button>
-    </div>
+    </form>
   );
 }

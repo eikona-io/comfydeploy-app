@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
@@ -13,12 +13,14 @@ interface HuggingfaceFormProps {
   onSubmit: (request: AddModelRequest) => void;
   folderPath: string;
   className?: string;
+  isSubmitting?: boolean;
 }
 
 export function HuggingfaceForm({
   onSubmit,
   folderPath,
   className,
+  isSubmitting = false,
 }: HuggingfaceFormProps) {
   const [repoId, setRepoId] = useState("");
   const [isValidating, setIsValidating] = useState(false);
@@ -76,8 +78,18 @@ export function HuggingfaceForm({
     });
   };
 
+  const handleFormSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (validation?.exists && !isSubmitting) {
+      handleSubmit();
+    }
+  };
+
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <form
+      onSubmit={handleFormSubmit}
+      className={cn("flex flex-col gap-4", className)}
+    >
       <FolderPathDisplay path={folderPath} />
 
       <div className="relative">
@@ -118,12 +130,19 @@ export function HuggingfaceForm({
       )}
 
       <Button
-        onClick={handleSubmit}
-        disabled={!validation?.exists}
+        type="submit"
+        disabled={!validation?.exists || isSubmitting}
         className="mt-2"
       >
-        Add Model
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Adding Model...
+          </>
+        ) : (
+          "Add Model"
+        )}
       </Button>
-    </div>
+    </form>
   );
 }
