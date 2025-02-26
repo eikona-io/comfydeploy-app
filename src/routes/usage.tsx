@@ -168,14 +168,17 @@ function RouteComponent() {
     }
   };
 
-  // const discountAmount =
-  //   (selectedInvoice?.subtotal - selectedInvoice?.total ?? 0) +
-  //   (selectedInvoice ? 0 : (usage?.credit ?? 0)) +
-  //   (selectedInvoice ? 0 : (usage?.free_tier_credit ?? 0) / 100);
-
   return (
     <div className="bg-white py-4 w-full">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+        <Alert variant="warning" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Under Maintenance</AlertTitle>
+          <AlertDescription>
+            The usage page is currently under maintenance. Some features may be
+            temporarily unavailable. We apologize for any inconvenience.
+          </AlertDescription>
+        </Alert>
         <Suspense>
           <UnpaidInvoices />
         </Suspense>
@@ -196,19 +199,6 @@ function RouteComponent() {
                     <CreditCard className="h-3.5 w-3.5" />
                     <Link
                       to="/pricing"
-                      // onClick={async () => {
-                      //   const res = await callServerPromise(
-                      //     api({
-                      //       url: `platform/stripe/dashboard?redirect_url=${encodeURIComponent(
-                      //         window.location.href,
-                      //       )}`,
-                      //     }),
-                      //     {
-                      //       loadingText: "Redirecting to Stripe...",
-                      //     },
-                      //   );
-                      //   window.open(res.url, "_blank");
-                      // }}
                       className="flex items-center gap-1 text-sm"
                     >
                       {pricingPlanNameMapping[x]} Plan
