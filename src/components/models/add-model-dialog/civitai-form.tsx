@@ -8,11 +8,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { FolderPathDisplay } from "./folder-path-display";
+import { Label } from "@/components/ui/label";
 
 interface CivitaiFormProps {
   onSubmit: (request: AddModelRequest) => void;
   folderPath: string;
   className?: string;
+  isSubmitting: boolean;
 }
 
 interface PreviewMediaProps {
@@ -61,6 +63,7 @@ export function CivitaiForm({
   onSubmit,
   folderPath,
   className,
+  isSubmitting,
 }: CivitaiFormProps) {
   const [url, setUrl] = useState("");
   const [filename, setFilename] = useState("");
@@ -69,6 +72,7 @@ export function CivitaiForm({
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [folderPath, setFolderPath] = useState("");
 
   const debouncedUrl = useDebounce(url, 500);
 
@@ -109,91 +113,57 @@ export function CivitaiForm({
     }
   };
 
-  const handleSubmit = () => {
-    if (!validation?.exists || !filename) return;
-
-    onSubmit({
-      source: "civitai",
-      folderPath,
-      filename,
-      civitai: {
-        url: url,
-      },
-    });
-  };
-
-  const handleFormSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (validation?.exists && filename) {
-      handleSubmit();
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !isSubmitting && url.trim()) {
+      e.preventDefault();
+      onSubmit({
+        source: "civitai",
+        folderPath,
+        filename,
+        civitai: {
+          url: url,
+        },
+      });
     }
   };
 
   return (
-    <form
-      onSubmit={handleFormSubmit}
-      className={cn("flex flex-col gap-4", className)}
-    >
-      <FolderPathDisplay path={folderPath} />
-
-      <div className="relative">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="url">Civitai URL</Label>
         <Input
-          placeholder="Enter Civitai model URL"
+          id="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          className={cn(
-            "pr-10",
-            validation?.exists && "border-green-500",
-            validation && !validation.exists && "border-red-500",
-          )}
+          placeholder="https://civitai.com/models/..."
+          onKeyDown={handleKeyDown}
         />
-        <div className="-translate-y-1/2 absolute top-1/2 right-3">
-          {isValidating ? (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : validation?.exists ? (
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          ) : validation ? (
-            <XCircle className="h-4 w-4 text-red-500" />
-          ) : null}
-        </div>
       </div>
-
-      {validation?.exists && (
-        <>
-          <div className="flex flex-col gap-4 rounded-md border p-4">
-            <div className="font-medium">{validation.title}</div>
-            {validation.preview_url && (
-              <PreviewMedia url={validation.preview_url} />
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label htmlFor="filename" className="text-sm font-medium">
-              Filename
-            </label>
-            <Input
-              id="filename"
-              value={filename}
-              onChange={(e) => setFilename(e.target.value)}
-              placeholder="Enter filename"
-            />
-          </div>
-        </>
-      )}
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="folder">Folder (optional)</Label>
+        <Input
+          id="folder"
+          value={folderPath}
+          onChange={(e) => setFolderPath(e.target.value)}
+          placeholder="e.g. models/stable-diffusion"
+          onKeyDown={handleKeyDown}
+        />
+      </div>
       <Button
-        type="submit"
-        disabled={!validation?.exists || !filename}
-        className="mt-2"
+        onClick={() =>
+          onSubmit({
+            source: "civitai",
+            folderPath,
+            filename,
+            civitai: {
+              url: url,
+            },
+          })
+        }
+        disabled={isSubmitting || !url.trim()}
       >
-        Add Model
+        {isSubmitting ? "Downloading..." : "Download"}
       </Button>
-    </form>
+    </div>
   );
 }

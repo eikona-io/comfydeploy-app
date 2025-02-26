@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { FolderPathDisplay } from "./folder-path-display";
+import { Label } from "@/components/ui/label";
 
 interface HuggingfaceFormProps {
   onSubmit: (request: AddModelRequest) => void;
@@ -85,6 +86,13 @@ export function HuggingfaceForm({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !isSubmitting && repoId.trim()) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
   return (
     <form
       onSubmit={handleFormSubmit}
@@ -102,6 +110,7 @@ export function HuggingfaceForm({
             validation?.exists && "border-green-500",
             validation && !validation.exists && "border-red-500",
           )}
+          onKeyDown={handleKeyDown}
         />
         <div className="-translate-y-1/2 absolute top-1/2 right-3">
           {isValidating ? (
