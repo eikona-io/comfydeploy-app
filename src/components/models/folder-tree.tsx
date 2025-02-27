@@ -65,21 +65,30 @@ type ModelFilter = "private" | "public" | "all";
 
 function buildTree(files: FileEntry[], isPrivate: boolean): TreeNode[] {
   const root: TreeNode[] = [];
+  const pathMap = new Map<string, TreeNode>(); // Track nodes by their full path
 
   for (const file of files) {
     const parts = file.path.split("/");
     let currentLevel = root;
+    let currentPath = "";
 
-    parts.forEach((part, index) => {
+    for (let index = 0; index < parts.length; index++) {
+      const part = parts[index];
       const isLast = index === parts.length - 1;
-      const existingNode = currentLevel.find((node) => node.name === part);
+
+      // Build the current path
+      currentPath = currentPath ? `${currentPath}/${part}` : part;
+
+      // Check if we already have a node for this exact path
+      const existingNode = pathMap.get(currentPath);
 
       if (existingNode) {
-        if (isLast) {
-          // If this is a file and it already exists, create a new node
+        if (isLast && file.type === 1) {
+          // This is a file with the same path as an existing node
+          // This shouldn't normally happen, but we'll handle it by creating a new node
           const newNode: TreeNode = {
             name: part,
-            path: parts.slice(0, index + 1).join("/"),
+            path: currentPath,
             type: file.type,
             children: [],
             mtime: file.mtime,
@@ -87,23 +96,30 @@ function buildTree(files: FileEntry[], isPrivate: boolean): TreeNode[] {
             isPrivate,
           };
           currentLevel.push(newNode);
-        } else {
+        } else if (!isLast) {
+          // Continue traversing down this existing folder
           currentLevel = existingNode.children;
         }
       } else {
+        // Create a new node for this path
         const newNode: TreeNode = {
           name: part,
-          path: parts.slice(0, index + 1).join("/"),
-          type: isLast ? file.type : 2,
+          path: currentPath,
+          type: isLast ? file.type : 2, // If it's the last part and a file, use file type, otherwise it's a folder
           children: [],
           mtime: file.mtime,
           size: file.size,
           isPrivate,
         };
+
         currentLevel.push(newNode);
-        currentLevel = newNode.children;
+        pathMap.set(currentPath, newNode);
+
+        if (!isLast) {
+          currentLevel = newNode.children;
+        }
       }
-    });
+    }
   }
 
   return root;
@@ -289,7 +305,7 @@ function mergeNodes(
   showPublic: boolean,
 ): TreeNode[] {
   const result: TreeNode[] = [];
-  const seenPaths = new Set<string>();
+  const pathMap = new Map<string, number>(); // Track nodes by path instead of name
 
   // Helper to check if a node should be included based on its privacy
   const shouldIncludeNode = (node: TreeNode) =>
@@ -300,7 +316,7 @@ function mergeNodes(
     for (const node of privateNodes) {
       if (shouldIncludeNode(node)) {
         result.push(node);
-        seenPaths.add(node.path);
+        pathMap.set(node.path, result.length - 1);
       }
     }
   }
@@ -308,18 +324,17 @@ function mergeNodes(
   // Add or merge public nodes if showing public
   if (showPublic) {
     for (const publicNode of publicNodes) {
-      const existingNodeIndex = result.findIndex(
-        (node) => node.name === publicNode.name,
-      );
+      const existingNodeIndex = pathMap.get(publicNode.path);
 
-      if (existingNodeIndex === -1) {
-        // No existing node with this name, add if we haven't seen this path
-        if (!seenPaths.has(publicNode.path) && shouldIncludeNode(publicNode)) {
+      if (existingNodeIndex === undefined) {
+        // No existing node with this path
+        if (shouldIncludeNode(publicNode)) {
           result.push(publicNode);
-          seenPaths.add(publicNode.path);
+          pathMap.set(publicNode.path, result.length - 1);
         }
       } else {
         const existingNode = result[existingNodeIndex];
+
         // If both are folders, merge their children
         if (existingNode.type === 2 && publicNode.type === 2) {
           const mergedChildren = mergeNodes(
@@ -406,8 +421,10 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     return result;
   };
 
+  const injectedPrivateTree = injectFrontendFolders(privateTree);
+
   const mergedTree = mergeNodes(
-    injectFrontendFolders(privateTree),
+    injectedPrivateTree,
     publicTree,
     filter === "private" || filter === "all",
     filter === "public" || filter === "all",
