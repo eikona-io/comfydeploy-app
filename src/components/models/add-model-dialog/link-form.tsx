@@ -1,6 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import type { AddModelRequest } from "@/types/models";
 import { FolderPathDisplay } from "./folder-path-display";
 import { cn } from "@/lib/utils";
@@ -9,67 +10,73 @@ interface LinkFormProps {
   onSubmit: (request: AddModelRequest) => void;
   folderPath: string;
   className?: string;
+  isSubmitting?: boolean;
 }
 
-export function LinkForm({ onSubmit, folderPath, className }: LinkFormProps) {
-  const [downloadLink, setDownloadLink] = useState("");
+export function LinkForm({
+  onSubmit,
+  folderPath,
+  className,
+  isSubmitting = false,
+}: LinkFormProps) {
+  const [url, setUrl] = useState("");
   const [filename, setFilename] = useState("");
 
   const handleSubmit = () => {
-    if (!downloadLink || !filename) return;
+    if (!url.trim() || !filename.trim()) return;
 
     onSubmit({
       source: "link",
       folderPath,
       filename,
-      downloadLink,
+      downloadLink: url,
     });
   };
 
-  const handleFormSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (downloadLink && filename) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !isSubmitting && url.trim() && filename.trim()) {
+      e.preventDefault();
       handleSubmit();
     }
   };
 
   return (
     <form
-      onSubmit={handleFormSubmit}
+      onSubmit={(e) => {
+        e.preventDefault();
+        handleSubmit();
+      }}
       className={cn("flex flex-col gap-4", className)}
     >
       <FolderPathDisplay path={folderPath} />
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="downloadLink" className="text-sm font-medium">
-          Download URL
-        </label>
+        <Label htmlFor="url">URL</Label>
         <Input
-          id="downloadLink"
-          placeholder="Enter direct download URL"
-          value={downloadLink}
-          onChange={(e) => setDownloadLink(e.target.value)}
+          id="url"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="https://example.com/model.safetensors"
+          onKeyDown={handleKeyDown}
         />
       </div>
 
       <div className="flex flex-col gap-2">
-        <label htmlFor="filename" className="text-sm font-medium">
-          Filename
-        </label>
+        <Label htmlFor="filename">Filename</Label>
         <Input
           id="filename"
           value={filename}
           onChange={(e) => setFilename(e.target.value)}
-          placeholder="Enter filename"
+          placeholder="model.safetensors"
+          onKeyDown={handleKeyDown}
         />
       </div>
 
       <Button
         type="submit"
-        disabled={!downloadLink || !filename}
-        className="mt-2"
+        disabled={isSubmitting || !url.trim() || !filename.trim()}
       >
-        Add Model
+        {isSubmitting ? "Adding Model..." : "Add Model"}
       </Button>
     </form>
   );

@@ -72,7 +72,6 @@ export function CivitaiForm({
     null,
   );
   const [error, setError] = useState<string | null>(null);
-  const [folderPath, setFolderPath] = useState("");
 
   const debouncedUrl = useDebounce(url, 500);
 
@@ -129,26 +128,51 @@ export function CivitaiForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="url">Civitai URL</Label>
+      <FolderPathDisplay path={folderPath} />
+
+      <div className="relative">
         <Input
           id="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
           placeholder="https://civitai.com/models/..."
           onKeyDown={handleKeyDown}
+          className={cn(
+            "pr-10",
+            validation?.exists && "border-green-500",
+            validation && !validation.exists && "border-red-500",
+          )}
         />
+        <div className="-translate-y-1/2 absolute top-1/2 right-3">
+          {isValidating ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : validation?.exists ? (
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+          ) : validation ? (
+            <XCircle className="h-4 w-4 text-red-500" />
+          ) : null}
+        </div>
       </div>
-      <div className="flex flex-col gap-2">
-        <Label htmlFor="folder">Folder (optional)</Label>
-        <Input
-          id="folder"
-          value={folderPath}
-          onChange={(e) => setFolderPath(e.target.value)}
-          placeholder="e.g. models/stable-diffusion"
-          onKeyDown={handleKeyDown}
-        />
-      </div>
+
+      {validation?.exists && (
+        <Alert className="border-green-200 bg-green-50">
+          <AlertDescription className="text-green-800">
+            <div className="flex flex-col gap-4">
+              <div className="font-medium">{validation.title}</div>
+              {validation.preview_url && (
+                <PreviewMedia url={validation.preview_url} />
+              )}
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
       <Button
         onClick={() =>
           onSubmit({
@@ -160,7 +184,7 @@ export function CivitaiForm({
             },
           })
         }
-        disabled={isSubmitting || !url.trim()}
+        disabled={isSubmitting || !url.trim() || !validation?.exists}
       >
         {isSubmitting ? "Downloading..." : "Download"}
       </Button>
