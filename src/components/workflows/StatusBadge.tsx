@@ -10,9 +10,11 @@ import { Check, Clock12, Minus, X } from "lucide-react";
 export function StatusBadge({
   status,
   mini = false,
+  isServerless = true,
 }: {
   status: string;
   mini?: boolean;
+  isServerless?: boolean;
 }) {
   function getBadge() {
     // return (
@@ -109,7 +111,11 @@ export function StatusBadge({
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>{getBadge()}</TooltipTrigger>
+      {isServerless ? (
+        <TooltipTrigger asChild>{getBadge()}</TooltipTrigger>
+      ) : (
+        <></>
+      )}
       <TooltipContent>
         <div>{status}</div>
       </TooltipContent>

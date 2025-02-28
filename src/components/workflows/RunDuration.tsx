@@ -144,7 +144,11 @@ export function RunDuration({
                 {runDurationBadge ?? coldStartBadge ?? queueTimeBadge}
               </div>
             )}
-            <StatusBadge status={run.status} mini={true} />
+            <StatusBadge
+              status={run.status}
+              mini={true}
+              isServerless={run.machine_type === "comfy-deploy-serverless"}
+            />
           </div>
         </div>
       </TooltipTrigger>
