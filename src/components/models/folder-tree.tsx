@@ -38,6 +38,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { DownloadingModels } from "@/components/models/downloading-models";
 
 interface FileEntry {
   path: string;
@@ -518,6 +519,8 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           </Button>
         </div>
       </div>
+
+      <DownloadingModels />
 
       <div className="relative">
         <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
