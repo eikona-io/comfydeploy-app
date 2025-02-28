@@ -113,6 +113,7 @@ export function LiveStatus({
           <div className="overflow-hidden text-ellipsis whitespace-nowrap text-2xs">
             {!ended &&
               !liveStatus &&
+              run.machine_type === "comfy-deploy-serverless" &&
               (run.queued_at !== undefined ? (
                 <Badge>Cold Starting</Badge>
               ) : (

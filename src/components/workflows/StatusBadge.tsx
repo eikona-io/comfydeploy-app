@@ -10,11 +10,9 @@ import { Check, Clock12, Minus, X } from "lucide-react";
 export function StatusBadge({
   status,
   mini = false,
-  isServerless = true,
 }: {
   status: string;
   mini?: boolean;
-  isServerless?: boolean;
 }) {
   function getBadge() {
     // return (
@@ -106,10 +104,7 @@ export function StatusBadge({
         }
         break;
     }
-    if (isServerless) {
-      return <Badge variant="secondary">{status}</Badge>;
-    }
-    return null;
+    return <Badge variant="secondary">{status}</Badge>;
   }
 
   return (
