@@ -106,16 +106,15 @@ export function StatusBadge({
         }
         break;
     }
-    return <Badge variant="secondary">{status}</Badge>;
+    if (isServerless) {
+      return <Badge variant="secondary">{status}</Badge>;
+    }
+    return null;
   }
 
   return (
     <Tooltip>
-      {isServerless ? (
-        <TooltipTrigger asChild>{getBadge()}</TooltipTrigger>
-      ) : (
-        <></>
-      )}
+      <TooltipTrigger asChild>{getBadge()}</TooltipTrigger>
       <TooltipContent>
         <div>{status}</div>
       </TooltipContent>
