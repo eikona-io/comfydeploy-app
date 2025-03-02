@@ -133,7 +133,7 @@ interface CreateFolderData {
 
 interface FileOperations {
   createFolder: (data: CreateFolderData) => Promise<void>;
-  deleteFile: (path: string) => Promise<void>;
+  deleteFile: (path: string) => Promise<string>;
   moveFile: (from: string, to: string) => Promise<void>;
 }
 
@@ -362,7 +362,6 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [frontendFolderPaths, setFrontendFolderPaths] = useState<string[]>([]);
-  const [showAddModelDialog, setShowAddModelDialog] = useState(false);
 
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery({
     queryKey: ["volume", "private-models"],
@@ -431,33 +430,23 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     filter === "public" || filter === "all",
   );
 
-  const createFolderMutation = useMutation({
-    mutationFn: async (data: CreateFolderData) => {
-      await api({
-        url: "volume/create-folder",
-        init: {
-          method: "POST",
-          body: JSON.stringify(data),
-        },
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["volume"] });
-    },
-  });
-
   const deleteFileMutation = useMutation({
     mutationFn: async (path: string) => {
       await api({
-        url: "volume/delete",
+        url: "volume/rm",
         init: {
-          method: "DELETE",
+          method: "POST",
           body: JSON.stringify({ path }),
         },
       });
+      return path;
     },
-    onSuccess: () => {
+    onSuccess: (path) => {
       queryClient.invalidateQueries({ queryKey: ["volume"] });
+      toast.success(`Deleted '${path}' successfully`);
+    },
+    onError: (error, path) => {
+      toast.error(`Failed to delete '${path}'. Please refresh and try again.`);
     },
   });
 
