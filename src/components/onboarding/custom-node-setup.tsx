@@ -663,7 +663,7 @@ function SelectedNodeList({
         <h2 className="font-medium text-md">
           Selected Nodes ({validation.docker_command_steps.steps.length})
         </h2>
-        {sub?.sub?.plan && (
+        {sub?.plans?.plans && (
           <div className="flex flex-col items-end gap-2 md:flex-row">
             {!scriptMode && (
               <Button
