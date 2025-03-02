@@ -263,7 +263,7 @@ function TreeNode({
       <div className="group flex items-center gap-2">
         <button
           type="button"
-          className="flex flex-1 items-center gap-2 rounded px-2 py-1 hover:bg-accent"
+          className="flex items-center gap-2 rounded px-2 py-1 hover:bg-accent"
           onClick={() => setIsOpen(!isOpen)}
         >
           {node.type === 2 ? (
@@ -294,7 +294,7 @@ function TreeNode({
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="start">
             {node.type === 2 ? (
               <>
                 <DropdownMenuItem onClick={() => setShowNewFolderDialog(true)}>
@@ -328,6 +328,8 @@ function TreeNode({
             )}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        <div className="flex-1" />
       </div>
 
       <Dialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog}>
