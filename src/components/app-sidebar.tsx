@@ -147,8 +147,8 @@ function usePages() {
         ]
       : []),
     {
-      name: "Storage",
-      path: "/storage",
+      name: "Models",
+      path: "/models",
       icon: Database,
     },
     {
