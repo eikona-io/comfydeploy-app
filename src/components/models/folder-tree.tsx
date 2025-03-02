@@ -15,6 +15,9 @@ import {
   FolderPlus,
   Upload,
   PencilIcon,
+  Loader2,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -40,6 +43,8 @@ import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { DownloadingModels } from "@/components/models/downloading-models";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
 
 interface FileEntry {
   path: string;
@@ -156,6 +161,9 @@ function TreeNode({
   const [newFolderName, setNewFolderName] = useState("");
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [newName, setNewName] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [isValidName, setIsValidName] = useState(true);
+  const [validationMessage, setValidationMessage] = useState("");
 
   // Check if this node or any of its children match
   const nodeMatches = node.name.toLowerCase().includes(search.toLowerCase());
@@ -198,10 +206,37 @@ function TreeNode({
     }
   };
 
+  const validateFileName = (name: string) => {
+    if (!name.trim()) {
+      setIsValidName(false);
+      setValidationMessage("Filename cannot be empty");
+      return false;
+    }
+
+    if (/[<>:"/\\|?*]/.test(name)) {
+      setIsValidName(false);
+      setValidationMessage("Filename contains invalid characters");
+      return false;
+    }
+
+    setIsValidName(true);
+    setValidationMessage("");
+    return true;
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewName(value);
+    validateFileName(value);
+  };
+
   const handleRename = async () => {
+    if (isRenaming || !validateFileName(newName)) return;
+
     try {
+      setIsRenaming(true);
       const pathParts = node.path.split("/");
-      pathParts.pop(); // Remove the current filename
+      pathParts.pop();
       const parentPath = pathParts.join("/");
       const newPath = parentPath ? `${parentPath}/${newName}` : newName;
 
@@ -211,6 +246,8 @@ function TreeNode({
       toast.success("File renamed successfully");
     } catch (error) {
       setShowRenameDialog(false);
+    } finally {
+      setIsRenaming(false);
     }
   };
 
@@ -318,28 +355,90 @@ function TreeNode({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+      <Dialog
+        open={showRenameDialog}
+        onOpenChange={(open) => {
+          if (!isRenaming) {
+            if (open) {
+              setNewName(node.name);
+              validateFileName(node.name);
+            } else {
+              setShowRenameDialog(false);
+            }
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Rename {node.type === 2 ? "Folder" : "File"}
-            </DialogTitle>
+            <DialogTitle>Rename File</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4">
-            <Input
-              placeholder="New name"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={handleRenameKeyDown}
-            />
+            <div className="text-sm text-muted-foreground">
+              Original path: <span className="font-medium">{node.path}</span>
+            </div>
+
+            <div>
+              <Label htmlFor="filename">New filename</Label>
+              <div className="relative mt-1.5">
+                <Input
+                  id="filename"
+                  placeholder="Enter new filename"
+                  value={newName}
+                  onChange={handleNameChange}
+                  onKeyDown={handleRenameKeyDown}
+                  autoFocus
+                  disabled={isRenaming}
+                  className={cn(
+                    "pr-10",
+                    isValidName ? "border-input" : "border-red-500",
+                  )}
+                />
+                <div className="-translate-y-1/2 absolute top-1/2 right-3">
+                  {!isRenaming && !isValidName ? (
+                    <XCircle className="h-4 w-4 text-red-500" />
+                  ) : !isRenaming && newName !== node.name ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : null}
+                </div>
+              </div>
+              {!isValidName && (
+                <p className="mt-1.5 text-sm text-red-500">
+                  {validationMessage}
+                </p>
+              )}
+            </div>
+
+            {newName !== node.name && isValidName && (
+              <Alert className="border-green-200 bg-green-50">
+                <AlertDescription className="text-green-800">
+                  File will be renamed to:{" "}
+                  <span className="font-medium">{newName}</span>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="flex justify-end gap-2">
               <Button
                 variant="outline"
                 onClick={() => setShowRenameDialog(false)}
+                disabled={isRenaming}
               >
                 Cancel
               </Button>
-              <Button onClick={handleRename}>Rename</Button>
+              <Button
+                onClick={handleRename}
+                disabled={isRenaming || !isValidName || newName === node.name}
+                className="min-w-[100px]"
+              >
+                {isRenaming ? (
+                  <div className="flex items-center">
+                    <span>Renaming</span>
+                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                  </div>
+                ) : (
+                  "Rename"
+                )}
+              </Button>
             </div>
           </div>
         </DialogContent>
