@@ -53,8 +53,6 @@ export function AddModelDialog({
       // Close the dialog after successful submission
       onOpenChange(false);
     } catch (error) {
-      console.error("Error adding model:", error);
-
       // Show error toast
       toast.error(
         error instanceof Error ? error.message : "Failed to add model",
