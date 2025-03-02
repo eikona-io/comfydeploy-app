@@ -14,6 +14,7 @@ import {
   Search,
   FolderPlus,
   Upload,
+  PencilIcon,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -134,7 +135,7 @@ interface CreateFolderData {
 interface FileOperations {
   createFolder: (data: CreateFolderData) => Promise<void>;
   deleteFile: (path: string) => Promise<string>;
-  moveFile: (from: string, to: string) => Promise<void>;
+  moveFile: (src: string, dst: string) => Promise<void>;
 }
 
 function TreeNode({
@@ -153,6 +154,8 @@ function TreeNode({
   const [isOpen, setIsOpen] = useState(!!search);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [newName, setNewName] = useState("");
 
   // Check if this node or any of its children match
   const nodeMatches = node.name.toLowerCase().includes(search.toLowerCase());
@@ -192,6 +195,29 @@ function TreeNode({
     if (e.key === "Enter") {
       e.preventDefault();
       handleCreateFolder();
+    }
+  };
+
+  const handleRename = async () => {
+    try {
+      const pathParts = node.path.split("/");
+      pathParts.pop(); // Remove the current filename
+      const parentPath = pathParts.join("/");
+      const newPath = parentPath ? `${parentPath}/${newName}` : newName;
+
+      await operations.moveFile(node.path, newPath);
+      setShowRenameDialog(false);
+      setNewName("");
+      toast.success("File renamed successfully");
+    } catch (error) {
+      setShowRenameDialog(false);
+    }
+  };
+
+  const handleRenameKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleRename();
     }
   };
 
@@ -244,13 +270,24 @@ function TreeNode({
                 </DropdownMenuItem>
               </>
             ) : (
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={() => operations.deleteFile(node.path)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setNewName(node.name);
+                    setShowRenameDialog(true);
+                  }}
+                >
+                  <PencilIcon className="mr-2 h-4 w-4" />
+                  Rename
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => operations.deleteFile(node.path)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -276,6 +313,33 @@ function TreeNode({
                 Cancel
               </Button>
               <Button onClick={handleCreateFolder}>Create</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Rename {node.type === 2 ? "Folder" : "File"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <Input
+              placeholder="New name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={handleRenameKeyDown}
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowRenameDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleRename}>Rename</Button>
             </div>
           </div>
         </DialogContent>
@@ -450,6 +514,24 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     },
   });
 
+  const moveFileMutation = useMutation({
+    mutationFn: async ({ src, dst }: { src: string; dst: string }) => {
+      await api({
+        url: "volume/mv",
+        init: {
+          method: "POST",
+          body: JSON.stringify({ src_path: src, dst_path: dst }),
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["volume"] });
+    },
+    onError: (error) => {
+      toast.error("Failed to move file. Please refresh and try again.");
+    },
+  });
+
   const operations: FileOperations = {
     createFolder: async (data: CreateFolderData) => {
       const newPath = data.parentPath
@@ -459,8 +541,8 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
       setFrontendFolderPaths((prev) => [...prev, newPath]);
     },
     deleteFile: deleteFileMutation.mutateAsync,
-    moveFile: async (from, to) => {
-      // To be implemented
+    moveFile: async (src, dst) => {
+      await moveFileMutation.mutateAsync({ src, dst });
     },
   };
 
