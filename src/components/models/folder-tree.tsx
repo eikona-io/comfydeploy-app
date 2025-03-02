@@ -284,50 +284,54 @@ function TreeNode({
           <span>{node.name}</span>
         </button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {node.type === 2 ? (
-              <>
-                <DropdownMenuItem onClick={() => setShowNewFolderDialog(true)}>
-                  <FolderPlus className="mr-2 h-4 w-4" />
-                  New Folder
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onAddModel(node.path)}>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Model
-                </DropdownMenuItem>
-              </>
-            ) : (
-              <>
-                <DropdownMenuItem
-                  onClick={() => {
-                    setNewName(node.name);
-                    setShowRenameDialog(true);
-                  }}
-                >
-                  <PencilIcon className="mr-2 h-4 w-4" />
-                  Rename
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-destructive"
-                  onClick={() => operations.deleteFile(node.path)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {node.isPrivate && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 opacity-0 group-hover:opacity-100"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {node.type === 2 ? (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => setShowNewFolderDialog(true)}
+                  >
+                    <FolderPlus className="mr-2 h-4 w-4" />
+                    New Folder
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onAddModel(node.path)}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload Model
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setNewName(node.name);
+                      setShowRenameDialog(true);
+                    }}
+                  >
+                    <PencilIcon className="mr-2 h-4 w-4" />
+                    Rename
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => operations.deleteFile(node.path)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
 
         <div className="flex-1" />
       </div>
@@ -413,8 +417,19 @@ function TreeNode({
             {newName !== node.name && isValidName && (
               <Alert className="border-green-200 bg-green-50">
                 <AlertDescription className="text-green-800">
-                  File will be renamed to:{" "}
-                  <span className="font-medium">{newName}</span>
+                  <div className="flex flex-col gap-1">
+                    <div>
+                      <span className="text-muted-foreground">From: </span>
+                      <span className="font-medium">{node.path}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">To: </span>
+                      <span className="font-medium">
+                        {node.path.substring(0, node.path.lastIndexOf("/") + 1)}
+                        {newName}
+                      </span>
+                    </div>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
