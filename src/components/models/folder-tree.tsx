@@ -15,9 +15,9 @@ import {
   FolderPlus,
   Upload,
   PencilIcon,
-  Loader2,
   CheckCircle2,
   XCircle,
+  Copy,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import {
@@ -164,6 +164,8 @@ function TreeNode({
   const [isRenaming, setIsRenaming] = useState(false);
   const [isValidName, setIsValidName] = useState(true);
   const [validationMessage, setValidationMessage] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Check if this node or any of its children match
   const nodeMatches = node.name.toLowerCase().includes(search.toLowerCase());
@@ -258,6 +260,20 @@ function TreeNode({
     }
   };
 
+  const handleDelete = async () => {
+    if (isDeleting) return;
+
+    try {
+      setIsDeleting(true);
+      await operations.deleteFile(node.path);
+      setShowDeleteDialog(false);
+    } catch (error) {
+      // Error is handled in the mutation
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div>
       <div className="group flex items-center gap-2">
@@ -284,19 +300,29 @@ function TreeNode({
           <span>{node.name}</span>
         </button>
 
-        {node.isPrivate && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 opacity-0 group-hover:opacity-100"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              {node.type === 2 ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem
+              onClick={() => {
+                navigator.clipboard.writeText(node.path);
+                toast.success("Path copied to clipboard");
+              }}
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              Copy Path
+            </DropdownMenuItem>
+
+            {node.isPrivate &&
+              (node.type === 2 ? (
                 <>
                   <DropdownMenuItem
                     onClick={() => setShowNewFolderDialog(true)}
@@ -322,16 +348,15 @@ function TreeNode({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="text-destructive"
-                    onClick={() => operations.deleteFile(node.path)}
+                    onClick={() => setShowDeleteDialog(true)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete
                   </DropdownMenuItem>
                 </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+              ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="flex-1" />
       </div>
@@ -450,10 +475,57 @@ function TreeNode({
                 {isRenaming ? (
                   <div className="flex items-center">
                     <span>Renaming</span>
-                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                   </div>
                 ) : (
                   "Rename"
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">
+              Confirm Delete
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div>
+              <p>Are you sure you want to delete this file?</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                <span className="font-medium">{node.path}</span>
+              </p>
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription>
+                  This action cannot be undone. The file will be permanently
+                  deleted.
+                </AlertDescription>
+              </Alert>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+                disabled={isDeleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="min-w-[100px]"
+              >
+                {isDeleting ? (
+                  <div className="flex w-full items-center justify-center">
+                    <span>Deleting</span>
+                  </div>
+                ) : (
+                  "Delete"
                 )}
               </Button>
             </div>
