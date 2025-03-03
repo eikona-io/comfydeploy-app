@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { FolderPathDisplay } from "./folder-path-display";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { uploadFileToVolume } from "@/components/files-api";
 import { api } from "@/lib/api";
 import type { AddModelRequest } from "@/types/models";
 import { formatBytes, formatTime } from "@/lib/utils";
+import { AlertCircle, Info } from "lucide-react";
 
 interface LocalUploadFormProps {
   onSubmit: (request: AddModelRequest) => void;
@@ -60,6 +61,29 @@ export function LocalUploadForm({
     fetchVolumeName();
   }, []);
 
+  // Add beforeunload event listener when upload is in progress
+  useEffect(() => {
+    const isUploading = uploadProgress > 0 && uploadProgress < 100;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isUploading) {
+        // Standard way to show a confirmation dialog
+        e.preventDefault();
+        // Chrome requires returnValue to be set
+        e.returnValue = "";
+        return "";
+      }
+    };
+
+    if (isUploading) {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    }
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [uploadProgress]);
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0] || null;
     setFile(selectedFile);
@@ -82,7 +106,8 @@ export function LocalUploadForm({
       await uploadFileToVolume({
         volumeName,
         file,
-        targetPath: `${folderPath}/${filename}`,
+        filename,
+        targetPath: folderPath,
         apiEndpoint: process.env.COMFY_DEPLOY_SHARED_MACHINE_API_URL || "",
         onProgress: (progress, uploadedSize, totalSize, estimatedTime) => {
           setUploadProgress(progress);
@@ -110,13 +135,32 @@ export function LocalUploadForm({
       <FolderPathDisplay path={folderPath} />
 
       {isLoading ? (
-        <div className="text-center py-4">Loading volume information...</div>
+        <div className="py-4 text-center">Loading volume information...</div>
       ) : error && !file ? (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       ) : (
         <>
+          <Alert variant="warning" className="border-amber-200 bg-amber-50">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">Important</AlertTitle>
+            <AlertDescription className="text-amber-700">
+              Please keep this browser tab open during the upload process.
+              Closing the tab or navigating away will cancel the upload.
+            </AlertDescription>
+          </Alert>
+
+          {file && file.size > 1024 * 1024 * 500 && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-700">
+                You're uploading a large file ({formatBytes(file.size)}). This
+                may take some time depending on your internet connection.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="file-upload">Select Model File</Label>
             <Input
@@ -145,7 +189,7 @@ export function LocalUploadForm({
             <div className="space-y-2">
               <Progress value={uploadProgress} />
               {uploadStats && (
-                <div className="text-xs text-muted-foreground">
+                <div className="text-muted-foreground text-xs">
                   {formatBytes(uploadStats.uploadedSize)} of{" "}
                   {formatBytes(uploadStats.totalSize)} uploaded
                   {uploadStats.estimatedTime > 0 && (
