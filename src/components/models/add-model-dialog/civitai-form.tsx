@@ -183,6 +183,18 @@ export function CivitaiForm({
         </div>
       </div>
 
+      {validation?.exists && (
+        <div className="space-y-2">
+          <Label htmlFor="filename">Filename</Label>
+          <Input
+            id="filename"
+            value={filename}
+            onChange={(e) => setFilename(e.target.value)}
+            placeholder="Enter filename"
+          />
+        </div>
+      )}
+
       {validation?.exists && validation.preview_url && (
         <Alert className="border-green-200 bg-green-50">
           <AlertDescription className="text-green-800">
@@ -217,7 +229,9 @@ export function CivitaiForm({
             },
           })
         }
-        disabled={isSubmitting || !url.trim() || !validation?.exists}
+        disabled={
+          isSubmitting || !url.trim() || !validation?.exists || !filename.trim()
+        }
       >
         {isSubmitting ? "Downloading..." : "Download"}
       </Button>
