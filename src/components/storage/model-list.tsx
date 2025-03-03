@@ -652,6 +652,18 @@ export function ModelList(props: { apiEndpoint: string }) {
                     setAddModelModalOpen(true);
                     setInsertModalPath(element.dir);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      e.nativeEvent.stopImmediatePropagation();
+                      setAddModelModalOpen(true);
+                      setInsertModalPath(element.dir);
+                    }
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label="Add model"
                 >
                   <Plus className="h-4 w-4 " />
                 </div>
