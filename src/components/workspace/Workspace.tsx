@@ -1,10 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-// import { PreventNavigation } from "@/repo/components/ui/custom/prevent-navigation";
-// import { createNewDraftVersion } from "@/server/actions/cdActions";
 import { useAuth } from "@clerk/clerk-react";
-// import { uploadFile } from "@repo/lib/uploadFile";
 import { motion } from "framer-motion";
 import { AnimatePresence } from "framer-motion";
 import { diff } from "json-diff-ts";

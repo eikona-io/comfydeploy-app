@@ -638,7 +638,7 @@ function DefaultOption({
                     <img
                       src={template.workflowImageUrl}
                       className="h-full w-full object-cover"
-                      alt={`$template.workflowNameexample`}
+                      alt={`${template.workflowName} example`}
                     />
                   </div>
 
@@ -707,6 +707,15 @@ function ImportOptions({
           />
           <div
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            tabIndex={0}
+            role="button"
+            aria-label="Upload file"
             onDragOver={(e) => {
               e.preventDefault();
               setIsDragging(true);
