@@ -401,7 +401,7 @@ export function AppSidebar() {
           />
         )}
 
-        {!workflow_id && <V3Dialog />}
+        {/* {!workflow_id && <V3Dialog />} */}
 
         <OrganizationSwitcher
           organizationProfileUrl="/organization-profile"
