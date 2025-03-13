@@ -438,11 +438,11 @@ export function AppSidebar() {
 
       {window.location.hostname === "localhost" && (
         <div className="fixed top-11 left-2 z-[9999] flex items-center gap-2 opacity-65">
-          <Badge className="bg-orange-300 text-orange-700 shadow-md">
+          <Badge className="pointer-events-none bg-orange-300 text-orange-700 shadow-md">
             Localhost
           </Badge>
 
-          <Badge variant="emerald" className="shadow-md">
+          <Badge variant="emerald" className="pointer-events-none shadow-md">
             <GitBranch className="h-4 w-4" />
             {currentGitBranch?.branch || `Please run "bun githooks"`}
           </Badge>
