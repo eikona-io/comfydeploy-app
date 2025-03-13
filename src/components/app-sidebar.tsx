@@ -11,6 +11,7 @@ import {
   Database,
   ExternalLink,
   Folder,
+  GitBranch,
   Github,
   Key,
   LineChart,
@@ -51,6 +52,8 @@ import { motion } from "framer-motion";
 import React, { use, useEffect, useRef, useState } from "react";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
+import { useQuery } from "@tanstack/react-query";
+import { Badge } from "./ui/badge";
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -271,152 +274,181 @@ export function AppSidebar() {
   const isAdminAndMember = useIsAdminAndMember();
   const workflow_id = useWorkflowIdInWorkflowPage();
 
+  const { data: currentGitBranch } = useQuery({
+    queryKey: ["currentGitBranch"],
+    queryFn: async () => {
+      const response = await fetch("/git-info.json");
+      const data = await response.json();
+      return data;
+    },
+    refetchInterval: 3000,
+    enabled: window.location.hostname === "localhost",
+  });
+
   return (
-    <Sidebar>
-      <SidebarHeader>
-        <div className="flex flex-row items-start justify-between">
-          <Link href="/" className="flex flex-row items-start justify-between">
-            <IconWord />
-          </Link>
-          <UserMenu />
-        </div>
+    <>
+      <Sidebar>
+        <SidebarHeader>
+          <div className="flex flex-row items-start justify-between">
+            <Link
+              href="/"
+              className="flex flex-row items-start justify-between"
+            >
+              <IconWord />
+            </Link>
+            <UserMenu />
+          </div>
 
-        {workflow_id && parentPath === "workflows" && (
-          <>
-            <WorkflowsBreadcrumb />
-            <div className="flex w-full flex-row gap-2 rounded-md border bg-gray-100 p-2">
-              <WorkflowDropdown
-                workflow_id={workflow_id}
-                className="min-w-0 flex-grow"
-              />
-              <VersionSelectV2
-                workflow_id={workflow_id}
-                className="w-20 flex-shrink-0"
-              />
-            </div>
-          </>
-        )}
+          {workflow_id && parentPath === "workflows" && (
+            <>
+              <WorkflowsBreadcrumb />
+              <div className="flex w-full flex-row gap-2 rounded-md border bg-gray-100 p-2">
+                <WorkflowDropdown
+                  workflow_id={workflow_id}
+                  className="min-w-0 flex-grow"
+                />
+                <VersionSelectV2
+                  workflow_id={workflow_id}
+                  className="w-20 flex-shrink-0"
+                />
+              </div>
+            </>
+          )}
 
-        {/* <div id="sidebar-header"></div> */}
-        {/* </SidebarMenuItem> */}
-        {/* </SidebarMenu> */}
-      </SidebarHeader>
-      <SidebarContent>
-        <div id="sidebar-panel" />
+          {/* <div id="sidebar-header"></div> */}
+          {/* </SidebarMenuItem> */}
+          {/* </SidebarMenu> */}
+        </SidebarHeader>
+        <SidebarContent>
+          <div id="sidebar-panel" />
 
-        {(!workflow_id || parentPath !== "workflows") && (
-          <>
-            <SidebarGroup>
-              <SidebarGroupLabel>Application</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      {`/${parentPath}` === item.url && (
-                        <motion.div
-                          className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
-                          transition={{
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 30,
-                          }}
-                        />
-                      )}
-                      <SidebarMenuButton asChild>
-                        <Link href={item.url}>
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-
-                      {item.url === "/models" && (
-                        <div id="sidebar-panel-models" />
-                      )}
-                      {item.url === "/machines" && (
-                        <div id="sidebar-panel-machines" />
-                      )}
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup>
-              <SidebarGroupLabel>Account</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {metaItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      {`/${parentPath}` === item.url && (
-                        <motion.div
-                          className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
-                          transition={{
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 30,
-                          }}
-                        />
-                      )}
-                      <SidebarMenuButton asChild>
-                        <Link href={item.url}>
-                          <item.icon />
-                          <span>{item.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup>
-              <SidebarGroupLabel>Links</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {links.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton asChild>
-                        <a href={item.url} target="_blank" rel="noreferrer">
-                          <item.icon />
-                          <span className="flex w-full flex-row items-center justify-between gap-2 pr-2">
+          {(!workflow_id || parentPath !== "workflows") && (
+            <>
+              <SidebarGroup>
+                <SidebarGroupLabel>Application</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {items.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        {`/${parentPath}` === item.url && (
+                          <motion.div
+                            className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                            }}
+                          />
+                        )}
+                        <SidebarMenuButton asChild>
+                          <Link href={item.url}>
+                            <item.icon />
                             <span>{item.title}</span>
-                            <ExternalLink size={14} />
-                          </span>
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </>
-        )}
-      </SidebarContent>
-      <SidebarFooter className="flex w-full flex-col justify-center gap-2">
-        {workflow_id && parentPath === "workflows" && isAdminAndMember && (
-          <MachineSelect
-            workflow_id={workflow_id}
-            leaveEmpty
-            className="rounded-full border bg-slate-100 p-2"
-          />
-        )}
+                          </Link>
+                        </SidebarMenuButton>
 
-        {/* {!workflow_id && <V3Dialog />} */}
+                        {item.url === "/models" && (
+                          <div id="sidebar-panel-models" />
+                        )}
+                        {item.url === "/machines" && (
+                          <div id="sidebar-panel-machines" />
+                        )}
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
 
-        <OrganizationSwitcher
-          organizationProfileUrl="/organization-profile"
-          organizationProfileMode="navigation"
-          appearance={{
-            elements: {
-              rootBox: "items-center justify-center p-2",
-              organizationSwitcherPopoverRootBox: {
-                pointerEvents: "initial",
+              <SidebarGroup>
+                <SidebarGroupLabel>Account</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {metaItems.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        {`/${parentPath}` === item.url && (
+                          <motion.div
+                            className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 30,
+                            }}
+                          />
+                        )}
+                        <SidebarMenuButton asChild>
+                          <Link href={item.url}>
+                            <item.icon />
+                            <span>{item.title}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              <SidebarGroup>
+                <SidebarGroupLabel>Links</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {links.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton asChild>
+                          <a href={item.url} target="_blank" rel="noreferrer">
+                            <item.icon />
+                            <span className="flex w-full flex-row items-center justify-between gap-2 pr-2">
+                              <span>{item.title}</span>
+                              <ExternalLink size={14} />
+                            </span>
+                          </a>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </>
+          )}
+        </SidebarContent>
+        <SidebarFooter className="flex w-full flex-col justify-center gap-2">
+          {workflow_id && parentPath === "workflows" && isAdminAndMember && (
+            <MachineSelect
+              workflow_id={workflow_id}
+              leaveEmpty
+              className="rounded-full border bg-slate-100 p-2"
+            />
+          )}
+
+          {/* {!workflow_id && <V3Dialog />} */}
+
+          <OrganizationSwitcher
+            organizationProfileUrl="/organization-profile"
+            organizationProfileMode="navigation"
+            appearance={{
+              elements: {
+                rootBox: "items-center justify-center p-2",
+                organizationSwitcherPopoverRootBox: {
+                  pointerEvents: "initial",
+                },
               },
-            },
-          }}
-        />
-      </SidebarFooter>
-    </Sidebar>
+            }}
+          />
+        </SidebarFooter>
+      </Sidebar>
+
+      {window.location.hostname === "localhost" && (
+        <div className="fixed top-11 left-2 z-[9999] flex items-center gap-2 opacity-65">
+          <Badge className="bg-orange-300 text-orange-700 shadow-md">
+            Localhost
+          </Badge>
+
+          <Badge variant="emerald" className="shadow-md">
+            <GitBranch className="h-4 w-4" />
+            {currentGitBranch?.branch || `Please run "bun githooks"`}
+          </Badge>
+        </div>
+      )}
+    </>
   );
 }
 
