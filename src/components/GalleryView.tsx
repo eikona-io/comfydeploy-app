@@ -11,8 +11,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-// import { RunDetails } from "./workflows/WorkflowComponent";
-// import { MyDrawer } from "./drawer";
+import { RunDetails } from "./workflows/WorkflowComponent";
+import { MyDrawer } from "./drawer";
 import { useQueryState } from "nuqs";
 import {
   DropdownMenu,
@@ -410,7 +410,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
           )}
         </div>
       </div>
-      {/* {runId && (
+      {runId && (
         <MyDrawer
           desktopClassName="w-[600px] ring-1 ring-gray-200"
           backgroundInteractive={true}
@@ -419,7 +419,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
         >
           <RunDetails run_id={runId} onClose={handleCloseRun} />
         </MyDrawer>
-      )} */}
+      )}
     </>
   );
 }

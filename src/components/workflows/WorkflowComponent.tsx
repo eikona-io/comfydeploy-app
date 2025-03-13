@@ -45,6 +45,7 @@ import {
   useWorkflowDeployments,
 } from "../workspace/ContainersTable";
 import { cn } from "@/lib/utils";
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 export default function WorkflowComponent() {
   const [runId, setRunId] = useQueryState("run-id");
