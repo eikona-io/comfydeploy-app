@@ -148,16 +148,20 @@ const Button = forwardRef<
       const currentTooltip = tooltip;
 
       setIsLoading(true);
-      if (onProcess) {
-        e.preventDefault();
-        const generator = onProcess();
-        for await (const message of generator) {
-          // setChildren(message.children);
-          setChildrenOverrides(message.children);
-          setTooltip(message.tooltip);
+      try {
+        if (onProcess) {
+          e.preventDefault();
+          const generator = onProcess();
+          for await (const message of generator) {
+            // setChildren(message.children);
+            setChildrenOverrides(message.children);
+            setTooltip(message.tooltip);
+          }
+        } else {
+          await onClick?.(e as React.MouseEvent<HTMLButtonElement>);
         }
-      } else {
-        await onClick?.(e as React.MouseEvent<HTMLButtonElement>);
+      } catch (error) {
+        console.error(error);
       }
       setIsLoading(false);
       // setChildren(currentChildren);
@@ -197,7 +201,7 @@ const Button = forwardRef<
         {...(target ? { target } : {})}
         {...(props as any)} // Type assertion to avoid conflicts
       >
-        {Icon && iconPlacement === "left" && (
+        {!isLoading && Icon && iconPlacement === "left" && (
           <Icon
             size={16}
             className={cn(
@@ -209,7 +213,7 @@ const Button = forwardRef<
           />
         )}
         {children}
-        {Icon && iconPlacement === "right" && (
+        {!isLoading && Icon && iconPlacement === "right" && (
           <Icon
             size={16}
             className={cn(
@@ -224,7 +228,10 @@ const Button = forwardRef<
           <div
             className={cn(
               "w-0 translate-x-[100%] pl-0 opacity-0 transition-all duration-200",
-              isLoading && "w-5 translate-x-0 pl-2 opacity-100",
+              isLoading &&
+                cn("w-5 translate-x-0 opacity-100", {
+                  "pl-2": children !== undefined && children !== null,
+                }),
             )}
           >
             <LoaderCircle size={16} className="animate-spin" />

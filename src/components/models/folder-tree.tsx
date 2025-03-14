@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useQueryState } from "nuqs";
 
 interface FileEntry {
   path: string;
@@ -651,7 +652,15 @@ function mergeNodes(
 export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<ModelFilter>("private");
+  const [filter, setFilter] = useQueryState<ModelFilter>("view", {
+    defaultValue: "private",
+    parse: (value): ModelFilter => {
+      if (value === "private" || value === "public" || value === "all") {
+        return value;
+      }
+      return "private";
+    },
+  });
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [frontendFolderPaths, setFrontendFolderPaths] = useState<string[]>([]);
@@ -660,6 +669,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     FileEntry[]
   >({
     queryKey: ["volume", "private-models"],
+    refetchInterval: 5000,
   });
 
   const { data: publicFiles, isLoading: isLoadingPublic } = useQuery<
@@ -890,12 +900,12 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["volume"] })
+            iconPlacement="left"
+            Icon={RefreshCcw}
+            onClick={async () =>
+              await queryClient.invalidateQueries({ queryKey: ["volume"] })
             }
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
+          />
           <Button
             variant="ghost"
             size="icon"
