@@ -200,6 +200,7 @@ function RouteComponent() {
               (x: keyof typeof pricingPlanNameMapping, i: number) => {
                 const charges = sub.plans?.charges?.[i];
                 const amount = sub.plans?.amount?.[i];
+                console.log(sub.plans?.charges, i);
                 return (
                   <Badge
                     key={i}
@@ -451,98 +452,6 @@ export function DevelopmentOnly(props: { children: ReactNode }) {
   return <></>;
 }
 
-function GPUTotalChargeCard() {
-  const { data: usage } = useSuspenseQuery<any>({
-    queryKey: ["platform", "usage"],
-  });
-
-  return (
-    <Card className="flex flex-col p-4 gap-2">
-      <div className="text-sm">
-        Showing period {new Date(usage.period.start).toLocaleDateString()} -{" "}
-        {new Date(usage.period.end).toLocaleDateString()}
-      </div>
-      <ScrollArea>
-        <Table>
-          <TableHeader className="bg-background top-0 sticky">
-            <TableRow>
-              <TableHead>Machine</TableHead>
-              <TableHead>GPU</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Cost</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {usage.usage.map((x) => (
-              <TableRow key={x.machine_id}>
-                <TableCell>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      {x.cost_item_title ? (
-                        <Badge>{x.cost_item_title}</Badge>
-                      ) : (
-                        <Link
-                          className="hover:underline"
-                          href={"/machines/" + x.machine_id}
-                        >
-                          {x.machine_name}{" "}
-                          {x.ws_gpu && <Badge>Workspace</Badge>}
-                        </Link>
-                      )}
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <div>{x.machine_id}</div>
-                    </TooltipContent>
-                  </Tooltip>
-                </TableCell>
-                <TableCell>{x.gpu || x.ws_gpu}</TableCell>
-                <TableCell>
-                  {x.cost_item_title ? <></> : getDuration(x.usage_in_sec)}
-                </TableCell>
-                <TableCell>$ {x.cost.toFixed(4)}</TableCell>
-              </TableRow>
-            ))}
-            <TableRow>
-              <TableCell colSpan={3} className="font-bold">
-                Total GPU Compute:
-              </TableCell>
-              <TableCell className="font-bold">
-                $ {usage.total_cost.toFixed(4)}
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell colSpan={3} className="font-bold">
-                Plan Credit:
-              </TableCell>
-              <TableCell className="font-bold">
-                - $ {usage.free_tier_credit / 100}
-              </TableCell>
-            </TableRow>
-            {usage.credit > 0 && !Number.isNaN(usage.credit) && (
-              <TableRow>
-                <TableCell colSpan={3} className="font-bold">
-                  Usage Credit:
-                </TableCell>
-                <TableCell className="font-bold">
-                  - $ {usage.credit?.toFixed(3)}
-                </TableCell>
-              </TableRow>
-            )}
-            <TableRow>
-              <TableCell colSpan={3} className="font-bold">
-                Final Total:
-              </TableCell>
-              <TableCell className="font-bold">
-                $ {usage.final_cost.toFixed(4)}
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </ScrollArea>
-    </Card>
-  );
-}
-
 export function UsageTable(props: {
   startTimeOverride?: Date;
   endTimeOverride?: Date;
@@ -643,84 +552,6 @@ export const pricingPlanNameMapping = {
   business: "API Business",
   basic: "API Basic",
 } as const;
-
-function PlanTotal() {
-  const { data: sub } = useSuspenseQuery<any>({
-    queryKey: ["platform", "plan"],
-  });
-
-  return (
-    <>
-      {sub ? (
-        sub?.plans?.plans.map((x, i) => (
-          <Card key={i} className="flex flex-col gap-2 p-4">
-            <div className="flex flex-wrap justify-between gap-2">
-              <Badge className="w-fit px-3 capitalize hover:underline">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const res = await callServerPromise(
-                      api({
-                        url: `platform/stripe/dashboard?redirect_url=${encodeURIComponent(
-                          window.location.href,
-                        )}`,
-                      }),
-                      {
-                        loadingText: "Redirecting to Stripe...",
-                      },
-                    );
-                    window.open(res.url, "_blank");
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  {pricingPlanNameMapping[x]} Plan
-                  {sub.plans.charges?.[i] !== undefined &&
-                  sub.plans.amount?.[i] !== undefined &&
-                  sub.plans.charges[i] !== sub.plans.amount[i] ? (
-                    <span className="ml-1">
-                      (
-                      <span className="text-muted-foreground line-through">
-                        ${(sub.plans.amount[i] ?? 0) / 100}
-                      </span>{" "}
-                      ${(sub.plans.charges[i] ?? 0) / 100}/mo)
-                    </span>
-                  ) : (
-                    <span className="ml-1">
-                      (${(sub.plans.amount[i] ?? 0) / 100}/mo)
-                    </span>
-                  )}
-                  <ExternalLink size={16} />
-                </button>
-              </Badge>
-              <div className="flex gap-2">
-                {sub.plans.charges?.[i] !== undefined &&
-                sub.plans.amount?.[i] !== undefined &&
-                sub.plans.charges[i] !== sub.plans.amount[i] ? (
-                  <>
-                    <span className="text-muted-foreground line-through">
-                      ${(sub.plans.amount[i] ?? 0) / 100}
-                    </span>
-                    <span>${(sub.plans.charges[i] ?? 0) / 100}</span>
-                  </>
-                ) : (
-                  `$${(sub.plans.amount[i] ?? 0) / 100}`
-                )}
-                {" / month"}
-              </div>
-            </div>
-          </Card>
-        ))
-      ) : (
-        <Card className="flex flex-col gap-2 p-4">
-          <div className="flex flex-wrap justify-between gap-2">
-            <Badge className="w-fit px-3 capitalize">Free Plan</Badge>
-            <div className="flex gap-2">$0 / month</div>
-          </div>
-        </Card>
-      )}
-    </>
-  );
-}
 
 export function InvoiceTable() {
   const { data: invoices } = useSuspenseQuery<Invoice[]>({
