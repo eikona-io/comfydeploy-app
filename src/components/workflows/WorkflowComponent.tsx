@@ -82,14 +82,9 @@ export function RunDetails(props: {
   isPlayground?: boolean;
 }) {
   const { run_id, onClose, isShare = false, isPlayground = false } = props;
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const navigate = useNavigate();
 
   const [selectedTab, setSelectedTab] = useQueryState("tab", parseAsString);
-  const [_, setRunId] = useQueryState("run-id");
   const [tweakRunId, setTweakRunId] = useQueryState("runID");
-  const [isTweak, setIsTweak] = useQueryState("tweak", parseAsBoolean);
-  // const { setInputValues } = publicRunStore();
 
   const { data: run, isLoading } = useQuery<any>({
     queryKey: ["run", run_id],
@@ -108,10 +103,10 @@ export function RunDetails(props: {
   });
 
   useEffect(() => {
-    if (isShare || isPlayground) {
-      setSelectedTab("inputs");
+    if (run?.status === "failed") {
+      setSelectedTab("logs");
     }
-  }, [isShare, isPlayground]);
+  }, [run]);
 
   if (isLoading) {
     return (
