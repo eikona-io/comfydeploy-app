@@ -519,7 +519,7 @@ function RunRow({
                 {/* {imageRender} */}
                 <OutputRenderRun
                   run={run as any}
-                  imgClasses="max-w-full min-h-[230px] object-cover rounded-[8px]"
+                  imgClasses="max-w-[230px] w-full h-[230px] object-cover object-center rounded-[8px]"
                   canExpandToView={true}
                   lazyLoading={true}
                   canDownload={true}
