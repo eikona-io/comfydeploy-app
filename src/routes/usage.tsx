@@ -316,7 +316,9 @@ function RouteComponent() {
             </div>
             {!is_displaying_invoice && (
               <div>
-                <div className="text-sm text-muted-foreground">Credit</div>
+                <div className="text-sm text-muted-foreground">
+                  Credit Balance
+                </div>
                 <div className="font-semibold mt-1 text-2xl text-green-600">
                   ${(credit / 100).toFixed(4)}
                 </div>
