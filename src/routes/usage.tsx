@@ -311,13 +311,14 @@ function RouteComponent() {
                   "0.00"}
               </div>
             </div>
-            <div>
-              <div className="text-sm text-muted-foreground">Credit</div>
-              <div className="font-semibold mt-1 text-2xl text-green-600">
-                -$
-                {(credit / 100).toFixed(4)}
+            {!selectedInvoice && (
+              <div>
+                <div className="text-sm text-muted-foreground">Credit</div>
+                <div className="font-semibold mt-1 text-2xl text-green-600">
+                  ${(credit / 100).toFixed(4)}
+                </div>
               </div>
-            </div>
+            )}
             <div>
               <div className="text-muted-foreground text-sm">Final Usage</div>
               <div className="mt-1 text-2xl font-semibold">
