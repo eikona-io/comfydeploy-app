@@ -67,6 +67,12 @@ function RouteComponent() {
     queryKey: ["platform", "user-settings"],
   });
 
+  const currnetGPUCredit = sub?.plans?.autumn_data?.entitlements?.find(
+    (x) => x.name === "gpu-credit",
+  );
+
+  console.log(currnetGPUCredit);
+
   // Get current period from the last invoice timestamp in current plan
   const currentPeriod = useMemo(() => {
     if (!sub?.plans?.last_invoice_timestamp) return null;
