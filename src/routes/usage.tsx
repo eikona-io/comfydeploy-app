@@ -178,6 +178,9 @@ function RouteComponent() {
     }
   };
 
+  const is_displaying_invoice = isInvoice(selectedInvoice);
+  console.log(selectedInvoice);
+
   return (
     <div className="bg-white py-4 w-full">
       <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
@@ -311,7 +314,7 @@ function RouteComponent() {
                   "0.00"}
               </div>
             </div>
-            {!selectedInvoice && (
+            {!is_displaying_invoice && (
               <div>
                 <div className="text-sm text-muted-foreground">Credit</div>
                 <div className="font-semibold mt-1 text-2xl text-green-600">
