@@ -68,10 +68,14 @@ function RouteComponent() {
   });
 
   const currnetGPUCredit = sub?.plans?.autumn_data?.entitlements?.find(
-    (x) => x.name === "gpu-credit",
+    (x) => x.feature_id === "gpu-credit",
   );
 
-  console.log(currnetGPUCredit);
+  const used = currnetGPUCredit?.used ?? 0;
+  const balance = currnetGPUCredit?.balance ?? 0;
+  const credit = (balance || 0) + (used || 0);
+
+  // console.log(currnetGPUCredit);
 
   // Get current period from the last invoice timestamp in current plan
   const currentPeriod = useMemo(() => {
@@ -231,14 +235,14 @@ function RouteComponent() {
                 );
               },
             )}
-            <div className="mx-2 hidden h-4 w-[1px] bg-border sm:block" />
+            {/* <div className="mx-2 hidden h-4 w-[1px] bg-border sm:block" />
             <Badge
               variant="green"
               className="flex items-center gap-1.5 text-sm"
             >
               <Wallet className="h-3.5 w-3.5" />
               Credit: ${(userSettings?.credit ?? 0).toFixed(3)}
-            </Badge>
+            </Badge> */}
           </div>
 
           {/* Right - Date selection */}
@@ -302,25 +306,26 @@ function RouteComponent() {
               <div className="font-semibold text-2xl">
                 $
                 {selectedInvoice?.total_cost?.toFixed(4) ??
-                  usage?.total_cost?.toFixed(4) ??
+                  (used / 100)?.toFixed(4) ??
                   "0.00"}
               </div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">
-                Monthly Credit
-              </div>
-              <div className="mt-1 text-2xl font-semibold text-green-600">
-                -$5.00
+              <div className="text-sm text-muted-foreground">Credit</div>
+              <div className="font-semibold mt-1 text-2xl text-green-600">
+                -$
+                {(credit / 100).toFixed(4)}
               </div>
             </div>
             <div>
-              <div className="text-sm text-muted-foreground">Final Usage</div>
+              <div className="text-muted-foreground text-sm">Final Usage</div>
               <div className="mt-1 text-2xl font-semibold">
                 $
                 {Math.max(
                   0,
-                  (selectedInvoice?.total_cost ?? usage?.total_cost ?? 0) - 5,
+                  selectedInvoice?.total_cost ??
+                    Math.max(0, -(credit - used)) / 100 ??
+                    0,
                 ).toFixed(4)}
               </div>
             </div>
