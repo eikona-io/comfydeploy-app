@@ -7,14 +7,14 @@ import { RunsTable } from "./RunsTable";
 
 import { motion } from "framer-motion";
 import { RunWorkflowButton } from "../run/VersionSelect";
-
-// import { RunWorkflowButton } from "@/components/VersionSelect";
+import { useQueryState } from "nuqs";
+import { cn } from "@/lib/utils";
 
 export default function RunComponent(props: {
   defaultData?: any;
 }) {
   const workflow_id = useWorkflowIdInWorkflowPage();
-  // const domain = typeof window !== "undefined" ? window.location.origin : "";
+  const [runId, _] = useQueryState("run-id");
 
   if (!workflow_id) {
     return null;
@@ -22,7 +22,12 @@ export default function RunComponent(props: {
 
   return (
     <motion.div className="w-full" layout>
-      <div className="relative h-fit w-full min-w-0">
+      <div
+        className={cn(
+          "relative h-fit transition-all duration-300",
+          runId ? "w-full 2xl:w-[calc(100%-594px)]" : "w-full",
+        )}
+      >
         <CardContent className="px-0 pt-6">
           <h2 className="mb-4 font-bold text-2xl">Requests</h2>
           <LoadingWrapper tag="runs">

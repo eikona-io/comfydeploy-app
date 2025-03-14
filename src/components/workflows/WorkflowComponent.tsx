@@ -87,6 +87,7 @@ export function RunDetails(props: {
 
   const [selectedTab, setSelectedTab] = useQueryState("tab", parseAsString);
   const [_, setRunId] = useQueryState("run-id");
+  const [tweakRunId, setTweakRunId] = useQueryState("runID");
   const [isTweak, setIsTweak] = useQueryState("tweak", parseAsBoolean);
   // const { setInputValues } = publicRunStore();
 
@@ -137,15 +138,8 @@ export function RunDetails(props: {
     if (isShare) {
       // setInputValues(run.workflow_inputs);
     } else {
-      setRunId(run.id);
-      setIsTweak(true);
-      navigate({
-        to: "/workflows/$workflowId/$view",
-        params: {
-          workflowId: run.workflow_id,
-          view: "playground",
-        },
-      });
+      setTweakRunId(run.id);
+      onClose?.();
     }
   };
 
