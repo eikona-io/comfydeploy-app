@@ -17,7 +17,7 @@ const TanStackRouterDevtools =
 import { AppSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { SignedIn, type useAuth } from "@clerk/clerk-react";
+import { SignedIn, type useClerk, type useAuth } from "@clerk/clerk-react";
 import { RedirectToSignIn, SignedOut } from "@clerk/clerk-react";
 import React from "react";
 import { Toaster } from "sonner";
@@ -25,33 +25,42 @@ import { Providers } from "../lib/providers";
 
 type Context = {
   auth?: ReturnType<typeof useAuth>;
+  clerk?: ReturnType<typeof useClerk>;
 };
 
-const publicRoutes = ["/home", "/auth/sign-in", "/auth/sign-up", "/waitlist"];
+const publicRoutes = [
+  "/home",
+  "/auth/sign-in",
+  "/auth/sign-up",
+  "/waitlist",
+  { path: "/share", wildcard: true },
+];
 
 export const Route = createRootRouteWithContext<Context>()({
   component: RootComponent,
   beforeLoad: async ({ context, location }) => {
-    // if (!context.auth?.isLoaded) {
-    //   return;
-    // }
+    while (!context.clerk?.loaded) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
 
-    // Define public routes that don't require authentication
-    if (
-      !context.auth?.isSignedIn &&
-      !publicRoutes.includes(location.pathname)
-    ) {
+    const isPublicRoute = publicRoutes.some((route) => {
+      if (typeof route === "string") {
+        return location.pathname === route;
+      }
+      return route.wildcard && location.pathname.startsWith(route.path);
+    });
+
+    if (!context.clerk?.session && !isPublicRoute) {
       throw redirect({
         to: "/auth/sign-in",
-        // search: {
-        // 	redirect: location.href,
-        // },
+        search: {
+          redirect: location.href,
+        },
       });
-    } else if (
-      context.auth &&
-      context.auth.isSignedIn &&
-      location.pathname === "/"
-    ) {
+    }
+
+    // Only redirect from root to home if user is signed in
+    if (context.clerk?.session && location.pathname === "/") {
       throw redirect({
         to: "/workflows",
       });
