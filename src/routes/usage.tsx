@@ -61,11 +61,11 @@ function RouteComponent() {
     queryKey: ["platform", "plan"],
   });
 
-  const { data: userSettings } = useQuery<{
-    credit?: number;
-  }>({
-    queryKey: ["platform", "user-settings"],
-  });
+  // const { data: userSettings } = useQuery<{
+  //   credit?: number;
+  // }>({
+  //   queryKey: ["platform", "user-settings"],
+  // });
 
   const currnetGPUCredit = sub?.plans?.autumn_data?.entitlements?.find(
     (x) => x.feature_id === "gpu-credit",
@@ -179,7 +179,7 @@ function RouteComponent() {
   };
 
   const is_displaying_invoice = isInvoice(selectedInvoice);
-  console.log(selectedInvoice);
+  // console.log(selectedInvoice);
 
   return (
     <div className="bg-white py-4 w-full">
@@ -192,9 +192,9 @@ function RouteComponent() {
             temporarily unavailable. We apologize for any inconvenience.
           </AlertDescription>
         </Alert>
-        <Suspense>
-          <UnpaidInvoices />
-        </Suspense>
+        {/* <Suspense> */}
+        <UnpaidInvoices />
+        {/* </Suspense> */}
         {/* Top row with plan, credit and date selection */}
         <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           {/* Left - Plan badges and Credit */}
@@ -556,60 +556,6 @@ export const pricingPlanNameMapping = {
   basic: "API Basic",
 } as const;
 
-export function InvoiceTable() {
-  const { data: invoices } = useSuspenseQuery<Invoice[]>({
-    queryKey: ["platform", "invoices"],
-  });
-
-  return (
-    <div className="space-y-4 w-full">
-      {invoices?.map((invoice: Invoice) => (
-        <InvoiceItem key={invoice.id} invoice={invoice}>
-          {/* <div className=""> */}
-          <UsageTable
-            startTimeOverride={new Date(invoice.period_start_timestamp * 1000)}
-            endTimeOverride={new Date(invoice.period_end_timestamp * 1000)}
-          />
-          <div className="mt-4">
-            <h3 className="font-semibold mb-2">Invoice Breakdown:</h3>
-            <ul className="list-disc list-inside">
-              {invoice.line_items.map((item, index) => (
-                <li key={item.description || index}>
-                  {item.description}: ${item.amount.toFixed(2)}
-                  {item.quantity && item.quantity > 1
-                    ? ` (x${item.quantity})`
-                    : ""}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between">
-              <span>Subtotal:</span>
-              <span>${invoice.subtotal.toFixed(2)}</span>
-            </div>
-            {invoice.subtotal > invoice.total && (
-              <div className="flex justify-between text-green-600">
-                <span>Discount:</span>
-                <span>-${(invoice.subtotal - invoice.total).toFixed(2)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-semibold">
-              <span>Total Due:</span>
-              <span>${invoice.total.toFixed(2)}</span>
-            </div>
-          </div>
-          {/* <div className="mt-4 text-right">
-              <span className="font-semibold">Subscription Plan: </span>
-              {planName}
-            </div> */}
-          {/* </div> */}
-        </InvoiceItem>
-      ))}
-    </div>
-  );
-}
-
 export function InvoiceItem({
   invoice,
   children,
@@ -790,7 +736,7 @@ function InvoiceDetails({ invoice }: { invoice: Invoice | CurrentPeriod }) {
 }
 
 function UnpaidInvoices() {
-  const { data: invoices } = useSuspenseQuery<Invoice[]>({
+  const { data: invoices } = useQuery<Invoice[]>({
     queryKey: ["platform", "invoices"],
   });
 
