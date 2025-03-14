@@ -309,9 +309,9 @@ function RouteComponent() {
               <div className="text-sm text-muted-foreground">Usage</div>
               <div className="font-semibold text-2xl">
                 $
-                {selectedInvoice?.total_cost?.toFixed(4) ??
-                  (used / 100)?.toFixed(4) ??
-                  "0.00"}
+                {is_displaying_invoice
+                  ? usage?.total_cost
+                  : ((used / 100)?.toFixed(4) ?? "0.00")}
               </div>
             </div>
             {!is_displaying_invoice && (
@@ -328,9 +328,9 @@ function RouteComponent() {
                 $
                 {Math.max(
                   0,
-                  selectedInvoice?.total_cost ??
-                    Math.max(0, -(credit - used)) / 100 ??
-                    0,
+                  is_displaying_invoice
+                    ? (usage?.final_cost ?? 0)
+                    : Math.max(0, -(credit - used)) / 100,
                 ).toFixed(4)}
               </div>
             </div>
