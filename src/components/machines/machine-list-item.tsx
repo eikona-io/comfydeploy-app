@@ -9,7 +9,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
-import { useMachineEvents } from "@/hooks/use-machine";
+import { useMachine, useMachineEvents } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
@@ -29,7 +29,6 @@ import {
   Copy,
   RefreshCcw,
   Trash2,
-  Play,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -57,14 +56,6 @@ import {
 } from "../ui/dropdown-menu";
 import { useCurrentPlanQuery } from "@/hooks/use-current-plan";
 import { DeleteMachineDialog, RebuildMachineDialog } from "./machine-list";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "../ui/tooltip";
-import { useLogStore } from "../workspace/LogContext";
-import { useSessionAPI } from "@/hooks/use-session-api";
 
 // -------------------------constants-------------------------
 
@@ -150,7 +141,7 @@ export const isMachineDeprecated = (machine: any) =>
 // -------------------------components-------------------------
 
 export function MachineListItem({
-  machine,
+  machineId,
   isExpanded,
   refetchQuery,
   index,
@@ -159,7 +150,7 @@ export function MachineListItem({
   showMigrateDialog = true,
   children,
 }: {
-  machine: any;
+  machineId: any;
   isExpanded?: boolean;
   refetchQuery: any;
   index: number;
@@ -168,8 +159,8 @@ export function MachineListItem({
   showMigrateDialog?: boolean;
   children?: React.ReactNode;
 }) {
-  const { data: events, isLoading } = useMachineEvents(machine.id);
-  const { hasActiveEvents } = useHasActiveEvents(machine.id);
+  const { data: events, isLoading } = useMachineEvents(machineId);
+  const { hasActiveEvents } = useHasActiveEvents(machineId);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [rebuildModalOpen, setRebuildModalOpen] = useState(false);
   const navigate = useNavigate({ from: "/machines" });
@@ -178,22 +169,23 @@ export function MachineListItem({
     useState(false);
   const router = useRouter();
   const [isStartingSession, setIsStartingSession] = useState(false);
+  const { data: machine, isLoading: isMachineLoading } = useMachine(machineId);
 
   // Check if Docker command steps are null (for disabling buttons)
   const isDockerCommandStepsNull =
-    machine.docker_command_steps === null &&
-    machine.type === "comfy-deploy-serverless";
+    machine?.docker_command_steps === null &&
+    machine?.type === "comfy-deploy-serverless";
 
   const isStale = useMemo(() => {
-    if (machine.status === "building") {
+    if (machine?.status === "building") {
       const buildDuration = differenceInHours(
         new Date(),
-        new Date(machine.updated_at),
+        new Date(machine?.updated_at),
       );
       return buildDuration >= 1;
     }
     return false;
-  }, [machine.status, machine.updated_at]);
+  }, [machine?.status, machine?.updated_at]);
 
   const isDeprecated = isMachineDeprecated(machine);
 
@@ -219,6 +211,8 @@ export function MachineListItem({
   //   });
   //   setIsStartingSession(false);
   // };
+
+  if (isMachineLoading) return null;
 
   const content = (
     <div

@@ -217,7 +217,7 @@ export function MachineList() {
             <MachineListItem
               key={machine.id}
               index={index}
-              machine={machine}
+              machineId={machine.id}
               refetchQuery={query.refetch}
               selectedTab={selectedTab}
             />
