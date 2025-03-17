@@ -29,8 +29,8 @@ import { useQueryState } from "nuqs";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
-
-// const BATCH_SIZE = 20; // Same as in use-machine.ts
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { motion } from "framer-motion";
 
 interface Machine {
   id: string;
@@ -58,17 +58,25 @@ export function MachineList() {
       : "docker";
   });
 
-  // const handleTabChange = (value: string) => {
-  //   setSelectedTab(value as TabType);
-  //   navigate({
-  //     search: (prev) => ({ ...prev, tab: value }),
-  //   });
-  // };
+  const handleTabChange = (value: string) => {
+    setSelectedTab(value as TabType);
+    navigate({
+      search: (prev) => ({ ...prev, tab: value }),
+    });
+  };
 
   const sub = useCurrentPlan();
   const hasActiveSub = !sub || !!sub?.sub;
 
-  const query = useMachines(debouncedSearchValue ?? undefined);
+  const query = useMachines(
+    debouncedSearchValue ?? undefined,
+    20,
+    undefined,
+    false,
+    selectedTab === "workspace",
+    selectedTab === "self-hosted",
+    selectedTab === "docker",
+  );
 
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1200px] px-2 py-4 md:px-10">
@@ -85,7 +93,7 @@ export function MachineList() {
           </kbd>
         </div>
 
-        {/* <Tabs value={selectedTab} onValueChange={handleTabChange}>
+        <Tabs value={selectedTab} onValueChange={handleTabChange}>
           <motion.div className="inline-flex items-center rounded-lg bg-white/95 py-0.5 ring-1 ring-gray-200/50 ">
             <TabsList className="relative flex w-fit gap-1 bg-transparent">
               <motion.div layout className="relative">
@@ -105,7 +113,7 @@ export function MachineList() {
                 <TabsTrigger
                   value="self-hosted"
                   className={cn(
-                    "rounded-md px-4 py-1.5 text-sm font-medium transition-all",
+                    "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                     selectedTab === "self-hosted"
                       ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
                       : "text-gray-600 hover:bg-gray-100",
@@ -114,11 +122,11 @@ export function MachineList() {
                   Self Hosted
                 </TabsTrigger>
               </motion.div>
-              <motion.div layout className="relative">
+              {/* <motion.div layout className="relative">
                 <TabsTrigger
                   value="workspace"
                   className={cn(
-                    "rounded-md px-4 py-1.5 text-sm font-medium transition-all",
+                    "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                     selectedTab === "workspace"
                       ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
                       : "text-gray-600 hover:bg-gray-100",
@@ -126,10 +134,10 @@ export function MachineList() {
                 >
                   Workspace
                 </TabsTrigger>
-              </motion.div>
+              </motion.div> */}
             </TabsList>
           </motion.div>
-        </Tabs> */}
+        </Tabs>
       </div>
 
       {query.isLoading ? (
