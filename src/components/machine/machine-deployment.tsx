@@ -454,10 +454,6 @@ function InstantRollback({
     }
   };
 
-  if (isLoadingRollbackMachineVersion) {
-    return <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600" />;
-  }
-
   return (
     <>
       <DropdownMenu>
@@ -471,9 +467,10 @@ function InstantRollback({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             disabled={
+              isLoadingRollbackMachineVersion ||
               !isBusinessOrEnterprise ||
-              rollbackMachineVersion.id === machine.machine_version_id ||
-              rollbackMachineVersion.status !== "ready" ||
+              rollbackMachineVersion?.id === machine.machine_version_id ||
+              rollbackMachineVersion?.status !== "ready" ||
               machine.status === "building"
             }
             className="text-red-500"
@@ -499,7 +496,7 @@ function InstantRollback({
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
           <DropdownMenuItem
-            disabled={rollbackMachineVersion.id !== machine.machine_version_id}
+            disabled={rollbackMachineVersion?.id !== machine.machine_version_id}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -515,7 +512,7 @@ function InstantRollback({
               navigate({
                 to: "/machines/$machineId/$machineVersionId",
                 params: {
-                  machineVersionId: rollbackMachineVersion.id,
+                  machineVersionId: rollbackMachineVersion?.id,
                 },
               });
             }}
@@ -537,7 +534,7 @@ function InstantRollback({
                 </span>
                 to
                 <span className="mx-1 w-fit rounded-md bg-gray-100 px-2 py-1 text-gray-500 text-xs leading-snug">
-                  v{rollbackMachineVersion.version}
+                  v{rollbackMachineVersion?.version}
                 </span>
                 .
               </div>
@@ -593,15 +590,15 @@ function InstantRollback({
                     </div>
                     <div className="flex flex-col">
                       <div className="flex flex-row items-center gap-x-2 font-medium font-mono text-gray-600 text-xs">
-                        {rollbackMachineVersion.id.slice(0, 8)}
+                        {rollbackMachineVersion?.id.slice(0, 8)}
                         <span className="w-fit rounded-md bg-gray-200 px-2 py-1 text-gray-500 text-xs leading-snug">
-                          v{rollbackMachineVersion.version}
+                          v{rollbackMachineVersion?.version}
                         </span>
                       </div>
                       <div className="flex flex-row items-center gap-x-2">
                         <MachineStatusBadge
-                          status={rollbackMachineVersion.status}
-                          createdAt={rollbackMachineVersion.created_at}
+                          status={rollbackMachineVersion?.status}
+                          createdAt={rollbackMachineVersion?.created_at}
                         />
                       </div>
                       <UserInfoForDeployment
