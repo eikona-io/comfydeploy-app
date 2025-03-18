@@ -451,7 +451,7 @@ export function MachineCostEstimate({ machineId }: { machineId: string }) {
   }, [usage, machineId]);
 
   if (isLoading) {
-    return <></>;
+    return <Skeleton className="h-6 w-24" />;
   }
 
   return (
