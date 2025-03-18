@@ -27,6 +27,7 @@ import {
   useMutation,
   useSuspenseQuery,
   useQueryClient,
+  useQuery,
 } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 // import { machineRoute } from "@/routes/machines/$machineId";
@@ -437,7 +438,7 @@ export function LastActiveEvent({ machineId }: { machineId: string }) {
 }
 
 export function MachineCostEstimate({ machineId }: { machineId: string }) {
-  const { data: usage } = useSuspenseQuery<any>({
+  const { data: usage, isLoading } = useQuery<any>({
     queryKey: ["platform", "usage"],
   });
 
@@ -448,6 +449,10 @@ export function MachineCostEstimate({ machineId }: { machineId: string }) {
     );
     return machineUsage?.cost || 0;
   }, [usage, machineId]);
+
+  if (isLoading) {
+    return <></>;
+  }
 
   return (
     <Link to={"/usage"} className="hidden items-center md:flex">

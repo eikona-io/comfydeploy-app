@@ -1,7 +1,7 @@
 import MachinePage from "@/components/machine/machine-page";
-import { createLazyFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-export const Route = createLazyFileRoute("/machines/$machineId/")({
+export const Route = createFileRoute("/machines/$machineId/")({
   component: RouteComponent,
 });
 
