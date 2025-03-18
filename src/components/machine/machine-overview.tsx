@@ -185,13 +185,15 @@ export function MachineOverview({ machine }: { machine: any }) {
       <div className="relative grid grid-cols-1 gap-8 px-4 py-2">
         <MachineVersionWrapper machine={machine} />
         <MachineSettingsWrapper machine={machine} />
-        <div className="sticky bottom-0 inset-x-0 mx-auto max-w-xl z-20">
-          <VersionChecker
-            machineId={machine.id}
-            variant="inline"
-            onUpdate={() => setIsUpdateDialogOpen(true)}
-          />
-        </div>
+        {machine.type === "comfy-deploy-serverless" && (
+          <div className="sticky bottom-0 inset-x-0 mx-auto max-w-xl z-20">
+            <VersionChecker
+              machineId={machine.id}
+              variant="inline"
+              onUpdate={() => setIsUpdateDialogOpen(true)}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
