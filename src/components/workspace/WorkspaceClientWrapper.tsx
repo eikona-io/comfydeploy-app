@@ -112,14 +112,16 @@ export function WorkspaceClientWrapper({
 
   if (Number.parseInt(machineBuilderVersion) >= 4) {
     return (
-      <div className="flex flex-col h-full">
-        <div className="absolute bottom-0 inset-x-0 mx-auto max-w-xl">
+      <div className="flex h-full flex-col">
+        <div className="absolute inset-x-0 bottom-0 z-0 mx-auto max-w-xl">
           <MachineUpdateChecker machineId={machine.id} />
         </div>
-        <SessionCreator
-          workflowId={props.workflow_id}
-          workflowLatestVersion={versions[0] as any}
-        />
+        <div className="z-10 flex-1">
+          <SessionCreator
+            workflowId={props.workflow_id}
+            workflowLatestVersion={versions[0] as any}
+          />
+        </div>
       </div>
     );
   }
