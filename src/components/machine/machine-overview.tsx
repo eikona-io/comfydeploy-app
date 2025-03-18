@@ -71,10 +71,14 @@ function UpdateCustomNodesDialog({
       toast.success("Custom nodes update initiated");
       onOpenChange(false);
       // Invalidate and refetch relevant queries
-      queryClient.invalidateQueries({ queryKey: ["machine", machine.id] });
       queryClient.invalidateQueries({
-        queryKey: ["machine", machine.id, "versions"],
+        predicate: (query) =>
+          query.queryKey.includes("machine") &&
+          query.queryKey.includes(machine.id),
       });
+      // queryClient.invalidateQueries({
+      //   queryKey: ["machine", machine.id, "versions"],
+      // });
       // Remove the action query param
       navigate({
         to: "/machines/$machineId",
