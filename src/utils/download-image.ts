@@ -10,14 +10,14 @@ export const downloadImage = async ({
   console.log("Downloading the image...");
 
   if (!url) {
-    toast.error("Something went wrong");
+    toast.error("Missing URL");
     return;
   }
 
   try {
     const response = await fetch(url, { mode: "cors" });
     if (!response.ok) {
-      toast.error("Something went wrong");
+      toast.error(`Error: ${response.statusText}`);
       return;
     }
 
@@ -35,6 +35,6 @@ export const downloadImage = async ({
     URL.revokeObjectURL(blobUrl);
     toast.success("Image downloaded successfully");
   } catch (error) {
-    toast.error("Something went wrong");
+    toast.error(`Error: ${error}`);
   }
 };
