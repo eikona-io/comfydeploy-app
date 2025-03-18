@@ -3,6 +3,12 @@ import { Progress } from "@/components/ui/progress";
 import { getMachineBuildProgress } from "@/hooks/use-machine-build-progress";
 import { AnimatePresence, easeOut, motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { LogDisplay } from "./LogDisplay";
+import { cn } from "@/lib/utils";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { Button } from "../ui/button";
+import { useNavigate } from "@tanstack/react-router";
+import { Badge } from "../ui/badge";
 
 interface MessageProgress {
   message: string;
@@ -12,93 +18,190 @@ interface MessageProgress {
 interface WorkspaceLoadingProps {
   messages?: MessageProgress[];
   progress?: number; // progress is a number between 0 and 100
+  session?: any;
+  isLive?: boolean;
+  isLoadingSession?: boolean;
+  workflowId?: string;
+  isSessionLoading?: boolean;
+}
+
+export function getSessionStatus(session: any, isLive: boolean | undefined) {
+  if (!session) {
+    return {
+      message: "Session Not Found",
+      description: "The session may have expired or been terminated.",
+      isError: true,
+    };
+  }
+
+  if (session.timeout_end) {
+    const timeoutDate = new Date(session.timeout_end);
+    const now = new Date();
+    if (now > timeoutDate) {
+      return {
+        message: "Session Timeout",
+        description: `Session timed out at ${timeoutDate.toLocaleTimeString()}`,
+        isError: true,
+      };
+    }
+  }
+
+  if (isLive === false) {
+    return {
+      message: "Connecting",
+      description: "Attempting to connect to your session...",
+      isError: false,
+    };
+  }
+
+  if (session.status === "error") {
+    return {
+      message: "Session Error",
+      description: session.error || "An error occurred with your session.",
+      isError: true,
+    };
+  }
+
+  return {
+    message: "Warming Up",
+    description: "Your session is being prepared. This may take a few moments.",
+    isError: false,
+  };
 }
 
 export function WorkspaceLoading({
   messages = [{ message: "Please wait", startProgress: 0 }],
   progress = 0,
+  session,
+  isLive,
+  isLoadingSession,
+  workflowId,
+  isSessionLoading,
 }: WorkspaceLoadingProps) {
-  return (
-    <div className="relative flex h-full w-full items-center justify-center bg-[#1e1e1e]">
-      {/* Grid background */}
-      <div
-        className="absolute inset-0 opacity-50"
-        style={{
-          backgroundImage: `linear-gradient(#2c2c2c 1px, transparent 1px),
-                           linear-gradient(90deg, #2c2c2c 1px, transparent 1px)`,
-          backgroundSize: "20px 20px",
-        }}
-      />
+  const navigate = useNavigate();
 
-      <div className="relative z-10 flex flex-col items-center">
-        <div className="mb-8 text-sm">
+  // Determine what content to show based on session state
+  let statusContent = null;
+
+  if (isLoadingSession) {
+    statusContent = (
+      <div className="flex flex-col items-center gap-4">
+        <h2 className="flex items-center gap-2 font-semibold text-gray-100">
+          Loading Session{" "}
+          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+        </h2>
+        <p className="text-center text-muted-foreground text-xs">
+          Please wait while we load your session...
+        </p>
+      </div>
+    );
+  } else if (session) {
+    const status = getSessionStatus(session, isLive);
+    const now = new Date();
+    const isTimeout =
+      session.timeout_end && now > new Date(session.timeout_end);
+
+    if (!isLive || status.isError) {
+      statusContent = (
+        <div className="flex flex-col items-center gap-4">
+          <h2 className="flex items-center gap-2 font-semibold text-gray-100">
+            {status.message}{" "}
+            {!status.isError && (
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            )}
+          </h2>
+          <p className="text-center text-muted-foreground text-xs">
+            {status.description}
+          </p>
+
+          {(!session || isTimeout) && (
+            <Button
+              variant="outline"
+              className="bg-zinc-100"
+              onClick={() => {
+                if (workflowId) {
+                  navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: { workflowId, view: "requests" },
+                  });
+                } else {
+                  navigate({
+                    to: "/home",
+                  });
+                }
+              }}
+            >
+              <ChevronLeft className="mr-2 h-4 w-4" /> Back
+            </Button>
+          )}
+        </div>
+      );
+    }
+  }
+
+  const final_messages = messages.filter(({ startProgress }, index, arr) => {
+    const nextThreshold =
+      arr[index + 1]?.startProgress ?? Number.POSITIVE_INFINITY;
+    return progress >= startProgress && progress < nextThreshold;
+  });
+  console.log(final_messages, progress);
+
+  // If no special status content, show the default progress messages
+  if (!statusContent) {
+    statusContent = (
+      <div className="flex flex-col items-center">
+        <div className="mb-2 h-5 text-sm">
           <AnimatePresence mode="wait">
-            {messages
-              .filter(({ startProgress }, index, arr) => {
-                const nextThreshold =
-                  arr[index + 1]?.startProgress ?? Number.POSITIVE_INFINITY;
-                return progress >= startProgress && progress < nextThreshold;
-              })
-              .map(({ message }) => (
-                <motion.div
-                  key={message}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3, ease: easeOut }}
-                >
-                  <TextShimmer className="[--base-color:theme(colors.gray.600)] [--base-gradient-color:theme(colors.gray.200)] dark:[--base-color:theme(colors.gray.700)] dark:[--base-gradient-color:theme(colors.gray.400)]">
-                    {message}
-                  </TextShimmer>
-                </motion.div>
-              ))}
+            {final_messages.map(({ message }) => (
+              <motion.div
+                key={message}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.5, ease: easeOut }}
+              >
+                <TextShimmer className="[--base-color:theme(colors.gray.600)] [--base-gradient-color:theme(colors.gray.200)] dark:[--base-color:theme(colors.gray.700)] dark:[--base-gradient-color:theme(colors.gray.400)]">
+                  {message}
+                </TextShimmer>
+              </motion.div>
+            ))}
           </AnimatePresence>
         </div>
-
-        {/* Node representation */}
-        <div className="relative flex items-start space-x-20">
-          {/* Left node */}
-          <div className="flex h-24 w-40 flex-col justify-between rounded-md bg-[#3c3c3c] p-2 shadow-lg">
-            <div className="flex justify-start">
-              <div className="h-3 w-3 rounded-full bg-[#00ff00]" />
-            </div>
-            <div className="h-3 w-full rounded bg-[#2c2c2c]" />
-            <div className="h-3 w-3/4 rounded bg-[#2c2c2c]" />
-          </div>
-
-          {/* Right node - positioned lower */}
-          <div className="mt-16 flex h-24 w-40 flex-col justify-between rounded-md bg-[#3c3c3c] p-2 shadow-lg">
-            <div className="flex justify-start">
-              <div className="h-3 w-3 rounded-full bg-[#00ff00]" />
-            </div>
-            <div className="h-3 w-full rounded bg-[#2c2c2c]" />
-            <div className="h-3 w-3/4 rounded bg-[#2c2c2c]" />
-          </div>
-
-          {/* Curved connection line */}
-          <svg
-            className="absolute top-0 left-[80px] h-48 w-20"
-            viewBox="0 0 224 192"
-          >
-            <path
-              d="M0 12 C112 12, 112 180, 224 180"
-              stroke="#3c3c3c"
-              strokeWidth="10"
-              fill="none"
-            />
-            <path
-              d="M0 12 C112 12, 112 180, 224 180"
-              stroke="#00ff00"
-              strokeWidth="10"
-              fill="none"
-              strokeDasharray="300"
-              strokeDashoffset={300 - (progress ?? 0) * 3}
-              className="transition-all duration-300 ease-in-out"
-            />
-          </svg>
+        <div className="mb-8 w-40">
+          <Progress value={progress} className="dark h-1" />
         </div>
       </div>
-    </div>
+    );
+  }
+
+  // Main container with consistent LogDisplay placement
+  return (
+    <motion.div
+      className="dark relative flex h-full w-full flex-col items-center justify-center transition-all duration-300"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3, ease: easeOut }}
+    >
+      <div className="relative flex flex-col items-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={isSessionLoading ? "loading" : isLive ? "live" : "status"}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mb-6"
+          >
+            {statusContent}
+          </motion.div>
+        </AnimatePresence>
+
+        <div>
+          <LogDisplay newInterface={true} />
+        </div>
+      </div>
+    </motion.div>
   );
 }
 

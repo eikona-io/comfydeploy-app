@@ -70,6 +70,11 @@ if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement);
   root.render(
     <ClerkProvider
+      appearance={{
+        elements: {
+          cardBox: "rounded-lg shadow-md border border-gray-100 border-1",
+        },
+      }}
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       afterSignOutUrl="/"
     >

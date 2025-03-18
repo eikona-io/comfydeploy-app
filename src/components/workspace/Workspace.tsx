@@ -1,19 +1,25 @@
-"use client";
-
 import { cn } from "@/lib/utils";
 import { useAuth } from "@clerk/clerk-react";
 import { motion } from "framer-motion";
 import { AnimatePresence } from "framer-motion";
 import { diff } from "json-diff-ts";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { WorkspaceLoading } from "./WorkspaceLoading";
 import {
   reloadIframe,
   sendEventToCD,
   sendInetrnalEventToCD,
   sendWorkflow,
 } from "./sendEventToCD";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Link, Download, Import, Workflow } from "lucide-react";
 
 export const useCDStore = create<{
   cdSetup: boolean;
@@ -49,26 +55,18 @@ export function useSelectedVersion(workflow_id: string | null) {
   };
 }
 
-import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { useAuthStore } from "@/lib/auth-store";
 import { useQuery } from "@tanstack/react-query";
 // import { usePathname, useRouter } from "next/navigation";
-import { parseAsInteger, useQueryState } from "nuqs";
-import { useMediaQuery } from "usehooks-ts";
-import { Drawer } from "vaul";
+import { parseAsBoolean, parseAsInteger, useQueryState } from "nuqs";
 import { create } from "zustand";
-import { AssetBrowser } from "../asset-browser";
-import { UploadZone } from "../upload/upload-zone";
 import { AssetsBrowserPopup } from "./assets-browser-drawer";
-import {
-  SessionIncrementDialog,
-  useSessionIncrementStore,
-} from "./increase-session";
-
-// import { useCurrentWorkflow } from "@/components/useCurrentWorkflow";
-// import { useMachineStore } from "@/repo/components/ui/custom/workspace/DevSelectMachine";
+import { WorkspaceControls } from "./workspace-control";
+import { useSearch } from "@tanstack/react-router";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 
 interface WorkflowState {
   workflow: any;
@@ -92,32 +90,61 @@ export const useWorkflowStore = create<WorkflowState>((set) => ({
   setDifferences: (differences) => set({ differences }),
 }));
 
+export const useWorspaceLoadingState = create<{
+  progress: number;
+  setProgress: (progress: number | ((prevProgress: number) => number)) => void;
+}>((set) => ({
+  progress: 0,
+  setProgress: (progressOrFn) =>
+    set((state) => ({
+      progress:
+        typeof progressOrFn === "function"
+          ? progressOrFn(state.progress)
+          : progressOrFn,
+    })),
+}));
+
 export default function Workspace({
   endpoint: _endpoint,
-  workflowJson,
   nativeMode = false,
+  sessionIdOverride,
+  machine_id,
+  machine_version_id,
+  gpu,
 }: {
   endpoint: string;
-  workflowJson: any;
   nativeMode?: boolean;
+  sessionIdOverride?: string;
+  machine_id?: string;
+  machine_version_id?: string;
+  gpu?: string;
 }) {
-  const workflowId = useWorkflowIdInWorkflowPage();
+  const { workflowId, workflowLink, version, isFirstTime } = useSearch({
+    from: "/sessions/$sessionId/",
+  });
+  const [_, setIsFirstTime] = useQueryState("isFirstTime", parseAsBoolean);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
-  const { workflow } = useCurrentWorkflow(workflowId);
+  const { workflow } = useCurrentWorkflow(workflowId ?? null);
+  const { value: versionData, isLoading: isLoadingVersion } =
+    useSelectedVersion(workflowId ?? null);
 
   const machineId = workflow?.selected_machine_id;
 
   const { data: machine } = useMachine(machineId);
+  const isLocal = process.env.NODE_ENV === "development";
 
-  const newPythonEndpoint = process.env.NEXT_PUBLIC_CD_API_URL;
+  const newPythonEndpoint = isLocal
+    ? process.env.NEXT_PUBLIC_NGROK_CD_API_URL // or whatever your local Python API URL is
+    : process.env.NEXT_PUBLIC_CD_API_URL;
 
   const { userId, orgId } = useAuth();
   const volumeName = `models_${orgId || userId}`;
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const { cdSetup, setCDSetup } = useCDStore();
-  const [progress, setProgress] = useState(0);
+  const { progress, setProgress } = useWorspaceLoadingState();
   const [hasSetupEventListener, setHasSetupEventListener] = useState(false);
-  const currentWorkflowRef = useRef(workflowJson);
+  const currentWorkflowRef = useRef(null);
   const {
     setWorkflow,
     setWorkflowAPI,
@@ -128,19 +155,27 @@ export default function Workspace({
     setDifferences,
   } = useWorkflowStore();
 
+  const { value: selectedVersion } = useSelectedVersion(workflowId ?? null);
+
+  const { data: workflowLinkJson, isLoading: isLoadingWorkflowLink } = useQuery(
+    {
+      queryKey: ["workflow", "link", workflowLink],
+      enabled: !!workflowLink,
+      queryFn: async () => {
+        if (!workflowLink) return;
+        console.log("fetching workflowLink", workflowLink);
+        const response = await fetch(workflowLink);
+        if (!response.ok) throw new Error("Failed to fetch workflow");
+        return response.json();
+      },
+      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+    },
+  );
+
   useEffect(() => {
-    setWorkflow(workflowJson);
-    currentWorkflowRef.current = workflowJson;
-  }, [workflowId, workflowJson]);
-
-  const { value: selectedVersion } = useSelectedVersion(workflowId);
-
-  const [sessionId] = useQueryState("sessionId", {
-    defaultValue: "",
-  });
-
-  const isDraftDifferent = useMemo(() => {
-    if (!selectedVersion || !currentWorkflow) return false;
+    if (!selectedVersion || !currentWorkflow) return;
 
     const differences = diff(selectedVersion.workflow, currentWorkflow, {
       keysToSkip: ["extra", "order", "$index"],
@@ -151,37 +186,28 @@ export default function Workspace({
 
     setDifferences(differences);
 
-    // console.log(
-    //   "differences",
-    //   differences,
-    //   selectedVersion?.workflow,
-    //   currentWorkflow,
-    // );
-
-    return Object.keys(differences).length > 0;
-  }, [selectedVersion?.version, currentWorkflow]);
-
-  useEffect(() => {
+    const isDraftDifferent = Object.keys(differences).length > 0;
+    console.log(
+      "isDraftDifferent",
+      isDraftDifferent,
+      selectedVersion.workflow,
+      currentWorkflow,
+      differences,
+    );
     setHasChanged(isDraftDifferent);
-  }, [isDraftDifferent]);
+    // return isDraftDifferent;
+  }, [selectedVersion?.version, currentWorkflow]);
 
   const endpoint = _endpoint;
 
-  // useEffect(() => {
-  //   console.log("reloading iframe");
-  //   setCDSetup(false);
-  //   setProgress(0);
-  //   reloadIframe();
-  // }, [turbo]);
-
   useEffect(() => {
-    if (machineId) {
+    if (machineId && !sessionIdOverride) {
       console.log("reloading iframe");
       setCDSetup(false);
       setProgress(0);
       reloadIframe();
     }
-  }, [machineId]);
+  }, [machineId, sessionIdOverride]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -203,26 +229,80 @@ export default function Workspace({
 
   useEffect(() => {
     if (!cdSetup) return;
-    const deployInterval = setInterval(
-      () => {
-        // console.log('sending')
-        sendEventToCD("deploy");
-      },
-      // connection ? 1000 : 5000,
-      1000,
-    ); // Send event every 5 seconds
+    const deployInterval = setInterval(() => {
+      sendEventToCD("deploy");
+    }, 1000);
 
     return () => clearInterval(deployInterval);
   }, [cdSetup]);
 
+  // Add new state for tracking workflow send status
+  const [workflowSendAttempts, setWorkflowSendAttempts] = useState(0);
+  const [isWorkflowLoaded, setIsWorkflowLoaded] = useState(false);
+  const workflowToSend = useRef<any>(null);
+
+  const [startTime] = useState(() => Date.now());
+
+  const setComfyUIWorkflow = (workflowJson: any) => {
+    workflowToSend.current = workflowJson;
+    setWorkflowSendAttempts(1); // Start first attempt
+    currentWorkflowRef.current = workflowJson;
+    sendWorkflow(workflowJson);
+  };
+
+  useEffect(() => {
+    if (!workflowSendAttempts || isWorkflowLoaded) return;
+
+    const baseDelay = 200;
+    const exponentialDelay = Math.min(
+      baseDelay * 2 ** (workflowSendAttempts - 1),
+      4000,
+    );
+
+    const jitter = Math.random() * 100;
+    const delay = exponentialDelay + jitter;
+
+    const timeout = setTimeout(() => {
+      const timeElapsed = Date.now() - startTime;
+
+      if (!isWorkflowLoaded && timeElapsed < 60000) {
+        console.log(
+          `Retrying workflow send, attempt ${workflowSendAttempts + 1} (delay: ${delay.toFixed(0)}ms, total time: ${timeElapsed.toFixed(0)}ms)`,
+        );
+        setWorkflowSendAttempts((prev) => prev + 1);
+        sendWorkflow(workflowToSend.current);
+      } else {
+        console.log(
+          `Stopping retries: ${isWorkflowLoaded ? "Workflow loaded" : "Time limit reached"} (${timeElapsed.toFixed(0)}ms elapsed)`,
+        );
+      }
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [workflowSendAttempts, isWorkflowLoaded, startTime]);
+
   useEffect(() => {
     if (!cdSetup) return;
-
-    console.log("sending workflow");
-    sendWorkflow(currentWorkflowRef.current);
-
-    return;
-  }, [cdSetup]);
+    if (isFirstTime) {
+      setIsFirstTime(null);
+      if (!workflowId && !workflowLink) {
+        console.log("no workflow, setting empty");
+        setComfyUIWorkflow({
+          nodes: [],
+        });
+      } else {
+        setIsImportDialogOpen(true);
+      }
+      return;
+    }
+  }, [
+    workflowId,
+    workflowLink,
+    cdSetup,
+    isLoadingVersion,
+    isLoadingWorkflowLink,
+    isFirstTime,
+  ]);
 
   const { fetchToken } = useAuthStore();
 
@@ -299,38 +379,30 @@ export default function Workspace({
           useAssetsBrowserStore.getState().setOpen(true);
           useAssetsBrowserStore.getState().setTargetNodeData(data.data);
         }
-        if (data.type === "increase-session") {
-          useSessionIncrementStore.getState().setOpen(true);
-          useSessionIncrementStore.getState().setSessionId(sessionId);
-        }
+
+        // handleEvent(data.type, data.data);
 
         // console.log(data);
-        if (data.type === "cd_plugin_setup" && workflowJson) {
-          sendWorkflow(workflowJson);
-          console.log("sending workflow");
+        if (data.type === "cd_plugin_setup") {
           setCDSetup(true);
           setProgress(100);
-          sendEventToCD("configure_queue_buttons", [
-            {
-              id: "assets",
-              icon: "pi-image",
-              tooltip: "Assets",
-              event: "assets",
-            },
-          ]);
-          sendEventToCD("configure_menu_right_buttons", [
-            {
-              id: "session",
-              icon: "pi-clock",
-              tooltip: "Increase the timeout of your current session",
-              label: "Increase Timeout",
-              btnClasses: "p-button-success",
-              event: "increase-session",
-              eventData: {},
-            },
-          ]);
+
+          // configureWorkspaceButtons();
+          // sendEventToCD("configure_menu_right_buttons", [
+          //   {
+          //     id: "session",
+          //     icon: "pi-clock",
+          //     tooltip: "Increase the timeout of your current session",
+          //     label: "Increase Timeout",
+          //     btnClasses: "p-button-success",
+          //     event: "increase-session",
+          //     eventData: {},
+          //   },
+          // ]);
         } else if (data.type === "cd_plugin_onAfterChange") {
         } else if (data.type === "cd_plugin_onDeployChanges") {
+          // console.log("current workflow", data.data.workflow);
+
           const differences = diff(
             currentWorkflowRef.current,
             data.data.workflow,
@@ -357,11 +429,15 @@ export default function Workspace({
                 newPythonEndpoint,
               ).toString(),
               cd_token: x,
-              gpu_event_id: sessionId,
+              gpu_event_id: sessionIdOverride,
+              gpu,
             };
             // console.log("sending workflow info", info);
             sendEventToCD("workflow_info", info);
           });
+        } else if (data.type === "graph_loaded") {
+          setIsWorkflowLoaded(true);
+          setWorkflowSendAttempts(0);
         }
       } catch (error) {
         console.error("Error parsing message from iframe:", error);
@@ -380,7 +456,7 @@ export default function Workspace({
         capture: true,
       });
     };
-  }, [workflowJson, volumeName, machineId, endpoint]);
+  }, [volumeName, machineId, endpoint]);
 
   useEffect(() => {
     if (!iframeLoaded) return;
@@ -423,27 +499,87 @@ export default function Workspace({
 
   return (
     <>
-      {sessionId !== "preview" && <SessionIncrementDialog />}
-      <AnimatePresence>
-        {!cdSetup && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            // animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-[20]"
-          >
-            <WorkspaceLoading
-              messages={[
-                { message: "Connecting to ComfyUI", startProgress: 0 },
-                { message: "Loading workspace", startProgress: 59 },
-              ]}
-              progress={progress}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AssetsBrowserPopup />
+
+      <WorkspaceControls
+        endpoint={endpoint}
+        machine_id={machine_id}
+        machine_version_id={machine_version_id}
+      />
+
+      <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Import className="h-5 w-5" />
+              Import Workflow
+            </DialogTitle>
+            <DialogDescription>
+              You're about to import a workflow into your workspace.
+              <br />
+              Note: Please wait for the ComfyUI ready before importing.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col space-y-4 py-4">
+            <div className="rounded-lg border bg-muted/50 p-4">
+              <h4 className="mb-2 font-medium text-sm">Source</h4>
+              {workflowLink ? (
+                <div className="flex w-full flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Link className="h-4 w-4 flex-shrink-0 text-blue-500" />
+                    <span className="font-medium text-sm">
+                      External Workflow
+                    </span>
+                  </div>
+                  <div className="max-h-20 overflow-y-auto rounded bg-muted/80 p-2">
+                    <a
+                      href={workflowLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="break-all text-blue-500 text-xs hover:underline"
+                    >
+                      {workflowLink}
+                    </a>
+                  </div>
+                </div>
+              ) : workflowId ? (
+                <div className="flex items-center gap-2">
+                  <Workflow className="h-4 w-4 flex-shrink-0" />
+                  <span className="font-medium text-sm">{workflow?.name}</span>
+                  {version && (
+                    <Badge variant="secondary" className="ml-1">
+                      v{version}
+                    </Badge>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setIsImportDialogOpen(false);
+                if (workflowId) {
+                  console.log("using workflowId", versionData.workflow);
+                  setComfyUIWorkflow(versionData.workflow);
+                } else if (workflowLink) {
+                  console.log("using workflowLink", workflowLinkJson);
+                  setComfyUIWorkflow(workflowLinkJson);
+                }
+              }}
+              disabled={isLoadingVersion || isLoadingWorkflowLink}
+              className="gap-1"
+            >
+              <Download className="h-4 w-4" />
+              {isLoadingVersion || isLoadingWorkflowLink
+                ? "Importing..."
+                : "Load into Workspace"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {hasSetupEventListener && (
         <iframe
@@ -454,10 +590,12 @@ export default function Workspace({
               ? `${endpoint}?native_mode=true`
               : `${endpoint}?workspace_mode=true`
           }
+          style={{
+            userSelect: "none",
+          }}
           className={cn(
-            "inset-0 h-full w-full border-none transition-opacity ",
-            !cdSetup && "opacity-0",
-            cdSetup && "animate-blur-in",
+            "inset-0 h-full w-full border-none z-[20]",
+            !cdSetup && "pointer-events-none",
           )}
           title="iframeContent"
           allow="autoplay; encrypted-media; fullscreen; display-capture; camera; microphone"

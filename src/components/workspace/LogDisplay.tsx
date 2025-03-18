@@ -31,6 +31,8 @@ import type React from "react";
 import { toast } from "sonner";
 import { useLog } from "./LogContext";
 import type { LogEntry, LogType } from "./LogContext";
+import { motion, AnimatePresence } from "framer-motion";
+import { useVirtualizer } from "@tanstack/react-virtual";
 
 function getColor(logType: LogType) {
   const styles = {
@@ -48,58 +50,79 @@ const LogEntryView = ({
   logRefs,
   selectedType,
   handleLogClick,
+  isNewInterface,
 }: {
   log: LogEntry;
   logRefs: React.RefObject<{ [key: string]: HTMLDivElement | null } | null>;
   selectedType: LogType;
   handleLogClick: (logId: string) => void;
-}) => (
-  <div
-    ref={(el) => {
-      logRefs!.current![log.id] = el;
-    }}
-    className="hover:!bg-gray-800 group mb-0.5 flex items-start justify-start space-x-4 bg-gray-950 leading-normal transition-all duration-300"
-    style={getColor(log.type)}
-  >
-    {log.timestamp && (
-      <TooltipProvider delayDuration={300}>
-        <Tooltip>
-          <TooltipTrigger
+  isNewInterface?: boolean;
+}) => {
+  const content = (
+    <div
+      ref={(el) => {
+        logRefs!.current![log.id] = el;
+      }}
+      className="hover:!bg-gray-800 group mb-0.5 flex items-start justify-start space-x-2 bg-gray-950 leading-normal transition-all duration-300"
+      style={getColor(log.type)}
+    >
+      {log.timestamp && (
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger
+              onClick={() => {
+                toast.success("Copied to clipboard");
+                navigator.clipboard.writeText(log.message);
+              }}
+            >
+              <span>{log.timestamp}</span>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="font-sans text-xs">
+                {log.previousTime} since previous log
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+      <span className="whitespace-pre-wrap">{log.message}</span>
+      {selectedType.type !== "All" && (
+        <div className="relative opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <Button
+            variant="expandIcon"
+            Icon={CornerDownLeft}
+            iconPlacement="right"
+            className="h-5 font-sans text-xs"
             onClick={() => {
-              toast.success("Copied to clipboard");
-              navigator.clipboard.writeText(log.message);
+              handleLogClick(log.id);
             }}
           >
-            <span>{log.timestamp}</span>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="font-sans text-xs">
-              {log.previousTime} since previous log
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    )}
-    <span className="whitespace-pre-wrap">{log.message}</span>
-    {selectedType.type !== "All" && (
-      <div className="relative opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <Button
-          variant="expandIcon"
-          Icon={CornerDownLeft}
-          iconPlacement="right"
-          className="h-5 font-sans text-xs"
-          onClick={() => {
-            handleLogClick(log.id);
-          }}
-        >
-          View in All
-        </Button>
-      </div>
-    )}
-  </div>
-);
+            View in All
+          </Button>
+        </div>
+      )}
+    </div>
+  );
 
-export function LogDisplay() {
+  if (isNewInterface) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+      >
+        {content}
+      </motion.div>
+    );
+  }
+
+  return content;
+};
+
+export function LogDisplay(props: {
+  control?: boolean;
+  newInterface?: boolean;
+}) {
   const state = useLog();
 
   const {
@@ -111,20 +134,49 @@ export function LogDisplay() {
     totalCount,
   } = useDeferredValue(state);
 
-  const [minimized, setMinimized] = useLocalStorage<boolean>(
-    "logDisplayIsMinimized",
-    true,
-  );
   const [selectedType, setSelectedType] = useState<LogType>({ type: "All" });
+  const [autoScroll, setAutoScroll] = useLocalStorage("log-auto-scroll", true);
 
   const logRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const parentRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Filter logs based on selected type
+  const filteredLogs = useMemo(() => {
+    return processedLogs.filter(
+      (log) =>
+        selectedType.type === "All" ||
+        log.type.type === selectedType.type ||
+        log.type.type === "Function",
+    );
+  }, [processedLogs, selectedType]);
+
+  // Set up virtualizer with dynamic sizing
+  const virtualizer = useVirtualizer({
+    count: filteredLogs.length,
+    getScrollElement: () => scrollAreaRef.current,
+    estimateSize: () => 30, // Initial estimate, will be refined by measurements
+    overscan: 10,
+    measureElement: (element) => {
+      // This will measure the actual rendered height of each item
+      return element.getBoundingClientRect().height;
+    },
+  });
+
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+    if (scrollAreaRef.current && autoScroll && filteredLogs.length > 0) {
+      if (props.newInterface) {
+        // Smooth scroll to bottom for new interface
+        virtualizer.scrollToIndex(filteredLogs.length - 1, {
+          behavior: "smooth",
+          align: "end",
+        });
+      } else {
+        // Instant scroll for old interface
+        virtualizer.scrollToIndex(filteredLogs.length - 1, { align: "end" });
+      }
     }
-  }, [processedLogs]);
+  }, [filteredLogs, autoScroll, props.newInterface, virtualizer]);
 
   const LogTypeBadge = ({
     type,
@@ -166,95 +218,123 @@ export function LogDisplay() {
   );
 
   return (
-    // <ExpandableDialog
-    //   header={
-    //     <div className="flex items-center justify-center">
-    //       <div className="w-10 flex items-center justify-center">Log</div>
-    //       <FileClock size={16} />
-    //     </div>
-    //   }
-    //   // minimized={minimized}
-    //   // setMinimized={setMinimized}
-    //   shortcutKey="alt+x"
-    //   viewKey="log"
-    // >
-    // </ExpandableDialog>
     <div className="w-[540px]">
-      <div className="flex items-center justify-start pb-2">
-        <div className="flex w-10 items-center justify-center font-semibold">
-          Log
+      {props.control && (
+        <div className="flex justify-between pb-2">
+          <div className={"flex gap-2"}>
+            <LogTypeBadge
+              type="All"
+              icon={<FileClock size={14} />}
+              count={totalCount}
+            />
+            <LogTypeBadge
+              type="Error"
+              icon={<CircleX size={14} />}
+              count={errorCount}
+            />
+            <LogTypeBadge
+              type="Warning"
+              icon={<TriangleAlert size={14} />}
+              count={warningCount}
+            />
+          </div>
+          <div className={"flex gap-1"}>
+            {props.newInterface && (
+              <Button
+                className="h-8 w-8"
+                variant="ghost"
+                size="icon"
+                onMouseDown={(event) => event.stopPropagation()}
+                onClick={() => setAutoScroll(!autoScroll)}
+                title={
+                  autoScroll ? "Disable auto-scroll" : "Enable auto-scroll"
+                }
+              >
+                <CornerDownLeft
+                  size={16}
+                  className={!autoScroll ? "opacity-50" : ""}
+                />
+              </Button>
+            )}
+            <Button
+              className="h-8 w-8"
+              variant="ghost"
+              size="icon"
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={() => {
+                clearLogs();
+                toast.success("Cleared logs!");
+              }}
+            >
+              <Trash2 size={16} />
+            </Button>
+            <Button
+              className="h-8 w-8"
+              variant="ghost"
+              size="icon"
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={() => {
+                navigator.clipboard.writeText(JSON.stringify(logs, null, 2));
+                toast.success("Copied to clipboard!");
+              }}
+            >
+              <Copy size={16} />
+            </Button>
+          </div>
         </div>
-        <FileClock size={16} />
-      </div>
-      <div className="flex justify-between pb-2">
-        <div className={`flex gap-2`}>
-          <LogTypeBadge
-            type="All"
-            icon={<FileClock size={14} />}
-            count={totalCount}
-          />
-          <LogTypeBadge
-            type="Error"
-            icon={<CircleX size={14} />}
-            count={errorCount}
-          />
-          <LogTypeBadge
-            type="Warning"
-            icon={<TriangleAlert size={14} />}
-            count={warningCount}
-          />
-        </div>
-        <div className={`flex gap-1`}>
-          <Button
-            className="h-8 w-8"
-            variant="ghost"
-            size="icon"
-            onMouseDown={(event) => event.stopPropagation()}
-            onClick={() => {
-              clearLogs();
-              toast.success("Cleared logs!");
-            }}
-          >
-            <Trash2 size={16} />
-          </Button>
-          <Button
-            className="h-8 w-8"
-            variant="ghost"
-            size="icon"
-            onMouseDown={(event) => event.stopPropagation()}
-            onClick={() => {
-              navigator.clipboard.writeText(JSON.stringify(logs, null, 2));
-              toast.success("Copied to clipboard!");
-            }}
-          >
-            <Copy size={16} />
-          </Button>
-        </div>
-      </div>
-      <ScrollArea
-        ref={scrollAreaRef}
-        className={`h-[440px] rounded-md bg-gray-950 p-4 font-mono text-gray-400 text-xs transition-all duration-300`}
-      >
-        <div>
-          {processedLogs
-            .filter(
-              (log) =>
-                selectedType.type === "All" ||
-                log.type.type === selectedType.type ||
-                log.type.type === "Function",
-            )
-            .map((log) => (
-              <LogEntryView
-                key={log.id}
-                log={log}
-                logRefs={logRefs}
-                selectedType={selectedType}
-                handleLogClick={handleLogClick}
-              />
-            ))}
-          {processedLogs.length === 0 && <p>No logs available.</p>}
-        </div>
-      </ScrollArea>
+      )}
+      <AnimatePresence>
+        <ScrollArea
+          ref={scrollAreaRef}
+          className={
+            props.newInterface
+              ? "group relative h-[200px] bg-transparent p-4 font-mono text-gray-400 text-xs transition-all duration-300 hover:h-[440px]"
+              : "h-[440px] rounded-md bg-black p-4 font-mono text-gray-400 text-xs transition-all duration-300"
+          }
+        >
+          {filteredLogs.length > 0 ? (
+            <div
+              ref={parentRef}
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+                width: "100%",
+                position: "relative",
+              }}
+            >
+              {virtualizer.getVirtualItems().map((virtualItem) => {
+                const log = filteredLogs[virtualItem.index];
+                return (
+                  <div
+                    key={virtualItem.key}
+                    data-index={virtualItem.index}
+                    ref={virtualizer.measureElement}
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      transform: `translateY(${virtualItem.start}px)`,
+                    }}
+                  >
+                    <LogEntryView
+                      key={log.id}
+                      log={log}
+                      logRefs={logRefs}
+                      selectedType={selectedType}
+                      handleLogClick={handleLogClick}
+                      isNewInterface={props.newInterface}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p>No logs available.</p>
+          )}
+          <div className="pointer-events-none absolute top-0 right-0 left-0 h-28 bg-gradient-to-t from-transparent to-[#141414] opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+          <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-b from-transparent to-[#141414] opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+        </ScrollArea>
+      </AnimatePresence>
     </div>
   );
 }
