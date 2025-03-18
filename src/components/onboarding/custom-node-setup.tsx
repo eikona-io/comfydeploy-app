@@ -392,6 +392,11 @@ function SearchNodeList({
               value={searchTerm}
               className="border-none pr-8 focus-visible:outline-none focus-visible:ring-0"
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault(); // Prevent form submission
+                }
+              }}
             />
             {searchTerm && (
               <button
