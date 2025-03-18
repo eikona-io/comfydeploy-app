@@ -366,10 +366,16 @@ function MachineVersionWrapper({ machine }: { machine: any }) {
           machine={machine}
         />
         {isLoadingMachineVersions ? (
-          <>
+          machineVersion.version === 1 ? (
+            <></>
+          ) : machineVersion.version === 2 ? (
             <MachineVersionSkeleton />
-            <MachineVersionSkeleton />
-          </>
+          ) : (
+            <>
+              <MachineVersionSkeleton />
+              <MachineVersionSkeleton />
+            </>
+          )
         ) : (
           versions
             .filter((version) => version.id !== machineVersion.id)
