@@ -3,12 +3,50 @@
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
+import { getRelativeTime } from "@/lib/get-relative-time";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "../ui/badge";
 import { LoadingIcon } from "../ui/custom/loading-icon";
 import { useWorkflowVersion } from "../workflow-list";
 import { SessionCreator } from "./SessionView";
 import { WorkspaceLoading, WorkspaceMachineLoading } from "./WorkspaceLoading";
+import { Button } from "../ui/button";
+import { AlertCircle, ArrowUpCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import { format } from "date-fns";
+import { VersionChecker } from "@/components/machine/version-checker";
+
+interface MachineUpdateCheckerProps {
+  machineId: string;
+}
+
+interface CustomNodesVersionResponse {
+  status: string;
+  local_commit: {
+    hash: string;
+    message: string;
+    date: string;
+  };
+  latest_commit: {
+    hash: string;
+    message: string;
+    date: string;
+  };
+  is_up_to_date: boolean;
+}
+
+function MachineUpdateChecker({ machineId }: MachineUpdateCheckerProps) {
+  return (
+    <VersionChecker
+      machineId={machineId}
+      variant="inline"
+      onUpdate={() => {
+        const url = `/machines/${machineId}?action=update-custom-nodes`;
+        window.open(url, "_blank");
+      }}
+    />
+  );
+}
 
 interface WorkspaceClientWrapperProps {
   workflow_id: string;
@@ -74,10 +112,15 @@ export function WorkspaceClientWrapper({
 
   if (Number.parseInt(machineBuilderVersion) >= 4) {
     return (
-      <SessionCreator
-        workflowId={props.workflow_id}
-        workflowLatestVersion={versions[0]}
-      />
+      <div className="flex flex-col h-full">
+        <div className="absolute bottom-0 inset-x-0 mx-auto max-w-xl">
+          <MachineUpdateChecker machineId={machine.id} />
+        </div>
+        <SessionCreator
+          workflowId={props.workflow_id}
+          workflowLatestVersion={versions[0] as any}
+        />
+      </div>
     );
   }
 

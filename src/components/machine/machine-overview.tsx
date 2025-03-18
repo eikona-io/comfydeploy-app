@@ -7,6 +7,13 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CardDescription } from "@/components/ui/card";
 import {
   useMachineEvents,
@@ -15,24 +22,134 @@ import {
   useMachineVersionsAll,
 } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { api } from "@/lib/api";
+import {
+  useMutation,
+  useSuspenseQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+// import { machineRoute } from "@/routes/machines/$machineId";
 import {
   AlertCircle,
   DollarSign,
   ExternalLink,
   GitBranch,
+  Loader2,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import { VersionChecker } from "./version-checker";
 
 // -----------------------components-----------------------
+
+function UpdateCustomNodesDialog({
+  machine,
+  open,
+  onOpenChange,
+}: {
+  machine: any;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      return api({
+        url: `machine/${machine.id}/update-custom-nodes`,
+        init: {
+          method: "POST",
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Custom nodes update initiated");
+      onOpenChange(false);
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: ["machine", machine.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["machine", machine.id, "versions"],
+      });
+      // Remove the action query param
+      navigate({
+        to: "/machines/$machineId",
+        params: { machineId: machine.id },
+      });
+    },
+    onError: (error) => {
+      toast.error("Failed to update custom nodes");
+    },
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Update ComfyUI-Deploy Custom Nodes</DialogTitle>
+          <DialogDescription>
+            Review the changes and update your machine's custom nodes to the
+            latest version.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-4">
+          <VersionChecker
+            machineId={machine.id}
+            variant="bottom"
+            hideUpdateButton
+          />
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                onOpenChange(false);
+                navigate({
+                  to: "/machines/$machineId",
+                  params: { machineId: machine.id },
+                });
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => updateMutation.mutate()}
+              disabled={updateMutation.isPending}
+              variant="default"
+            >
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                "Update & Rebuild"
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function MachineOverview({ machine }: { machine: any }) {
   const { data: machineVersionsAll, isLoading: isLoadingVersions } =
     useMachineVersionsAll(machine.id);
+  const search = useSearch({
+    from: "/machines/$machineId/",
+  });
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (search?.action === "update-custom-nodes") {
+      setIsUpdateDialogOpen(true);
+    }
+  }, [search?.action]);
 
   const isDeprecated = isMachineDeprecated(machine);
 
@@ -47,6 +164,11 @@ export function MachineOverview({ machine }: { machine: any }) {
 
   return (
     <div className="w-full">
+      <UpdateCustomNodesDialog
+        machine={machine}
+        open={isUpdateDialogOpen}
+        onOpenChange={setIsUpdateDialogOpen}
+      />
       <div className="px-4 py-1">
         <MachineAlert
           machine={machine}
@@ -55,9 +177,16 @@ export function MachineOverview({ machine }: { machine: any }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-8 px-4 py-2">
+      <div className="relative grid grid-cols-1 gap-8 px-4 py-2">
         <MachineVersionWrapper machine={machine} />
         <MachineSettingsWrapper machine={machine} />
+        <div className="sticky bottom-0 inset-x-0 mx-auto max-w-xl z-20">
+          <VersionChecker
+            machineId={machine.id}
+            variant="inline"
+            onUpdate={() => setIsUpdateDialogOpen(true)}
+          />
+        </div>
       </div>
     </div>
   );
