@@ -1,0 +1,79 @@
+# Codebase Query Handling Documentation
+
+## Frontend Query Pattern
+- The frontend uses a custom override for `useQuery` where the queryKey follows a resource-based pattern
+- No need to specify `queryFn` as it's handled by the override
+- For mutations, use `useMutation` with proper error handling and query invalidation
+
+### Example Usage:
+```typescript
+// ❌ Don't do this:
+const { data } = useQuery({
+  queryKey: [`${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine/${machineId}/check-custom-nodes`],
+  queryFn: async () => {
+    const response = await fetch(...);
+    return response.json();
+  }
+});
+
+// ✅ Do this instead:
+const { data } = useQuery({
+  queryKey: ["machine", machineId, "check-custom-nodes"]
+});
+
+// ✅ For mutations:
+const mutation = useMutation({
+  mutationFn: async () => {
+    return api({
+      url: `machine/${machine.id}/update-custom-nodes`,
+      init: { method: "POST" }
+    });
+  },
+  onSuccess: () => {
+    // Invalidate and refetch relevant queries
+    queryClient.invalidateQueries({ queryKey: ["machine", machine.id] });
+  }
+});
+```
+
+The queryKey pattern follows a resource-based structure:
+- First element: resource type (e.g., "machine")
+- Second element: resource identifier (e.g., machineId)
+- Additional elements: specific actions or sub-resources (e.g., "check-custom-nodes")
+
+This pattern makes the queries more consistent and easier to manage across the application.
+
+## Frontend Components
+- Workspace components are in `frontend/src/components/workspace/`
+- `WorkspaceClientWrapper.tsx` handles the main workspace UI logic
+- Update alerts should be placed before the main content but after loading states
+- Dialog components should follow this structure:
+  ```typescript
+  function CustomDialog({
+    machine,
+    open,
+    onOpenChange,
+  }: {
+    machine: Machine; // Use proper types, avoid 'any'
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+  })
+  ```
+
+## Error Handling
+- Always handle loading states with proper UI feedback
+- Use toast notifications for success/error feedback
+- Implement proper TypeScript types to avoid 'any' usage
+- Handle edge cases in useEffect hooks with proper cleanup
+
+## CSS Classes
+- Sort CSS classes alphabetically
+- Use consistent naming conventions
+- Prefer Tailwind utility classes
+- Use cn() utility for conditional classes
+
+## State Management
+- Use proper state initialization in useEffect
+- Clean up side effects in useEffect returns
+- Handle URL parameters through proper router hooks
+- Use URL state for dialog visibility when appropriate 
