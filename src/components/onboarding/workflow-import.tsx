@@ -436,7 +436,7 @@ export default function WorkflowImport() {
               );
             }
 
-            toast.info("Redirecting to machine page...");
+            // toast.info("Redirecting to machine page...");
             navigate({
               to: "/machines/$machineId",
               params: { machineId },

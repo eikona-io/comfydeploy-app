@@ -187,7 +187,7 @@ export function MachineCreate() {
               toast.success(`${filteredData?.name} created successfully!`);
               const machineId = response.id;
 
-              toast.info("Redirecting to machine page...");
+              // toast.info("Redirecting to machine page...");
               await new Promise((resolve) => setTimeout(resolve, 1000));
               navigate({
                 to: "/machines/$machineId",
