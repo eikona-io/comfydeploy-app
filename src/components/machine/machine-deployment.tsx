@@ -327,15 +327,15 @@ export function MachineVersionListItem({
           to={`/machines/${machine.id}/${machineVersion.id}`}
         >
           {/* ID and Version */}
-          <div className="grid grid-cols-1 gap-y-1 min-w-0 cursor-pointer">
-            <div className="flex flex-row gap-x-2 items-center">
-              <div className="bg-gray-100 leading-snug px-2 py-0 rounded-md text-gray-500 text-xs w-fit">
+          <div className="grid min-w-0 cursor-pointer grid-cols-1 gap-y-1">
+            <div className="flex flex-row items-center gap-x-2">
+              <div className="w-fit rounded-md bg-gray-100 px-2 py-0 text-gray-500 text-xs leading-snug">
                 v{machineVersion.version}
               </div>
               {machineVersion.id === machine.machine_version_id && (
                 <Badge
                   variant="green"
-                  className="flex items-center gap-x-1 !text-2xs"
+                  className="!text-2xs flex items-center gap-x-1"
                 >
                   <CircleArrowUp className="h-3 w-3" />
                   <span>Current</span>
@@ -387,7 +387,7 @@ export function MachineVersionListItem({
           <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
             <HardDrive className="h-[14px] w-[14px] shrink-0" />
             <div className="flex items-center">
-              <span className="text-xs text-gray-600">
+              <span className="text-gray-600 text-xs">
                 {machineVersion.gpu}
               </span>
             </div>
@@ -395,10 +395,10 @@ export function MachineVersionListItem({
         </Link>
 
         {/* Keep interactive elements outside of Link */}
-        <div className="justify-self-end flex flex-row gap-x-2 items-center">
+        <div className="flex flex-row items-center gap-x-2 justify-self-end">
           <UserInfoForDeployment machineVersion={machineVersion} />
           <InstantRollback
-            machineVersion={machineVersion}
+            machineVersionId={machineVersion.id}
             machine={machine}
             isBusinessOrEnterprise={isBusinessOrEnterprise}
           />
@@ -409,11 +409,11 @@ export function MachineVersionListItem({
 }
 
 function InstantRollback({
-  machineVersion,
+  machineVersionId,
   machine,
   isBusinessOrEnterprise,
 }: {
-  machineVersion: any;
+  machineVersionId: string;
   machine: any;
   isBusinessOrEnterprise: boolean;
 }) {
@@ -423,6 +423,11 @@ function InstantRollback({
     machine.id,
     machine.machine_version_id,
   );
+  const {
+    data: rollbackMachineVersion,
+    isLoading: isLoadingRollbackMachineVersion,
+  } = useMachineVersion(machine.id, machineVersionId);
+
   const navigate = useNavigate({
     from: "/machines/$machineId",
   });
@@ -438,11 +443,11 @@ function InstantRollback({
         init: {
           method: "POST",
           body: JSON.stringify({
-            machine_version_id: machineVersion.id,
+            machine_version_id: rollbackMachineVersion.id,
           }),
         },
       });
-      toast.success(`Rollback to v${machineVersion.version}`);
+      toast.success(`Rollback to v${rollbackMachineVersion.version}`);
     } catch (error) {
       console.error(error);
       toast.error("Failed to rollback. ");
@@ -462,9 +467,10 @@ function InstantRollback({
           <DropdownMenuSeparator />
           <DropdownMenuItem
             disabled={
+              isLoadingRollbackMachineVersion ||
               !isBusinessOrEnterprise ||
-              machineVersion.id === machine.machine_version_id ||
-              machineVersion.status !== "ready" ||
+              rollbackMachineVersion?.id === machine.machine_version_id ||
+              rollbackMachineVersion?.status !== "ready" ||
               machine.status === "building"
             }
             className="text-red-500"
@@ -477,9 +483,9 @@ function InstantRollback({
             Rollback
             <DropdownMenuShortcut>
               {isBusinessOrEnterprise ? (
-                <RotateCcw className="w-4 h-4" />
+                <RotateCcw className="h-4 w-4" />
               ) : (
-                <Lock className="w-4 h-4" />
+                <Lock className="h-4 w-4" />
               )}
             </DropdownMenuShortcut>
           </DropdownMenuItem>
@@ -490,7 +496,7 @@ function InstantRollback({
             </DropdownMenuShortcut>
           </DropdownMenuItem> */}
           <DropdownMenuItem
-            disabled={machineVersion.id !== machine.machine_version_id}
+            disabled={rollbackMachineVersion?.id !== machine.machine_version_id}
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
@@ -506,7 +512,7 @@ function InstantRollback({
               navigate({
                 to: "/machines/$machineId/$machineVersionId",
                 params: {
-                  machineVersionId: machineVersion.id,
+                  machineVersionId: rollbackMachineVersion?.id,
                 },
               });
             }}
@@ -523,31 +529,31 @@ function InstantRollback({
             <AlertDialogDescription>
               <div className="mb-4">
                 You are about to rollback from
-                <span className="bg-gray-100 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit mx-1">
+                <span className="mx-1 w-fit rounded-md bg-gray-100 px-2 py-1 text-gray-500 text-xs leading-snug">
                   v{currentMachineVersion?.version}
                 </span>
                 to
-                <span className="bg-gray-100 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit mx-1">
-                  v{machineVersion.version}
+                <span className="mx-1 w-fit rounded-md bg-gray-100 px-2 py-1 text-gray-500 text-xs leading-snug">
+                  v{rollbackMachineVersion?.version}
                 </span>
                 .
               </div>
 
-              <div className="flex flex-col md:flex-row items-center gap-4">
+              <div className="flex flex-col items-center gap-4 md:flex-row">
                 {/* Current Version Card */}
-                <div className="flex-1 flex justify-between bg-gray-100 rounded-[6px] p-2 border border-gray-200 w-full md:w-auto">
-                  <div className="flex flex-row gap-x-4 items-center">
+                <div className="flex w-full flex-1 justify-between rounded-[6px] border border-gray-200 bg-gray-100 p-2 md:w-auto">
+                  <div className="flex flex-row items-center gap-x-4">
                     <div>
                       <CircleX className="h-4 w-4" />
                     </div>
                     <div className="flex flex-col">
-                      <div className="text-xs text-gray-600 font-medium font-mono flex flex-row gap-x-2 items-center">
+                      <div className="flex flex-row items-center gap-x-2 font-medium font-mono text-gray-600 text-xs">
                         {currentMachineVersion?.id.slice(0, 8)}
-                        <span className="bg-gray-200 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit">
+                        <span className="w-fit rounded-md bg-gray-200 px-2 py-1 text-gray-500 text-xs leading-snug">
                           v{currentMachineVersion?.version}
                         </span>
                       </div>
-                      <div className="flex flex-row gap-x-2 items-center">
+                      <div className="flex flex-row items-center gap-x-2">
                         <MachineStatusBadge
                           status={currentMachineVersion?.status}
                           createdAt={currentMachineVersion?.created_at}
@@ -577,25 +583,27 @@ function InstantRollback({
                 </div>
 
                 {/* Previous Version Card */}
-                <div className="flex-1 flex justify-between bg-white rounded-[6px] p-2 border border-gray-200 shadow-lg w-full md:w-auto">
-                  <div className="flex flex-row gap-x-4 items-center">
+                <div className="flex w-full flex-1 justify-between rounded-[6px] border border-gray-200 bg-white p-2 shadow-lg md:w-auto">
+                  <div className="flex flex-row items-center gap-x-4">
                     <div>
                       <RotateCcw className="h-4 w-4 text-blue-500" />
                     </div>
                     <div className="flex flex-col">
-                      <div className="text-xs text-gray-600 font-medium font-mono flex flex-row gap-x-2 items-center">
-                        {machineVersion.id.slice(0, 8)}
-                        <span className="bg-gray-200 leading-snug px-2 py-1 rounded-md text-gray-500 text-xs w-fit">
-                          v{machineVersion.version}
+                      <div className="flex flex-row items-center gap-x-2 font-medium font-mono text-gray-600 text-xs">
+                        {rollbackMachineVersion?.id.slice(0, 8)}
+                        <span className="w-fit rounded-md bg-gray-200 px-2 py-1 text-gray-500 text-xs leading-snug">
+                          v{rollbackMachineVersion?.version}
                         </span>
                       </div>
-                      <div className="flex flex-row gap-x-2 items-center">
+                      <div className="flex flex-row items-center gap-x-2">
                         <MachineStatusBadge
-                          status={machineVersion.status}
-                          createdAt={machineVersion.created_at}
+                          status={rollbackMachineVersion?.status}
+                          createdAt={rollbackMachineVersion?.created_at}
                         />
                       </div>
-                      <UserInfoForDeployment machineVersion={machineVersion} />
+                      <UserInfoForDeployment
+                        machineVersion={rollbackMachineVersion}
+                      />
                     </div>
                   </div>
                   <div>
@@ -610,7 +618,7 @@ function InstantRollback({
               </div>
               <DiffViewer
                 currentMachineVersion={currentMachineVersion}
-                machineVersion={machineVersion}
+                machineVersion={rollbackMachineVersion}
               />
             </AlertDialogDescription>
           </AlertDialogHeader>
