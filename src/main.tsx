@@ -252,10 +252,7 @@ let publicClerk: ReturnType<typeof useClerk> | undefined;
 function InnerApp() {
   const auth = useAuth();
   const clerk = useClerk();
-
-  useEffect(() => {
-    publicClerk = clerk;
-  }, [clerk]);
+  publicClerk = clerk;
 
   if (!auth.isLoaded) {
     return (
