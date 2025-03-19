@@ -1,6 +1,5 @@
 import { DownloadButton } from "@/components/download-button";
 import { ErrorBoundary } from "@/components/error-boundary";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +18,9 @@ import {
   Loader2,
   CircleX,
   Expand,
+  Ellipsis,
+  Search,
+  FolderOpen,
 } from "lucide-react";
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import {
@@ -30,8 +32,16 @@ import {
 } from "../ui/carousel";
 import { ShineBorder } from "../magicui/shine-border";
 import { downloadImage } from "@/utils/download-image";
-import { ImageInputsTooltip } from "../image-inputs-tooltip";
-// import { ModelRenderer } from "./3d-renderer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 // Create a lazy-loaded version of the component
 const LazyModelRenderer = lazy(() =>
@@ -208,16 +218,6 @@ function FileURLRenderMulti({
 }) {
   const [openOnIndex, setOpenOnIndex] = useState<number | null>(null);
 
-  // Move expandImage outside of the ImageList component to prevent recreation on each render
-  const expandImage = useCallback(({ url }: { url: string }) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }, []);
-
   if (!canExpandToView) {
     if (columns > 1 && urls.length > 1) {
       return (
@@ -294,144 +294,164 @@ function FileURLRenderMulti({
 
       {columns > 1 ? (
         <div className={cn("grid grid-cols-1 gap-2", `grid-cols-${columns}`)}>
-          {urls.map((urlImage, i) => (
-            <button
-              key={i}
-              type="button"
-              className="group/item relative flex overflow-clip rounded-[8px] "
-              onClick={() => {
-                setOpenOnIndex(i);
-              }}
-            >
-              <Skeleton className={cn("aspect-square min-w-[230px]")} />
-              <FileURLRender
-                url={urlImage.url}
-                imgClasses={cn(
-                  imgClasses,
-                  "absolute top-0 left-0 pointer-events-none",
-                )}
+          {urls.map((urlImage, i) => {
+            return (
+              <MediaDisplay
+                key={urlImage.url}
+                urlImage={urlImage}
+                imgClasses={imgClasses}
                 lazyLoading={lazyLoading}
+                onClick={() => {
+                  setOpenOnIndex(i);
+                }}
+                canDownload={canDownload}
               />
-
-              {urlImage.upload_duration && (
-                <Badge className="absolute top-2 left-2 text-white opacity-0 transition-all duration-300 group-hover/item:bg-black group-hover/item:opacity-100">
-                  Upload time:{" "}
-                  {Math.round(urlImage.upload_duration * 100) / 100}s
-                </Badge>
-              )}
-
-              {urlImage.node_meta && (
-                <Badge className="absolute bottom-2 left-2 text-white opacity-0 transition-all duration-300 group-hover/item:bg-black/25 group-hover/item:opacity-100">
-                  {urlImage.node_meta.node_class}
-                </Badge>
-              )}
-
-              {urlImage.url && (
-                <ImageInputsTooltip tooltipText="View full resolution">
-                  <Button
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      expandImage({ url: urlImage.url });
-                    }}
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 bg-black bg-opacity-50 text-white opacity-0 transition-all duration-300 hover:bg-black hover:bg-opacity-70 hover:text-white group-hover/item:opacity-100"
-                  >
-                    <Expand size={16} />
-                  </Button>
-                </ImageInputsTooltip>
-              )}
-
-              {canDownload && (
-                <Button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await downloadImage({
-                      url: urlImage.url,
-                      fileName: urlImage.filename,
-                    });
-                  }}
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 bottom-2 bg-black bg-opacity-50 text-white opacity-0 transition-all duration-300 hover:bg-black hover:bg-opacity-70 hover:text-white group-hover/item:opacity-100"
-                >
-                  <Download size={16} />
-                </Button>
-              )}
-            </button>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <>
           {urls.map((urlImage, i) => (
-            <button
-              key={i}
-              type="button"
-              className="group/item relative flex overflow-clip rounded-[8px] "
+            <MediaDisplay
+              key={urlImage.url}
+              urlImage={urlImage}
+              imgClasses={imgClasses}
+              lazyLoading={lazyLoading}
               onClick={() => {
                 setOpenOnIndex(i);
               }}
-            >
-              <Skeleton className={cn("aspect-square min-w-[230px]")} />
-              <FileURLRender
-                url={urlImage.url}
-                imgClasses={cn(
-                  imgClasses,
-                  "absolute top-0 left-0 pointer-events-none",
-                )}
-                lazyLoading={lazyLoading}
-              />
-
-              {urlImage.upload_duration && (
-                <Badge className="absolute top-2 left-2 text-white opacity-0 transition-all duration-300 group-hover/item:bg-black group-hover/item:opacity-100">
-                  Upload time:{" "}
-                  {Math.round(urlImage.upload_duration * 100) / 100}s
-                </Badge>
-              )}
-
-              {urlImage.node_meta && (
-                <Badge className="absolute bottom-2 left-2 text-white opacity-0 transition-all duration-300 group-hover/item:bg-black/25 group-hover/item:opacity-100">
-                  {urlImage.node_meta.node_class}
-                </Badge>
-              )}
-
-              {urlImage.url && (
-                <ImageInputsTooltip tooltipText="View full resolution">
-                  <Button
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      expandImage({ url: urlImage.url });
-                    }}
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-2 right-2 bg-black bg-opacity-50 text-white opacity-0 transition-all duration-300 hover:bg-black hover:bg-opacity-70 hover:text-white group-hover/item:opacity-100"
-                  >
-                    <Expand size={16} />
-                  </Button>
-                </ImageInputsTooltip>
-              )}
-
-              {canDownload && (
-                <Button
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await downloadImage({
-                      url: urlImage.url,
-                      fileName: urlImage.filename,
-                    });
-                  }}
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-2 bottom-2 bg-black bg-opacity-50 text-white opacity-0 transition-all duration-300 hover:bg-black hover:bg-opacity-70 hover:text-white group-hover/item:opacity-100"
-                >
-                  <Download size={16} />
-                </Button>
-              )}
-            </button>
+              canDownload={canDownload}
+            />
           ))}
         </>
       )}
     </>
+  );
+}
+
+function MediaDisplay({
+  urlImage,
+  imgClasses,
+  lazyLoading,
+  onClick,
+  canDownload,
+}: {
+  urlImage: any;
+  imgClasses: string;
+  lazyLoading: boolean;
+  onClick: () => void;
+  canDownload: boolean;
+}) {
+  const expandImage = useCallback(({ url }: { url: string }) => {
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }, []);
+
+  return (
+    <div
+      key={urlImage.url}
+      className="group relative flex overflow-clip rounded-[8px]"
+    >
+      <Skeleton className={cn("aspect-square min-w-[230px]")} />
+      <FileURLRender
+        url={urlImage.url}
+        imgClasses={cn(imgClasses, "absolute top-0 left-0 pointer-events-none")}
+        lazyLoading={lazyLoading}
+      />
+
+      <div className="absolute top-0 right-0 w-full rounded-t-[4px] bg-gradient-to-t from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-transparent"
+              >
+                <Ellipsis className="h-3.5 w-3.5 text-white/90" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-52">
+              {urlImage.filename && (
+                <>
+                  <DropdownMenuLabel className="line-clamp-1">
+                    {urlImage.filename}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              <DropdownMenuItem
+                onClick={(event) => {
+                  event.stopPropagation();
+                  expandImage({ url: urlImage.url });
+                }}
+              >
+                <div className="flex w-full items-center justify-between">
+                  View Full Resolution <Expand className="h-3.5 w-3.5" />
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {/* <DropdownMenuItem
+                onClick={async (event) => {
+                  event.stopPropagation();
+                  try {
+                    await api({
+                      url: "assets/upload/url",
+                      init: {
+                        method: "POST",
+                      },
+                      params: {
+                        url: urlImage.url,
+                      },
+                    });
+                    toast.success(`${urlImage.filename} uploaded to assets`);
+                  } catch (error) {
+                    toast.error(`Failed to upload: ${error}`);
+                  }
+                }}
+              >
+                <div className="flex w-full items-center justify-between">
+                  Add to assets <FolderOpen className="h-3.5 w-3.5" />
+                </div>
+              </DropdownMenuItem> */}
+              <DropdownMenuItem
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await downloadImage({
+                    url: urlImage.url,
+                    fileName: urlImage.filename,
+                  });
+                }}
+                disabled={!canDownload}
+              >
+                <div className="flex w-full items-center justify-between">
+                  Download <Download className="h-3.5 w-3.5" />
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+      <div className="absolute bottom-0 left-0 w-full rounded-b-[4px] bg-gradient-to-b from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <div className="flex items-center justify-between px-3 py-2 drop-shadow-md">
+          <div className="flex items-center gap-2">
+            <span className="text-white/90 text-xs">
+              {Math.round(urlImage.upload_duration * 100) / 100}s
+            </span>
+            {urlImage.filename && (
+              <span className="w-28 truncate rounded bg-white/20 px-1.5 py-0.5 text-[10px] text-white/90">
+                {urlImage.filename}
+              </span>
+            )}
+          </div>
+          <Search className="h-3.5 w-3.5 text-white/90" />
+        </div>
+      </div>
+    </div>
   );
 }
 
