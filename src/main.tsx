@@ -123,43 +123,43 @@ routeTree.update({
       }
     }
 
-    // Add org prefix to path if needed
-    currentOrg = currentOrg ?? personalOrg;
+    // // Add org prefix to path if needed
+    // currentOrg = currentOrg ?? personalOrg;
 
-    if (
-      inPathWithOrgPrefix &&
-      currentOrg &&
-      !location.pathname.includes(`/${currentOrg}/`)
-    ) {
-      // const shouldHaveOrgPrefix = orgPrefixPaths.some((path) =>
-      //   location.pathname.startsWith(path),
-      // );
-      // if (shouldHaveOrgPrefix) {
-      if (!notPersonalOrg) {
-        // console.log(
-        //   "shit",
-        //   "redirecting to",
-        //   `/user/${currentOrg}${location.pathname}`,
-        // );
-        orgSlug = currentOrg;
-        type = "user";
-        throw redirect({
-          to: `/user/${currentOrg}${location.pathname}`,
-          search: location.search,
-        });
-      }
-      // console.log(
-      //   "shit",
-      //   "redirecting to",
-      //   `/org/${currentOrg}${location.pathname}`,
-      // );
-      orgSlug = currentOrg;
-      type = "org";
-      throw redirect({
-        to: `/org/${currentOrg}${location.pathname}`,
-        search: location.search,
-      });
-    }
+    // if (
+    //   inPathWithOrgPrefix &&
+    //   currentOrg &&
+    //   !location.pathname.includes(`/${currentOrg}/`)
+    // ) {
+    //   // const shouldHaveOrgPrefix = orgPrefixPaths.some((path) =>
+    //   //   location.pathname.startsWith(path),
+    //   // );
+    //   // if (shouldHaveOrgPrefix) {
+    //   if (!notPersonalOrg) {
+    //     // console.log(
+    //     //   "shit",
+    //     //   "redirecting to",
+    //     //   `/user/${currentOrg}${location.pathname}`,
+    //     // );
+    //     orgSlug = currentOrg;
+    //     type = "user";
+    //     throw redirect({
+    //       to: `/user/${currentOrg}${location.pathname}`,
+    //       search: location.search,
+    //     });
+    //   }
+    //   // console.log(
+    //   //   "shit",
+    //   //   "redirecting to",
+    //   //   `/org/${currentOrg}${location.pathname}`,
+    //   // );
+    //   orgSlug = currentOrg;
+    //   type = "org";
+    //   throw redirect({
+    //     to: `/org/${currentOrg}${location.pathname}`,
+    //     search: location.search,
+    //   });
+    // }
   },
 });
 
@@ -200,17 +200,74 @@ router.getMatchedRoutes = (next, opts) => {
       currentRouteIncomingOrg !== personalOrg &&
       currentRouteIncomingOrg !== null;
 
+    if (inPathWithOrgPrefix && currentRouteIncomingOrg !== currentOrg) {
+      // If org doesn't exist and it's not personal org, redirect to org-not-found
+      // if (!isValidOrg && notPersonalOrg) {
+      //   throw redirect({
+      //     to: "/org-not-found",
+      //     search: {
+      //       org: currentRouteIncomingOrg,
+      //     },
+      //   });
+      // }
+      // if (currentRouteIncomingOrg !== currentOrg) {
+      //   // console.log("shit", "setting org", currentRouteIncomingOrg);
+      //   currentOrg = currentRouteIncomingOrg;
+      //   publicClerk?.setActive({
+      //     organization: currentRouteIncomingOrg,
+      //   });
+      // }
+    }
+
     // Remove leading slash and add $orgId prefix
     const newPath = opts?.to?.startsWith("/") ? opts?.to?.slice(1) : opts?.to;
 
-    const type = notPersonalOrg ? "org" : "user";
-    const orgSlug = notPersonalOrg ? currentOrg : personalOrg;
+    type = notPersonalOrg ? "org" : "user";
+    orgSlug = notPersonalOrg ? currentOrg : personalOrg;
 
     // console.log("shit log", next, opts, next.pathname, newPath);
     opts.to = `/${type}/${orgSlug}/${newPath}`;
     // console.log("shit log", opts?.to);
     // next.pathname = `${type}/${orgSlug}/${newPath}`;
     // next.href = `${type}/${orgSlug}/${newPath}`;
+
+    // Add org prefix to path if needed
+    // currentOrg = currentOrg ?? personalOrg;
+
+    // if (
+    //   inPathWithOrgPrefix &&
+    //   currentOrg &&
+    //   !location.pathname.includes(`/${currentOrg}/`)
+    // ) {
+    //   // const shouldHaveOrgPrefix = orgPrefixPaths.some((path) =>
+    //   //   location.pathname.startsWith(path),
+    //   // );
+    //   // if (shouldHaveOrgPrefix) {
+    //   if (!notPersonalOrg) {
+    //     // console.log(
+    //     //   "shit",
+    //     //   "redirecting to",
+    //     //   `/user/${currentOrg}${location.pathname}`,
+    //     // );
+    //     orgSlug = currentOrg;
+    //     type = "user";
+    //     throw redirect({
+    //       to: `/user/${currentOrg}${location.pathname}`,
+    //       search: location.search,
+    //     });
+    //   }
+    //   // console.log(
+    //   //   "shit",
+    //   //   "redirecting to",
+    //   //   `/org/${currentOrg}${location.pathname}`,
+    //   // );
+    //   orgSlug = currentOrg;
+    //   type = "org";
+    //   throw redirect({
+    //     to: `/org/${currentOrg}${location.pathname}`,
+    //     search: location.search,
+    //   });
+    // }
   }
 
   // if (

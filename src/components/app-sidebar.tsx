@@ -274,24 +274,28 @@ export function AppSidebar() {
   }));
 
   const location = useLocation();
+  // console.log(location);
+
   const pathname = location.pathname;
-  const chunks = pathname.split("/");
+  const chunks = pathname.split("/").filter(Boolean);
 
   const { case1Match, case2Match, pathParts, pathWithoutOrg } = getOrgPathInfo(
     orgSlug ?? null,
-    pathname,
+    pathname.replace("//", "/"),
   );
 
-  let parentPath = chunks[2];
+  let parentPath = chunks[0];
 
   const clerk = useClerk();
   const personalOrg = clerk.user?.username ?? "personal";
 
   if (case2Match) {
-    parentPath = chunks[3];
+    parentPath = chunks[2];
   } else {
-    parentPath = chunks[1];
+    parentPath = chunks[0];
   }
+
+  console.log("parentPath", case1Match, case2Match, parentPath, chunks);
 
   const isAdminAndMember = useIsAdminAndMember();
   const workflow_id = useWorkflowIdInWorkflowPage();
