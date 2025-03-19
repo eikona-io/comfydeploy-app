@@ -68,7 +68,7 @@ routeTree.update({
     if (location.pathname.includes(`${type}/${orgSlug}`)) {
       location.pathname = location.pathname.replace(`${type}/${orgSlug}`, "");
     }
-    console.log("shit", location.pathname, ctx);
+    // console.log("shit", location.pathname, ctx);
 
     const context: RootRouteContext = ctx.context;
 
@@ -115,7 +115,7 @@ routeTree.update({
       }
 
       if (currentRouteIncomingOrg !== currentOrg) {
-        console.log("shit", "setting org", currentRouteIncomingOrg);
+        // console.log("shit", "setting org", currentRouteIncomingOrg);
         currentOrg = currentRouteIncomingOrg;
         context.clerk?.setActive({
           organization: currentRouteIncomingOrg,
@@ -136,11 +136,11 @@ routeTree.update({
       // );
       // if (shouldHaveOrgPrefix) {
       if (!notPersonalOrg) {
-        console.log(
-          "shit",
-          "redirecting to",
-          `/user/${currentOrg}${location.pathname}`,
-        );
+        // console.log(
+        //   "shit",
+        //   "redirecting to",
+        //   `/user/${currentOrg}${location.pathname}`,
+        // );
         orgSlug = currentOrg;
         type = "user";
         throw redirect({
@@ -148,11 +148,11 @@ routeTree.update({
           search: location.search,
         });
       }
-      console.log(
-        "shit",
-        "redirecting to",
-        `/org/${currentOrg}${location.pathname}`,
-      );
+      // console.log(
+      //   "shit",
+      //   "redirecting to",
+      //   `/org/${currentOrg}${location.pathname}`,
+      // );
       orgSlug = currentOrg;
       type = "org";
       throw redirect({
