@@ -278,7 +278,7 @@ export function AppSidebar() {
   const chunks = pathname.split("/");
 
   const { case1Match, case2Match, pathParts, pathWithoutOrg } = getOrgPathInfo(
-    null,
+    orgSlug ?? null,
     pathname,
   );
 

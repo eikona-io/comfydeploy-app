@@ -22,19 +22,27 @@ export function getOrgPathInfo(
     pathWithoutOrg.startsWith(path),
   );
 
-  const currentRouteIncomingOrg = case2Match
-    ? pathParts[2]
-    : case1Match
-      ? currentOrg
-      : null;
+  let currentRouteIncomingOrg =
+    (case2Match ? pathParts[2] : case1Match ? currentOrg : null) ?? null;
+
+  if (case1Match) {
+    currentRouteIncomingOrg = currentOrg;
+  }
+
   const inPathWithOrgPrefix = case1Match || case2Match;
 
-  return {
+  const data = {
     case1Match,
     case2Match,
+    pathname,
     pathParts,
     pathWithoutOrg,
     currentRouteIncomingOrg,
     inPathWithOrgPrefix,
+    currentOrg,
   };
+
+  // console.log("shit", data);
+
+  return data;
 }

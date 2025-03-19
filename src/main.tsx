@@ -51,6 +51,9 @@ function updateRoutePaths(route: RouteType) {
 // Update all routes in the routeTree that match orgPrefixPaths
 (routeTree.children as unknown as any[])?.forEach(updateRoutePaths);
 
+let orgSlug: string | null = "$orgId";
+let type: string | null = "$type";
+
 const existingBeforeLoad = routeTree.options.beforeLoad;
 routeTree.update({
   beforeLoad: async (ctx) => {
@@ -62,6 +65,10 @@ routeTree.update({
     if (location.pathname.includes("$type/$orgId")) {
       location.pathname = location.pathname.replace("$type/$orgId", "");
     }
+    if (location.pathname.includes(`${type}/${orgSlug}`)) {
+      location.pathname = location.pathname.replace(`${type}/${orgSlug}`, "");
+    }
+    console.log("shit", location.pathname, ctx);
 
     const context: RootRouteContext = ctx.context;
 
@@ -79,21 +86,6 @@ routeTree.update({
       pathWithoutOrg,
     } = getOrgPathInfo(currentOrg, location.pathname);
 
-    // Check if path matches any org prefix paths
-    const case1Match = orgPrefixPaths.some((path) =>
-      location.pathname.startsWith(path),
-    );
-
-    // const pathParts = location.pathname.split("/");
-    // const pathWithoutOrg = `/${pathParts.slice(3).join("/")}`;
-    const case2Match = orgPrefixPaths.some((path) =>
-      pathWithoutOrg.startsWith(path),
-    );
-
-    // const currentRouteIncomingOrg =
-    //   (case2Match ? pathParts[2] : case1Match ? currentOrg : null) ?? null;
-
-    // Check if the incoming org exists in user memberships
     const isValidOrg = memberships?.some(
       (membership) => membership.organization.slug === currentRouteIncomingOrg,
     );
@@ -123,7 +115,7 @@ routeTree.update({
       }
 
       if (currentRouteIncomingOrg !== currentOrg) {
-        console.log("setting org", currentRouteIncomingOrg);
+        console.log("shit", "setting org", currentRouteIncomingOrg);
         currentOrg = currentRouteIncomingOrg;
         context.clerk?.setActive({
           organization: currentRouteIncomingOrg,
@@ -142,16 +134,27 @@ routeTree.update({
       // const shouldHaveOrgPrefix = orgPrefixPaths.some((path) =>
       //   location.pathname.startsWith(path),
       // );
-
       // if (shouldHaveOrgPrefix) {
-
       if (!notPersonalOrg) {
+        console.log(
+          "shit",
+          "redirecting to",
+          `/user/${currentOrg}${location.pathname}`,
+        );
+        orgSlug = currentOrg;
+        type = "user";
         throw redirect({
           to: `/user/${currentOrg}${location.pathname}`,
           search: location.search,
         });
       }
-
+      console.log(
+        "shit",
+        "redirecting to",
+        `/org/${currentOrg}${location.pathname}`,
+      );
+      orgSlug = currentOrg;
+      type = "org";
       throw redirect({
         to: `/org/${currentOrg}${location.pathname}`,
         search: location.search,
@@ -176,17 +179,40 @@ const router = createRouter({
 const existingGetMatchedRoutes = router.getMatchedRoutes;
 router.getMatchedRoutes = (next, opts) => {
   if (
-    next.pathname &&
-    orgPrefixPaths.some((prefix) => next.pathname.startsWith(prefix))
+    opts?.to &&
+    orgPrefixPaths.some((prefix) => opts?.to?.startsWith(prefix))
   ) {
-    // Remove leading slash and add $orgId prefix
-    const newPath = next.pathname.startsWith("/")
-      ? next.pathname.slice(1)
-      : next.pathname;
+    const memberships = publicClerk?.user?.organizationMemberships;
+    const personalOrg = publicClerk?.user?.username ?? "personal";
+    const currentOrg = publicClerk?.organization?.slug || null;
 
-    next.pathname = `$type/$orgId/${newPath}`;
-    next.href = `$type/$orgId/${newPath}`;
+    const {
+      inPathWithOrgPrefix,
+      pathParts,
+      currentRouteIncomingOrg,
+      pathWithoutOrg,
+    } = getOrgPathInfo(currentOrg, opts?.to);
+
+    const isValidOrg = memberships?.some(
+      (membership) => membership.organization.slug === currentRouteIncomingOrg,
+    );
+    const notPersonalOrg =
+      currentRouteIncomingOrg !== personalOrg &&
+      currentRouteIncomingOrg !== null;
+
+    // Remove leading slash and add $orgId prefix
+    const newPath = opts?.to?.startsWith("/") ? opts?.to?.slice(1) : opts?.to;
+
+    const type = notPersonalOrg ? "org" : "user";
+    const orgSlug = notPersonalOrg ? currentOrg : personalOrg;
+
+    // console.log("shit log", next, opts, next.pathname, newPath);
+    opts.to = `/${type}/${orgSlug}/${newPath}`;
+    // console.log("shit log", opts?.to);
+    // next.pathname = `${type}/${orgSlug}/${newPath}`;
+    // next.href = `${type}/${orgSlug}/${newPath}`;
   }
+
   // if (
   //   opts?.to &&
   //   typeof opts.to === "string" &&
@@ -221,11 +247,34 @@ if (!rootElement) {
   throw new Error("Root element not found");
 }
 
+let publicClerk: ReturnType<typeof useClerk> | undefined;
+
 function InnerApp() {
   const auth = useAuth();
   const clerk = useClerk();
 
-  return <RouterProvider router={router} context={{ auth, clerk }} />;
+  useEffect(() => {
+    publicClerk = clerk;
+  }, [clerk]);
+
+  if (!auth.isLoaded) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background animate-in fade-in duration-300">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingIcon className="h-8 w-8 animate-spin" />
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Loading your account...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fade-in animate-in duration-300">
+      <RouterProvider router={router} context={{ auth, clerk }} />
+    </div>
+  );
 }
 
 if (!rootElement.innerHTML) {

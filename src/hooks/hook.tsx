@@ -8,7 +8,7 @@ import { api } from "../lib/api";
 export function useWorkflowIdInWorkflowPage() {
   const matchRoute = useMatchRoute();
   const params = matchRoute({
-    to: "/$type/$orgId/workflows/$workflowId/$view",
+    to: "/workflows/$workflowId/$view",
   });
 
   if (!params) {
