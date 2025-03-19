@@ -287,7 +287,7 @@ export function AppSidebar() {
   const clerk = useClerk();
   const personalOrg = clerk.user?.username ?? "personal";
 
-  if (case1Match || case2Match) {
+  if (case2Match) {
     parentPath = chunks[3];
   } else {
     parentPath = chunks[1];
