@@ -68,7 +68,6 @@ routeTree.update({
     if (location.pathname.includes(`${type}/${orgSlug}`)) {
       location.pathname = location.pathname.replace(`${type}/${orgSlug}`, "");
     }
-    // console.log("shit", location.pathname, ctx);
 
     const context: RootRouteContext = ctx.context;
 
@@ -103,6 +102,7 @@ routeTree.update({
     //   notPersonalOrg,
     // });
 
+    // To check org are valid, if not redirect to org-not-found, and apply incoming org to current org
     if (inPathWithOrgPrefix && currentRouteIncomingOrg !== currentOrg) {
       // If org doesn't exist and it's not personal org, redirect to org-not-found
       if (!isValidOrg && notPersonalOrg) {
@@ -122,44 +122,6 @@ routeTree.update({
         });
       }
     }
-
-    // // Add org prefix to path if needed
-    // currentOrg = currentOrg ?? personalOrg;
-
-    // if (
-    //   inPathWithOrgPrefix &&
-    //   currentOrg &&
-    //   !location.pathname.includes(`/${currentOrg}/`)
-    // ) {
-    //   // const shouldHaveOrgPrefix = orgPrefixPaths.some((path) =>
-    //   //   location.pathname.startsWith(path),
-    //   // );
-    //   // if (shouldHaveOrgPrefix) {
-    //   if (!notPersonalOrg) {
-    //     // console.log(
-    //     //   "shit",
-    //     //   "redirecting to",
-    //     //   `/user/${currentOrg}${location.pathname}`,
-    //     // );
-    //     orgSlug = currentOrg;
-    //     type = "user";
-    //     throw redirect({
-    //       to: `/user/${currentOrg}${location.pathname}`,
-    //       search: location.search,
-    //     });
-    //   }
-    //   // console.log(
-    //   //   "shit",
-    //   //   "redirecting to",
-    //   //   `/org/${currentOrg}${location.pathname}`,
-    //   // );
-    //   orgSlug = currentOrg;
-    //   type = "org";
-    //   throw redirect({
-    //     to: `/org/${currentOrg}${location.pathname}`,
-    //     search: location.search,
-    //   });
-    // }
   },
 });
 
@@ -177,6 +139,7 @@ const router = createRouter({
 });
 
 const existingGetMatchedRoutes = router.getMatchedRoutes;
+// To map all non org routes to org routes
 router.getMatchedRoutes = (next, opts) => {
   if (
     opts?.to &&
@@ -193,31 +156,9 @@ router.getMatchedRoutes = (next, opts) => {
       pathWithoutOrg,
     } = getOrgPathInfo(currentOrg, opts?.to);
 
-    const isValidOrg = memberships?.some(
-      (membership) => membership.organization.slug === currentRouteIncomingOrg,
-    );
     const notPersonalOrg =
       currentRouteIncomingOrg !== personalOrg &&
       currentRouteIncomingOrg !== null;
-
-    if (inPathWithOrgPrefix && currentRouteIncomingOrg !== currentOrg) {
-      // If org doesn't exist and it's not personal org, redirect to org-not-found
-      // if (!isValidOrg && notPersonalOrg) {
-      //   throw redirect({
-      //     to: "/org-not-found",
-      //     search: {
-      //       org: currentRouteIncomingOrg,
-      //     },
-      //   });
-      // }
-      // if (currentRouteIncomingOrg !== currentOrg) {
-      //   // console.log("shit", "setting org", currentRouteIncomingOrg);
-      //   currentOrg = currentRouteIncomingOrg;
-      //   publicClerk?.setActive({
-      //     organization: currentRouteIncomingOrg,
-      //   });
-      // }
-    }
 
     // Remove leading slash and add $orgId prefix
     const newPath = opts?.to?.startsWith("/") ? opts?.to?.slice(1) : opts?.to;
@@ -227,61 +168,7 @@ router.getMatchedRoutes = (next, opts) => {
 
     // console.log("shit log", next, opts, next.pathname, newPath);
     opts.to = `/${type}/${orgSlug}/${newPath}`;
-    // console.log("shit log", opts?.to);
-    // next.pathname = `${type}/${orgSlug}/${newPath}`;
-    // next.href = `${type}/${orgSlug}/${newPath}`;
-
-    // Add org prefix to path if needed
-    // currentOrg = currentOrg ?? personalOrg;
-
-    // if (
-    //   inPathWithOrgPrefix &&
-    //   currentOrg &&
-    //   !location.pathname.includes(`/${currentOrg}/`)
-    // ) {
-    //   // const shouldHaveOrgPrefix = orgPrefixPaths.some((path) =>
-    //   //   location.pathname.startsWith(path),
-    //   // );
-    //   // if (shouldHaveOrgPrefix) {
-    //   if (!notPersonalOrg) {
-    //     // console.log(
-    //     //   "shit",
-    //     //   "redirecting to",
-    //     //   `/user/${currentOrg}${location.pathname}`,
-    //     // );
-    //     orgSlug = currentOrg;
-    //     type = "user";
-    //     throw redirect({
-    //       to: `/user/${currentOrg}${location.pathname}`,
-    //       search: location.search,
-    //     });
-    //   }
-    //   // console.log(
-    //   //   "shit",
-    //   //   "redirecting to",
-    //   //   `/org/${currentOrg}${location.pathname}`,
-    //   // );
-    //   orgSlug = currentOrg;
-    //   type = "org";
-    //   throw redirect({
-    //     to: `/org/${currentOrg}${location.pathname}`,
-    //     search: location.search,
-    //   });
-    // }
   }
-
-  // if (
-  //   opts?.to &&
-  //   typeof opts.to === "string" &&
-  //   orgPrefixPaths.some((prefix) => opts.to?.startsWith(prefix))
-  // ) {
-  //   // Remove leading slash and add $orgId prefix
-  //   const newPath = opts.to.startsWith("/") ? opts.to.slice(1) : opts.to;
-
-  //   opts.to = `$orgId/${newPath}`;
-
-  //   console.log(next, opts);
-  // }
 
   const result = existingGetMatchedRoutes(next, opts);
   return result;
