@@ -60,11 +60,13 @@ export function MachineSettingsWrapper({
   onValueChange,
   title,
   disableUnsavedChangesWarningServerless = false,
+  readonly = false,
 }: {
   machine: any;
   onValueChange?: (key: string, value: any) => void;
   title?: ReactNode;
   disableUnsavedChangesWarningServerless?: boolean;
+  readonly?: boolean;
 }) {
   const isServerless = machine.type === "comfy-deploy-serverless";
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -159,6 +161,7 @@ export function MachineSettingsWrapper({
               disableUnsavedChangesWarning={
                 disableUnsavedChangesWarningServerless
               }
+              readonly={readonly}
             />
           ) : (
             <ClassicSettings
@@ -247,6 +250,7 @@ function ServerlessSettings({
   view,
   onValueChange,
   disableUnsavedChangesWarning = false,
+  readonly = false,
 }: {
   machine: any;
   formRef: RefObject<HTMLFormElement | null>;
@@ -255,6 +259,7 @@ function ServerlessSettings({
   view: string;
   onValueChange?: (key: string, value: any) => void;
   disableUnsavedChangesWarning?: boolean;
+  readonly?: boolean;
 }) {
   const [isFormDirty, setIsFormDirty] = useState(false);
   const controls = useAnimation();
@@ -412,7 +417,12 @@ function ServerlessSettings({
       <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)}>
         {view === "environment" && (
           <div className="space-y-4 p-2 pt-4">
-            <div className="flex flex-col gap-4 md:flex-row">
+            <div
+              className={cn(
+                "flex flex-col gap-4 md:flex-row",
+                readonly && "pointer-events-none opacity-70",
+              )}
+            >
               <div className="w-full">
                 <Badge className="font-medium text-sm">ComfyUI Version</Badge>
                 <ComfyUIVersionSelectBox
@@ -428,27 +438,27 @@ function ServerlessSettings({
                 />
               </div>
             </div>
-            {/* {!isNew && ( */}
             <CustomNodeSetupWrapper
               value={form.watch("docker_command_steps")}
               onChange={(value) => form.setValue("docker_command_steps", value)}
+              readonly={readonly}
             />
-            {/* )} */}
           </div>
         )}
 
         {view === "autoscaling" && (
-          <div className="space-y-1 p-2 pt-4">
+          <div
+            className={cn(
+              "space-y-1 p-2 pt-4",
+              readonly && "pointer-events-none opacity-70",
+            )}
+          >
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col items-start justify-between">
                 <div className="flex flex-col gap-2">
                   <Badge className="font-medium text-sm">
                     Max Parallel GPU
                   </Badge>
-                  {/* <div>
-                        Increase the concurrency limit for the machine to handle
-                        more gpu intensive tasks at the same time.
-                      </div> */}
                 </div>
                 <div className="w-full">
                   <MaxParallelGPUSlider
@@ -464,10 +474,6 @@ function ServerlessSettings({
                   <Badge className="mb-2 font-medium text-sm">
                     Keep Always On
                   </Badge>
-                  {/* <div>
-                        Increase the concurrency limit for the machine to handle
-                        more gpu intensive tasks at the same time.
-                      </div> */}
                 </div>
                 <div className="w-full">
                   <MaxAlwaysOnSlider
@@ -476,13 +482,6 @@ function ServerlessSettings({
                   />
                 </div>
               </div>
-              {/* </AccordionContent>
-              </AccordionItem> */}
-              {/* <AccordionItem value="timeout">
-                <AccordionTrigger className="py-4">
-                  Timeout Settings
-                </AccordionTrigger>
-                <AccordionContent className="space-y-6"> */}
               <div>
                 <Badge className="mb-2 font-medium text-sm">
                   Workflow Timeout
@@ -505,7 +504,12 @@ function ServerlessSettings({
 
         {view === "advanced" && (
           <div className="space-y-10 p-2 pt-4">
-            <div className="flex flex-col gap-2">
+            <div
+              className={cn(
+                "flex flex-col gap-2",
+                readonly && "pointer-events-none opacity-70",
+              )}
+            >
               <h3 className="font-medium text-sm">Builder Version</h3>
               <BuilderVersionSelectBox
                 value={form.watch("machine_builder_version") || "4"}
@@ -523,7 +527,12 @@ function ServerlessSettings({
                 <AccordionTrigger className="py-4">
                   Docker Configuration
                 </AccordionTrigger>
-                <AccordionContent className="space-y-6">
+                <AccordionContent
+                  className={cn(
+                    "space-y-6",
+                    readonly && "pointer-events-none opacity-70",
+                  )}
+                >
                   <div className="flex flex-col gap-2">
                     <h3 className="font-medium text-sm">Base Docker Image</h3>
                     <Input
@@ -548,7 +557,12 @@ function ServerlessSettings({
                 <AccordionTrigger className="py-4">
                   System Settings
                 </AccordionTrigger>
-                <AccordionContent className="space-y-6">
+                <AccordionContent
+                  className={cn(
+                    "space-y-6",
+                    readonly && "pointer-events-none opacity-70",
+                  )}
+                >
                   <div className="flex flex-col gap-2">
                     <h3 className="font-medium text-sm">Python Version</h3>
                     <Select
@@ -584,20 +598,18 @@ function ServerlessSettings({
                       to 1 container before spinning up a new container.
                     </p>
                   </div>
-                  {/* <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Websocket timeout</h3>
-                    <WebSocketTimeout
-                      value={form.watch("ws_timeout")}
-                      onChange={(value) => form.setValue("ws_timeout", value)}
-                    />
-                  </div> */}
                 </AccordionContent>
               </AccordionItem>
               <AccordionItem value="custom">
                 <AccordionTrigger className="py-4">
                   Custom Settings
                 </AccordionTrigger>
-                <AccordionContent className="space-y-6">
+                <AccordionContent
+                  className={cn(
+                    "space-y-6",
+                    readonly && "pointer-events-none opacity-70",
+                  )}
+                >
                   <div>
                     <div className="flex flex-row items-center gap-4">
                       <Switch
@@ -810,9 +822,11 @@ function ComfyUIVersionSelectBox({
 function CustomNodeSetupWrapper({
   value,
   onChange,
+  readonly = false,
 }: {
   value: any;
   onChange: (value: any) => void;
+  readonly?: boolean;
 }) {
   const [validation, setValidation] = useState<StepValidation>(() => ({
     docker_command_steps: value || { steps: [] },
@@ -850,6 +864,7 @@ function CustomNodeSetupWrapper({
     <CustomNodeSetup
       validation={validation}
       setValidation={handleValidationChange}
+      readonly={readonly}
     />
   );
 }
