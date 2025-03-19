@@ -2,6 +2,9 @@ import {
   Outlet,
   createRootRouteWithContext,
   redirect,
+  useLocation,
+  useMatchRoute,
+  useRouter,
 } from "@tanstack/react-router";
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
@@ -17,13 +20,19 @@ const TanStackRouterDevtools =
 import { AppSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { SignedIn, type useClerk, type useAuth } from "@clerk/clerk-react";
-import { RedirectToSignIn, SignedOut } from "@clerk/clerk-react";
-import React from "react";
+import { SignedIn, useClerk } from "@clerk/clerk-react";
+import {
+  RedirectToSignIn,
+  SignedOut,
+  useAuth,
+  useOrganizationList,
+} from "@clerk/clerk-react";
+import React, { useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
-import { Providers } from "../lib/providers";
+import { Providers, queryClient } from "../lib/providers";
+import { orgPrefixPaths } from "@/orgPrefixPaths";
 
-type Context = {
+export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
   clerk?: ReturnType<typeof useClerk>;
 };
@@ -36,7 +45,7 @@ const publicRoutes = [
   { path: "/share", wildcard: true },
 ];
 
-export const Route = createRootRouteWithContext<Context>()({
+export const Route = createRootRouteWithContext<RootRouteContext>()({
   component: RootComponent,
   beforeLoad: async ({ context, location }) => {
     while (!context.clerk?.loaded) {
@@ -69,20 +78,35 @@ export const Route = createRootRouteWithContext<Context>()({
 });
 
 function RootComponent() {
-  // useEffect(() => {
-  // 	if (!isSignedIn) {
-  // 		// navigate({ to: "/" });
-  // 	} else {
-  // 		navigate({ to: "/workflows" });
-  // 	}
-  // }, [isSignedIn, navigate]);
+  const auth = useAuth();
+  const clerk = useClerk();
+  const { userMemberships, isLoaded } = useOrganizationList({
+    userMemberships: true,
+  });
+
+  const router = useRouter();
+  const isFirstRender = useRef(true);
+  const currentOrg = useRef(auth.orgId);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    // if (auth.orgId !== currentOrg.current) {
+    //   router.navigate({
+    //     to: "/",
+    //   });
+    // }
+
+    currentOrg.current = auth.orgId;
+    queryClient.resetQueries();
+  }, [auth.orgId, router]);
 
   return (
     <SidebarProvider>
       <Providers>
-        {/* <SignedOut>
-          <RedirectToSignIn />
-        </SignedOut> */}
         <SignedIn>
           <AppSidebar />
         </SignedIn>

@@ -43,7 +43,12 @@ import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
-import { OrganizationSwitcher, UserButton, useAuth } from "@clerk/clerk-react";
+import {
+  OrganizationSwitcher,
+  UserButton,
+  useAuth,
+  useClerk,
+} from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
 // import { MachineSelect } from "@/components/MachineSelect";
@@ -242,17 +247,17 @@ export function AppSidebar() {
   const { pages, flatPages, metaPages } = usePages();
   // const sub = useCurrentPlan();
 
-  const { orgId } = useAuth();
+  const { orgId, orgSlug } = useAuth();
   const isFirstRender = useRef(true);
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    console.log("org_id", orgId);
-    window.location.reload();
-  }, [orgId]);
+  // useEffect(() => {
+  //   if (isFirstRender.current) {
+  //     isFirstRender.current = false;
+  //     return;
+  //   }
+  //   console.log("org_id", orgId);
+  //   window.location.reload();
+  // }, [orgId]);
 
   const items = flatPages.map((page) => ({
     title: page.name,
@@ -269,7 +274,13 @@ export function AppSidebar() {
   const location = useLocation();
   const pathname = location.pathname;
   const chunks = pathname.split("/");
-  const parentPath = chunks[1];
+  let parentPath = chunks[1];
+
+  const clerk = useClerk();
+  const personalOrg = clerk.user?.username ?? "personal";
+  if (parentPath === orgSlug || parentPath === personalOrg) {
+    parentPath = chunks[2];
+  }
 
   const isAdminAndMember = useIsAdminAndMember();
   const workflow_id = useWorkflowIdInWorkflowPage();
@@ -419,11 +430,11 @@ export function AppSidebar() {
             />
           )}
 
-          {/* {!workflow_id && <V3Dialog />} */}
-
           <OrganizationSwitcher
             organizationProfileUrl="/organization-profile"
             organizationProfileMode="navigation"
+            afterSelectOrganizationUrl="/:slug/workflows"
+            afterSelectPersonalUrl={`/${personalOrg}/workflows`}
             appearance={{
               elements: {
                 rootBox: "items-center justify-center p-2",
