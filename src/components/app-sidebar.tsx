@@ -295,7 +295,7 @@ export function AppSidebar() {
     parentPath = chunks[0];
   }
 
-  console.log("parentPath", case1Match, case2Match, parentPath, chunks);
+  // console.log("parentPath", case1Match, case2Match, parentPath, chunks);
 
   const isAdminAndMember = useIsAdminAndMember();
   const workflow_id = useWorkflowIdInWorkflowPage();
