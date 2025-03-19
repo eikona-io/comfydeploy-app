@@ -22,6 +22,7 @@ import { useEffect } from "react";
 // Set up a Router instance
 import { type RootRouteContext, Route } from "./routes/__root";
 import { orgPrefixPaths } from "./orgPrefixPaths";
+import { getOrgPathInfo } from "@/utils/org-path";
 
 // Add this function before creating the orgRoute
 function updateRoutePaths(route: RouteType) {
@@ -37,7 +38,7 @@ function updateRoutePaths(route: RouteType) {
     // route.options.path = `$orgId/${newPath}`;
     // const existingBeforeLoad = route.options.beforeLoad;
     route.update({
-      path: `$orgId/${newPath}`,
+      path: `$type/$orgId/${newPath}`,
     });
   }
 
@@ -58,8 +59,8 @@ routeTree.update({
     const location = ctx.location;
     console.log("location", location);
 
-    if (location.pathname.includes("$orgId")) {
-      location.pathname = location.pathname.replace("$orgId", "");
+    if (location.pathname.includes("$type/$orgId")) {
+      location.pathname = location.pathname.replace("$type/$orgId", "");
     }
 
     const context: RootRouteContext = ctx.context;
@@ -71,21 +72,26 @@ routeTree.update({
     const personalOrg = context.clerk?.user?.username ?? "personal";
     let currentOrg = context.clerk?.organization?.slug || null;
 
+    const {
+      inPathWithOrgPrefix,
+      pathParts,
+      currentRouteIncomingOrg,
+      pathWithoutOrg,
+    } = getOrgPathInfo(currentOrg, location.pathname);
+
     // Check if path matches any org prefix paths
     const case1Match = orgPrefixPaths.some((path) =>
       location.pathname.startsWith(path),
     );
 
-    const pathParts = location.pathname.split("/");
-    const pathWithoutOrg = `/${pathParts.slice(2).join("/")}`;
+    // const pathParts = location.pathname.split("/");
+    // const pathWithoutOrg = `/${pathParts.slice(3).join("/")}`;
     const case2Match = orgPrefixPaths.some((path) =>
       pathWithoutOrg.startsWith(path),
     );
 
-    const currentRouteIncomingOrg =
-      (case2Match ? pathParts[1] : case1Match ? currentOrg : null) ?? null;
-
-    const inPathWithOrgPrefix = case1Match || case2Match;
+    // const currentRouteIncomingOrg =
+    //   (case2Match ? pathParts[2] : case1Match ? currentOrg : null) ?? null;
 
     // Check if the incoming org exists in user memberships
     const isValidOrg = memberships?.some(
@@ -138,11 +144,18 @@ routeTree.update({
       // );
 
       // if (shouldHaveOrgPrefix) {
+
+      if (!notPersonalOrg) {
+        throw redirect({
+          to: `/user/${currentOrg}${location.pathname}`,
+          search: location.search,
+        });
+      }
+
       throw redirect({
-        to: `/${currentOrg}${location.pathname}`,
+        to: `/org/${currentOrg}${location.pathname}`,
         search: location.search,
       });
-      // }
     }
   },
 });
@@ -171,10 +184,8 @@ router.getMatchedRoutes = (next, opts) => {
       ? next.pathname.slice(1)
       : next.pathname;
 
-    next.pathname = `$orgId/${newPath}`;
-    next.href = `$orgId/${newPath}`;
-
-    console.log(next, opts);
+    next.pathname = `$type/$orgId/${newPath}`;
+    next.href = `$type/$orgId/${newPath}`;
   }
   // if (
   //   opts?.to &&

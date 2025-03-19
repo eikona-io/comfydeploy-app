@@ -59,6 +59,8 @@ import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "./ui/badge";
+import { orgPrefixPaths } from "@/orgPrefixPaths";
+import { getOrgPathInfo } from "@/utils/org-path";
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -274,12 +276,21 @@ export function AppSidebar() {
   const location = useLocation();
   const pathname = location.pathname;
   const chunks = pathname.split("/");
-  let parentPath = chunks[1];
+
+  const { case1Match, case2Match, pathParts, pathWithoutOrg } = getOrgPathInfo(
+    null,
+    pathname,
+  );
+
+  let parentPath = chunks[2];
 
   const clerk = useClerk();
   const personalOrg = clerk.user?.username ?? "personal";
-  if (parentPath === orgSlug || parentPath === personalOrg) {
-    parentPath = chunks[2];
+
+  if (case1Match || case2Match) {
+    parentPath = chunks[3];
+  } else {
+    parentPath = chunks[1];
   }
 
   const isAdminAndMember = useIsAdminAndMember();
@@ -433,8 +444,8 @@ export function AppSidebar() {
           <OrganizationSwitcher
             organizationProfileUrl="/organization-profile"
             organizationProfileMode="navigation"
-            afterSelectOrganizationUrl="/:slug/workflows"
-            afterSelectPersonalUrl={`/${personalOrg}/workflows`}
+            afterSelectOrganizationUrl="/org/:slug/workflows"
+            afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
             appearance={{
               elements: {
                 rootBox: "items-center justify-center p-2",
