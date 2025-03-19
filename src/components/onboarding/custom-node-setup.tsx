@@ -300,7 +300,6 @@ function SearchNodeList({
   const [customGitUrl, setCustomGitUrl] = useState("");
   const [customGitUrlDialogOpen, setCustomGitUrlDialogOpen] = useState(false);
   const plan = useCurrentPlan();
-  console.log("🚀 ~ plan:", plan);
 
   const handleAddNode = async (node: DefaultCustomNodeData) => {
     const nodeRefLower = node.reference.toLowerCase();
