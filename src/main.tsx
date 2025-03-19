@@ -56,6 +56,11 @@ routeTree.update({
     await existingBeforeLoad?.(ctx);
 
     const location = ctx.location;
+    console.log("location", location);
+
+    if (location.pathname.includes("$orgId")) {
+      location.pathname = location.pathname.replace("$orgId", "");
+    }
 
     const context: RootRouteContext = ctx.context;
 
@@ -154,6 +159,39 @@ const router = createRouter({
     clerk: undefined as ReturnType<typeof useClerk> | undefined,
   },
 });
+
+const existingGetMatchedRoutes = router.getMatchedRoutes;
+router.getMatchedRoutes = (next, opts) => {
+  if (
+    next.pathname &&
+    orgPrefixPaths.some((prefix) => next.pathname.startsWith(prefix))
+  ) {
+    // Remove leading slash and add $orgId prefix
+    const newPath = next.pathname.startsWith("/")
+      ? next.pathname.slice(1)
+      : next.pathname;
+
+    next.pathname = `$orgId/${newPath}`;
+    next.href = `$orgId/${newPath}`;
+
+    console.log(next, opts);
+  }
+  // if (
+  //   opts?.to &&
+  //   typeof opts.to === "string" &&
+  //   orgPrefixPaths.some((prefix) => opts.to?.startsWith(prefix))
+  // ) {
+  //   // Remove leading slash and add $orgId prefix
+  //   const newPath = opts.to.startsWith("/") ? opts.to.slice(1) : opts.to;
+
+  //   opts.to = `$orgId/${newPath}`;
+
+  //   console.log(next, opts);
+  // }
+
+  const result = existingGetMatchedRoutes(next, opts);
+  return result;
+};
 
 // Register things for typesafety
 declare module "@tanstack/react-router" {
