@@ -878,7 +878,6 @@ function GPUSelectBox({
 }) {
   const { gpuConfig } = useGPUConfig();
   const sub = useCurrentPlan() as SubscriptionPlan;
-  console.log(sub);
   const isBusiness = sub?.plans?.plans?.some(
     (plan) =>
       plan.includes("business") ||
