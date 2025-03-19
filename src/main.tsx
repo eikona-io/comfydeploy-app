@@ -57,7 +57,7 @@ routeTree.update({
     await existingBeforeLoad?.(ctx);
 
     const location = ctx.location;
-    console.log("location", location);
+    // console.log("location", location);
 
     if (location.pathname.includes("$type/$orgId")) {
       location.pathname = location.pathname.replace("$type/$orgId", "");
