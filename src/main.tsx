@@ -60,14 +60,14 @@ routeTree.update({
     await existingBeforeLoad?.(ctx);
 
     const location = ctx.location;
-    // console.log("location", location);
 
     if (location.pathname.includes("$type/$orgId")) {
       location.pathname = location.pathname.replace("$type/$orgId", "");
     }
-    if (location.pathname.includes(`${type}/${orgSlug}`)) {
-      location.pathname = location.pathname.replace(`${type}/${orgSlug}`, "");
-    }
+    // console.log("location", location);
+    // if (location.pathname.includes(`/${type}/${orgSlug}`)) {
+    //   location.pathname = location.pathname.replace(`/${type}/${orgSlug}`, "");
+    // }
 
     const context: RootRouteContext = ctx.context;
 

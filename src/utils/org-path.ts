@@ -42,7 +42,7 @@ export function getOrgPathInfo(
     currentOrg,
   };
 
-  // console.log("shit", data);
+  // console.trace("shit", data);
 
   return data;
 }
