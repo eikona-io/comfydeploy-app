@@ -49,19 +49,11 @@ export function BuildStepsUI({
   machine: any;
   logs: LogsType;
 }) {
-  const [viewMode, setViewMode] = useState<ViewMode>("new");
+  const [viewMode, setViewMode] = useState<ViewMode>("full");
 
   return (
     <div className="flex h-full max-h-[calc(100vh-100px)] flex-col">
       <div className="mb-4 flex space-x-2">
-        <Button
-          variant={viewMode === "new" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setViewMode("new")}
-        >
-          <LayoutGrid className="mr-2 h-4 w-4" />
-          New Layout
-        </Button>
         <Button
           variant={viewMode === "full" ? "default" : "outline"}
           size="sm"
@@ -69,6 +61,14 @@ export function BuildStepsUI({
         >
           <List className="mr-2 h-4 w-4" />
           Full Log
+        </Button>
+        <Button
+          variant={viewMode === "new" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setViewMode("new")}
+        >
+          <LayoutGrid className="mr-2 h-4 w-4" />
+          New Layout
         </Button>
         <Button
           variant={viewMode === "sideBySide" ? "default" : "outline"}

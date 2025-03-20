@@ -6,7 +6,7 @@ import { useQueryState } from "nuqs";
 import { useEffect, useState, useRef } from "react";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { MachineSettingsWrapper } from "../machine/machine-settings";
-import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { comfydeploy_hash, comfyui_hash } from "@/utils/comfydeploy-hash";
 import { Input } from "../ui/input";
 import { useMachine } from "@/hooks/use-machine";
 import { LoadingIcon } from "../ui/custom/loading-icon";
@@ -20,7 +20,19 @@ const newMachine = {
   gpu: "A10G",
   comfyui_version: comfyui_hash,
   docker_command_steps: {
-    steps: [],
+    steps: [
+      {
+        id: "comfyui-deploy",
+        type: "custom-node",
+        data: {
+          name: "ComfyUI Deploy",
+          url: "https://github.com/BennyKok/comfyui-deploy",
+          files: ["https://github.com/BennyKok/comfyui-deploy"],
+          install_type: "git-clone",
+          hash: comfydeploy_hash,
+        },
+      },
+    ],
   },
 
   // default values
@@ -175,7 +187,7 @@ export function MachineCreate() {
               toast.success(`${filteredData?.name} created successfully!`);
               const machineId = response.id;
 
-              toast.info("Redirecting to machine page...");
+              // toast.info("Redirecting to machine page...");
               await new Promise((resolve) => setTimeout(resolve, 1000));
               navigate({
                 to: "/machines/$machineId",

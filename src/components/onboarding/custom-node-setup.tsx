@@ -169,7 +169,8 @@ const updateNodeWithBranchInfo = async (
 export function CustomNodeSetup({
   validation,
   setValidation,
-}: StepComponentProps<MachineStepValidation>) {
+  readonly = false,
+}: StepComponentProps<MachineStepValidation> & { readonly?: boolean }) {
   return (
     <div>
       <div className="mb-2">
@@ -178,10 +179,15 @@ export function CustomNodeSetup({
           <DesktopLayout
             validation={validation}
             setValidation={setValidation}
+            readonly={readonly}
           />
         </div>
         <div className="block lg:hidden">
-          <MobileLayout validation={validation} setValidation={setValidation} />
+          <MobileLayout
+            validation={validation}
+            setValidation={setValidation}
+            readonly={readonly}
+          />
         </div>
       </div>
     </div>
@@ -193,17 +199,23 @@ export function CustomNodeSetup({
 function DesktopLayout({
   validation,
   setValidation,
-}: StepComponentProps<MachineStepValidation>) {
+  readonly = false,
+}: StepComponentProps<MachineStepValidation> & { readonly?: boolean }) {
   return (
     <ResizablePanelGroup direction="horizontal">
       <ResizablePanel defaultSize={50} minSize={40} collapsible>
-        <SearchNodeList validation={validation} setValidation={setValidation} />
+        <SearchNodeList
+          validation={validation}
+          setValidation={setValidation}
+          readonly={readonly}
+        />
       </ResizablePanel>
       <ResizableHandle className="mx-2" withHandle />
       <ResizablePanel defaultSize={50} minSize={40} collapsible>
         <SelectedNodeList
           validation={validation}
           setValidation={setValidation}
+          readonly={readonly}
         />
       </ResizablePanel>
     </ResizablePanelGroup>
@@ -213,7 +225,8 @@ function DesktopLayout({
 function MobileLayout({
   validation,
   setValidation,
-}: StepComponentProps<MachineStepValidation>) {
+  readonly = false,
+}: StepComponentProps<MachineStepValidation> & { readonly?: boolean }) {
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   return (
@@ -221,26 +234,28 @@ function MobileLayout({
       <SelectedNodeList
         validation={validation}
         setValidation={setValidation}
-        mobileDrawerOpen={mobileDrawerOpen}
         setMobileDrawerOpen={setMobileDrawerOpen}
+        readonly={readonly}
       />
-      <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
-        <DrawerContent>
-          <DrawerHeader className="text-left">
-            <SearchNodeList
-              validation={validation}
-              setValidation={setValidation}
-            />
-          </DrawerHeader>
-          <DrawerFooter>
-            <DrawerClose>
-              <Button variant="outline" className="w-full">
-                Done
-              </Button>
-            </DrawerClose>
-          </DrawerFooter>
-        </DrawerContent>
-      </Drawer>
+      {!readonly && (
+        <Drawer open={mobileDrawerOpen} onOpenChange={setMobileDrawerOpen}>
+          <DrawerContent>
+            <DrawerHeader className="text-left">
+              <SearchNodeList
+                validation={validation}
+                setValidation={setValidation}
+              />
+            </DrawerHeader>
+            <DrawerFooter>
+              <DrawerClose>
+                <Button variant="outline" className="w-full">
+                  Done
+                </Button>
+              </DrawerClose>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      )}
     </div>
   );
 }
@@ -250,7 +265,8 @@ function MobileLayout({
 function SearchNodeList({
   validation,
   setValidation,
-}: StepComponentProps<MachineStepValidation>) {
+  readonly = false,
+}: StepComponentProps<MachineStepValidation> & { readonly?: boolean }) {
   const { data, isLoading } = useQuery<DefaultCustomNodeData[]>({
     queryKey: ["custom-node-list"],
     queryFn: async () => {
@@ -284,7 +300,6 @@ function SearchNodeList({
   const [customGitUrl, setCustomGitUrl] = useState("");
   const [customGitUrlDialogOpen, setCustomGitUrlDialogOpen] = useState(false);
   const plan = useCurrentPlan();
-  console.log("🚀 ~ plan:", plan);
 
   const handleAddNode = async (node: DefaultCustomNodeData) => {
     const nodeRefLower = node.reference.toLowerCase();
@@ -382,7 +397,12 @@ function SearchNodeList({
   }, [parentRef, filteredNodes.length]);
 
   return (
-    <div className="flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white px-4 pb-4 shadow-sm">
+    <div
+      className={cn(
+        "flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white px-4 pb-4 shadow-sm",
+        readonly && "pointer-events-none opacity-70",
+      )}
+    >
       <div className="flex flex-row items-center gap-2">
         <div className="mt-1 flex w-full flex-row items-center border-gray-300 border-b px-2">
           <Search size={18} className="text-gray-500" />
@@ -392,6 +412,11 @@ function SearchNodeList({
               value={searchTerm}
               className="border-none pr-8 focus-visible:outline-none focus-visible:ring-0"
               onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault(); // Prevent form submission
+                }
+              }}
             />
             {searchTerm && (
               <button
@@ -409,7 +434,7 @@ function SearchNodeList({
           onOpenChange={setCustomGitUrlDialogOpen}
         >
           <DialogTrigger asChild>
-            {plan && plan?.plans?.plans.length !== 0 && (
+            {plan && plan?.plans?.plans.length !== 0 && !readonly && (
               <Button
                 variant="outline"
                 size="sm"
@@ -450,7 +475,12 @@ function SearchNodeList({
                   let repo = "";
                   let owner = "";
                   try {
-                    const url = new URL(customGitUrl);
+                    // Remove trailing slash if it exists
+                    const normalizedUrl = customGitUrl.endsWith("/")
+                      ? customGitUrl.slice(0, -1)
+                      : customGitUrl;
+
+                    const url = new URL(normalizedUrl);
                     if (url.hostname === "github.com") {
                       const pathParts = url.pathname.split("/").filter(Boolean);
                       if (pathParts.length >= 2) {
@@ -616,10 +646,10 @@ function SearchNodeList({
 function SelectedNodeList({
   validation,
   setValidation,
-  mobileDrawerOpen,
+  readonly = false,
   setMobileDrawerOpen,
 }: StepComponentProps<MachineStepValidation> & {
-  mobileDrawerOpen?: boolean;
+  readonly?: boolean;
   setMobileDrawerOpen?: (open: boolean) => void;
 }) {
   const [editingHash, setEditingHash] = useState<string | null>(null);
@@ -756,7 +786,7 @@ function SelectedNodeList({
         <h2 className="font-medium text-md">
           Selected Nodes ({validation.docker_command_steps.steps.length})
         </h2>
-        {sub && sub?.plans?.plans.length !== 0 && (
+        {sub && sub?.plans?.plans.length !== 0 && !readonly && (
           <div className="flex flex-col items-end gap-2 md:flex-row">
             {!scriptMode && (
               <Button
@@ -901,7 +931,7 @@ function SelectedNodeList({
           modifiers={[restrictToVerticalAxis]}
         >
           <div>
-            {validation.docker_command_steps.steps.length > 1 && (
+            {validation.docker_command_steps.steps.length > 1 && !readonly && (
               <span className="text-gray-500 text-xs">
                 <span className="text-red-500">* </span>Long press and drag to
                 reorder the nodes.
@@ -941,6 +971,7 @@ function SelectedNodeList({
                     handleRemoveNode={handleRemoveNode}
                     setValidation={setValidation}
                     validation={validation}
+                    readonly={readonly}
                   />
                 ))
               )}
@@ -962,6 +993,7 @@ function SortableCustomNodeCard(props: {
   handleRemoveNode: (node: DockerCommandStep) => void;
   setValidation: (validation: MachineStepValidation) => void;
   validation: MachineStepValidation;
+  readonly?: boolean;
 }) {
   const {
     attributes,
@@ -976,7 +1008,8 @@ function SortableCustomNodeCard(props: {
       (isCustomNodeData(props.node) &&
         props.editingHash === props.node.data.url) ||
       (props.node.type === "commands" &&
-        props.editingCommand === props.node.id),
+        props.editingCommand === props.node.id) ||
+      props.readonly,
   });
 
   const style = {
@@ -996,7 +1029,10 @@ function SortableCustomNodeCard(props: {
       style={style}
       {...attributes}
       {...listeners}
-      className="group cursor-auto active:cursor-grabbing"
+      className={cn(
+        "group cursor-auto",
+        !props.readonly && "active:cursor-grabbing",
+      )}
     >
       <div onClick={(e) => e.stopPropagation()}>
         <CustomNodeCard {...props} />
@@ -1015,6 +1051,7 @@ function CustomNodeCard({
   handleRemoveNode,
   setValidation,
   validation,
+  readonly = false,
 }: {
   node: DockerCommandStep;
   editingHash: string | null;
@@ -1025,6 +1062,7 @@ function CustomNodeCard({
   handleRemoveNode: (node: DockerCommandStep) => void;
   setValidation: (validation: MachineStepValidation) => void;
   validation: MachineStepValidation;
+  readonly?: boolean;
 }) {
   // Handle command type
   if (node.type === "commands") {
@@ -1062,55 +1100,57 @@ function CustomNodeCard({
             )}
           </div>
           <div className="flex">
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className={cn(
-                "text-gray-500",
-                editingCommand !== node.id &&
-                  "opacity-0 transition-opacity duration-200 hover:text-gray-700 group-hover:opacity-100",
-              )}
-              onClick={(e) => {
-                if (editingCommand === node.id) {
-                  // Find the textarea element and get its value
-                  const textarea =
-                    e.currentTarget.parentElement?.parentElement?.querySelector(
-                      "textarea",
-                    );
-                  if (textarea) {
+            {!readonly && (
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                className={cn(
+                  "text-gray-500",
+                  editingCommand !== node.id &&
+                    "opacity-0 transition-opacity duration-200 hover:text-gray-700 group-hover:opacity-100",
+                )}
+                onClick={(e) => {
+                  if (editingCommand === node.id) {
+                    // Find the textarea element and get its value
+                    const textarea =
+                      e.currentTarget.parentElement?.parentElement?.querySelector(
+                        "textarea",
+                      );
+                    if (textarea) {
+                      setValidation({
+                        ...validation,
+                        isEditingHashOrAddingCommands: false,
+                        docker_command_steps: {
+                          steps: validation.docker_command_steps.steps.map(
+                            (step) =>
+                              step.id === node.id
+                                ? { ...step, data: textarea.value }
+                                : step,
+                          ),
+                        },
+                      });
+                      setEditingCommand(null);
+                    }
+                  } else {
                     setValidation({
                       ...validation,
-                      isEditingHashOrAddingCommands: false,
-                      docker_command_steps: {
-                        steps: validation.docker_command_steps.steps.map(
-                          (step) =>
-                            step.id === node.id
-                              ? { ...step, data: textarea.value }
-                              : step,
-                        ),
-                      },
+                      isEditingHashOrAddingCommands: true,
                     });
-                    setEditingCommand(null);
+                    setEditingCommand(node.id);
                   }
-                } else {
-                  setValidation({
-                    ...validation,
-                    isEditingHashOrAddingCommands: true,
-                  });
-                  setEditingCommand(node.id);
-                }
-              }}
-            >
-              {editingCommand === node.id ? (
-                <Save size={14} />
-              ) : (
-                <Pencil size={14} />
-              )}
-            </Button>
+                }}
+              >
+                {editingCommand === node.id ? (
+                  <Save size={14} />
+                ) : (
+                  <Pencil size={14} />
+                )}
+              </Button>
+            )}
           </div>
         </div>
-        {editingCommand !== node.id && (
+        {!readonly && editingCommand !== node.id && (
           <div className="-top-2 -right-2 absolute">
             <button
               type="button"
@@ -1157,14 +1197,6 @@ function CustomNodeCard({
               </Link>
             </div>
           </div>
-          {/* <Button
-          type="button"
-          variant="ghost"
-          className="h-3 shrink-0 text-red-500 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100"
-          onClick={() => handleRemoveNode(node)}
-        >
-          <Minus size={14} />
-        </Button> */}
         </div>
 
         {node.data && (
@@ -1238,7 +1270,7 @@ function CustomNodeCard({
           </div>
         )}
       </div>
-      {editingHash !== node.data.url && (
+      {editingHash !== node.data.url && !readonly && (
         <>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -1,29 +1,54 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMatchRoute } from "@tanstack/react-router";
+import { useLocation, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
+import { getOrgPathInfo } from "@/utils/org-path";
+import { useAuth } from "@clerk/clerk-react";
+import { useClerk } from "@clerk/clerk-react";
 import { useSearch } from "@tanstack/react-router";
 
 export function useWorkflowIdInWorkflowPage() {
-  const matchRoute = useMatchRoute();
-  const params = matchRoute({ to: "/workflows/$workflowId/$view" });
+  const location = useLocation();
+  const pathname = location.pathname;
+  const chunks = pathname.split("/").filter(Boolean);
+  const { orgId, orgSlug } = useAuth();
 
-  const search = useSearch({
-    // from: "/sessions/$sessionId/",
-    strict: false,
-  });
+  const { case1Match, case2Match, pathParts, pathWithoutOrg } = getOrgPathInfo(
+    orgSlug ?? null,
+    pathname.replace("//", "/"),
+  );
 
-  if (search.workflowId) {
-    return search.workflowId;
+  let parentPath = chunks[0];
+
+  const clerk = useClerk();
+  const personalOrg = clerk.user?.username ?? "personal";
+
+  let workflowId = null;
+
+  if (case2Match) {
+    parentPath = chunks[2];
+    if (parentPath === "workflows") {
+      workflowId = chunks[3];
+    }
+  } else {
+    parentPath = chunks[0];
+    if (parentPath === "workflows") {
+      workflowId = chunks[1];
+    }
   }
 
-  if (!params) {
-    return null;
-  }
+  return workflowId;
 
-  return params.workflowId;
+  // const matchRoute = useMatchRoute();
+  // const params = matchRoute({
+  //   to: "/$type/$orgId/workflows/$workflowId/$view",
+  // });
+  // if (!params) {
+  //   return null;
+  // }
+  // return params.workflowId;
 }
 
 export function useAssetList(path = "/") {

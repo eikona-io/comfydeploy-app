@@ -281,7 +281,7 @@ export function MachineList() {
             });
             console.log("machine", machine);
             toast.success(`${data.name} created successfully!`);
-            toast.info("Redirecting to machine page...");
+            // toast.info("Redirecting to machine page...");
             await new Promise((resolve) => setTimeout(resolve, 1000));
             navigate({
               to: "/machines/$machineId",
@@ -323,7 +323,7 @@ export function MachineList() {
             });
 
             toast.success(`${data.name} created successfully!`);
-            toast.info("Redirecting to machine page...");
+            // toast.info("Redirecting to machine page...");
             await new Promise((resolve) => setTimeout(resolve, 1000));
             navigate({
               to: "/machines/$machineId",

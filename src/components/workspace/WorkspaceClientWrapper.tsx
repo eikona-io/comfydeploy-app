@@ -106,6 +106,9 @@ export function WorkspaceClientWrapper({
   if (Number.parseInt(machineBuilderVersion) >= 4) {
     return (
       <>
+<div className="absolute inset-x-0 bottom-0 z-0 mx-auto max-w-xl">
+          <MachineUpdateChecker machineId={machine.id} />
+        </div>
         <MyDrawer
           desktopClassName="w-[600px]"
           open={sessionCreation.isOpen}

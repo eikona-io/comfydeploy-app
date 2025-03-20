@@ -15,6 +15,7 @@ import { Route as WaitlistImport } from './routes/waitlist'
 import { Route as UsageImport } from './routes/usage'
 import { Route as SettingsImport } from './routes/settings'
 import { Route as PricingImport } from './routes/pricing'
+import { Route as OrgNotFoundImport } from './routes/org-not-found'
 import { Route as OnboardingCallImport } from './routes/onboarding-call'
 import { Route as ModelsImport } from './routes/models'
 import { Route as AssetsImport } from './routes/assets'
@@ -57,6 +58,12 @@ const SettingsRoute = SettingsImport.update({
 const PricingRoute = PricingImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const OrgNotFoundRoute = OrgNotFoundImport.update({
+  id: '/org-not-found',
+  path: '/org-not-found',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -216,6 +223,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingCallImport
       parentRoute: typeof rootRoute
     }
+    '/org-not-found': {
+      id: '/org-not-found'
+      path: '/org-not-found'
+      fullPath: '/org-not-found'
+      preLoaderRoute: typeof OrgNotFoundImport
+      parentRoute: typeof rootRoute
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
@@ -346,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/assets': typeof AssetsRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
+  '/org-not-found': typeof OrgNotFoundRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/usage': typeof UsageRoute
@@ -371,6 +386,7 @@ export interface FileRoutesByTo {
   '/assets': typeof AssetsRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
+  '/org-not-found': typeof OrgNotFoundRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/usage': typeof UsageRoute
@@ -397,6 +413,7 @@ export interface FileRoutesById {
   '/assets': typeof AssetsRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
+  '/org-not-found': typeof OrgNotFoundRoute
   '/pricing': typeof PricingRoute
   '/settings': typeof SettingsRoute
   '/usage': typeof UsageRoute
@@ -424,6 +441,7 @@ export interface FileRouteTypes {
     | '/assets'
     | '/models'
     | '/onboarding-call'
+    | '/org-not-found'
     | '/pricing'
     | '/settings'
     | '/usage'
@@ -448,6 +466,7 @@ export interface FileRouteTypes {
     | '/assets'
     | '/models'
     | '/onboarding-call'
+    | '/org-not-found'
     | '/pricing'
     | '/settings'
     | '/usage'
@@ -472,6 +491,7 @@ export interface FileRouteTypes {
     | '/assets'
     | '/models'
     | '/onboarding-call'
+    | '/org-not-found'
     | '/pricing'
     | '/settings'
     | '/usage'
@@ -498,6 +518,7 @@ export interface RootRouteChildren {
   AssetsRoute: typeof AssetsRoute
   ModelsRoute: typeof ModelsRoute
   OnboardingCallRoute: typeof OnboardingCallRoute
+  OrgNotFoundRoute: typeof OrgNotFoundRoute
   PricingRoute: typeof PricingRoute
   SettingsRoute: typeof SettingsRoute
   UsageRoute: typeof UsageRoute
@@ -523,6 +544,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssetsRoute: AssetsRoute,
   ModelsRoute: ModelsRoute,
   OnboardingCallRoute: OnboardingCallRoute,
+  OrgNotFoundRoute: OrgNotFoundRoute,
   PricingRoute: PricingRoute,
   SettingsRoute: SettingsRoute,
   UsageRoute: UsageRoute,
@@ -559,6 +581,7 @@ export const routeTree = rootRoute
         "/assets",
         "/models",
         "/onboarding-call",
+        "/org-not-found",
         "/pricing",
         "/settings",
         "/usage",
@@ -592,6 +615,9 @@ export const routeTree = rootRoute
     },
     "/onboarding-call": {
       "filePath": "onboarding-call.tsx"
+    },
+    "/org-not-found": {
+      "filePath": "org-not-found.tsx"
     },
     "/pricing": {
       "filePath": "pricing.tsx"

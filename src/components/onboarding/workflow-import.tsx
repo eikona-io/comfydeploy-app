@@ -383,10 +383,13 @@ export default function WorkflowImport() {
                   `Workflow "${validation.workflowName}" created successfully!`,
                 );
                 if (workflowResult.workflow_id) {
-                  window.open(
-                    `/workflows/${workflowResult.workflow_id}/requests`,
-                    "_blank",
-                  );
+                  navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: {
+                      workflowId: workflowResult.workflow_id,
+                      view: "workspace",
+                    },
+                  });
                 }
               } else {
                 response = await api({
@@ -430,18 +433,21 @@ export default function WorkflowImport() {
               `Workflow "${validation.workflowName}" created successfully!`,
             );
             if (workflowResult.workflow_id) {
-              window.open(
-                `/workflows/${workflowResult.workflow_id}/requests`,
-                "_blank",
-              );
+              navigate({
+                to: "/workflows/$workflowId/$view",
+                params: {
+                  workflowId: workflowResult.workflow_id,
+                  view: "workspace",
+                },
+              });
             }
 
-            toast.info("Redirecting to machine page...");
-            navigate({
-              to: "/machines/$machineId",
-              params: { machineId },
-              search: { view: undefined },
-            });
+            // toast.info("Redirecting to machine page...");
+            // navigate({
+            //   to: "/machines/$machineId",
+            //   params: { machineId },
+            //   search: { view: undefined },
+            // });
 
             return true;
           } catch (error) {

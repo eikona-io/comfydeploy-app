@@ -1172,7 +1172,7 @@ function AdvanceSettings({ validation }: StepComponentProps<StepValidation>) {
               `/workflows/${workflowResult.data.workflow_id}?view=workspace`,
               "_blank",
             );
-            toast.info("Redirecting to machine page...");
+            // toast.info("Redirecting to machine page...");
             navigate({
               to: "/machines/$machineId",
               params: { machineId: machine.id },

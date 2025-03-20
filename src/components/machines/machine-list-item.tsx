@@ -489,7 +489,7 @@ function MigrateOldMachineDialog({ machine }: { machine: any }) {
         },
       );
       toast.success("Upgrade machine successfully");
-      toast.info("Redirecting to machine page...");
+      // toast.info("Redirecting to machine page...");
       await new Promise((resolve) => setTimeout(resolve, 1000));
       navigate({
         to: "/machines/$machineId/history",

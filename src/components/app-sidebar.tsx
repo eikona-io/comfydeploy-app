@@ -43,7 +43,12 @@ import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
-import { OrganizationSwitcher, UserButton, useAuth } from "@clerk/clerk-react";
+import {
+  OrganizationSwitcher,
+  UserButton,
+  useAuth,
+  useClerk,
+} from "@clerk/clerk-react";
 import { Link, useLocation } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
 // import { MachineSelect } from "@/components/MachineSelect";
@@ -54,6 +59,8 @@ import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "./ui/badge";
+import { orgPrefixPaths } from "@/orgPrefixPaths";
+import { getOrgPathInfo } from "@/utils/org-path";
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -187,7 +194,7 @@ function usePages() {
         ]
       : []),
 
-    ...(sub?.sub?.plan
+    ...(sub?.plans?.plans
       ? [
           {
             name: "Analytics",
@@ -242,17 +249,17 @@ export function AppSidebar() {
   const { pages, flatPages, metaPages } = usePages();
   // const sub = useCurrentPlan();
 
-  const { orgId } = useAuth();
+  const { orgId, orgSlug } = useAuth();
   const isFirstRender = useRef(true);
 
-  useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      return;
-    }
-    console.log("org_id", orgId);
-    window.location.reload();
-  }, [orgId]);
+  // useEffect(() => {
+  //   if (isFirstRender.current) {
+  //     isFirstRender.current = false;
+  //     return;
+  //   }
+  //   console.log("org_id", orgId);
+  //   window.location.reload();
+  // }, [orgId]);
 
   const items = flatPages.map((page) => ({
     title: page.name,
@@ -267,9 +274,28 @@ export function AppSidebar() {
   }));
 
   const location = useLocation();
+  // console.log(location);
+
   const pathname = location.pathname;
-  const chunks = pathname.split("/");
-  const parentPath = chunks[1];
+  const chunks = pathname.split("/").filter(Boolean);
+
+  const { case1Match, case2Match, pathParts, pathWithoutOrg } = getOrgPathInfo(
+    orgSlug ?? null,
+    pathname.replace("//", "/"),
+  );
+
+  let parentPath = chunks[0];
+
+  const clerk = useClerk();
+  const personalOrg = clerk.user?.username ?? "personal";
+
+  if (case2Match) {
+    parentPath = chunks[2];
+  } else {
+    parentPath = chunks[0];
+  }
+
+  // console.log("parentPath", case1Match, case2Match, parentPath, chunks);
 
   const isAdminAndMember = useIsAdminAndMember();
   const workflow_id = useWorkflowIdInWorkflowPage();
@@ -419,11 +445,11 @@ export function AppSidebar() {
             />
           )}
 
-          {/* {!workflow_id && <V3Dialog />} */}
-
           <OrganizationSwitcher
             organizationProfileUrl="/organization-profile"
             organizationProfileMode="navigation"
+            afterSelectOrganizationUrl="/org/:slug/workflows"
+            afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
             appearance={{
               elements: {
                 rootBox: "items-center justify-center p-2",
