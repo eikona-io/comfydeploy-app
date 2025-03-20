@@ -5,24 +5,24 @@ import {
   useOrganizationList,
 } from "@clerk/clerk-react";
 import {
+  type Route as RouteType,
   RouterProvider,
-  createRouter,
-  redirect,
-  useRouter,
   createFileRoute,
   createRoute,
-  type Route as RouteType,
+  createRouter,
+  redirect,
   useLocation,
+  useRouter,
 } from "@tanstack/react-router";
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import "./globals.css";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
+import { getOrgPathInfo } from "@/utils/org-path";
 import { useEffect } from "react";
+import { orgPrefixPaths } from "./orgPrefixPaths";
 // Set up a Router instance
 import { type RootRouteContext, Route } from "./routes/__root";
-import { orgPrefixPaths } from "./orgPrefixPaths";
-import { getOrgPathInfo } from "@/utils/org-path";
 
 // Add this function before creating the orgRoute
 function updateRoutePaths(route: RouteType) {
@@ -121,6 +121,44 @@ routeTree.update({
           organization: currentRouteIncomingOrg,
         });
       }
+    }
+
+    // Add org prefix to path if needed
+    currentOrg = currentOrg ?? personalOrg;
+
+    if (
+      inPathWithOrgPrefix &&
+      currentOrg &&
+      !location.pathname.includes(`/${currentOrg}/`)
+    ) {
+      // const shouldHaveOrgPrefix = orgPrefixPaths.some((path) =>
+      //   location.pathname.startsWith(path),
+      // );
+      // if (shouldHaveOrgPrefix) {
+      if (!notPersonalOrg) {
+        // console.log(
+        //   "shit",
+        //   "redirecting to",
+        //   `/user/${currentOrg}${location.pathname}`,
+        // );
+        orgSlug = currentOrg;
+        type = "user";
+        throw redirect({
+          to: `/user/${currentOrg}${location.pathname}`,
+          search: location.search,
+        });
+      }
+      // console.log(
+      //   "shit",
+      //   "redirecting to",
+      //   `/org/${currentOrg}${location.pathname}`,
+      // );
+      orgSlug = currentOrg;
+      type = "org";
+      throw redirect({
+        to: `/org/${currentOrg}${location.pathname}`,
+        search: location.search,
+      });
     }
   },
 });
