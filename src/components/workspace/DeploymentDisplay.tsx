@@ -1069,7 +1069,7 @@ export function APIDocs({
               examples.
             </p>
             <Link
-              href="https://docs.comfydeploy.com"
+              to="https://docs.comfydeploy.com"
               className="mt-2 inline-flex items-center text-blue-600 hover:underline"
             >
               Visit our docs
