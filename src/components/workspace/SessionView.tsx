@@ -15,6 +15,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "../ui/button";
 import { AnimatePresence, motion } from "framer-motion";
 import { WorkspaceLoading } from "./WorkspaceLoading";
+import { useWorkflowIdInSessionView } from "@/hooks/hook";
 
 export function getSessionStatus(session: any, isLive: boolean | undefined) {
   if (!session) {
@@ -73,9 +74,7 @@ export function SessionLoading({
   const now = new Date();
   const isTimeout = now > new Date(session?.timeout_end);
   const navigate = useNavigate();
-  const { workflowId } = useSearch({
-    from: "/sessions/$sessionId/",
-  });
+  const workflowId = useWorkflowIdInSessionView();
 
   if (isLoadingSession) {
     return (

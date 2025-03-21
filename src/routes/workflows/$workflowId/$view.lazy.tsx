@@ -178,7 +178,7 @@ function WorkflowPageComponent() {
     <div className="relative flex h-full w-full flex-col">
       <Portal
         targetId="sidebar-panel"
-        trigger={isMobile ? isMobileSidebarOpen : true}
+        trigger={isMobile || !!sessionId ? isMobileSidebarOpen : true}
       >
         <AnimatePresence>
           <motion.div
@@ -275,21 +275,26 @@ function WorkflowPageComponent() {
                               index={index}
                               isActive={sessionId === session.session_id}
                               onSelect={(selectedSessionId) => {
-                                // setSessionId(selectedSessionId);
+                                setSessionId(selectedSessionId);
                                 // setView("workspace"); // Switch to workspace view
                                 // setActiveTabIndex(tabs.indexOf("workspace")); // Update active tab
-                                // router.navigate({
-                                //   to: "/workflows/$workflowId/$view",
-                                //   params: { workflowId, view: "workspace" },
-                                // });
                                 router.navigate({
-                                  to: "/sessions/$sessionId",
-                                  params: { sessionId: selectedSessionId },
+                                  to: "/workflows/$workflowId/$view",
+                                  params: { workflowId, view: "workspace" },
                                   search: {
                                     isFirstTime: true,
                                     workflowId: workflowId,
+                                    sessionId: selectedSessionId,
                                   },
                                 });
+                                // router.navigate({
+                                //   to: "/sessions/$sessionId",
+                                //   params: { sessionId: selectedSessionId },
+                                //   search: {
+                                //     isFirstTime: true,
+                                //     workflowId: workflowId,
+                                //   },
+                                // });
                               }}
                               onDelete={async (sessionIdToDelete) => {
                                 setSessionId(null);

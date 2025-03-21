@@ -13,8 +13,11 @@ import { WorkspaceLoading, WorkspaceMachineLoading } from "./WorkspaceLoading";
 import { Button } from "../ui/button";
 import { SessionCreationDialog } from "./session-creator-dialog";
 import { MyDrawer } from "../drawer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { VersionChecker } from "../machine/version-checker";
+import { useQueryState } from "nuqs";
+import { easeOut } from "framer-motion";
+import { motion } from "framer-motion";
 
 interface WorkspaceClientWrapperProps {
   workflow_id: string;
@@ -50,6 +53,15 @@ export function WorkspaceClientWrapper({
     machineVersionId: "",
   });
 
+  const [cachedSessionId, setCachedSessionId] = useState<string | null>(null);
+  const [hasActiveSession, setHasActiveSession] = useState(false);
+
+  const [sessionId, setSessionId] = useQueryState("sessionId");
+  const { data: selectedSession } = useQuery({
+    enabled: !!sessionId,
+    queryKey: ["session", sessionId],
+  });
+
   const {
     workflow,
     mutateWorkflow,
@@ -68,6 +80,26 @@ export function WorkspaceClientWrapper({
   const { data: machine, isLoading } = useMachine(
     workflow?.selected_machine_id,
   );
+
+  useEffect(() => {
+    if (sessionId && selectedSession) {
+      setHasActiveSession(true);
+      setCachedSessionId(sessionId);
+    }
+  }, [sessionId, selectedSession]);
+
+  console.log(
+    "sessionId",
+    sessionId,
+    selectedSession,
+    hasActiveSession,
+    cachedSessionId,
+  );
+
+  useEffect(() => {
+    setHasActiveSession(false);
+    setCachedSessionId(null);
+  }, [props.workflow_id]);
 
   if (isLoadingWorkflow || isLoading || isLoadingVersions || !versions) {
     // return <WorkspaceLoading />;
@@ -106,7 +138,7 @@ export function WorkspaceClientWrapper({
   if (Number.parseInt(machineBuilderVersion) >= 4) {
     return (
       <>
-<div className="absolute inset-x-0 bottom-0 z-0 mx-auto max-w-xl">
+        <div className="absolute inset-x-0 bottom-0 z-0 mx-auto max-w-xl">
           <MachineUpdateChecker machineId={machine.id} />
         </div>
         <MyDrawer
@@ -131,28 +163,57 @@ export function WorkspaceClientWrapper({
             </div>
           </div>
         </MyDrawer>
-        <div className="w-full h-full flex justify-center items-center">
-          <div className="absolute bottom-0 inset-x-0 mx-auto max-w-xl">
-            <MachineUpdateChecker machineId={machine.id} />
+
+        <motion.div
+          className="z-[10] h-full w-full bg-[#141414] relative"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: !!sessionId ? 1 : 0 }}
+          transition={{ duration: 0.2, ease: easeOut }}
+        >
+          <motion.div
+            className="pointer-events-none absolute inset-0 backdrop-blur-sm"
+            style={{
+              backgroundImage: `linear-gradient(#2c2c2c 1px, transparent 1px),
+                        linear-gradient(90deg, #2c2c2c 1px, transparent 1px)`,
+              backgroundSize: "20px 20px",
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: hasActiveSession ? 0.2 : 0 }}
+            transition={{ duration: 0.5, ease: easeOut }}
+          />
+          {hasActiveSession && cachedSessionId ? (
+            <SessionCreator
+              workflowId={props.workflow_id}
+              sessionIdOverride={cachedSessionId}
+            />
+          ) : (
+            <></>
+          )}
+        </motion.div>
+
+        {!(hasActiveSession && cachedSessionId) ? (
+          <div className="absolute inset-0 z-[10] flex h-full w-full items-center justify-center">
+            <div className="flex flex-col items-center gap-2">
+              <p className="text-sm text-gray-500">
+                Starting a ComfyUI session to edit your workflow
+              </p>
+              <Button
+                onClick={(e) =>
+                  setSessionCreation((prev) => ({
+                    ...prev,
+                    isOpen: true,
+                    version: versions[0].version,
+                    machineId: workflow?.selected_machine_id,
+                  }))
+                }
+              >
+                Start ComfyUI
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-sm text-gray-500">
-              Starting a ComfyUI session to edit your workflow
-            </p>
-            <Button
-              onClick={(e) =>
-                setSessionCreation((prev) => ({
-                  ...prev,
-                  isOpen: true,
-                  version: versions[0].version,
-                  machineId: workflow?.selected_machine_id,
-                }))
-              }
-            >
-              Start ComfyUI
-            </Button>
-          </div>
-        </div>
+        ) : (
+          <></>
+        )}
       </>
     );
   }

@@ -21,6 +21,11 @@ import {
   Server,
   Settings,
   Workflow,
+  ChevronLeft,
+  Terminal,
+  Cross,
+  X,
+  Save,
 } from "lucide-react";
 
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
@@ -36,31 +41,48 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
-import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInSessionView,
+  useWorkflowIdInWorkflowPage,
+} from "@/hooks/hook";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { orgPrefixPaths } from "@/orgPrefixPaths";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
+import { getOrgPathInfo } from "@/utils/org-path";
 import {
   OrganizationSwitcher,
   UserButton,
   useAuth,
   useClerk,
 } from "@clerk/clerk-react";
-import { Link, useLocation } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
 // import { MachineSelect } from "@/components/MachineSelect";
 // import { useCurrentPlan } from "@/components/useCurrentPlan";
 import { motion } from "framer-motion";
-import React, { use, useEffect, useRef, useState } from "react";
+import type React from "react";
+import { use, useEffect, useRef, useState } from "react";
+import { Badge } from "./ui/badge";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
-import { useQuery } from "@tanstack/react-query";
-import { Badge } from "./ui/badge";
-import { orgPrefixPaths } from "@/orgPrefixPaths";
-import { getOrgPathInfo } from "@/utils/org-path";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { LogDisplay } from "@/components/workspace/LogDisplay";
+import { parseAsString } from "nuqs";
+import { useQueryState } from "nuqs";
+import { useWorkflowStore } from "./workspace/Workspace";
+import { WorkflowCommitVersion } from "./workspace/WorkflowCommitVersion";
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -245,21 +267,116 @@ const links = [
   },
 ];
 
+function SessionSidebar() {
+  const router = useRouter();
+  const workflowId = useWorkflowIdInSessionView();
+  // const sessionId = useSessionIdInSessionView();
+  const clerk = useClerk();
+  const personalOrg = clerk.user?.username ?? "personal";
+
+  const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
+  const [displayCommit, setDisplayCommit] = useState(false);
+  const { hasChanged } = useWorkflowStore();
+
+  return (
+    <>
+      {displayCommit && (
+        <WorkflowCommitVersion
+          setOpen={setDisplayCommit}
+          // endpoint={endpoint}
+          // machine_id={machine_id}
+          // machine_version_id={machine_version_id}
+          // session_url={session?.url}
+        />
+      )}
+      <Sidebar collapsible="icon">
+        <SidebarHeader>
+          <div className="flex flex-row items-start justify-between">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => {
+                if (workflowId) {
+                  router.navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: { workflowId, view: "requests" },
+                    // search: { sessionId: undefined },
+                  });
+                } else {
+                  router.navigate({
+                    to: "/",
+                    // search: { sessionId: undefined },
+                  });
+                }
+                setSessionId(null);
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {/* <SidebarMenuItem>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Terminal className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-fit p-2">
+                    <LogDisplay />
+                  </PopoverContent>
+                </Popover>
+              </SidebarMenuItem> */}
+                {hasChanged && (
+                  <SidebarMenuItem>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        setDisplayCommit(true);
+                      }}
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </SidebarMenuItem>
+                )}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          {/* <OrganizationSwitcher
+          organizationProfileUrl="/organization-profile"
+          organizationProfileMode="navigation"
+          afterSelectOrganizationUrl="/org/:slug/workflows"
+          afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
+          appearance={{
+            elements: {
+              rootBox: "items-center justify-center p-2",
+              organizationSwitcherPopoverRootBox: {
+                pointerEvents: "initial",
+              },
+            },
+          }}
+        /> */}
+        </SidebarFooter>
+      </Sidebar>
+    </>
+  );
+}
+
 export function AppSidebar() {
   const { pages, flatPages, metaPages } = usePages();
-  // const sub = useCurrentPlan();
-
   const { orgId, orgSlug } = useAuth();
   const isFirstRender = useRef(true);
-
-  // useEffect(() => {
-  //   if (isFirstRender.current) {
-  //     isFirstRender.current = false;
-  //     return;
-  //   }
-  //   console.log("org_id", orgId);
-  //   window.location.reload();
-  // }, [orgId]);
+  const sessionId = useSessionIdInSessionView();
+  const { setOpen } = useSidebar();
 
   const items = flatPages.map((page) => ({
     title: page.name,
@@ -310,6 +427,15 @@ export function AppSidebar() {
     refetchInterval: 3000,
     enabled: window.location.hostname === "localhost",
   });
+
+  useEffect(() => {
+    setOpen(!sessionId);
+  }, [sessionId]);
+
+  // If we're in a session, show the session-specific sidebar
+  if (sessionId) {
+    return <SessionSidebar />;
+  }
 
   return (
     <>

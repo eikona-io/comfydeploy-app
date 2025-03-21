@@ -67,6 +67,7 @@ import { WorkspaceControls } from "./workspace-control";
 import { useSearch } from "@tanstack/react-router";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { useWorkflowIdInSessionView } from "@/hooks/hook";
 
 interface WorkflowState {
   workflow: any;
@@ -119,10 +120,17 @@ export default function Workspace({
   machine_version_id?: string;
   gpu?: string;
 }) {
-  const { workflowId, workflowLink, version, isFirstTime } = useSearch({
-    from: "/sessions/$sessionId/",
-  });
-  const [_, setIsFirstTime] = useQueryState("isFirstTime", parseAsBoolean);
+  // const { workflowId, workflowLink, version, isFirstTime } = useSearch({
+  //   from: "/sessions/$sessionId/",
+  // });
+  const workflowId = useWorkflowIdInSessionView();
+  const workflowLink = undefined; //useWorkflowLinkInSessionView();
+  const [version] = useQueryState("version", parseAsInteger);
+  // const [isFirstTime] = useQueryState("isFirstTime", parseAsBoolean);
+  const [isFirstTime, setIsFirstTime] = useQueryState(
+    "isFirstTime",
+    parseAsBoolean,
+  );
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const { workflow } = useCurrentWorkflow(workflowId ?? null);

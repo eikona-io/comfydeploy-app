@@ -12,7 +12,10 @@ import { WorkflowList } from "@/components/workflow-dropdown";
 import { useSelectedVersion, VersionList } from "@/components/version-select";
 import { WorkflowCommitVersion } from "./WorkflowCommitVersion";
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useMatch } from "@tanstack/react-router";
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInSessionView,
+} from "@/hooks/hook";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useWorkflowVersion } from "../workflow-list";
@@ -60,14 +63,11 @@ interface WorkspaceButtonProps {
 }
 
 export function RightMenuButtons({ endpoint }: WorkspaceButtonProps) {
-  const match = useMatch({
-    from: "/sessions/$sessionId/",
-    shouldThrow: false,
-  });
+  const sessionId = useSessionIdInSessionView();
 
   const { data: session } = useQuery<any>({
-    queryKey: ["session", match?.params.sessionId],
-    enabled: !!match?.params.sessionId,
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
   });
 
   const { data: machine } = useMachine(session?.machine_id);
@@ -96,11 +96,8 @@ export function RightMenuButtons({ endpoint }: WorkspaceButtonProps) {
           id: "assets",
           icon: "pi-box",
           label: "Assets",
-          //   icon: "pi-image",
           tooltip: "Assets",
           event: "assets",
-          //   btnClasses:
-          //     "p-button p-component p-button-icon-only p-button-secondary p-button-text",
         },
       ],
       buttonIdPrefix: "cd-button-",
@@ -108,11 +105,6 @@ export function RightMenuButtons({ endpoint }: WorkspaceButtonProps) {
   }, [machine?.id, machine?.name]);
 
   useWorkspaceButtons(data, endpoint);
-
-  // const { data: machineVersions, isLoading: isLoadingMachineVersions } =
-  //   useMachineVersions(machine?.id);
-
-  // const versions = machineVersions?.pages[0] || [];
 
   return (
     <>
@@ -129,8 +121,8 @@ export function CreateWorkspaceDialog({
   open,
   setOpen,
   sessionMachineId,
-  setFirstCreateDialogOpen, // for new workspace and new workflow
-  setDisplayCommit, // for new workspace but exist workflow
+  setFirstCreateDialogOpen,
+  setDisplayCommit,
 }: {
   open: boolean;
   setOpen: (open: boolean) => void;
@@ -141,17 +133,12 @@ export function CreateWorkspaceDialog({
   const { data: machine, refetch: refetchMachine } =
     useMachine(sessionMachineId);
   const [machineName, setMachineName] = useState(machine?.name);
-  const match = useMatch({
-    from: "/sessions/$sessionId/",
-    shouldThrow: false,
-  });
-  const { workflowId } = useSearch({
-    from: "/sessions/$sessionId/",
-  });
+  const sessionId = useSessionIdInSessionView();
+  const workflowId = useWorkflowIdInSessionView();
 
   const { refetch } = useQuery<any>({
-    queryKey: ["session", match?.params.sessionId],
-    enabled: !!match?.params.sessionId,
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
   });
 
   return (
@@ -175,7 +162,7 @@ export function CreateWorkspaceDialog({
                 onClick={async () => {
                   await callServerPromise(
                     api({
-                      url: `session/${match?.params.sessionId}/snapshot`,
+                      url: `session/${sessionId}/snapshot`,
                       init: {
                         method: "POST",
                         body: JSON.stringify({
@@ -216,23 +203,17 @@ export function CreateWorkspaceDialog({
 
 export function LeftMenuButtons({ endpoint }: WorkspaceButtonProps) {
   const router = useRouter();
-  const { workflowId } = useSearch({
-    from: "/sessions/$sessionId/",
-  });
-  const match = useMatch({
-    from: "/sessions/$sessionId/",
-    shouldThrow: false,
-  });
+  const workflowId = useWorkflowIdInSessionView();
+  const sessionId = useSessionIdInSessionView();
 
   const { data: session } = useQuery<any>({
-    queryKey: ["session", match?.params.sessionId],
-    enabled: !!match?.params.sessionId,
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
   });
 
   const { data: machine } = useMachine(session?.machine_id);
 
   const data = useMemo(() => {
-    console.log("=====", " re calculating left menu buttons");
     return {
       containerSelector: ".comfyui-menu",
       buttonConfigs: [
@@ -251,7 +232,7 @@ export function LeftMenuButtons({ endpoint }: WorkspaceButtonProps) {
               });
             } else {
               router.navigate({
-                to: "/home",
+                to: "/",
               });
             }
           },
@@ -260,7 +241,7 @@ export function LeftMenuButtons({ endpoint }: WorkspaceButtonProps) {
       buttonIdPrefix: "cd-button-left-",
       containerStyle: { order: "-1" },
     };
-  }, [workflowId, machine?.id]);
+  }, [workflowId, router.navigate]);
 
   useWorkspaceButtons(data, endpoint);
 
@@ -268,14 +249,11 @@ export function LeftMenuButtons({ endpoint }: WorkspaceButtonProps) {
 }
 
 export function QueueButtons({ endpoint }: WorkspaceButtonProps) {
-  const match = useMatch({
-    from: "/sessions/$sessionId/",
-    shouldThrow: false,
-  });
+  const sessionId = useSessionIdInSessionView();
 
   const { data: session, refetch } = useQuery<any>({
-    queryKey: ["session", match?.params.sessionId],
-    enabled: !!match?.params.sessionId,
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
     refetchInterval: 1000,
   });
 
@@ -359,7 +337,7 @@ export function QueueButtons({ endpoint }: WorkspaceButtonProps) {
 
     await callServerPromise(
       api({
-        url: `session/${match?.params.sessionId}/increase-timeout`,
+        url: `session/${sessionId}/increase-timeout`,
         init: {
           method: "POST",
           body: JSON.stringify({
@@ -370,7 +348,6 @@ export function QueueButtons({ endpoint }: WorkspaceButtonProps) {
     );
 
     await refetch();
-    // toast.success(`Session time increased by ${selectedIncrement} minutes`);
     setTimerDialogOpen(false);
   };
 
@@ -459,14 +436,11 @@ export function WorkflowButtons({
 
   const router = useRouter();
   const workflowId = useWorkflowIdInWorkflowPage();
-  const match = useMatch({
-    from: "/sessions/$sessionId/",
-    shouldThrow: false,
-  });
+  const sessionId = useSessionIdInSessionView();
 
   const { data: session } = useQuery<any>({
-    queryKey: ["session", match?.params.sessionId],
-    enabled: !!match?.params.sessionId,
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
   });
 
   const { data: machine } = useMachine(session?.machine_id);
@@ -483,7 +457,9 @@ export function WorkflowButtons({
 
   const is_fluid_machine = !!workspace_version?.modal_image_id;
 
-  const { value: selectedVersion } = useSelectedVersion(workflowId);
+  const { value: selectedVersion } = useSelectedVersion(
+    workflowId || undefined,
+  );
   const { data: comfyui_snapshot } = useQuery({
     queryKey: ["comfyui_snapshot", session?.url],
     queryFn: async () => {
@@ -530,7 +506,7 @@ export function WorkflowButtons({
     router.navigate({
       to: "/sessions/$sessionId",
       params: {
-        sessionId: match?.params.sessionId || "",
+        sessionId: sessionId || "",
       },
       search: {
         workflowId: id,
@@ -542,9 +518,11 @@ export function WorkflowButtons({
 
   const [isTemplateOpen, setIsTemplateOpen] = useState(false);
   const [isNewWorkflowOpen, setIsNewWorkflowOpen] = useState(false);
-  const { workflowId: workflowIdFromSearch, workflowLink } = useSearch({
-    from: "/sessions/$sessionId/",
-  });
+  // const { workflowId: workflowIdFromSearch, workflowLink } = useSearch({
+  //   from: "/sessions/$sessionId/",
+  // });
+  const workflowIdFromSearch = useWorkflowIdInSessionView();
+  const workflowLink = undefined; //useWorkflowLinkInSessionView();
   const { cdSetup } = useCDStore();
   const endpointParts = endpoint.split("//")[1].split(".");
   const endpointId = `${endpointParts[0]}-${endpointParts[1]}`;
@@ -562,7 +540,7 @@ export function WorkflowButtons({
         expires: 1 / 24,
       });
     }, 1000);
-  }, [cdSetup, workflowId, workflowLink]);
+  }, [cdSetup, workflowId, workflowLink, endpointId]);
 
   const data = useMemo(() => {
     return {
@@ -596,12 +574,6 @@ export function WorkflowButtons({
           icon: "pi-plus",
           tooltip: "Workflow Template",
           event: "workflow_template",
-          // style: {
-          //   height: "28px",
-          //   marginLeft: "7px",
-          //   borderRadius: "4px",
-          //   display: "flex",
-          // },
           onClick: (_: string, __: unknown) => {
             if (workflowIdFromSearch) {
               setIsClearWorkflowDialogOpen(true);
@@ -614,7 +586,6 @@ export function WorkflowButtons({
         {
           id: "workflow-2",
           icon: "pi-save",
-          // icon: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M12 3v6"/><circle cx="12" cy="12" r="3"/><path d="M12 15v6"/></g></svg>`,
           label:
             hasSnapshotDiff && is_fluid_machine && !hasChanged
               ? "Update Snapshot"
@@ -627,22 +598,12 @@ export function WorkflowButtons({
           },
           onClick: (_: string, __: unknown) => {
             if (!machine) {
-              // toast.error("Please create a workspace first");
               setIsNewWorkspaceDialogOpen(true);
               return;
             }
             setDisplayCommit(true);
           },
         },
-
-        // {
-        //   id: "workflow-4",
-        //   icon: "pi-diff",
-        //   label: "Diff",
-        //   tooltip: "Diff",
-        //   event: "diff",
-        //   onClick: (_: string, __: unknown) => setDisplayDiff(true),
-        // },
 
         {
           id: "save-new-workflow",
@@ -652,7 +613,6 @@ export function WorkflowButtons({
           event: "save_new_workflow",
           onClick: (_: string, __: unknown) => {
             if (!machine) {
-              // toast.error("Please create a workspace first");
               setIsNewWorkspaceDialogOpen(true);
               return;
             }
@@ -676,6 +636,7 @@ export function WorkflowButtons({
     machine?.id,
     machine?.name,
     hasSnapshotDiff,
+    is_fluid_machine,
   ]);
 
   const [_, setWorkflowId] = useQueryState("workflowId");
@@ -697,8 +658,8 @@ export function WorkflowButtons({
         open={isNewWorkspaceDialogOpen}
         setOpen={setIsNewWorkspaceDialogOpen}
         sessionMachineId={session?.machine_id}
-        setFirstCreateDialogOpen={setIsNewWorkflowOpen} // for new workspace and new workflow
-        setDisplayCommit={setDisplayCommit} // for new workspace but exist workflow
+        setFirstCreateDialogOpen={setIsNewWorkflowOpen}
+        setDisplayCommit={setDisplayCommit}
       />
 
       <Dialog
@@ -724,12 +685,11 @@ export function WorkflowButtons({
         </DialogContent>
       </Dialog>
 
-      {/* New Workflow Dialog */}
       <NewWorkflowDialog
         open={isNewWorkflowOpen}
         setOpen={setIsNewWorkflowOpen}
       />
-      {/* popover clear current workflow */}
+
       <Popover
         open={isClearWorkflowDialogOpen}
         onOpenChange={setIsClearWorkflowDialogOpen}
@@ -760,7 +720,7 @@ export function WorkflowButtons({
                   router.navigate({
                     to: "/sessions/$sessionId",
                     params: {
-                      sessionId: match?.params.sessionId || "",
+                      sessionId: sessionId || "",
                     },
                     search: {
                       isFirstTime: true,
@@ -1030,14 +990,11 @@ function NewWorkflowDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { workflow } = useWorkflowStore();
   const router = useRouter();
-  const match = useMatch({
-    from: "/sessions/$sessionId/",
-    shouldThrow: false,
-  });
+  const sessionId = useSessionIdInSessionView();
 
   const { data: session } = useQuery<any>({
-    queryKey: ["session", match?.params.sessionId],
-    enabled: !!match?.params.sessionId,
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
   });
 
   const getPromptWithTimeout = useCallback(
@@ -1123,7 +1080,7 @@ function NewWorkflowDialog({
       router.navigate({
         to: "/sessions/$sessionId",
         params: {
-          sessionId: match?.params.sessionId || "",
+          sessionId: sessionId || "",
         },
         search: {
           workflowId: result.workflow_id,

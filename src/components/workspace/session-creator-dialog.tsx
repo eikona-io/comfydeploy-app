@@ -225,15 +225,25 @@ export function SessionCreationDialog({
 
       useLogStore.getState().clearLogs();
 
+      // router.navigate({
+      //   to: "/sessions/$sessionId",
+      //   params: {
+      //     sessionId: response.session_id,
+      //   },
+      //   search: {
+      //     workflowId,
+      //     version,
+      //     isFirstTime: true,
+      //   },
+      // });
+
       router.navigate({
-        to: "/sessions/$sessionId",
-        params: {
-          sessionId: response.session_id,
-        },
+        to: "/workflows/$workflowId/$view",
+        params: { workflowId, view: "workspace" },
         search: {
-          workflowId,
-          version,
           isFirstTime: true,
+          workflowId: workflowId,
+          sessionId: response.session_id,
         },
       });
 

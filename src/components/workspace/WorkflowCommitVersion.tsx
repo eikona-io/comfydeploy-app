@@ -5,7 +5,10 @@ import { InsertModal } from "@/components/auto-form/auto-form-dialog";
 // import { useTurboStore } from "@/components/workspace/App";
 // import { WorkspaceContext } from "@/components/workspace/WorkspaceContext";
 import { sendEventToCD } from "@/components/workspace/sendEventToCD";
-import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInWorkflowPage,
+} from "@/hooks/hook";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { useAuth } from "@clerk/clerk-react";
@@ -88,10 +91,7 @@ export function WorkflowCommitVersion({
   let [snapshotAction, setSnapshotAction] =
     useState<SnapshotAction>("CREATE_AND_COMMIT");
 
-  const match = useMatch({
-    from: "/sessions/$sessionId/",
-    shouldThrow: false,
-  });
+  const sessionId = useSessionIdInSessionView();
 
   const endpoint = _endpoint;
   // if (turbo) {
@@ -223,13 +223,10 @@ export function WorkflowCommitVersion({
           // console.log("prompt", prompt);
 
           let new_machine_vesion_id: string | undefined;
-          if (
-            snapshotAction === "CREATE_AND_COMMIT" &&
-            match?.params.sessionId
-          ) {
+          if (snapshotAction === "CREATE_AND_COMMIT" && sessionId) {
             const snapshot_data = await callServerPromise(
               api({
-                url: `session/${match.params.sessionId}/snapshot`,
+                url: `session/${sessionId}/snapshot`,
                 init: {
                   method: "POST",
                 },
