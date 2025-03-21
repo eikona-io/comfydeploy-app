@@ -440,15 +440,6 @@ function WorkflowActionCommand({
         </CommandItem>
         <CommandItem
           onSelect={() => {
-            navigate({ to: `/workflows/${workflowId}/containers` });
-            setOpen(false);
-          }}
-        >
-          <ArrowRight className="!h-4 !w-4 mr-2" />
-          <span>To Containers...</span>
-        </CommandItem>
-        <CommandItem
-          onSelect={() => {
             navigate({ to: `/workflows/${workflowId}/deployment` });
             setOpen(false);
           }}

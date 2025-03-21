@@ -69,7 +69,7 @@ import { useEffect, useState } from "react";
 const pages = [
   "workspace",
   "requests",
-  "containers",
+  // "containers",
   "deployment",
   "playground",
   "gallery",
