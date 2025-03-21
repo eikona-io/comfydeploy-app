@@ -1,16 +1,13 @@
 import { GalleryView } from "@/components/GalleryView";
 import { PaddingLayout } from "@/components/PaddingLayout";
-import { LoadingWrapper } from "@/components/loading-wrapper";
+import { DeploymentPage } from "@/components/deployment/deployment-page";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
 import { SessionItem } from "@/components/sessions/SessionItem";
 import {
   Breadcrumb,
-  BreadcrumbEllipsis,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -28,7 +25,6 @@ import {
 } from "@/components/ui/popover";
 import {
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -40,29 +36,16 @@ import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpda
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
 import { ContainersTable } from "@/components/workspace/ContainersTable";
-import { APIDocs } from "@/components/workspace/DeploymentDisplay";
 import { LogDisplay } from "@/components/workspace/LogDisplay";
-import { MachineSelect } from "@/components/workspace/MachineSelect";
 import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { WorkspaceStatusBar } from "@/components/workspace/WorkspaceStatusBar";
-import { SessionCreate } from "@/components/workspace/session-create";
-import { WorkspaceSubmenuActions } from "@/components/workspace/workspace-submenu-actions";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useSessionAPI } from "@/hooks/use-session-api";
-import {
-  getInputsFromWorkflowAPI,
-  getInputsFromWorkflowJSON,
-} from "@/lib/getInputsFromWorkflow";
 import { cn } from "@/lib/utils";
-import {
-  Link,
-  createLazyFileRoute,
-  notFound,
-  useRouter,
-} from "@tanstack/react-router";
+import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Plus, Terminal } from "lucide-react";
+import { Terminal } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 
@@ -121,14 +104,7 @@ function WorkflowPageComponent() {
     case "deployment":
       view = (
         <PaddingLayout>
-          <div className="relative mx-auto my-10 w-full max-w-screen-lg">
-            <LoadingWrapper tag="api">
-              <APIDocs
-                domain={process.env.NEXT_PUBLIC_CD_API_URL!}
-                workflow_id={workflowId}
-              />
-            </LoadingWrapper>
-          </div>
+          <DeploymentPage />
         </PaddingLayout>
       );
       break;

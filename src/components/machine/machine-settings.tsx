@@ -869,7 +869,7 @@ function CustomNodeSetupWrapper({
   );
 }
 
-function GPUSelectBox({
+export function GPUSelectBox({
   value,
   onChange,
 }: {
@@ -1003,7 +1003,7 @@ function RangeSlider({
   );
 }
 
-function MaxParallelGPUSlider({
+export function MaxParallelGPUSlider({
   value,
   onChange,
 }: {
@@ -1155,7 +1155,7 @@ function TimeSelect({
   );
 }
 
-function WorkflowTimeOut({
+export function WorkflowTimeOut({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
@@ -1177,7 +1177,7 @@ function WorkflowTimeOut({
   );
 }
 
-function WarmTime({
+export function WarmTime({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
@@ -1203,7 +1203,7 @@ function WarmTime({
   );
 }
 
-function MaxAlwaysOnSlider({
+export function MaxAlwaysOnSlider({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
