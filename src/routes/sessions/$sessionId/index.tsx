@@ -1,10 +1,11 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
-import { z } from "zod";
 import { usePostHog } from "posthog-js/react";
+import { z } from "zod";
 
 import { MachineStatus } from "@/components/machines/machine-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Portal } from "@/components/ui/custom/portal";
 import { Input } from "@/components/ui/input";
 import {
   Popover,
@@ -12,10 +13,23 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import {
+  VersionSelectV2,
+  useSelectedVersion,
+} from "@/components/version-select";
+import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
+import { WorkflowDropdown } from "@/components/workflow-dropdown";
+import { SessionCreator } from "@/components/workspace/SessionView";
+import { WorkflowCommitVersion } from "@/components/workspace/WorkflowCommitVersion";
+import { WorkflowDiff } from "@/components/workspace/WorkflowDiff";
+import { useWorkflowStore } from "@/components/workspace/Workspace";
+import { sendWorkflow } from "@/components/workspace/sendEventToCD";
 import { useMachine, useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { AnimatePresence, easeOut, motion } from "framer-motion";
 import {
   AlertTriangle,
   ChevronDown,
@@ -27,22 +41,8 @@ import {
   Search,
 } from "lucide-react";
 import * as React from "react";
-import { useDebounce } from "use-debounce";
-import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { WorkflowDropdown } from "@/components/workflow-dropdown";
-import { Portal } from "@/components/ui/custom/portal";
-import {
-  useSelectedVersion,
-  VersionSelectV2,
-} from "@/components/version-select";
-import { WorkflowCommitVersion } from "@/components/workspace/WorkflowCommitVersion";
-import { WorkflowDiff } from "@/components/workspace/WorkflowDiff";
-import { AnimatePresence, easeOut, motion } from "framer-motion";
-import { sendWorkflow } from "@/components/workspace/sendEventToCD";
 import { toast } from "sonner";
-import { useWorkflowStore } from "@/components/workspace/Workspace";
-import { useQuery } from "@tanstack/react-query";
-import { SessionCreator } from "@/components/workspace/SessionView";
+import { useDebounce } from "use-debounce";
 
 export const Route = createFileRoute("/sessions/$sessionId/")({
   component: RouteComponent,
@@ -68,10 +68,10 @@ function RouteComponent() {
     );
   }
 
-  const { data: session } = useQuery<any>({
-    enabled: !!sessionId,
-    queryKey: ["session", sessionId],
-  });
+  // const { data: session } = useQuery<any>({
+  //   enabled: !!sessionId,
+  //   queryKey: ["session", sessionId],
+  // });
 
   return (
     <motion.div
@@ -94,7 +94,7 @@ function RouteComponent() {
         transition={{ duration: 0.5, ease: easeOut }}
       />
 
-      <Portal targetId="nav-bar-items">
+      {/* <Portal targetId="nav-bar-items">
         <div className="flex flex-row items-center justify-between gap-2">
           <div className="flex flex-row">
             <WorkflowDropdown
@@ -126,8 +126,8 @@ function RouteComponent() {
             />
           )}
         </div>
-      </Portal>
-      <Portal targetId="nav-bar-items-right">
+      </Portal> */}
+      {/* <Portal targetId="nav-bar-items-right">
         <div className="flex flex-row items-center justify-between gap-2">
           {session?.machine_id && (
             <Button
@@ -169,7 +169,7 @@ function RouteComponent() {
             </Button>
           )}
         </div>
-      </Portal>
+      </Portal> */}
       <SessionCreator
         workflowId={workflowId ?? undefined}
         sessionIdOverride={sessionId}
