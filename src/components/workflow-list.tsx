@@ -399,7 +399,7 @@ function WorkflowCard({
               </div>
             )}
           </div>
-          <div className="absolute right-0 bottom-0 left-0 px-2 py-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
+          {/* <div className="absolute right-0 bottom-0 left-0 px-2 py-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
             <div className="flex items-center justify-center gap-2">
               <AdminAndMember>
                 <Button
@@ -436,7 +436,7 @@ function WorkflowCard({
                 </Button>
               </AdminAndMember>
             </div>
-          </div>
+          </div> */}
           <div className="absolute top-2 right-2">
             <AdminAndMember>
               <DropdownMenu>
