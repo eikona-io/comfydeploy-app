@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Loader2, MoreVertical } from "lucide-react";
+import { Copy, Loader2, MoreVertical } from "lucide-react";
 import { Button } from "../ui/button";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { api } from "@/lib/api";
@@ -26,6 +26,12 @@ import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useState } from "react";
 import { create } from "zustand";
 import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 export interface Deployment {
   id: string;
@@ -43,6 +49,11 @@ export interface Deployment {
   };
   dub_link?: string;
   machine_id: string;
+  created_at: string;
+  updated_at: string;
+  machine: {
+    name: string;
+  };
 }
 
 interface Version {
@@ -76,8 +87,11 @@ export function DeploymentPage() {
   const { workflowId } = useParams({ from: "/workflows/$workflowId/$view" });
   const { workflow } = useCurrentWorkflow(workflowId);
   const { data: machine } = useMachine(workflow?.selected_machine_id);
-  const { data: deployments, refetch: refetchDeployments } =
-    useWorkflowDeployments(workflowId);
+  const {
+    data: deployments,
+    refetch: refetchDeployments,
+    isLoading: isDeploymentsLoading,
+  } = useWorkflowDeployments(workflowId);
   const { data: versions } = useQuery<Version[]>({
     queryKey: ["workflow", workflowId, "versions"],
     meta: {
@@ -137,11 +151,45 @@ export function DeploymentPage() {
             Select a version and deploy it to an environment.
           </p>
         </div>
-        <h3 className="mb-2 ml-2 font-medium text-sm">Versions</h3>
+        <h3 className="mb-2 ml-2 font-medium text-sm">History</h3>
+        <div className="rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200">
+          {isDeploymentsLoading ? (
+            <div className="flex h-[80px] flex-col items-center justify-center">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          ) : (
+            <>
+              {deployments?.some((d: Deployment) =>
+                ["production", "staging"].includes(d.environment),
+              ) ? (
+                <div className="flex flex-col">
+                  {deployments
+                    .filter((d: Deployment) =>
+                      ["production", "staging"].includes(d.environment),
+                    )
+                    .map((deployment: Deployment) => (
+                      <DeploymentHistory
+                        key={deployment.id}
+                        deployment={deployment}
+                      />
+                    ))}
+                </div>
+              ) : (
+                <div className="flex h-[80px] flex-col items-center justify-center">
+                  <p className="text-muted-foreground text-xs">
+                    No deployments yet
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <h3 className="mt-4 mb-2 ml-2 font-medium text-sm">Versions</h3>
         <VersionList
           hideSearch
           workflow_id={workflowId || ""}
-          className="relative z-[1] w-full rounded-md bg-background p-1 ring-1 ring-gray-200"
+          className="relative z-[1] w-full rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200"
           containerClassName="max-h-[234px]"
           height={30}
           renderItem={(item: Version) => {
@@ -300,5 +348,82 @@ export function DeploymentPage() {
       </div>
       <DeploymentDrawer />
     </>
+  );
+}
+
+function DeploymentHistory({ deployment }: { deployment: Deployment }) {
+  const { setSelectedDeployment } = useSelectedDeploymentStore();
+  console.log(deployment);
+
+  return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+    <div
+      className="grid cursor-pointer grid-cols-3 items-center rounded-[8px] border-gray-100 border-b px-3 py-1.5 text-xs last:border-b-0 hover:bg-gray-50"
+      onClick={() => {
+        setSelectedDeployment(deployment.id);
+      }}
+    >
+      {/* Left column */}
+      <div className="flex items-center gap-3">
+        <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+          #{deployment.id.slice(0, 8)}
+        </span>
+        <Badge className={cn("!text-2xs", getEnvColor(deployment.environment))}>
+          {deployment.environment}
+        </Badge>
+
+        {deployment.version?.version && (
+          <Badge variant="secondary" className="!text-2xs py-0 font-medium">
+            v{deployment.version.version}
+          </Badge>
+        )}
+      </div>
+
+      {/* Center column - Machine info */}
+      <div className="flex items-center justify-center gap-4 overflow-hidden">
+        <span
+          className="max-w-[150px] truncate text-muted-foreground text-xs"
+          title={deployment.machine.name}
+        >
+          {deployment.machine.name}
+        </span>
+        {deployment.gpu && (
+          <Badge variant="outline" className="!text-2xs font-normal">
+            {deployment.gpu}
+          </Badge>
+        )}
+      </div>
+
+      {/* Right column */}
+      <div className="flex items-center justify-end gap-3">
+        <span className="whitespace-nowrap text-2xs text-muted-foreground">
+          {getRelativeTime(deployment.updated_at)}
+        </span>
+        <TooltipProvider>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 p-0.5"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  e.nativeEvent.preventDefault();
+                  e.nativeEvent.stopPropagation();
+                  navigator.clipboard.writeText(deployment.id);
+                  toast.success("ID copied to clipboard");
+                }}
+              >
+                <Copy size={13} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-2xs">Copy ID</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </div>
   );
 }

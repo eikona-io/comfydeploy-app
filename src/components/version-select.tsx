@@ -25,7 +25,7 @@ import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { Search } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
 import * as React from "react";
@@ -149,6 +149,19 @@ export function VersionList({
         onClose?.();
       },
     });
+
+  if (query.isLoading) {
+    return (
+      <div
+        className={cn(
+          "flex h-[234px] w-[375px] items-center justify-center",
+          className,
+        )}
+      >
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("w-[375px] overflow-hidden", className)}>
