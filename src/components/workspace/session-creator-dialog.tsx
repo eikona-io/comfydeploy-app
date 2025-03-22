@@ -47,6 +47,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { api } from "@/lib/api";
+import { useQueryState } from "nuqs";
 
 interface SessionCreationDialogProps {
   workflowId: string;
@@ -174,6 +175,8 @@ export function SessionCreationDialog({
   const { data: machinesData } = useMachines(debouncedSearchValue);
   const machines = machinesData?.pages.flat() ?? [];
 
+  const [_, setSessionId] = useQueryState("sessionId");
+
   // console.log("modalImageId", modalImageId);
 
   const form = useForm<SessionForm>({
@@ -243,9 +246,11 @@ export function SessionCreationDialog({
         search: {
           isFirstTime: true,
           workflowId: workflowId,
-          sessionId: response.session_id,
+          // sessionId: response.session_id,
         },
       });
+
+      setSessionId(response.session_id);
 
       onClose();
     } catch (error) {

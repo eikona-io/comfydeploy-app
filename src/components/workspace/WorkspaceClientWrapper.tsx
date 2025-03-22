@@ -191,7 +191,7 @@ export function WorkspaceClientWrapper({
           )}
         </motion.div>
 
-        {!(hasActiveSession && cachedSessionId) ? (
+        {!sessionId ? (
           <div className="absolute inset-0 z-[10] flex h-full w-full items-center justify-center">
             <div className="flex flex-col items-center gap-2">
               <p className="text-sm text-gray-500">

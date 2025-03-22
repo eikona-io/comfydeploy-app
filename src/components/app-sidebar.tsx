@@ -278,11 +278,24 @@ function SessionSidebar() {
   const [displayCommit, setDisplayCommit] = useState(false);
   const { hasChanged } = useWorkflowStore();
 
+  const {
+    data: session,
+    isLoading: isLoadingSession,
+    isError,
+  } = useQuery<any>({
+    enabled: !!sessionId,
+    queryKey: ["session", sessionId],
+    refetchInterval: 1000,
+  });
+
+  const url = session?.url || session?.tunnel_url;
+
   return (
     <>
       {displayCommit && (
         <WorkflowCommitVersion
           setOpen={setDisplayCommit}
+          endpoint={url}
           // endpoint={endpoint}
           // machine_id={machine_id}
           // machine_version_id={machine_version_id}
@@ -317,55 +330,26 @@ function SessionSidebar() {
           </div>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {/* <SidebarMenuItem>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Terminal className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-fit p-2">
-                    <LogDisplay />
-                  </PopoverContent>
-                </Popover>
-              </SidebarMenuItem> */}
-                {hasChanged && (
-                  <SidebarMenuItem>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => {
-                        setDisplayCommit(true);
-                      }}
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                  </SidebarMenuItem>
-                )}
-              </SidebarMenu>
-            </SidebarGroupContent>
+          <SidebarGroup className="p-1">
+            <SidebarMenu>
+              {hasChanged && (
+                <SidebarMenuItem className=" p-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => {
+                      setDisplayCommit(true);
+                    }}
+                    className="bg-orange-200 mx-auto hover:bg-orange-300"
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </SidebarMenuItem>
+              )}
+            </SidebarMenu>
+            {/* </SidebarGroupContent> */}
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-          {/* <OrganizationSwitcher
-          organizationProfileUrl="/organization-profile"
-          organizationProfileMode="navigation"
-          afterSelectOrganizationUrl="/org/:slug/workflows"
-          afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
-          appearance={{
-            elements: {
-              rootBox: "items-center justify-center p-2",
-              organizationSwitcherPopoverRootBox: {
-                pointerEvents: "initial",
-              },
-            },
-          }}
-        /> */}
-        </SidebarFooter>
       </Sidebar>
     </>
   );
