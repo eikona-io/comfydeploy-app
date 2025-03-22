@@ -32,7 +32,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
-import { RunsTable, RunsTableVirtualized } from "../workflows/RunsTable";
+import { FilterDropdown, RunsTableVirtualized } from "../workflows/RunsTable";
 import WorkflowComponent from "../workflows/WorkflowComponent";
 import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
 
@@ -137,15 +137,33 @@ export function DeploymentPage() {
         <h3 className="mt-4 mb-2 ml-2 font-medium text-sm">Versions</h3>
         <DeploymentWorkflowVersionList workflowId={workflowId} />
 
-        <h3 className="mt-4 mb-2 ml-2 font-medium text-sm">Requests</h3>
+        <div className="mx-2 mt-4 mb-1 flex items-center justify-between">
+          <h3 className="font-medium text-sm">Requests</h3>
+          <FilterDropdown
+            workflowId={workflowId}
+            buttonSize="sm"
+            isDeploymentPage={true}
+          />
+        </div>
+
         <div className="h-[310px] overflow-clip rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200">
-          <RealtimeWorkflowProvider workflowId={workflowId}>
-            <RunsTableVirtualized
-              workflow_id={workflowId}
-              className="h-[300px]"
-            />
-            <WorkflowComponent />
-          </RealtimeWorkflowProvider>
+          {deployments?.some((d: Deployment) =>
+            ["production", "staging"].includes(d.environment),
+          ) ? (
+            <RealtimeWorkflowProvider workflowId={workflowId}>
+              <RunsTableVirtualized
+                workflow_id={workflowId}
+                className="h-[300px]"
+              />
+              <WorkflowComponent />
+            </RealtimeWorkflowProvider>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center">
+              <p className="text-muted-foreground text-xs">
+                No deployments yet
+              </p>
+            </div>
+          )}
         </div>
       </div>
       <DeploymentDrawer />

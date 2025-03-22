@@ -137,24 +137,18 @@ export function RunDetails(props: {
 
   const handleClick = () => {
     if (!run) return;
-    if (isShare) {
-      // setInputValues(run.workflow_inputs);
-    } else if (isPlayground) {
-      navigate({
-        to: "/workflows/$workflowId/$view",
-        params: {
-          workflowId: run.workflow_id,
-          view: "playground",
-        },
-        search: (prev) => ({
-          ...prev,
-          tweak: true,
-        }),
-      });
-    } else {
-      setTweakRunId(run.id);
-      onClose?.();
-    }
+
+    navigate({
+      to: "/workflows/$workflowId/$view",
+      params: {
+        workflowId: run.workflow_id,
+        view: "playground",
+      },
+      search: (prev) => ({
+        ...prev,
+        tweak: true,
+      }),
+    });
   };
 
   const content = (

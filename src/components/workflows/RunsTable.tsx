@@ -15,31 +15,31 @@ import { RunInputs } from "@/components/workflows/RunInputs";
 import { RunOutputs } from "@/components/workflows/RunOutputs";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Settings2Icon } from "lucide-react";
+import { Check, Settings2, Settings2Icon, Trash, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import React, { Suspense, use, useEffect } from "react";
 import { create } from "zustand";
-
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { LiveStatus } from "@/components/workflows/LiveStatus";
 import { useRealtimeWorkflow } from "@/components/workflows/RealtimeRunUpdate";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import {
-  useInfiniteQuery,
-  useQuery,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { FileURLRender, getTotalUrlCountAndUrls } from "./OutputRender";
-import { getEnvColor } from "../workspace/ContainersTable";
+import {
+  getEnvColor,
+  useWorkflowDeployments,
+} from "../workspace/ContainersTable";
 import type { Deployment } from "../deployment/deployment-page";
+import {
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "../ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuTrigger } from "../ui/dropdown-menu";
 
 interface RunsTableState {
   selectedRun: any | null;
@@ -147,12 +147,17 @@ type RunRowRenderer = (props: RunRowRendererProps) => React.ReactNode;
 export function useRuns(props: {
   workflow_id: string;
   defaultData?: any;
+  status?: string;
+  deployment_id?: string;
 }) {
   return useInfiniteQuery({
     queryKey: ["v2", "workflow", props.workflow_id, "runs"],
     meta: {
       limit: BATCH_SIZE,
-      params: { with_outputs: false, with_inputs: false },
+      params: {
+        ...(props.status ? { status: props.status } : {}),
+        ...(props.deployment_id ? { deployment_id: props.deployment_id } : {}),
+      },
     },
     getNextPageParam: (lastPage, allPages) => {
       return lastPage?.length === BATCH_SIZE
@@ -186,18 +191,31 @@ export function RunsTableVirtualized(props: {
 
   const [filterFavorites, setFilterFavorites] = useQueryState("favorite");
 
-  const { socket, workflowId, connectionStatus } = useRealtimeWorkflow();
+  const [deploymentId, setDeploymentId] = useQueryState("filter-deployment-id");
+  const [filterStatus, setFilterStatus] = useQueryState("filter-status");
 
   const {
     data,
-    error,
     fetchNextPage,
     hasNextPage,
-    isFetching,
+    isRefetching,
     isFetchingNextPage,
     status,
     refetch,
-  } = useRuns(props);
+  } = useRuns({
+    ...props,
+    deployment_id: deploymentId || undefined,
+    status: filterStatus || undefined,
+  });
+
+  useEffect(() => {
+    if (deploymentId) {
+      refetch();
+    }
+    if (filterStatus) {
+      refetch();
+    }
+  }, [deploymentId, filterStatus]);
 
   const [viewPage, setViewPage] = useQueryState("view");
 
@@ -285,7 +303,8 @@ export function RunsTableVirtualized(props: {
       <div
         ref={parentRef}
         className={cn(
-          "scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent h-[calc(100vh-10rem)] overflow-y-scroll",
+          "scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent h-[calc(100vh-10rem)] overflow-y-scroll transition-opacity duration-300",
+          isRefetching && "pointer-events-none opacity-50",
           props.className,
         )}
       >
@@ -514,15 +533,13 @@ function LoadingSpinner() {
 }
 
 function DisplayVersion(props: { versionId?: string }) {
-  const { data: version, isLoading } = useQuery({
+  const { data: version } = useQuery({
     queryKey: ["workflow-version", props.versionId],
     queryFn: async ({ queryKey }) => {
       const response = await api({ url: queryKey.join("/") });
       return response;
     },
   });
-
-  if (isLoading) return <Skeleton className="h-5 w-[28px]" />;
 
   if (!version) return null;
 
@@ -536,6 +553,7 @@ function DisplayVersion(props: { versionId?: string }) {
 function DeploymentVersion(props: { deploymentId?: string }) {
   const { data: deployment } = useQuery<Deployment>({
     queryKey: ["deployment", props.deploymentId],
+    enabled: !!props.deploymentId,
   });
 
   if (!deployment) return null;
@@ -553,5 +571,256 @@ function DeploymentVersion(props: { deploymentId?: string }) {
     >
       {deployment.environment}
     </Badge>
+  );
+}
+
+export function FilterDropdown({
+  workflowId,
+  buttonSize,
+  isDeploymentPage = false,
+}: {
+  workflowId: string;
+  buttonSize?: string;
+  isDeploymentPage?: boolean;
+}) {
+  const [statusFilter, setStatusFilter] = useQueryState("filter-status");
+  const [deploymentIdFilter, setDeploymentIdFilter] = useQueryState(
+    "filter-deployment-id",
+  );
+
+  const { data: deployments } = useWorkflowDeployments(workflowId);
+
+  // Group deployments by environment
+  const deploymentsByEnvironment = React.useMemo(() => {
+    if (!deployments) return {};
+
+    return deployments.reduce(
+      (acc: { [key: string]: Deployment[] }, deployment: Deployment) => {
+        const env = deployment.environment;
+        if (!acc[env]) {
+          acc[env] = [];
+        }
+        acc[env].push(deployment);
+        return acc;
+      },
+      {},
+    );
+  }, [deployments]);
+
+  // Get environment names for the dropdown
+  const environments = React.useMemo(() => {
+    return Object.keys(deploymentsByEnvironment).filter((env) =>
+      ["production", "staging"].includes(env),
+    );
+  }, [deploymentsByEnvironment]);
+
+  // Set default environment filter for deployment page
+  React.useEffect(() => {
+    if (
+      isDeploymentPage &&
+      deployments &&
+      (!deploymentIdFilter || deploymentIdFilter === "")
+    ) {
+      const setDefaultEnvironment = async () => {
+        // Try to set production as default
+        if (deploymentsByEnvironment.production?.length > 0) {
+          await setDeploymentIdFilter(
+            deploymentsByEnvironment.production[0].id,
+          );
+        }
+        // Fall back to staging if production doesn't exist
+        else if (deploymentsByEnvironment.staging?.length > 0) {
+          await setDeploymentIdFilter(deploymentsByEnvironment.staging[0].id);
+        }
+      };
+
+      setDefaultEnvironment();
+    }
+  }, [
+    isDeploymentPage,
+    deployments,
+    deploymentIdFilter,
+    deploymentsByEnvironment,
+    setDeploymentIdFilter,
+  ]);
+
+  // Get the current environment name based on the deployment ID
+  const currentEnvironment = React.useMemo(() => {
+    if (!deploymentIdFilter || !deployments) return null;
+
+    const deployment = deployments.find(
+      (d: Deployment) => d.id === deploymentIdFilter,
+    );
+    return deployment?.environment || null;
+  }, [deploymentIdFilter, deployments]);
+
+  const { refetch } = useRuns({
+    workflow_id: workflowId,
+    status: statusFilter || undefined,
+    deployment_id: deploymentIdFilter || undefined,
+  });
+
+  // Helper function to handle status filter changes
+  const handleStatusFilterChange = async (newStatus: string | null) => {
+    await setStatusFilter(newStatus);
+    refetch();
+  };
+
+  // Helper function to handle environment filter changes
+  const handleEnvironmentFilterChange = async (environment: string | null) => {
+    if (environment === null) {
+      await setDeploymentIdFilter(null);
+    } else {
+      const deploymentsForEnv = deploymentsByEnvironment[environment] || [];
+      const latestDeployment =
+        deploymentsForEnv.length > 0 ? deploymentsForEnv[0] : null;
+
+      if (latestDeployment) {
+        await setDeploymentIdFilter(latestDeployment.id);
+      }
+    }
+    refetch();
+  };
+
+  // New function to clear all filters
+  const clearAllFilters = async () => {
+    await setStatusFilter(null);
+    await setDeploymentIdFilter(null);
+    refetch();
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = statusFilter || deploymentIdFilter;
+
+  return (
+    <div className="flex items-center gap-2">
+      <div className="hidden flex-wrap items-center gap-1.5 lg:flex">
+        {statusFilter && (
+          <Badge
+            variant={statusFilter === "success" ? "green" : "red"}
+            className="cursor-pointer gap-x-1"
+            onClick={() => handleStatusFilterChange(null)}
+          >
+            <span>
+              {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+            </span>
+            <X className="h-2.5 w-2.5" />
+          </Badge>
+        )}
+
+        {currentEnvironment && (
+          <Badge
+            className={cn(
+              getEnvColor(currentEnvironment),
+              "cursor-pointer gap-x-1",
+            )}
+            onClick={() => {
+              if (isDeploymentPage) return;
+              handleEnvironmentFilterChange(null);
+            }}
+          >
+            <span>
+              {currentEnvironment.charAt(0).toUpperCase() +
+                currentEnvironment.slice(1)}
+            </span>
+            <X className="h-2.5 w-2.5" />
+          </Badge>
+        )}
+      </div>
+
+      <div className="relative ml-auto">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size={buttonSize as "sm" | undefined}
+              className="relative focus-visible:ring-transparent"
+            >
+              <Settings2Icon className="mr-2 h-4 w-4" />
+              Filter
+              {hasActiveFilters && (
+                <>
+                  <div className="-right-0.5 -top-0.5 absolute h-3 w-3 rounded-full bg-orange-500" />
+                  <div className="-right-0.5 -top-0.5 absolute h-3 w-3 animate-ping rounded-full bg-orange-500" />
+                </>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[220px]">
+            <DropdownMenuLabel>Status</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => handleStatusFilterChange(null)}>
+              All
+              {!statusFilter && <Check className="ml-auto h-4 w-4" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleStatusFilterChange("success")}
+            >
+              <div className="flex items-center">
+                <Badge variant={"green"}>Success</Badge>
+              </div>
+              {statusFilter === "success" && (
+                <Check className="ml-auto h-4 w-4" />
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleStatusFilterChange("failed")}
+            >
+              <div className="flex items-center">
+                <Badge variant={"red"}>Failed</Badge>
+              </div>
+              {statusFilter === "failed" && (
+                <Check className="ml-auto h-4 w-4" />
+              )}
+            </DropdownMenuItem>
+
+            {environments.length > 0 && (
+              <>
+                <DropdownMenuLabel className="mt-2">
+                  Environment
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => handleEnvironmentFilterChange(null)}
+                >
+                  All
+                  {!currentEnvironment && <Check className="ml-auto h-4 w-4" />}
+                </DropdownMenuItem>
+                {environments.map((env) => (
+                  <DropdownMenuItem
+                    key={env}
+                    onClick={() => handleEnvironmentFilterChange(env)}
+                  >
+                    <div className="flex items-center">
+                      <Badge className={cn("mr-2", getEnvColor(env))}>
+                        {env}
+                      </Badge>
+                    </div>
+                    {currentEnvironment === env && (
+                      <Check className="ml-auto h-4 w-4" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </>
+            )}
+
+            {hasActiveFilters && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={clearAllFilters}
+                  className="text-red-500"
+                >
+                  <div className="flex w-full items-center justify-between">
+                    Clear all filters
+                    <Trash className="h-4 w-4" />
+                  </div>
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </div>
   );
 }
