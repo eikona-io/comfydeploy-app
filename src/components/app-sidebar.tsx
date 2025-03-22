@@ -105,6 +105,7 @@ import {
   SessionIncrementDialog,
   useSessionIncrementStore,
 } from "./workspace/increase-session";
+import { useSelectedVersion, VersionList } from "@/components/version-select";
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -398,6 +399,7 @@ function SessionSidebar() {
   };
 
   const [timerDialogOpen, setTimerDialogOpen] = useState(false);
+  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
 
   return (
     <>
@@ -414,6 +416,17 @@ function SessionSidebar() {
       {displayCommit && (
         <WorkflowCommitVersion endpoint={url} setOpen={setDisplayCommit} />
       )}
+      <Dialog open={isVersionDialogOpen} onOpenChange={setIsVersionDialogOpen}>
+        <DialogContent hideOverlay className="sm:max-0-w-[425px]">
+          <VersionList
+            className="w-full"
+            workflow_id={workflowId || ""}
+            onClose={() => {
+              setIsVersionDialogOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
       <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex flex-row items-start justify-between">
@@ -442,20 +455,37 @@ function SessionSidebar() {
         <SidebarContent>
           <SidebarGroup className="p-1">
             <SidebarMenu>
-              {hasChanged && (
-                <SidebarMenuItem className="p-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setDisplayCommit(true);
-                    }}
-                    className="bg-orange-200 mx-auto hover:bg-orange-300"
-                  >
-                    <Save className="h-4 w-4" />
-                  </Button>
-                </SidebarMenuItem>
-              )}
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setDisplayCommit(true);
+                  }}
+                  disabled={!hasChanged}
+                  className={`mx-auto transition-colors ${
+                    hasChanged ? "bg-orange-200 hover:bg-orange-300" : ""
+                  }`}
+                >
+                  <Save className="h-4 w-4" />
+                </Button>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setIsVersionDialogOpen(true);
+                  }}
+                  className="mx-auto relative"
+                >
+                  <GitBranch className="h-4 w-4" />
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-primary/10 text-[10px] flex items-center justify-center font-medium">
+                    v
+                    {useSelectedVersion(workflowId || "").value?.version || "1"}
+                  </div>
+                </Button>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
