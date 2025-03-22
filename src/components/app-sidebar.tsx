@@ -3,28 +3,56 @@
 import { Icon as IconWord } from "@/components/icon-word";
 
 import {
+  ArrowLeft,
   Book,
   BookCheck,
   Box,
+  ChevronLeft,
   CircleGauge,
   CreditCard,
+  Cross,
   Database,
   ExternalLink,
   Folder,
   GitBranch,
   Github,
+  History,
   Key,
   LineChart,
   MessageCircle,
+  Plus,
   Receipt,
   Rss,
+  Save,
   Server,
   Settings,
+  Terminal,
   Workflow,
+  X,
 } from "lucide-react";
 
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Progress, ProgressValue } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Sidebar,
   SidebarContent,
@@ -36,31 +64,48 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
-import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { LogDisplay } from "@/components/workspace/LogDisplay";
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInSessionView,
+  useWorkflowIdInWorkflowPage,
+} from "@/hooks/hook";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { orgPrefixPaths } from "@/orgPrefixPaths";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
+import { getOrgPathInfo } from "@/utils/org-path";
 import {
   OrganizationSwitcher,
   UserButton,
   useAuth,
   useClerk,
 } from "@clerk/clerk-react";
-import { Link, useLocation } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
 // import { MachineSelect } from "@/components/MachineSelect";
 // import { useCurrentPlan } from "@/components/useCurrentPlan";
 import { motion } from "framer-motion";
-import React, { use, useEffect, useRef, useState } from "react";
+import { parseAsString } from "nuqs";
+import { useQueryState } from "nuqs";
+import type React from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Badge } from "./ui/badge";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
-import { useQuery } from "@tanstack/react-query";
-import { Badge } from "./ui/badge";
-import { orgPrefixPaths } from "@/orgPrefixPaths";
-import { getOrgPathInfo } from "@/utils/org-path";
+import { WorkflowCommitVersion } from "./workspace/WorkflowCommitVersion";
+import { useWorkflowStore } from "./workspace/Workspace";
+import {
+  SessionIncrementDialog,
+  useSessionIncrementStore,
+} from "./workspace/increase-session";
+import { useSelectedVersion, VersionList } from "@/components/version-select";
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -245,21 +290,382 @@ const links = [
   },
 ];
 
+function SessionSidebar() {
+  const router = useRouter();
+  const workflowId = useWorkflowIdInSessionView();
+  // const sessionId = useSessionIdInSessionView();
+  const clerk = useClerk();
+  const personalOrg = clerk.user?.username ?? "personal";
+
+  const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
+  const [displayCommit, setDisplayCommit] = useState(false);
+  const { hasChanged } = useWorkflowStore();
+  const {
+    setOpen: setSessionIncrementOpen,
+    setSessionId: setIncrementSessionId,
+  } = useSessionIncrementStore();
+
+  const {
+    data: session,
+    isLoading: isLoadingSession,
+    isError,
+    refetch,
+  } = useQuery<any>({
+    enabled: !!sessionId,
+    queryKey: ["session", sessionId],
+    refetchInterval: 1000,
+  });
+
+  const url = session?.url || session?.tunnel_url;
+
+  // Only calculate these values if we have timeout_end (non-legacy mode)
+  const isLegacyMode = !session?.timeout_end;
+  const progressPercentage = useMemo(() => {
+    if (!session?.timeout_end || !session?.created_at) {
+      // For legacy mode, use session.timeout as total duration
+      if (isLegacyMode && session?.timeout) {
+        const now = new Date().getTime();
+        const start = new Date(session.created_at).getTime();
+        const duration = session.timeout * 60 * 1000; // Convert minutes to milliseconds
+        return ((duration - (now - start)) / duration) * 100;
+      }
+      return 0;
+    }
+    const now = new Date().getTime();
+    const end = new Date(session.timeout_end).getTime();
+    const start = new Date(session.created_at).getTime();
+    return ((end - now) / (end - start)) * 100;
+  }, [
+    session?.timeout_end,
+    session?.created_at,
+    session?.timeout,
+    isLegacyMode,
+  ]);
+
+  const [countdown, setCountdown] = useState("");
+
+  useEffect(() => {
+    if (!session?.created_at) return;
+
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      let distance;
+
+      if (isLegacyMode) {
+        // For legacy mode, calculate remaining time from session.timeout
+        const start = new Date(session.created_at).getTime();
+        const duration = session.timeout * 60 * 1000; // Convert minutes to milliseconds
+        distance = duration - (now - start);
+      } else {
+        // For non-legacy mode, use timeout_end
+        const targetTime = new Date(session.timeout_end).getTime();
+        distance = targetTime - now;
+      }
+
+      if (distance < 0) {
+        setCountdown("00:00:00");
+        return;
+      }
+
+      const hours = Math.floor(
+        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
+      );
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      setCountdown(
+        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`,
+      );
+    };
+
+    const intervalId = setInterval(updateCountdown, 1000);
+    updateCountdown(); // Initial update
+
+    return () => clearInterval(intervalId);
+  }, [
+    session?.timeout_end,
+    session?.created_at,
+    session?.timeout,
+    isLegacyMode,
+  ]);
+
+  const handleTimerClick = () => {
+    if (isLegacyMode) {
+      setIncrementSessionId(sessionId);
+      setSessionIncrementOpen(true);
+    } else {
+      setTimerDialogOpen(true);
+    }
+  };
+
+  const [timerDialogOpen, setTimerDialogOpen] = useState(false);
+  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
+
+  return (
+    <>
+      {!isLegacyMode && (
+        <TimerDialog
+          open={timerDialogOpen}
+          onOpenChange={setTimerDialogOpen}
+          session={session}
+          countdown={countdown}
+          onRefetch={refetch}
+        />
+      )}
+      <SessionIncrementDialog /> {/* This will handle the legacy mode dialog */}
+      {displayCommit && (
+        <WorkflowCommitVersion endpoint={url} setOpen={setDisplayCommit} />
+      )}
+      <Dialog open={isVersionDialogOpen} onOpenChange={setIsVersionDialogOpen}>
+        <DialogContent hideOverlay className="sm:max-0-w-[425px]">
+          <VersionList
+            className="w-full"
+            workflow_id={workflowId || ""}
+            onClose={() => {
+              setIsVersionDialogOpen(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+      <Sidebar collapsible="icon">
+        <SidebarHeader>
+          <div className="flex flex-row items-start justify-between">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => {
+                if (workflowId) {
+                  router.navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: { workflowId, view: "requests" },
+                  });
+                } else {
+                  router.navigate({
+                    to: "/",
+                  });
+                }
+                setSessionId(null);
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup className="p-1">
+            <SidebarMenu>
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setDisplayCommit(true);
+                  }}
+                  disabled={!hasChanged}
+                  className={`mx-auto transition-colors ${
+                    hasChanged ? "bg-orange-200 hover:bg-orange-300" : ""
+                  }`}
+                >
+                  <Save className="h-4 w-4" />
+                </Button>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setIsVersionDialogOpen(true);
+                  }}
+                  className="mx-auto relative"
+                >
+                  <GitBranch className="h-4 w-4" />
+                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-primary/10 text-[10px] flex items-center justify-center font-medium">
+                    v
+                    {useSelectedVersion(workflowId || "").value?.version || "1"}
+                  </div>
+                </Button>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                className="group relative mx-auto h-8 w-8 cursor-pointer"
+                onClick={handleTimerClick}
+              >
+                <div className="absolute inset-0">
+                  <svg viewBox="0 0 32 32" className="h-full w-full">
+                    <circle cx="16" cy="16" r="16" className="fill-black/40" />
+                    <path
+                      d={(() => {
+                        const x = 16;
+                        const y = 16;
+                        const radius = 16;
+                        // Adjust angle to start from top (subtract 90 degrees)
+                        const angle = (progressPercentage / 100) * 360 - 90;
+
+                        // Start from the center
+                        let d = `M ${x},${y} `;
+                        // Draw line to top center of circle (12 o'clock position)
+                        d += `L ${x},0 `;
+
+                        // Draw arc
+                        const largeArcFlag =
+                          progressPercentage <= 50 ? "0" : "1";
+
+                        // Calculate end point of arc, adjusting for top start position
+                        const endX =
+                          x + radius * Math.cos((angle * Math.PI) / 180);
+                        const endY =
+                          y + radius * Math.sin((angle * Math.PI) / 180);
+
+                        // Draw arc to end point
+                        d += `A ${radius},${radius} 0 ${largeArcFlag} 1 ${endX},${endY} `;
+                        // Close path to center
+                        d += "Z";
+
+                        return d;
+                      })()}
+                      className="fill-primary transition-all duration-300"
+                    />
+                  </svg>
+                </div>
+                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium tabular-nums text-background">
+                  {countdown.split(":")[1]}:{countdown.split(":")[2]}
+                </span>
+              </button>
+            </PopoverTrigger>
+            <PopoverContent side="top" className="w-auto p-2 text-xs">
+              {`${countdown} remaining`}
+            </PopoverContent>
+          </Popover>
+        </SidebarFooter>
+      </Sidebar>
+    </>
+  );
+}
+
+// Separate the Timer Dialog into its own component
+function TimerDialog({
+  open,
+  onOpenChange,
+  session,
+  countdown,
+  onRefetch,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  session: any;
+  countdown: string;
+  onRefetch: () => Promise<any>;
+}) {
+  const [selectedIncrement, setSelectedIncrement] = useState("5");
+  const sessionId = useSessionIdInSessionView();
+
+  const timeIncrements = [
+    { value: "1", label: "1 minute" },
+    { value: "5", label: "5 minutes" },
+    { value: "10", label: "10 minutes" },
+    { value: "15", label: "15 minutes" },
+  ];
+
+  const incrementTime = async () => {
+    if (!session) {
+      toast.error("Session details not found");
+      return;
+    }
+
+    toast.promise(
+      callServerPromise(
+        api({
+          url: `session/${sessionId}/increase-timeout`,
+          init: {
+            method: "POST",
+            body: JSON.stringify({
+              minutes: Number(selectedIncrement),
+            }),
+          },
+        }),
+      ).then(() => onRefetch()),
+      {
+        loading: "Increasing session time...",
+        success: "Session time increased successfully",
+        error: "Failed to increase session time",
+      },
+    );
+
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>Increase Session Time</DialogTitle>
+        </DialogHeader>
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center text-muted-foreground text-sm">
+              <span className="flex items-center space-x-2">
+                Instance:{" "}
+                <span className="ml-1 font-medium">{session?.gpu}</span>
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between rounded-none bg-muted/50 px-2 py-3">
+                <div className="flex items-center gap-2">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium text-sm">Time Remaining</span>
+                </div>
+                <span className="font-medium text-sm">{countdown}</span>
+              </div>
+              <Progress
+                value={
+                  ((new Date(session?.timeout_end).getTime() -
+                    new Date().getTime()) /
+                    (new Date(session?.timeout_end).getTime() -
+                      new Date(session?.created_at).getTime())) *
+                  100
+                }
+                className="h-2"
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Select
+              value={selectedIncrement}
+              onValueChange={setSelectedIncrement}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Minutes" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeIncrements.map((increment) => (
+                  <SelectItem key={increment.value} value={increment.value}>
+                    {increment.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={incrementTime} className="flex-1">
+              <Plus className="mr-2 h-4 w-4" /> Add Time
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function AppSidebar() {
   const { pages, flatPages, metaPages } = usePages();
-  // const sub = useCurrentPlan();
-
   const { orgId, orgSlug } = useAuth();
   const isFirstRender = useRef(true);
-
-  // useEffect(() => {
-  //   if (isFirstRender.current) {
-  //     isFirstRender.current = false;
-  //     return;
-  //   }
-  //   console.log("org_id", orgId);
-  //   window.location.reload();
-  // }, [orgId]);
+  const sessionId = useSessionIdInSessionView();
+  const { setOpen } = useSidebar();
 
   const items = flatPages.map((page) => ({
     title: page.name,
@@ -310,6 +716,15 @@ export function AppSidebar() {
     refetchInterval: 3000,
     enabled: window.location.hostname === "localhost",
   });
+
+  useEffect(() => {
+    setOpen(!sessionId);
+  }, [sessionId]);
+
+  // If we're in a session, show the session-specific sidebar
+  if (sessionId) {
+    return <SessionSidebar />;
+  }
 
   return (
     <>

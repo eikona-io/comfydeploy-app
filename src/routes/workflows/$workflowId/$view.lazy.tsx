@@ -155,7 +155,7 @@ function WorkflowPageComponent() {
     <div className="relative flex h-full w-full flex-col">
       <Portal
         targetId="sidebar-panel"
-        trigger={isMobile ? isMobileSidebarOpen : true}
+        trigger={isMobile || !!sessionId ? isMobileSidebarOpen : true}
       >
         <AnimatePresence>
           <motion.div
@@ -178,72 +178,12 @@ function WorkflowPageComponent() {
                         }}
                         className={cn(
                           currentView === tab && "bg-gray-200 text-gray-900",
-                          "transition-colors",
+                          "transition-colors capitalize",
                         )}
-                        asChild
-                        // role="button"
+                        // asChild
                       >
-                        <button className="w-full capitalize" type="button">
-                          {tab}
-                        </button>
+                        {tab === "workspace" ? "ComfyUI" : tab}
                       </SidebarMenuButton>
-
-                      {/* Only render if the current view is workspace */}
-                      <AnimatePresence>
-                        {tab === "workspace" && currentView === "workspace" && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                          >
-                            <WorkspaceStatusBar
-                              endpoint={
-                                sessionSelected?.tunnel_url ||
-                                process.env.COMFYUI_FRONTEND_URL
-                              }
-                              className=""
-                              btnsClassName="gap-1"
-                            />
-                            <SidebarMenu className="">
-                              <SidebarMenuItem>
-                                <div className="flex items-center gap-0.5">
-                                  {/* <SidebarMenuButton>
-                                <SessionCreate
-                                  workflowId={workflowId}
-                                  setSessionId={setSessionId}
-                                  asChild={true}
-                                >
-                                  <div className="flex items-center gap-0.5">
-                                    <Plus size={16} /> Create Session
-                                  </div>
-                                </SessionCreate>
-                              </SidebarMenuButton> */}
-                                  {currentView === "workspace" &&
-                                    tab === "workspace" &&
-                                    sessionSelected && (
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 "
-                                          >
-                                            <Terminal className="mr-2 h-4 " />{" "}
-                                            Logs
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-fit p-2">
-                                          <LogDisplay />
-                                        </PopoverContent>
-                                      </Popover>
-                                    )}
-                                </div>
-                              </SidebarMenuItem>
-                            </SidebarMenu>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
 
                       {tab === "workspace" &&
                         sessions &&
@@ -267,7 +207,20 @@ function WorkflowPageComponent() {
                                           workflowId,
                                           view: "workspace",
                                         },
+                                        search: {
+                                          isFirstTime: true,
+                                          workflowId: workflowId,
+                                          sessionId: selectedSessionId,
+                                        },
                                       });
+                                      // router.navigate({
+                                      //   to: "/sessions/$sessionId",
+                                      //   params: { sessionId: selectedSessionId },
+                                      //   search: {
+                                      //     isFirstTime: true,
+                                      //     workflowId: workflowId,
+                                      //   },
+                                      // });
                                     }}
                                     onDelete={async (sessionIdToDelete) => {
                                       setSessionId(null);
@@ -281,25 +234,6 @@ function WorkflowPageComponent() {
                             ))}
                           </SidebarMenuSub>
                         )}
-
-                      {/* TODO: Add share options */}
-                      {/* {tab === "playground" && isAdminAndMember && (
-                <DropdownMenu>
-                  {dialog}
-                  {privateDialog}
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuAction className="mr-4">
-                      <MoreHorizontal />
-                    </SidebarMenuAction>
-                  </DropdownMenuTrigger>˝
-                  <DropdownMenuContent className="w-56" forceMount>
-                    {menuItem}
-                    <span className="pointer-events-none opacity-30">
-                      {privateMenuItem}
-                    </span>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )} */}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>
