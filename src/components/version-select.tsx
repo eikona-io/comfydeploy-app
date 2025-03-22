@@ -132,6 +132,7 @@ export function VersionList({
 
   const [_version, setVersion] = useQueryState("version", {
     defaultValue: selectedVersion?.version ?? flatData[0]?.version ?? 1,
+    clearOnDefault: false,
     ...parseAsInteger,
   });
 
