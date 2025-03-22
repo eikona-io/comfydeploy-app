@@ -11,17 +11,29 @@ import { Input } from "@/components/ui/input";
 import {
   type SubscriptionPlan,
   useCurrentPlan,
+  useCurrentPlanWithStatus,
 } from "@/hooks/use-current-plan";
-import { useGithubBranchInfo } from "@/hooks/use-github-branch-info";
+import {
+  useGithubBranchInfo,
+  useGithubReleases,
+} from "@/hooks/use-github-branch-info";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
 import { isEqual } from "lodash";
-import { ExternalLinkIcon, Info, Loader2, Lock, Save } from "lucide-react";
+import {
+  ExternalLinkIcon,
+  Info,
+  Loader2,
+  Lock,
+  PencilIcon,
+  Save,
+} from "lucide-react";
 import { useQueryState } from "nuqs";
 import {
   type ReactNode,
@@ -34,6 +46,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import type { z } from "zod";
 import { CustomNodeSetup } from "../onboarding/custom-node-setup";
+import type { StepValidation } from "../onboarding/workflow-import";
 import {
   Accordion,
   AccordionContent,
@@ -49,11 +62,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Skeleton } from "../ui/skeleton";
 import { Slider } from "../ui/slider";
 import { Switch } from "../ui/switch";
+import {
+  UnsavedChangesWarning,
+  useUnsavedChangesWarning,
+} from "../unsaved-changes-warning";
 import { ExtraDockerCommands } from "./extra-docker-commands";
-import type { StepValidation } from "../onboarding/workflow-import";
-import { callServerPromise } from "@/lib/call-server-promise";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useCachedQuery } from "@/lib/use-cached-query";
 
 export function MachineSettingsWrapper({
   machine,
@@ -262,17 +288,21 @@ function ServerlessSettings({
   readonly?: boolean;
 }) {
   const [isFormDirty, setIsFormDirty] = useState(false);
-  const controls = useAnimation();
-  const navigate = useNavigate();
-
   const isNew = machine.id === "new";
+  const { controls } = useUnsavedChangesWarning({
+    isDirty: isFormDirty,
+    isNew,
+    disabled: disableUnsavedChangesWarning,
+  });
+
+  const navigate = useNavigate();
 
   const form = useForm<FormData>({
     resolver: zodResolver(serverlessFormSchema),
     mode: "onChange",
     defaultValues: {
       // env
-      comfyui_version: machine.comfyui_version || comfyui_hash,
+      comfyui_version: machine.comfyui_version,
       docker_command_steps: machine.docker_command_steps || {
         steps: [],
       },
@@ -313,41 +343,6 @@ function ServerlessSettings({
 
     return () => subscription.unsubscribe();
   }, [form, machine, onValueChange, disableUnsavedChangesWarning]);
-
-  useBlocker({
-    enableBeforeUnload: () => {
-      return !disableUnsavedChangesWarning && !!isFormDirty && !isNew;
-    },
-    shouldBlockFn: () => {
-      if (isNew || disableUnsavedChangesWarning) return false;
-
-      if (isFormDirty) {
-        controls.start({
-          x: [0, -8, 12, -15, 8, -10, 5, -3, 2, -1, 0],
-          y: [0, 4, -9, 6, -12, 8, -3, 5, -2, 1, 0],
-          filter: [
-            "blur(0px)",
-            "blur(2px)",
-            "blur(2px)",
-            "blur(3px)",
-            "blur(2px)",
-            "blur(2px)",
-            "blur(1px)",
-            "blur(2px)",
-            "blur(1px)",
-            "blur(1px)",
-            "blur(0px)",
-          ],
-          transition: {
-            duration: 0.4,
-            ease: easeOut,
-          },
-        });
-      }
-
-      return !!isFormDirty;
-    },
-  });
 
   useEffect(() => {
     const errors = form.formState.errors;
@@ -424,17 +419,20 @@ function ServerlessSettings({
               )}
             >
               <div className="w-full">
-                <Badge className="font-medium text-sm">ComfyUI Version</Badge>
+                <Badge className="mb-2 font-medium text-sm">
+                  ComfyUI Version
+                </Badge>
                 <ComfyUIVersionSelectBox
                   value={form.watch("comfyui_version")}
                   onChange={(value) => form.setValue("comfyui_version", value)}
                 />
               </div>
               <div className="w-full">
-                <Badge className="font-medium text-sm">GPU</Badge>
+                <Badge className="mb-2 font-medium text-sm">GPU</Badge>
                 <GPUSelectBox
                   value={form.watch("gpu")}
                   onChange={(value) => form.setValue("gpu", value)}
+                  disabled={false}
                 />
               </div>
             </div>
@@ -668,118 +666,114 @@ function ServerlessSettings({
         )}
       </form>
 
-      <AnimatePresence>
-        {!disableUnsavedChangesWarning && isFormDirty && (
-          <motion.div
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            transition={{ type: "spring", bounce: 0.5, duration: 0.5 }}
-            className="fixed right-0 bottom-4 left-0 z-50 mx-auto w-fit"
-          >
-            <motion.div
-              animate={controls}
-              className="flex w-96 flex-row items-center justify-between gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm shadow-md"
-            >
-              <div className="flex flex-row items-center gap-2">
-                <Info className="h-4 w-4" /> Unsaved changes
-              </div>
-              <div className="flex flex-row items-center gap-1">
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    form.reset();
-                    setIsFormDirty(false);
-                  }}
-                >
-                  Reset
-                </Button>
-                <Button
-                  onClick={() => formRef.current?.requestSubmit()}
-                  disabled={isLoading}
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Saving...
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-2">
-                      <Save className="h-4 w-4" />
-                      Save
-                    </span>
-                  )}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <UnsavedChangesWarning
+        isDirty={isFormDirty}
+        isLoading={isLoading}
+        onReset={() => {
+          form.reset();
+          setIsFormDirty(false);
+        }}
+        onSave={() => formRef.current?.requestSubmit()}
+        controls={controls}
+        disabled={disableUnsavedChangesWarning}
+      />
     </>
   );
 }
 
 // -----------------------components-----------------------
-function ComfyUIVersionSelectBox({
+export function ComfyUIVersionSelectBox({
   value,
   onChange,
+  className,
+  isAnnoymous = false,
 }: {
   value?: string;
   onChange: (value: string) => void;
+  className?: string;
+  isAnnoymous?: boolean;
 }) {
-  const { data: latestComfyUI, isLoading } = useGithubBranchInfo(
-    "https://github.com/comfyanonymous/ComfyUI",
-  );
-  useEffect(() => {
-    setCustomValue(value || "");
-  }, [value]);
+  const { data: versions, isLoading } = useCachedQuery({
+    queryKey: ["comfyui-versions"],
+    enabled: !isAnnoymous,
+    cacheTime: 1000 * 60 * 30,
+  });
 
   const [customValue, setCustomValue] = useState(value || "");
+  const [showCustomDialog, setShowCustomDialog] = useState(false);
 
   const options = [
-    { label: "Recommended", value: comfyui_hash },
-    { label: "Latest", value: latestComfyUI?.commit.sha || "latest" },
-    { label: "Custom", value: "custom" },
+    ...(versions?.releases || []),
+    // versions?.latest || { label: "Latest", value: "latest", sha: "" },
+    // { label: "Custom Version", value: "custom", sha: "" },
   ];
 
-  // Only check for custom if we have loaded the latest hash
-  const isCustom =
-    !isLoading &&
-    value &&
-    !options.slice(0, 2).some((opt) => opt.value === value);
+  // Find if the current value matches any known version
+  const matchingVersion = options.find(
+    (opt) =>
+      opt.sha === value ||
+      opt.value === value ||
+      (opt.value === "latest" && value === "latest"),
+  );
 
-  // Don't change selection while loading
-  const selectedValue =
-    isLoading && value === latestComfyUI?.commit.sha
-      ? "latest"
-      : isCustom || value === ""
+  // Determine the selected value based on matches
+  const selectedValue = isLoading
+    ? "loading"
+    : matchingVersion
+      ? matchingVersion.value
+      : value
         ? "custom"
-        : value || comfyui_hash;
+        : "latest"; // Default to latest if no value
+
+  // Set default value when options are loaded and no value is selected
+  useEffect(() => {
+    // console.log("isLoading", isLoading);
+    // console.log("options", options);
+    // console.log("value", value);
+    if (!isLoading && options.length > 0 && !value) {
+      const latestOption = options[0];
+      if (latestOption) {
+        onChange(latestOption.sha || latestOption.value);
+      }
+    }
+  }, [isLoading, options, value, onChange]);
 
   return (
-    <div className="mt-2 space-y-2">
+    <div className={cn("flex flex-row gap-1", className)}>
       <Select
         value={selectedValue}
         onValueChange={(newValue) => {
-          if (newValue === "custom") {
-            setCustomValue("");
-            onChange("");
-          } else if (newValue === "latest" && latestComfyUI?.commit.sha) {
-            const latestHash = latestComfyUI.commit.sha;
-            onChange(latestHash);
-            setCustomValue(latestHash);
+          if (
+            newValue === "custom" ||
+            (newValue === selectedValue && newValue === "custom")
+          ) {
+            setShowCustomDialog(true);
           } else {
-            onChange(newValue);
-            setCustomValue(newValue);
+            const selectedOption = options.find(
+              (opt) => opt.value === newValue,
+            );
+            if (selectedOption) {
+              // Special handling for "latest" version
+              const newValue =
+                selectedOption.value === "latest"
+                  ? "latest"
+                  : selectedOption.sha || selectedOption.value;
+              onChange(newValue);
+              setCustomValue(newValue);
+            }
           }
         }}
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select version">
-            {isLoading && selectedValue === "latest" ? (
+            {isLoading ? (
               <div className="flex items-center gap-2">
-                <span>Latest</span>
-                <span className="text-muted-foreground">(loading...)</span>
+                <Skeleton className="h-4 w-[120px]" />
+              </div>
+            ) : selectedValue === "custom" ? (
+              <div className="flex items-center gap-2">
+                {/* <span>Custom: </span> */}
+                <span className="font-mono text-xs">{value?.slice(0, 7)}</span>
               </div>
             ) : (
               options.find((opt) => opt.value === selectedValue)?.label
@@ -787,34 +781,105 @@ function ComfyUIVersionSelectBox({
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.label} value={option.value}>
-              <div className="flex w-full items-center justify-between">
-                <span>{option.label}</span>
-                {option.value !== "custom" && (
-                  <span className="ml-2 font-mono text-muted-foreground text-xs">
-                    {isLoading && option.label === "Latest"
-                      ? "(loading...)"
-                      : `(${option.value.slice(0, 7)})`}
-                  </span>
-                )}
-              </div>
-            </SelectItem>
-          ))}
+          {isLoading ? (
+            <>
+              {Array(3)
+                .fill(0)
+                .map((_, index) => (
+                  <SelectItem
+                    key={`loading-${index}`}
+                    value={`loading-${index}`}
+                  >
+                    <div className="flex w-full items-center justify-between">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="ml-2 h-3 w-16" />
+                    </div>
+                  </SelectItem>
+                ))}
+            </>
+          ) : (
+            options.map((option) => (
+              <SelectItem
+                key={option.value}
+                value={option.value}
+                disabled={isAnnoymous && option.label === "Latest"}
+              >
+                <div className="flex w-full items-center justify-between">
+                  <div className="flex flex-col">
+                    <span>{option.label}</span>
+                  </div>
+                  {option.sha && (
+                    <span className="ml-2 font-mono text-muted-foreground text-xs">
+                      {`(${option.sha.slice(0, 7)})`}
+                    </span>
+                  )}
+                </div>
+              </SelectItem>
+            ))
+          )}
+          <SelectItem value="custom" onClick={() => setShowCustomDialog(true)}>
+            Custom
+          </SelectItem>
         </SelectContent>
       </Select>
 
       {selectedValue === "custom" && (
-        <Input
-          className="font-mono text-xs bg-gray-100"
-          placeholder="Enter ComfyUI hash..."
-          value={customValue}
-          onChange={(e) => {
-            setCustomValue(e.target.value);
-            onChange(e.target.value);
-          }}
-        />
+        <Button
+          type="button"
+          variant="outline"
+          className="mt-0"
+          onClick={() => setShowCustomDialog(true)}
+        >
+          <PencilIcon className="h-4 w-4" />
+        </Button>
       )}
+      <Dialog
+        open={showCustomDialog}
+        onOpenChange={(open) => {
+          setShowCustomDialog(open);
+          if (!open && value) {
+            setCustomValue(value);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Enter Custom ComfyUI Version</DialogTitle>
+            <DialogDescription>
+              Please enter the ComfyUI commit hash or version number
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              className="font-mono"
+              placeholder="Enter ComfyUI hash..."
+              value={customValue}
+              onChange={(e) => setCustomValue(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCustomDialog(false);
+                if (value) {
+                  setCustomValue(value);
+                }
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                onChange(customValue);
+                setShowCustomDialog(false);
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -869,12 +934,16 @@ function CustomNodeSetupWrapper({
   );
 }
 
-function GPUSelectBox({
+export function GPUSelectBox({
   value,
   onChange,
+  className,
+  disabled,
 }: {
   value?: (typeof machineGPUOptions)[number];
   onChange: (value: (typeof machineGPUOptions)[number]) => void;
+  className?: string;
+  disabled?: boolean;
 }) {
   const { gpuConfig } = useGPUConfig();
   const sub = useCurrentPlan() as SubscriptionPlan;
@@ -886,8 +955,8 @@ function GPUSelectBox({
   );
 
   return (
-    <div className="mt-2">
-      <Select value={value} onValueChange={onChange}>
+    <div className={cn("", className)}>
+      <Select value={value} onValueChange={onChange} disabled={disabled}>
         <SelectTrigger className="w-full">
           <SelectValue placeholder="Select GPU">
             {value && (
@@ -1003,15 +1072,16 @@ function RangeSlider({
   );
 }
 
-function MaxParallelGPUSlider({
+export function MaxParallelGPUSlider({
   value,
   onChange,
 }: {
   value: number;
   onChange: (value: number) => void;
 }) {
-  const sub = useCurrentPlan();
-  const { data: userSettings } = useUserSettings();
+  const { data: sub, isLoading: isSubLoading } = useCurrentPlanWithStatus();
+  const { data: userSettings, isLoading: isUserSettingsLoading } =
+    useUserSettings();
   const plan = sub?.plans?.plans.filter(
     (plan: string) => !plan.includes("ws"),
   )?.[0];
@@ -1036,6 +1106,22 @@ function MaxParallelGPUSlider({
   let maxGPU = planHierarchy[plan as keyof typeof planHierarchy]?.max || 1;
   if (userSettings?.max_gpu) {
     maxGPU = Math.max(maxGPU, userSettings.max_gpu);
+  }
+
+  if (isUserSettingsLoading || isSubLoading) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-6" />
+          <Skeleton className="h-4 w-6" />
+        </div>
+        <Skeleton className="h-5 w-full" />
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-4 w-10" />
+          <Skeleton className="h-8 w-20" />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -1155,7 +1241,7 @@ function TimeSelect({
   );
 }
 
-function WorkflowTimeOut({
+export function WorkflowTimeOut({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
@@ -1177,7 +1263,7 @@ function WorkflowTimeOut({
   );
 }
 
-function WarmTime({
+export function WarmTime({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
@@ -1198,12 +1284,12 @@ function WarmTime({
       onChange={onChange}
       options={options}
       placeholder="Select Warm Time"
-      description="The warm time is the seconds before the container will be stopped after the run is finished. So the next request will reuse the warm container."
+      // description="The warm time is the seconds before the container will be stopped after the run is finished. So the next request will reuse the warm container."
     />
   );
 }
 
-function MaxAlwaysOnSlider({
+export function MaxAlwaysOnSlider({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {

@@ -173,7 +173,7 @@ function WorkflowPageComponent() {
     <div className="relative flex h-full w-full flex-col">
       <Portal
         targetId="sidebar-panel"
-        trigger={isMobile ? isMobileSidebarOpen : true}
+        trigger={isMobile || !!sessionId ? isMobileSidebarOpen : true}
       >
         <AnimatePresence>
           <motion.div
@@ -212,14 +212,14 @@ function WorkflowPageComponent() {
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <WorkspaceStatusBar
+                        {/* <WorkspaceStatusBar
                           endpoint={
                             sessionSelected?.tunnel_url ||
                             process.env.COMFYUI_FRONTEND_URL
                           }
                           className=""
                           btnsClassName="gap-1"
-                        />
+                        /> */}
                         <SidebarMenu className="">
                           <SidebarMenuItem>
                             <div className="flex items-center gap-0.5">
@@ -276,7 +276,20 @@ function WorkflowPageComponent() {
                                 router.navigate({
                                   to: "/workflows/$workflowId/$view",
                                   params: { workflowId, view: "workspace" },
+                                  search: {
+                                    isFirstTime: true,
+                                    workflowId: workflowId,
+                                    sessionId: selectedSessionId,
+                                  },
                                 });
+                                // router.navigate({
+                                //   to: "/sessions/$sessionId",
+                                //   params: { sessionId: selectedSessionId },
+                                //   search: {
+                                //     isFirstTime: true,
+                                //     workflowId: workflowId,
+                                //   },
+                                // });
                               }}
                               onDelete={async (sessionIdToDelete) => {
                                 setSessionId(null);

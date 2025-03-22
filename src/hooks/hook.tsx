@@ -1,12 +1,43 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useMatchRoute } from "@tanstack/react-router";
+import { useLocation, useMatch, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { getOrgPathInfo } from "@/utils/org-path";
 import { useAuth } from "@clerk/clerk-react";
 import { useClerk } from "@clerk/clerk-react";
+import { useSearch } from "@tanstack/react-router";
+import { parseAsString } from "nuqs";
+import { useQueryState } from "nuqs";
+
+export function useWorkflowIdInSessionView() {
+  const match = useMatch({
+    from: "/workflows/$workflowId/$view",
+    shouldThrow: false,
+  });
+  const match2 = useMatch({
+    from: "/sessions/$sessionId/",
+    shouldThrow: false,
+  });
+  if (match) {
+    return match.params.workflowId;
+  }
+  return match2?.search.workflowId;
+}
+
+export function useSessionIdInSessionView() {
+  const match = useMatch({
+    from: "/sessions/$sessionId/",
+    shouldThrow: false,
+  });
+  const [sessionId] = useQueryState("sessionId", parseAsString);
+
+  if (sessionId) {
+    return sessionId;
+  }
+  return match?.params.sessionId;
+}
 
 export function useWorkflowIdInWorkflowPage() {
   const location = useLocation();
