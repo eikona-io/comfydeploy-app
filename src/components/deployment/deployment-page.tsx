@@ -146,7 +146,7 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <div
-      className="grid cursor-pointer grid-cols-3 items-center rounded-[8px] border-gray-100 border-b px-3 py-1.5 text-xs last:border-b-0 hover:bg-gray-50"
+      className="grid cursor-pointer grid-cols-3 items-center rounded-[8px] border-gray-100 border-b px-4 py-1.5 text-xs last:border-b-0 hover:bg-gray-50"
       onClick={() => {
         setSelectedDeployment(deployment.id);
       }}

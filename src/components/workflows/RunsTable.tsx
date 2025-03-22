@@ -37,6 +37,7 @@ import {
   useQuery,
   useSuspenseQuery,
 } from "@tanstack/react-query";
+import { FileURLRender, getTotalUrlCountAndUrls } from "./OutputRender";
 
 interface RunsTableState {
   selectedRun: any | null;
@@ -409,10 +410,14 @@ function RunRow({
   const truncatedId = run.id.substring(0, 6);
 
   return (
+    // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <div
-      className={`flex h-full cursor-pointer items-center justify-between overflow-hidden border-b p-2 text-sm hover:bg-gray-100 ${
-        isSelected ? "border border-black bg-gray-50 shadow-sm" : ""
-      }`}
+      className={cn(
+        "flex h-[50px] cursor-pointer items-center justify-between overflow-hidden border-b p-2 text-sm transition-shadow",
+        isSelected
+          ? "bg-gray-50 shadow-md"
+          : "hover:bg-gray-100 hover:shadow-sm",
+      )}
       onClick={() => {
         onSelect();
       }}
@@ -431,13 +436,64 @@ function RunRow({
             </Badge>
           )}
         </span>
-        <span className="col-span-3 text-2xs text-gray-500">
+        <span className="col-span-2 text-2xs text-gray-500">
           {getRelativeTime(run.created_at)}
         </span>
-        <div className="col-span-4 flex items-center justify-end gap-2">
+        <div className="col-span-3">
+          <OutputPreview runId={run.id} />
+        </div>
+        <div className="col-span-2 flex items-center justify-end gap-2">
           <LiveStatus run={run} refetch={refetch} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function OutputPreview(props: { runId: string }) {
+  const { data: run, isLoading } = useQuery<any>({
+    queryKey: ["run", props.runId],
+    queryKeyHashFn: (queryKey) => [...queryKey, "outputs"].toString(),
+    refetchInterval: (query) => {
+      if (
+        query.state.data?.status === "running" ||
+        query.state.data?.status === "uploading" ||
+        query.state.data?.status === "not-started" ||
+        query.state.data?.status === "queued"
+      ) {
+        return 2000;
+      }
+      return false;
+    },
+  });
+
+  if (isLoading) return <Skeleton className="h-6 w-24" />;
+
+  const { urls: urlList } = getTotalUrlCountAndUrls(run.outputs || []);
+
+  const MAX_DISPLAY = 2;
+  const urlsToDisplay =
+    urlList.length > 0 ? urlList.slice(0, MAX_DISPLAY) : urlList;
+  const remainingCount = urlList.length - MAX_DISPLAY;
+
+  if (urlsToDisplay.length === 0) return null;
+
+  return (
+    <div className="flex flex-row items-center gap-2">
+      {urlsToDisplay.map((url) => (
+        <div key={url.url}>
+          <FileURLRender
+            url={url.url}
+            imgClasses="h-8 w-8 rounded-[8px] object-cover"
+            lazyLoading={true}
+          />
+        </div>
+      ))}
+      {remainingCount > 0 && (
+        <div className="ml-1 whitespace-nowrap text-2xs text-muted-foreground">
+          +{remainingCount} more
+        </div>
+      )}
     </div>
   );
 }

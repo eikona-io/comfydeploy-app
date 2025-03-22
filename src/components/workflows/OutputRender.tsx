@@ -687,8 +687,8 @@ export function PlaygroundOutputRenderRun({
   );
 }
 
-export function OutputRender(props: { run_id: string; fileUrl: string }) {
-  if (!props.fileUrl) return <></>;
+export function OutputRender({ fileUrl }: { fileUrl: string }) {
+  if (!fileUrl) return <></>;
 
-  return <FileURLRender url={props.fileUrl} />;
+  return <FileURLRender url={fileUrl} />;
 }
