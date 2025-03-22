@@ -144,14 +144,14 @@ export const WorkspaceControls = React.memo(function WorkspaceControls(props: {
 }) {
   return (
     <>
-      <RightMenuButtons endpoint={props.endpoint} />
-      <LeftMenuButtons endpoint={props.endpoint} />
+      {/* <RightMenuButtons endpoint={props.endpoint} /> */}
+      {/* <LeftMenuButtons endpoint={props.endpoint} /> */}
       <QueueButtons endpoint={props.endpoint} />
-      <WorkflowButtons
+      {/* <WorkflowButtons
         endpoint={props.endpoint}
         machine_id={props.machine_id}
         machine_version_id={props.machine_version_id}
-      />
+      /> */}
       <ClearContainerButtons endpoint={props.endpoint} />
     </>
   );

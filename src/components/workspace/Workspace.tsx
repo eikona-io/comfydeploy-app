@@ -258,36 +258,37 @@ export default function Workspace({
     sendWorkflow(workflowJson);
   };
 
-  useEffect(() => {
-    if (!workflowSendAttempts || isWorkflowLoaded) return;
+  // Temporary disabled
+  // useEffect(() => {
+  //   if (!workflowSendAttempts || isWorkflowLoaded) return;
 
-    const baseDelay = 200;
-    const exponentialDelay = Math.min(
-      baseDelay * 2 ** (workflowSendAttempts - 1),
-      4000,
-    );
+  //   const baseDelay = 200;
+  //   const exponentialDelay = Math.min(
+  //     baseDelay * 2 ** (workflowSendAttempts - 1),
+  //     4000,
+  //   );
 
-    const jitter = Math.random() * 100;
-    const delay = exponentialDelay + jitter;
+  //   const jitter = Math.random() * 100;
+  //   const delay = exponentialDelay + jitter;
 
-    const timeout = setTimeout(() => {
-      const timeElapsed = Date.now() - startTime;
+  //   const timeout = setTimeout(() => {
+  //     const timeElapsed = Date.now() - startTime;
 
-      if (!isWorkflowLoaded && timeElapsed < 60000) {
-        console.log(
-          `Retrying workflow send, attempt ${workflowSendAttempts + 1} (delay: ${delay.toFixed(0)}ms, total time: ${timeElapsed.toFixed(0)}ms)`,
-        );
-        setWorkflowSendAttempts((prev) => prev + 1);
-        sendWorkflow(workflowToSend.current);
-      } else {
-        console.log(
-          `Stopping retries: ${isWorkflowLoaded ? "Workflow loaded" : "Time limit reached"} (${timeElapsed.toFixed(0)}ms elapsed)`,
-        );
-      }
-    }, delay);
+  //     if (!isWorkflowLoaded && timeElapsed < 60000) {
+  //       console.log(
+  //         `Retrying workflow send, attempt ${workflowSendAttempts + 1} (delay: ${delay.toFixed(0)}ms, total time: ${timeElapsed.toFixed(0)}ms)`,
+  //       );
+  //       setWorkflowSendAttempts((prev) => prev + 1);
+  //       sendWorkflow(workflowToSend.current);
+  //     } else {
+  //       console.log(
+  //         `Stopping retries: ${isWorkflowLoaded ? "Workflow loaded" : "Time limit reached"} (${timeElapsed.toFixed(0)}ms elapsed)`,
+  //       );
+  //     }
+  //   }, delay);
 
-    return () => clearTimeout(timeout);
-  }, [workflowSendAttempts, isWorkflowLoaded, startTime]);
+  //   return () => clearTimeout(timeout);
+  // }, [workflowSendAttempts, isWorkflowLoaded, startTime]);
 
   useEffect(() => {
     if (!cdSetup) return;
