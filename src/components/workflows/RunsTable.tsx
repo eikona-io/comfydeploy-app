@@ -38,6 +38,8 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { FileURLRender, getTotalUrlCountAndUrls } from "./OutputRender";
+import { getEnvColor } from "../workspace/ContainersTable";
+import type { Deployment } from "../deployment/deployment-page";
 
 interface RunsTableState {
   selectedRun: any | null;
@@ -269,39 +271,17 @@ export function RunsTableVirtualized(props: {
   }
 
   if (!data || flatData.length === 0) {
-    return <>No runs available</>;
+    return (
+      <div className="flex items-center justify-center">
+        <p className="p-4 text-muted-foreground text-xs">No runs available</p>
+      </div>
+    );
   }
 
   const { workflow_api, workflow_inputs, run_log, ...rest } = run ?? {};
 
   return (
     <div>
-      <div className="relative">
-        <div className="-top-10 absolute right-28 z-10 flex flex-row gap-2 p-2">
-          <Tooltip>
-            <TooltipTrigger>
-              <div
-                className={`h-2 w-2 rounded-full ${
-                  connectionStatus === "connected"
-                    ? "bg-green-500"
-                    : connectionStatus === "connected"
-                      ? "bg-yellow-500"
-                      : "bg-red-500"
-                } animate-pulse`}
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>
-                Realtime:{" "}
-                {connectionStatus === "connected"
-                  ? "Connected"
-                  : "Disconnected"}
-              </p>
-              {/* <p>Socket: {socket?.active ? "Connected" : "Disconnected"}</p> */}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
       <div
         ref={parentRef}
         className={cn(
@@ -314,8 +294,6 @@ export function RunsTableVirtualized(props: {
             height: `${rowVirtualizer.getTotalSize()}px`,
             width: "100%",
             position: "relative",
-            marginBottom: "16px",
-            marginTop: "16px",
           }}
         >
           {rowVirtualizer.getVirtualItems().map((virtualRow) => {
@@ -331,31 +309,17 @@ export function RunsTableVirtualized(props: {
                   left: 0,
                   width: "100%",
                   transform: `translateY(${virtualRow.start}px)`,
-                  padding: `${
-                    props.RunRowComponent ? "0 16px 16px 16px" : "0"
-                  }`,
                 }}
               >
                 {run ? (
-                  props.RunRowComponent ? (
-                    <props.RunRowComponent
-                      run={run}
-                      isSelected={runId === run.id}
-                      onSelect={() => {
-                        setRunId(run.id);
-                      }}
-                      setInputValues={props.setInputValues ?? (() => {})}
-                    />
-                  ) : (
-                    <RunRow
-                      run={run}
-                      isSelected={runId === run.id}
-                      onSelect={() => {
-                        setRunId(run.id);
-                      }}
-                      refetch={refetch}
-                    />
-                  )
+                  <RunRow
+                    run={run}
+                    isSelected={runId === run.id}
+                    onSelect={() => {
+                      setRunId(run.id);
+                    }}
+                    refetch={refetch}
+                  />
                 ) : hasNextPage ? (
                   <LoadingRow />
                 ) : null}
@@ -368,7 +332,7 @@ export function RunsTableVirtualized(props: {
             <LoadingSpinner />
           </div>
         )}
-        <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-full rounded-b-md bg-gradient-to-b from-transparent to-white" />
+        {/* <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-full rounded-b-md bg-gradient-to-b from-transparent to-white" /> */}
         {/* <ScrollBar orientation="vertical" /> */}
       </div>
     </div>
@@ -377,7 +341,7 @@ export function RunsTableVirtualized(props: {
 
 function LoadingRow() {
   return (
-    <div className="flex h-full items-center justify-between overflow-hidden border-b p-2">
+    <div className="flex h-[42px] items-center justify-between overflow-hidden border-b p-2">
       <div className="grid w-full grid-cols-12 items-center gap-2">
         <Skeleton className="col-span-1 h-4 w-8" />
         <Skeleton className="col-span-2 h-6 w-16" />
@@ -402,9 +366,31 @@ function RunRow({
   onSelect: () => void;
   refetch: () => void;
 }) {
+  const rowRef = React.useRef<HTMLDivElement>(null);
+  const [rowWidth, setRowWidth] = React.useState<number | null>(null);
+
+  // Use ResizeObserver to track width changes
+  React.useEffect(() => {
+    if (!rowRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) {
+        setRowWidth(width);
+      }
+    });
+
+    resizeObserver.observe(rowRef.current);
+
+    // Clean up observer when component unmounts
+    return () => resizeObserver.disconnect();
+  }, []);
+
   if (!run) {
     return <LoadingRow />;
   }
+
+  const isRunDetailOpenAndTooNarrow = rowWidth && rowWidth < 650;
 
   // Truncate the UUID to first 8 characters
   const truncatedId = run.id.substring(0, 6);
@@ -412,8 +398,9 @@ function RunRow({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <div
+      ref={rowRef}
       className={cn(
-        "flex h-[50px] cursor-pointer items-center justify-between overflow-hidden border-b p-2 text-sm transition-shadow",
+        "flex h-[42px] cursor-pointer items-center justify-between overflow-hidden border-b p-2 text-sm transition-all",
         isSelected
           ? "bg-gray-50 shadow-md"
           : "hover:bg-gray-100 hover:shadow-sm",
@@ -422,26 +409,38 @@ function RunRow({
         onSelect();
       }}
     >
-      <div className="grid w-full grid-cols-12 items-center gap-2">
-        <span className="col-span-1 text-2xs text-gray-500">
+      <div
+        className={cn(
+          "grid w-full items-center gap-2",
+          isRunDetailOpenAndTooNarrow ? "grid-cols-8" : "grid-cols-12",
+        )}
+      >
+        <span className="col-span-1 font-mono text-[10px] text-gray-500">
           #{truncatedId}
         </span>
         <span className="col-span-2">
+          <DeploymentVersion deploymentId={run.deployment_id} />
+        </span>
+        <span className="col-span-1">
           <DisplayVersion versionId={run.workflow_version_id} />
         </span>
-        <span className="col-span-2">
-          {run.gpu && (
-            <Badge className="w-fit rounded-[10px] text-2xs text-gray-500">
-              {run.gpu}
-            </Badge>
-          )}
-        </span>
+        {!isRunDetailOpenAndTooNarrow && (
+          <span className="col-span-1">
+            {run.gpu && (
+              <Badge className="!text-2xs w-fit" variant="outline">
+                {run.gpu}
+              </Badge>
+            )}
+          </span>
+        )}
         <span className="col-span-2 text-2xs text-gray-500">
           {getRelativeTime(run.created_at)}
         </span>
-        <div className="col-span-3">
-          <OutputPreview runId={run.id} />
-        </div>
+        {!isRunDetailOpenAndTooNarrow && (
+          <div className="col-span-3">
+            <OutputPreview runId={run.id} />
+          </div>
+        )}
         <div className="col-span-2 flex items-center justify-end gap-2">
           <LiveStatus run={run} refetch={refetch} />
         </div>
@@ -479,7 +478,7 @@ function OutputPreview(props: { runId: string }) {
   if (urlsToDisplay.length === 0) return null;
 
   return (
-    <div className="flex flex-row items-center gap-2">
+    <div className="pointer-events-none flex flex-row items-center gap-2">
       {urlsToDisplay.map((url) => (
         <div key={url.url}>
           <FileURLRender
@@ -500,8 +499,8 @@ function OutputPreview(props: { runId: string }) {
 
 function LoadingState() {
   return (
-    <div className="flex flex-col space-y-4 p-4">
-      {[...Array(5)].map((_, index) => (
+    <div className="flex flex-col">
+      {[...Array(20)].map((_, index) => (
         <LoadingRow key={index} />
       ))}
     </div>
@@ -523,16 +522,36 @@ function DisplayVersion(props: { versionId?: string }) {
     },
   });
 
-  if (isLoading) return <Skeleton className="h-6 w-[28px]" />;
+  if (isLoading) return <Skeleton className="h-5 w-[28px]" />;
 
-  if (!version)
-    return (
-      <Badge className="w-fit rounded-[10px] px-2 py-1 text-xs">N/A</Badge>
-    );
+  if (!version) return null;
 
   return (
-    <Badge className="w-fit rounded-[10px] px-2 py-1 text-xs">
+    <Badge className="!text-2xs w-fit px-2 text-gray-500">
       v{version?.version}
+    </Badge>
+  );
+}
+
+function DeploymentVersion(props: { deploymentId?: string }) {
+  const { data: deployment } = useQuery<Deployment>({
+    queryKey: ["deployment", props.deploymentId],
+  });
+
+  if (!deployment) return null;
+
+  if (!["staging", "production"].includes(deployment.environment)) {
+    return null;
+  }
+
+  return (
+    <Badge
+      className={cn(
+        "!text-2xs w-fit px-2",
+        getEnvColor(deployment.environment),
+      )}
+    >
+      {deployment.environment}
     </Badge>
   );
 }

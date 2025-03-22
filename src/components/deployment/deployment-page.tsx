@@ -32,6 +32,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { RunsTable, RunsTableVirtualized } from "../workflows/RunsTable";
+import WorkflowComponent from "../workflows/WorkflowComponent";
+import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
 
 export interface Deployment {
   id: string;
@@ -90,8 +93,8 @@ export function DeploymentPage() {
 
   return (
     <>
-      <div className="mx-auto max-w-screen-lg">
-        <div className="mt-10 mb-4 flex flex-col gap-2">
+      <div className="mx-auto max-w-screen-lg py-10">
+        <div className="mb-4 flex flex-col gap-2">
           <h2 className="font-bold text-2xl">Deployment</h2>
           <p className="text-muted-foreground text-sm">
             Select a version and deploy it to an environment.
@@ -133,6 +136,17 @@ export function DeploymentPage() {
 
         <h3 className="mt-4 mb-2 ml-2 font-medium text-sm">Versions</h3>
         <DeploymentWorkflowVersionList workflowId={workflowId} />
+
+        <h3 className="mt-4 mb-2 ml-2 font-medium text-sm">Requests</h3>
+        <div className="h-[310px] overflow-clip rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200">
+          <RealtimeWorkflowProvider workflowId={workflowId}>
+            <RunsTableVirtualized
+              workflow_id={workflowId}
+              className="h-[300px]"
+            />
+            <WorkflowComponent />
+          </RealtimeWorkflowProvider>
+        </div>
       </div>
       <DeploymentDrawer />
     </>
@@ -276,7 +290,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
       hideSearch
       workflow_id={workflowId || ""}
       className="relative z-[1] w-full rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200"
-      containerClassName="max-h-[234px]"
+      containerClassName="max-h-[200px]"
       height={30}
       renderItem={(item: Version) => {
         const myDeployments = deployments?.filter(

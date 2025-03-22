@@ -154,7 +154,7 @@ export function VersionList({
     return (
       <div
         className={cn(
-          "flex h-[234px] w-[375px] items-center justify-center",
+          "flex h-[200px] w-[375px] items-center justify-center",
           className,
         )}
       >

@@ -47,12 +47,14 @@ import { EventSourcePolyfill } from "event-source-polyfill";
 
 export default function WorkflowComponent() {
   const [runId, setRunId] = useQueryState("run-id");
+  const [tab, setTab] = useQueryState("tab", parseAsString);
 
   const { selectedRun, setSelectedRun } = useRunsTableStore();
 
   const handleCloseRun = () => {
     setSelectedRun(null);
     setRunId(null);
+    setTab(null);
   };
 
   return (

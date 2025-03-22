@@ -24,23 +24,17 @@ export default function RunComponent(props: {
     <motion.div className="w-full" layout>
       <div
         className={cn(
-          "relative h-fit transition-all duration-300",
-          runId ? "w-full 2xl:w-[calc(100%-594px)]" : "w-full",
+          "relative h-fit w-full transition-all duration-300",
+          runId && "xl:w-[calc(100%-594px)]",
         )}
       >
         <CardContent className="px-0 pt-6">
           <h2 className="mb-4 font-bold text-2xl">Requests</h2>
           <LoadingWrapper tag="runs">
-            <>
-              <RunsTable
-                workflow_id={workflow_id}
-                defaultData={props.defaultData}
-              />
-              <RunWorkflowButton
-                className="absolute top-6 right-4"
-                workflow_id={workflow_id}
-              />
-            </>
+            <RunsTable
+              workflow_id={workflow_id}
+              defaultData={props.defaultData}
+            />
           </LoadingWrapper>
         </CardContent>
       </div>
