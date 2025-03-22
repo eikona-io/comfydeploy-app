@@ -88,13 +88,13 @@ export function WorkspaceClientWrapper({
     }
   }, [sessionId, selectedSession]);
 
-  console.log(
-    "sessionId",
-    sessionId,
-    selectedSession,
-    hasActiveSession,
-    cachedSessionId,
-  );
+  // console.log(
+  //   "sessionId",
+  //   sessionId,
+  //   selectedSession,
+  //   hasActiveSession,
+  //   cachedSessionId,
+  // );
 
   useEffect(() => {
     setHasActiveSession(false);
