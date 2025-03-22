@@ -144,7 +144,7 @@ export function DeploymentPage() {
         </div>
 
         <div className="relative mt-2 ">
-          <h3 className="my-4 ml-2 font-medium text-sm">Versions</h3>
+          <h3 className="mt-4 mb-2 ml-2 font-medium text-sm">Versions</h3>
           <DeploymentWorkflowVersionList workflowId={workflowId} />
         </div>
 
@@ -334,22 +334,22 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
   return (
     <>
       {versions?.[0] && (
-        <div className="absolute top-0 right-2">
+        <div className="-top-1 absolute right-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="default"
-                className="rounded-[6px] focus-visible:ring-transparent"
+                className="h-[30px] rounded-[8px] text-2xs focus-visible:ring-transparent"
                 size="sm"
               >
                 Deploy Latest
                 <Badge
                   variant="outline"
-                  className="ml-2 h-fit bg-gray-400/50 py-0 text-2xs text-white"
+                  className="!text-[11px] ml-2 h-[18px] bg-gray-400/50 py-0 text-white"
                 >
                   v{versions?.[0].version}
                 </Badge>
-                <Rocket className="ml-2" size={14} />
+                <Rocket className="ml-2" size={13} />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 overflow-visible">
@@ -504,8 +504,11 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                     <MoreVertical size={16} />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56 overflow-visible">
-                    <DropdownMenuLabel className="font-medium text-sm">
+                    <DropdownMenuLabel className="flex flex-row items-center gap-2 py-1 font-medium text-xs">
                       Deployment
+                      <Badge variant="secondary" className="!text-2xs py-0">
+                        v{item.version}
+                      </Badge>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
