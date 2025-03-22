@@ -290,6 +290,8 @@ function WorkflowPageComponent() {
 
 function RequestPage() {
   const { workflowId, view: currentView } = Route.useParams();
+  const [deploymentId, setDeploymentId] = useQueryState("filter-deployment-id");
+  const [status, setStatus] = useQueryState("filter-status");
 
   return (
     <>
@@ -297,7 +299,11 @@ function RequestPage() {
         layout
         className={cn("flex h-full w-full flex-col gap-4 pt-4 lg:flex-row")}
       >
-        <RealtimeWorkflowProvider workflowId={workflowId}>
+        <RealtimeWorkflowProvider
+          workflowId={workflowId}
+          status={status ?? undefined}
+          deploymentId={deploymentId ?? undefined}
+        >
           <RunComponent />
           <WorkflowComponent />
         </RealtimeWorkflowProvider>

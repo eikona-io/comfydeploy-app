@@ -749,12 +749,20 @@ export function FilterDropdown({
           <DropdownMenuContent align="end" className="w-[220px]">
             <DropdownMenuLabel>Status</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleStatusFilterChange(null)}>
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.preventDefault();
+                handleStatusFilterChange(null);
+              }}
+            >
               All
               {!statusFilter && <Check className="ml-auto h-4 w-4" />}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => handleStatusFilterChange("success")}
+              onClick={(e) => {
+                e.preventDefault();
+                handleStatusFilterChange("success");
+              }}
             >
               <div className="flex items-center">
                 <Badge variant={"green"}>Success</Badge>
@@ -764,7 +772,10 @@ export function FilterDropdown({
               )}
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => handleStatusFilterChange("failed")}
+              onClick={(e) => {
+                e.preventDefault();
+                handleStatusFilterChange("failed");
+              }}
             >
               <div className="flex items-center">
                 <Badge variant={"red"}>Failed</Badge>
@@ -781,7 +792,10 @@ export function FilterDropdown({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={() => handleEnvironmentFilterChange(null)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleEnvironmentFilterChange(null);
+                  }}
                 >
                   All
                   {!currentEnvironment && <Check className="ml-auto h-4 w-4" />}
@@ -789,7 +803,10 @@ export function FilterDropdown({
                 {environments.map((env) => (
                   <DropdownMenuItem
                     key={env}
-                    onClick={() => handleEnvironmentFilterChange(env)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleEnvironmentFilterChange(env);
+                    }}
                   >
                     <div className="flex items-center">
                       <Badge className={cn("mr-2", getEnvColor(env))}>
@@ -808,7 +825,10 @@ export function FilterDropdown({
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  onClick={clearAllFilters}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    clearAllFilters();
+                  }}
                   className="text-red-500"
                 >
                   <div className="flex w-full items-center justify-between">

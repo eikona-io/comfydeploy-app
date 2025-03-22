@@ -6,13 +6,19 @@ import { useRunsTableStore } from "@/components/workflows/RunsTable";
 import { useProgressUpdates } from "@/hooks/use-progress-update";
 import { useQueryClient } from "@tanstack/react-query";
 
-export function useRealtimeWorkflowUpdate2(workflow_id: string) {
+export function useRealtimeWorkflowUpdate2(
+  workflow_id: string,
+  status?: string,
+  deploymentId?: string,
+) {
   const queryClient = useQueryClient();
 
   const { progressUpdates, connectionStatus } = useProgressUpdates({
     workflowId: workflow_id,
     returnRun: true,
     reconnect: true,
+    status,
+    deploymentId,
     onUpdate: (update) => {
       const data = update as any;
 
@@ -97,8 +103,19 @@ const RealtimeWorkflowContext = React.createContext<{
 export function RealtimeWorkflowProvider({
   children,
   workflowId,
-}: { children: React.ReactNode; workflowId: string }) {
-  const { connectionStatus } = useRealtimeWorkflowUpdate2(workflowId);
+  status,
+  deploymentId,
+}: {
+  children: React.ReactNode;
+  workflowId: string;
+  status?: string;
+  deploymentId?: string;
+}) {
+  const { connectionStatus } = useRealtimeWorkflowUpdate2(
+    workflowId,
+    status,
+    deploymentId,
+  );
   // const socket = useRealtimeWorkflowUpdate(workflowId);
   // useRealtimeWorkflowUpdate2(workflowId);
 

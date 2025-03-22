@@ -43,6 +43,7 @@ import {
 import { FilterDropdown, RunsTableVirtualized } from "../workflows/RunsTable";
 import WorkflowComponent from "../workflows/WorkflowComponent";
 import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
+import { useQueryState } from "nuqs";
 
 export interface Deployment {
   id: string;
@@ -96,9 +97,14 @@ export const useSelectedDeploymentStore = create<SelectedDeploymentState>(
 
 export function DeploymentPage() {
   const { workflowId } = useParams({ from: "/workflows/$workflowId/$view" });
+  const [deploymentId, setDeploymentId] = useQueryState("filter-deployment-id");
+  const [status, setStatus] = useQueryState("filter-status");
   const navigate = useNavigate();
   const { data: deployments, isLoading: isDeploymentsLoading } =
     useWorkflowDeployments(workflowId);
+
+  console.log("deploymentId", deploymentId);
+  console.log("status", status);
 
   return (
     <>
@@ -161,7 +167,11 @@ export function DeploymentPage() {
           {deployments?.some((d: Deployment) =>
             ["production", "staging"].includes(d.environment),
           ) ? (
-            <RealtimeWorkflowProvider workflowId={workflowId}>
+            <RealtimeWorkflowProvider
+              workflowId={workflowId}
+              status={status ?? undefined}
+              deploymentId={deploymentId ?? undefined}
+            >
               <RunsTableVirtualized
                 workflow_id={workflowId}
                 className="h-[300px]"

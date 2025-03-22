@@ -28,6 +28,9 @@ export function useProgressUpdates({
   returnRun,
   fromStart,
   reconnect,
+
+  status,
+  deploymentId,
 }: {
   runId?: string;
   workflowId?: string;
@@ -36,6 +39,9 @@ export function useProgressUpdates({
   returnRun?: boolean;
   fromStart?: boolean;
   reconnect?: boolean;
+
+  status?: string;
+  deploymentId?: string;
 }) {
   const [progressUpdates, setProgressUpdates] = useState<ProgressUpdate[]>([]);
   const [connectionStatus, setConnectionStatus] =
@@ -75,6 +81,13 @@ export function useProgressUpdates({
       }
       if (fromStart) {
         url.searchParams.append("from_start", "true");
+      }
+
+      if (status) {
+        url.searchParams.append("status", status);
+      }
+      if (deploymentId) {
+        url.searchParams.append("deployment_id", deploymentId);
       }
 
       eventSource = new EventSourcePolyfill(url.toString(), {
