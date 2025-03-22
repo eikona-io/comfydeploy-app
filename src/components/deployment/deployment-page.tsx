@@ -14,9 +14,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Copy, Loader2, MoreVertical } from "lucide-react";
+import { ChevronRight, Copy, Loader2, MoreVertical } from "lucide-react";
 import { Button } from "../ui/button";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { api } from "@/lib/api";
@@ -165,6 +167,15 @@ export function DeploymentPage() {
             </div>
           )}
         </div>
+        <div className="flex justify-end">
+          <Button
+            variant="link"
+            size="sm"
+            className="text-muted-foreground text-xs"
+          >
+            View all <ChevronRight size={13} className="ml-1" />
+          </Button>
+        </div>
       </div>
       <DeploymentDrawer />
     </>
@@ -173,7 +184,6 @@ export function DeploymentPage() {
 
 function DeploymentHistory({ deployment }: { deployment: Deployment }) {
   const { setSelectedDeployment } = useSelectedDeploymentStore();
-  console.log(deployment);
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -397,6 +407,10 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                   <MoreVertical size={16} />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56 overflow-visible">
+                  <DropdownMenuLabel className="font-medium text-sm">
+                    Deployment
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="p-0"
                     disabled={isPromoting}
