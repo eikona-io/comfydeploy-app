@@ -1,4 +1,4 @@
-import { useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import type { GpuTypes } from "../onboarding/workflow-machine-import";
 import { VersionList } from "../version-select";
 import { cn } from "@/lib/utils";
@@ -96,6 +96,7 @@ export const useSelectedDeploymentStore = create<SelectedDeploymentState>(
 
 export function DeploymentPage() {
   const { workflowId } = useParams({ from: "/workflows/$workflowId/$view" });
+  const navigate = useNavigate();
   const { data: deployments, isLoading: isDeploymentsLoading } =
     useWorkflowDeployments(workflowId);
 
@@ -180,6 +181,15 @@ export function DeploymentPage() {
             variant="link"
             size="sm"
             className="text-muted-foreground text-xs"
+            onClick={() => {
+              navigate({
+                to: "/workflows/$workflowId/$view",
+                params: { workflowId, view: "requests" },
+                search: (prev) => ({
+                  ...prev,
+                }),
+              });
+            }}
           >
             View all <ChevronRight size={13} className="ml-1" />
           </Button>
