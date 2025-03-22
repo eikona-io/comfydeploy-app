@@ -300,6 +300,14 @@ export function QueueButtons({ endpoint }: WorkspaceButtonProps) {
     const distance = targetTime - now;
     const isLessThan10Seconds = distance > 0 && distance < 20000;
 
+    if (!session?.timeout_end) {
+      return {
+        containerSelector: ".queue-button-group.flex",
+        buttonConfigs: [],
+        buttonIdPrefix: "cd-button-queue-",
+      };
+    }
+
     return {
       containerSelector: ".queue-button-group.flex",
       buttonConfigs: [
