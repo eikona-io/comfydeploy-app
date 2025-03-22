@@ -308,7 +308,7 @@ function WorkflowPageComponent() {
 
             {isAdminAndMember && (
               <SidebarGroup>
-                <SidebarGroupLabel>Deployment</SidebarGroupLabel>
+                <SidebarGroupLabel>API</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu className="px-1">
                     {deployment.map((tab) => (
