@@ -334,7 +334,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
   return (
     <>
       {versions?.[0] && (
-        <div className="absolute right-2 top-0">
+        <div className="absolute top-0 right-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -342,10 +342,10 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                 className="rounded-[6px] focus-visible:ring-transparent"
                 size="sm"
               >
-                Deploy Latest{" "}
+                Deploy Latest
                 <Badge
                   variant="outline"
-                  className="text-2xs ml-2 h-fit py-0 text-white bg-gray-400/50"
+                  className="ml-2 h-fit bg-gray-400/50 py-0 text-2xs text-white"
                 >
                   v{versions?.[0].version}
                 </Badge>
@@ -498,7 +498,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     asChild
-                    className="h-full w-full rounded-sm p-2 hover:bg-gray-50"
+                    className="h-full w-full cursor-pointer rounded-sm p-2 hover:bg-gray-50"
                     onClick={(e) => e.stopPropagation()} // Prevent triggering the row click
                   >
                     <MoreVertical size={16} />
