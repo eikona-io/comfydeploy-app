@@ -31,7 +31,7 @@ import { api } from "@/lib/api";
 import { toast } from "sonner";
 import { useMachine } from "@/hooks/use-machine";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { create } from "zustand";
 import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
 import {
@@ -44,6 +44,13 @@ import { FilterDropdown, RunsTableVirtualized } from "../workflows/RunsTable";
 import WorkflowComponent from "../workflows/WorkflowComponent";
 import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
 import { useQueryState } from "nuqs";
+import { Area } from "recharts";
+import { ChartTooltipContent } from "../ui/chart";
+import { ChartTooltip } from "../ui/chart";
+import { XAxis } from "recharts";
+import { type ChartConfig, ChartContainer } from "../ui/chart";
+import { AreaChart, CartesianGrid } from "recharts";
+import { ErrorBoundary } from "../error-boundary";
 
 export interface Deployment {
   id: string;
@@ -115,7 +122,7 @@ export function DeploymentPage() {
             Select a version and deploy it to an environment.
           </p>
         </div>
-        <h3 className="mb-2 ml-2 font-medium text-sm">History</h3>
+        <h3 className="mb-2 ml-2 font-medium text-sm">Environment</h3>
         <div className="rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200">
           {isDeploymentsLoading ? (
             <div className="flex h-[80px] flex-col items-center justify-center">
@@ -204,6 +211,18 @@ export function DeploymentPage() {
             View all <ChevronRight size={13} className="ml-1" />
           </Button>
         </div>
+
+        <div className="mx-2 mt-4 mb-1 flex items-center justify-between">
+          <h3 className="font-medium text-sm">Deployment Status (Last 24h)</h3>
+          <FilterDropdown
+            workflowId={workflowId}
+            buttonSize="sm"
+            isDeploymentPage={true}
+          />
+        </div>
+        <ErrorBoundary fallback={(error) => <div>Error: {error.message}</div>}>
+          <DeploymentStatusGraph workflowId={workflowId} />
+        </ErrorBoundary>
       </div>
       <DeploymentDrawer />
     </>
@@ -587,5 +606,330 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
         }}
       />
     </>
+  );
+}
+
+const chartConfig = {
+  success: {
+    label: "success",
+    color: "green",
+  },
+  failed: {
+    label: "failed",
+    color: "red",
+  },
+} satisfies ChartConfig;
+
+function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
+  const [deploymentId] = useQueryState("filter-deployment-id");
+  const [deploymentStatus] = useQueryState("filter-status");
+  const [timeInterval, setTimeInterval] = useState<10 | 30 | 60>(60);
+
+  const {
+    data: runs,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["workflow", workflowId, "runs", "day"],
+    meta: {
+      params: {
+        deployment_id: deploymentId,
+      },
+    },
+    enabled: !!deploymentId,
+    refetchInterval: 10000,
+  });
+
+  useEffect(() => {
+    if (deploymentId) {
+      refetch();
+    }
+  }, [deploymentId]);
+
+  // Determine the best time interval based on data distribution
+  useEffect(() => {
+    if (!runs || runs.length === 0) {
+      setTimeInterval(60); // Default to 60 minutes if no data
+      return;
+    }
+
+    // Get distribution of data across 24 hours
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Filter runs from the last 24 hours
+    const recentRuns = runs.filter(
+      (run) => new Date(run.created_at) >= twentyFourHoursAgo,
+    );
+
+    if (recentRuns.length === 0) {
+      setTimeInterval(60);
+      return;
+    }
+
+    // Check how many different hours have data
+    const hourSet = new Set();
+    for (const run of recentRuns) {
+      const hour = new Date(run.created_at).getHours();
+      hourSet.add(hour);
+    }
+
+    // Count how many different slots would have data at different granularities
+    const hoursWithData = hourSet.size;
+
+    // Check if data is well distributed throughout the day
+    if (hoursWithData >= 12) {
+      // Data spread across at least half of the day, use finer granularity
+      setTimeInterval(10);
+    } else if (hoursWithData >= 6) {
+      // Data spread across at least a quarter of the day
+      setTimeInterval(30);
+    } else {
+      // Data is sparse, use coarser granularity
+      setTimeInterval(60);
+    }
+  }, [runs]);
+
+  // Process the data to group by the chosen interval from 24 hours ago until now
+  const processDataForChart = (runsData: any[] = []) => {
+    if (!runsData || !runsData.length) return [];
+
+    // Get current time and 24 hours ago
+    const now = new Date();
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // Calculate how many slots we need based on the interval (in minutes)
+    const slotsCount = Math.ceil((24 * 60) / timeInterval);
+
+    // Create time slots for the last 24 hours
+    const timeSlotData: Array<{
+      timeLabel: string;
+      timestamp: number;
+      hour: number; // Store the hour for easier filtering
+      success: number;
+      failed: number;
+    }> = [];
+
+    // Generate time slots backward from now
+    for (let i = 0; i < slotsCount; i++) {
+      const slotTime = new Date(now.getTime() - i * timeInterval * 60 * 1000);
+      const slotStart = new Date(slotTime);
+
+      // Round to the nearest interval
+      slotStart.setMinutes(
+        Math.floor(slotStart.getMinutes() / timeInterval) * timeInterval,
+        0,
+        0,
+      );
+
+      // Format the time label
+      const hours = slotStart.getHours().toString().padStart(2, "0");
+      const mins = slotStart.getMinutes().toString().padStart(2, "0");
+      const timeLabel = `${hours}:${mins}`;
+
+      timeSlotData.unshift({
+        timeLabel,
+        timestamp: slotStart.getTime(),
+        hour: slotStart.getHours(),
+        success: 0,
+        failed: 0,
+      });
+    }
+
+    // Count runs for each time slot
+    for (const run of runsData) {
+      const runDate = new Date(run.created_at);
+
+      // Skip runs older than 24 hours
+      if (runDate < twentyFourHoursAgo) continue;
+
+      // Find the right time slot for this run
+      for (let i = 0; i < timeSlotData.length - 1; i++) {
+        if (
+          runDate.getTime() >= timeSlotData[i].timestamp &&
+          runDate.getTime() < timeSlotData[i + 1].timestamp
+        ) {
+          if (run.status === "success") {
+            timeSlotData[i].success += 1;
+          } else if (run.status === "failed") {
+            timeSlotData[i].failed += 1;
+          }
+          break;
+        }
+      }
+
+      // Check the last slot
+      if (
+        runDate.getTime() >= timeSlotData[timeSlotData.length - 1].timestamp
+      ) {
+        if (run.status === "success") {
+          timeSlotData[timeSlotData.length - 1].success += 1;
+        } else if (run.status === "failed") {
+          timeSlotData[timeSlotData.length - 1].failed += 1;
+        }
+      }
+    }
+
+    return timeSlotData;
+  };
+
+  const chartData = processDataForChart(runs);
+
+  // Calculate the appropriate interval for x-axis labels based on time interval
+  const getLabelInterval = () => {
+    switch (timeInterval) {
+      case 10:
+        return 3; // Show every hour (6 x 10min = 60min)
+      case 30:
+        return 2; // Show every hour (2 x 30min = 60min)
+      case 60:
+        return 2; // Show every 2 hours
+      default:
+        return 1;
+    }
+  };
+
+  // Add a formatted timestamp to show in the tooltip for better context
+  const formatTimeLabel = (timeLabel: string) => {
+    const now = new Date();
+    const [hoursStr, minsStr] = timeLabel.split(":");
+    const hours = Number.parseInt(hoursStr);
+    const mins = Number.parseInt(minsStr);
+
+    // Create a date object for the label time
+    const labelTime = new Date(now);
+    labelTime.setHours(hours, mins, 0, 0);
+
+    // Calculate the difference in minutes
+    let diffMs = now.getTime() - labelTime.getTime();
+    if (diffMs < 0) {
+      diffMs += 24 * 60 * 60 * 1000; // Add 24 hours if the time is for tomorrow
+    }
+
+    const diffMins = Math.round(diffMs / (60 * 1000));
+
+    if (diffMins < 1) {
+      return "Just now";
+    }
+    if (diffMins < 60) {
+      return `${diffMins} ${diffMins === 1 ? "minute" : "minutes"} ago`;
+    }
+    const diffHours = Math.floor(diffMins / 60);
+    const remainingMins = diffMins % 60;
+
+    if (remainingMins === 0) {
+      return `${diffHours} ${diffHours === 1 ? "hour" : "hours"} ago`;
+    }
+    return `${diffHours}h ${remainingMins}m ago`;
+  };
+
+  return (
+    <div className="rounded-md bg-background p-4 shadow-sm ring-1 ring-gray-200">
+      {isLoading ? (
+        <div className="flex h-[300px] items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
+      ) : (
+        <>
+          {!runs || runs.length === 0 ? (
+            <div className="flex h-[300px] items-center justify-center">
+              <p className="text-muted-foreground text-xs">
+                No deployment data available
+              </p>
+            </div>
+          ) : (
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+              <AreaChart
+                accessibilityLayer
+                data={chartData}
+                height={200}
+                margin={{
+                  left: 0,
+                  right: 20,
+                  top: 10,
+                  bottom: 0,
+                }}
+              >
+                <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="timeLabel"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tick={{ fontSize: 10 }}
+                  interval={getLabelInterval()}
+                  tickFormatter={(value, index) => {
+                    const [hours, mins] = value.split(":");
+                    // For very dense charts, we may want to only show the hour marks
+                    // for better readability
+                    if (timeInterval <= 15) {
+                      // For 10 minute intervals
+                      return mins === "00" ? `${hours}:00` : "";
+                    }
+                    return value;
+                  }}
+                />
+                <ChartTooltip
+                  cursor={false}
+                  content={
+                    <ChartTooltipContent
+                      labelFormatter={(label) => {
+                        return `${label} (${formatTimeLabel(label)})`;
+                      }}
+                    />
+                  }
+                />
+                <defs>
+                  <linearGradient id="fillSuccess" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="rgb(34, 197, 94)"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="rgb(34, 197, 94)"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                  <linearGradient id="fillFailed" x1="0" y1="0" x2="0" y2="1">
+                    <stop
+                      offset="5%"
+                      stopColor="rgb(239, 68, 68)"
+                      stopOpacity={0.8}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor="rgb(239, 68, 68)"
+                      stopOpacity={0.1}
+                    />
+                  </linearGradient>
+                </defs>
+                {(!deploymentStatus || deploymentStatus === "failed") && (
+                  <Area
+                    dataKey="failed"
+                    type="linear"
+                    fill="url(#fillFailed)"
+                    fillOpacity={0.6}
+                    stroke="rgb(239, 68, 68)"
+                    stackId="1"
+                  />
+                )}
+                {(!deploymentStatus || deploymentStatus === "success") && (
+                  <Area
+                    dataKey="success"
+                    type="linear"
+                    fill="url(#fillSuccess)"
+                    fillOpacity={0.6}
+                    stroke="rgb(34, 197, 94)"
+                    stackId="1"
+                  />
+                )}
+              </AreaChart>
+            </ChartContainer>
+          )}
+        </>
+      )}
+    </div>
   );
 }
