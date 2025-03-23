@@ -420,7 +420,7 @@ export function SessionCreatorForm({
               {createDynamicSession.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Create Session
+              Start ComfyUI
             </Button>
           </div>
         </form>
