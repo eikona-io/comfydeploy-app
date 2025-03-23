@@ -46,6 +46,8 @@ import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { api } from "@/lib/api";
 import { useQueryState } from "nuqs";
+import { UserIcon } from "../run/SharePageComponent";
+import { SessionTimer } from "@/components/workspace/SessionTimer";
 
 interface SessionForm {
   machineId: string;
@@ -80,7 +82,7 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
   }
 
   return (
-    <div className="space-y-1 px-1 py-1">
+    <div className="space-y-1 py-1">
       {sessions.map((session) => (
         <div
           key={session.session_id}
@@ -99,30 +101,21 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
                 search: {
                   isFirstTime: true,
                   workflowId: params.workflowId,
-                  // sessionId: selectedSessionId,
                 },
               });
-              // router.navigate({
-              //   to: "/sessions/$sessionId",
-              //   params: {
-              //     sessionId: session.session_id,
-              //   },
-              //   search: {
-              //     ...(params.workflowId
-              //       ? { workflowId: params.workflowId }
-              //       : { machineId: session.machine_id }),
-              //     isFirstTime: true,
-              //   },
-              // });
             }}
           >
             <div className="relative flex h-4 w-4 items-center justify-center">
               <div className="h-2 w-2 rounded-full bg-green-500" />
               <RotateCw className="absolute h-4 w-4 animate-spin text-green-500 opacity-50" />
             </div>
-            <span className="text-sm">{session.session_id.slice(0, 8)}</span>
+            <UserIcon user_id={session.user_id} className="h-6 w-6" />
+            <span className="text-muted-foreground text-xs">
+              {session.session_id.slice(0, 8)}
+            </span>
             <Badge variant="outline">{session.gpu}</Badge>
-            <ArrowRightToLine className="ml-auto h-4 w-4 text-blue-500 opacity-0 transition-opacity group-hover:opacity-100" />
+            <ArrowRightToLine className="mr-2 ml-auto h-4 w-4 text-blue-500 opacity-0 transition-opacity group-hover:opacity-100" />
+            <SessionTimer session={session} size="sm" />
           </div>
           <TooltipProvider>
             <Tooltip>
@@ -252,9 +245,9 @@ export function SessionCreatorForm({
   return (
     <div className="flex flex-col gap-6 w-full">
       <div>
-        <h2 className="font-semibold text-lg">Create Session</h2>
+        <h2 className="font-semibold text-lg">Workspace</h2>
         <p className="text-sm text-muted-foreground flex items-center gap-2">
-          Configure your session for version{" "}
+          Start and edit your workflow{" "}
           <Badge variant="outline" className="gap-2">
             {isFluidVersion && (
               <div className="rounded-full bg-blue-100 p-0.5">

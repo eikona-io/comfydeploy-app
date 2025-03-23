@@ -234,7 +234,7 @@ function WorkflowPageComponent() {
                                   </div>
                                 </SessionCreate>
                               </SidebarMenuButton> */}
-                              {currentView === "workspace" &&
+                              {/* {currentView === "workspace" &&
                                 tab === "workspace" &&
                                 sessionSelected && (
                                   <Popover>
@@ -251,7 +251,7 @@ function WorkflowPageComponent() {
                                       <LogDisplay />
                                     </PopoverContent>
                                   </Popover>
-                                )}
+                                )} */}
                             </div>
                           </SidebarMenuItem>
                         </SidebarMenu>
@@ -259,7 +259,7 @@ function WorkflowPageComponent() {
                     )}
                   </AnimatePresence>
 
-                  {tab === "workspace" && sessions && sessions.length > 0 && (
+                  {/* {tab === "workspace" && sessions && sessions.length > 0 && (
                     <SidebarMenuSub className="mt-2 mr-0 pr-0">
                       {sessions?.map((session, index) => (
                         <SidebarMenuSubItem key={session.id}>
@@ -302,7 +302,7 @@ function WorkflowPageComponent() {
                         </SidebarMenuSubItem>
                       ))}
                     </SidebarMenuSub>
-                  )}
+                  )} */}
 
                   {/* TODO: Add share options */}
                   {/* {tab === "playground" && isAdminAndMember && (

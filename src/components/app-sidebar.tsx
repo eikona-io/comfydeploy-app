@@ -45,7 +45,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Progress, ProgressValue } from "@/components/ui/progress";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -106,6 +106,17 @@ import {
   useSessionIncrementStore,
 } from "./workspace/increase-session";
 import { useSelectedVersion, VersionList } from "@/components/version-select";
+import { SessionTimer } from "@/components/workspace/SessionTimer";
+
+// Add Session type
+interface Session {
+  created_at: string;
+  timeout_end?: string;
+  timeout?: number;
+  url?: string;
+  tunnel_url?: string;
+  gpu?: string;
+}
 
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
@@ -293,7 +304,6 @@ const links = [
 function SessionSidebar() {
   const router = useRouter();
   const workflowId = useWorkflowIdInSessionView();
-  // const sessionId = useSessionIdInSessionView();
   const clerk = useClerk();
   const personalOrg = clerk.user?.username ?? "personal";
 
@@ -310,7 +320,7 @@ function SessionSidebar() {
     isLoading: isLoadingSession,
     isError,
     refetch,
-  } = useQuery<any>({
+  } = useQuery<Session>({
     enabled: !!sessionId,
     queryKey: ["session", sessionId],
     refetchInterval: 1000,
@@ -320,74 +330,6 @@ function SessionSidebar() {
 
   // Only calculate these values if we have timeout_end (non-legacy mode)
   const isLegacyMode = !session?.timeout_end;
-  const progressPercentage = useMemo(() => {
-    if (!session?.timeout_end || !session?.created_at) {
-      // For legacy mode, use session.timeout as total duration
-      if (isLegacyMode && session?.timeout) {
-        const now = new Date().getTime();
-        const start = new Date(session.created_at).getTime();
-        const duration = session.timeout * 60 * 1000; // Convert minutes to milliseconds
-        return ((duration - (now - start)) / duration) * 100;
-      }
-      return 0;
-    }
-    const now = new Date().getTime();
-    const end = new Date(session.timeout_end).getTime();
-    const start = new Date(session.created_at).getTime();
-    return ((end - now) / (end - start)) * 100;
-  }, [
-    session?.timeout_end,
-    session?.created_at,
-    session?.timeout,
-    isLegacyMode,
-  ]);
-
-  const [countdown, setCountdown] = useState("");
-
-  useEffect(() => {
-    if (!session?.created_at) return;
-
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      let distance;
-
-      if (isLegacyMode) {
-        // For legacy mode, calculate remaining time from session.timeout
-        const start = new Date(session.created_at).getTime();
-        const duration = session.timeout * 60 * 1000; // Convert minutes to milliseconds
-        distance = duration - (now - start);
-      } else {
-        // For non-legacy mode, use timeout_end
-        const targetTime = new Date(session.timeout_end).getTime();
-        distance = targetTime - now;
-      }
-
-      if (distance < 0) {
-        setCountdown("00:00:00");
-        return;
-      }
-
-      const hours = Math.floor(
-        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60),
-      );
-      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-      setCountdown(
-        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`,
-      );
-    };
-
-    const intervalId = setInterval(updateCountdown, 1000);
-    updateCountdown(); // Initial update
-
-    return () => clearInterval(intervalId);
-  }, [
-    session?.timeout_end,
-    session?.created_at,
-    session?.timeout,
-    isLegacyMode,
-  ]);
 
   const handleTimerClick = () => {
     if (isLegacyMode) {
@@ -408,7 +350,6 @@ function SessionSidebar() {
           open={timerDialogOpen}
           onOpenChange={setTimerDialogOpen}
           session={session}
-          countdown={countdown}
           onRefetch={refetch}
         />
       )}
@@ -438,7 +379,7 @@ function SessionSidebar() {
                 if (workflowId) {
                   router.navigate({
                     to: "/workflows/$workflowId/$view",
-                    params: { workflowId, view: "requests" },
+                    params: { workflowId, view: "workspace" },
                   });
                 } else {
                   router.navigate({
@@ -477,10 +418,10 @@ function SessionSidebar() {
                   onClick={() => {
                     setIsVersionDialogOpen(true);
                   }}
-                  className="mx-auto relative"
+                  className="relative mx-auto"
                 >
                   <GitBranch className="h-4 w-4" />
-                  <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] rounded-full bg-primary/10 text-[10px] flex items-center justify-center font-medium">
+                  <div className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
                     v
                     {useSelectedVersion(workflowId || "").value?.version || "1"}
                   </div>
@@ -490,77 +431,26 @@ function SessionSidebar() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button
-                className="group relative mx-auto h-8 w-8 cursor-pointer"
-                onClick={handleTimerClick}
-              >
-                <div className="absolute inset-0">
-                  <svg viewBox="0 0 32 32" className="h-full w-full">
-                    <circle cx="16" cy="16" r="16" className="fill-black/40" />
-                    <path
-                      d={(() => {
-                        const x = 16;
-                        const y = 16;
-                        const radius = 16;
-                        // Adjust angle to start from top (subtract 90 degrees)
-                        const angle = (progressPercentage / 100) * 360 - 90;
-
-                        // Start from the center
-                        let d = `M ${x},${y} `;
-                        // Draw line to top center of circle (12 o'clock position)
-                        d += `L ${x},0 `;
-
-                        // Draw arc
-                        const largeArcFlag =
-                          progressPercentage <= 50 ? "0" : "1";
-
-                        // Calculate end point of arc, adjusting for top start position
-                        const endX =
-                          x + radius * Math.cos((angle * Math.PI) / 180);
-                        const endY =
-                          y + radius * Math.sin((angle * Math.PI) / 180);
-
-                        // Draw arc to end point
-                        d += `A ${radius},${radius} 0 ${largeArcFlag} 1 ${endX},${endY} `;
-                        // Close path to center
-                        d += "Z";
-
-                        return d;
-                      })()}
-                      className="fill-primary transition-all duration-300"
-                    />
-                  </svg>
-                </div>
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium tabular-nums text-background">
-                  {countdown.split(":")[1]}:{countdown.split(":")[2]}
-                </span>
-              </button>
-            </PopoverTrigger>
-            <PopoverContent side="top" className="w-auto p-2 text-xs">
-              {`${countdown} remaining`}
-            </PopoverContent>
-          </Popover>
+          {session && (
+            <SessionTimer session={session} onClick={handleTimerClick} />
+          )}
         </SidebarFooter>
       </Sidebar>
     </>
   );
 }
 
-// Separate the Timer Dialog into its own component
+// Update TimerDialog component
 function TimerDialog({
   open,
   onOpenChange,
   session,
-  countdown,
   onRefetch,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  session: any;
-  countdown: string;
-  onRefetch: () => Promise<any>;
+  session: Session | undefined;
+  onRefetch: () => Promise<unknown>;
 }) {
   const [selectedIncrement, setSelectedIncrement] = useState("5");
   const sessionId = useSessionIdInSessionView();
@@ -620,18 +510,20 @@ function TimerDialog({
                   <History className="h-4 w-4 text-muted-foreground" />
                   <span className="font-medium text-sm">Time Remaining</span>
                 </div>
-                <span className="font-medium text-sm">{countdown}</span>
+                {session && <SessionTimer session={session} size="sm" />}
               </div>
-              <Progress
-                value={
-                  ((new Date(session?.timeout_end).getTime() -
-                    new Date().getTime()) /
-                    (new Date(session?.timeout_end).getTime() -
-                      new Date(session?.created_at).getTime())) *
-                  100
-                }
-                className="h-2"
-              />
+              {session?.timeout_end && session?.created_at && (
+                <Progress
+                  value={
+                    ((new Date(session.timeout_end).getTime() -
+                      new Date().getTime()) /
+                      (new Date(session.timeout_end).getTime() -
+                        new Date(session.created_at).getTime())) *
+                    100
+                  }
+                  className="h-2"
+                />
+              )}
             </div>
           </div>
           <div className="flex items-center space-x-2">
