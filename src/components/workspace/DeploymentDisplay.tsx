@@ -753,7 +753,13 @@ export function APIDocs({
             steps={[
               {
                 title: "Install the typescript comfydeploy SDK",
-                content: <CodeBlock lang="bash" code={"npm i comfydeploy"} />,
+                content: (
+                  <CodeBlock
+                    className="text-xs"
+                    lang="bash"
+                    code={"npm i comfydeploy"}
+                  />
+                ),
               },
               {
                 title: "Initialize your client",
@@ -766,6 +772,7 @@ export function APIDocs({
                       </Button>
                     </span>
                     <CodeBlock
+                      className="text-xs"
                       lang="js"
                       code={formatCode({
                         codeTemplate:
@@ -798,10 +805,11 @@ export function APIDocs({
                           inputs: model.inputs,
                           model_id: model.id,
                         })}
-                        className="max-w-[500px]"
+                        className="max-w-[500px] text-xs"
                       />
                     ) : (
                       <CodeBlock
+                        className="text-xs"
                         lang="js"
                         code={formatCode({
                           codeTemplate: jsClientQueueRunTemplate,
@@ -836,6 +844,7 @@ export function APIDocs({
                           <Badge>src/app/api/webhook/route.tsx</Badge>
                         </span>
                         <CodeBlock
+                          className="text-xs"
                           lang="js"
                           code={formatCode({
                             codeTemplate: webhook_template,
@@ -883,10 +892,11 @@ export function APIDocs({
                           inputs: model.inputs,
                           model_id: model.id,
                         })}
-                        className="max-w-[500px]"
+                        className="max-w-[500px] text-xs"
                       />
                     ) : (
                       <CodeBlock
+                        className="text-xs"
                         lang="js"
                         code={formatCode({
                           codeTemplate: restClientQueueRunTemplateModel,
@@ -921,6 +931,7 @@ export function APIDocs({
                           <Badge>src/app/api/webhook/route.tsx</Badge>
                         </span>
                         <CodeBlock
+                          className="text-xs"
                           lang="js"
                           code={formatCode({
                             codeTemplate: webhook_template,
