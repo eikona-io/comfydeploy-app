@@ -184,56 +184,6 @@ function WorkflowPageComponent() {
                       >
                         {tab === "workspace" ? "ComfyUI" : tab}
                       </SidebarMenuButton>
-
-                      {tab === "workspace" &&
-                        sessions &&
-                        sessions.length > 0 && (
-                          <SidebarMenuSub className="mt-2 mr-0 pr-0">
-                            {sessions?.map((session, index) => (
-                              <SidebarMenuSubItem key={session.id}>
-                                <SidebarMenuSubButton>
-                                  <SessionItem
-                                    key={session.id}
-                                    session={session}
-                                    index={index}
-                                    isActive={sessionId === session.session_id}
-                                    onSelect={(selectedSessionId) => {
-                                      setSessionId(selectedSessionId);
-                                      // setView("workspace"); // Switch to workspace view
-                                      // setActiveTabIndex(tabs.indexOf("workspace")); // Update active tab
-                                      router.navigate({
-                                        to: "/workflows/$workflowId/$view",
-                                        params: {
-                                          workflowId,
-                                          view: "workspace",
-                                        },
-                                        search: {
-                                          isFirstTime: true,
-                                          workflowId: workflowId,
-                                          sessionId: selectedSessionId,
-                                        },
-                                      });
-                                      // router.navigate({
-                                      //   to: "/sessions/$sessionId",
-                                      //   params: { sessionId: selectedSessionId },
-                                      //   search: {
-                                      //     isFirstTime: true,
-                                      //     workflowId: workflowId,
-                                      //   },
-                                      // });
-                                    }}
-                                    onDelete={async (sessionIdToDelete) => {
-                                      setSessionId(null);
-                                      await deleteSession.mutateAsync({
-                                        sessionId: sessionIdToDelete,
-                                      });
-                                    }}
-                                  />
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            ))}
-                          </SidebarMenuSub>
-                        )}
                     </SidebarMenuItem>
                   ))}
                 </SidebarMenu>

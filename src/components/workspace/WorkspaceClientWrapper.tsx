@@ -18,6 +18,7 @@ import { VersionChecker } from "../machine/version-checker";
 import { useQueryState } from "nuqs";
 import { easeOut } from "framer-motion";
 import { motion } from "framer-motion";
+import { SessionCreatorForm } from "./session-creator-form";
 
 interface WorkspaceClientWrapperProps {
   workflow_id: string;
@@ -27,6 +28,12 @@ interface WorkspaceClientWrapperProps {
 
 interface MachineUpdateCheckerProps {
   machineId: string;
+}
+
+interface WorkflowVersion {
+  version: number;
+  id: string;
+  created_at: string;
 }
 
 function MachineUpdateChecker({ machineId }: MachineUpdateCheckerProps) {
@@ -68,7 +75,9 @@ export function WorkspaceClientWrapper({
     isLoading: isLoadingWorkflow,
   } = useCurrentWorkflow(props.workflow_id);
 
-  const { data: versions, isLoading: isLoadingVersions } = useQuery({
+  const { data: versions, isLoading: isLoadingVersions } = useQuery<
+    WorkflowVersion[]
+  >({
     enabled: !!props.workflow_id,
     queryKey: ["workflow", props.workflow_id, "versions"],
     queryKeyHashFn: (queryKey) => [...queryKey, "latest"].toString(),
@@ -88,21 +97,12 @@ export function WorkspaceClientWrapper({
     }
   }, [sessionId, selectedSession]);
 
-  // console.log(
-  //   "sessionId",
-  //   sessionId,
-  //   selectedSession,
-  //   hasActiveSession,
-  //   cachedSessionId,
-  // );
-
   useEffect(() => {
     setHasActiveSession(false);
     setCachedSessionId(null);
-  }, [props.workflow_id]);
+  }, []);
 
   if (isLoadingWorkflow || isLoading || isLoadingVersions || !versions) {
-    // return <WorkspaceLoading />;
     return (
       <div className="flex h-full w-full items-center justify-center">
         <LoadingIcon />
@@ -165,9 +165,12 @@ export function WorkspaceClientWrapper({
         </MyDrawer>
 
         <motion.div
-          className="z-[10] h-full w-full bg-[#141414] relative"
+          className={cn(
+            "absolute inset-0 z-[10] h-full w-full bg-[#141414]",
+            sessionId ? "pointer-events-auto" : "pointer-events-none",
+          )}
           initial={{ opacity: 0 }}
-          animate={{ opacity: !!sessionId ? 1 : 0 }}
+          animate={{ opacity: sessionId ? 1 : 0 }}
           transition={{ duration: 0.2, ease: easeOut }}
         >
           <motion.div
@@ -192,24 +195,15 @@ export function WorkspaceClientWrapper({
         </motion.div>
 
         {!sessionId ? (
-          <div className="absolute inset-0 z-[10] flex h-full w-full items-center justify-center">
-            <div className="flex flex-col items-center gap-2">
-              <p className="text-sm text-gray-500">
-                Starting a ComfyUI session to edit your workflow
-              </p>
-              <Button
-                onClick={(e) =>
-                  setSessionCreation((prev) => ({
-                    ...prev,
-                    isOpen: true,
-                    version: versions[0].version,
-                    machineId: workflow?.selected_machine_id,
-                  }))
-                }
-              >
-                Start ComfyUI
-              </Button>
-            </div>
+          <div className="flex h-full w-full items-center justify-center max-w-lg mx-auto">
+            {/* <div className="flex flex-col items-center gap-2 "> */}
+            <SessionCreatorForm
+              workflowId={props.workflow_id}
+              version={versions[0]?.version ?? 0}
+              defaultMachineId={workflow?.selected_machine_id}
+              defaultMachineVersionId={workflow?.selected_machine_version_id}
+            />
+            {/* </div> */}
           </div>
         ) : (
           <></>

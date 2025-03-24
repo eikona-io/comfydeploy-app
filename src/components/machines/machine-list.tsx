@@ -223,6 +223,7 @@ export function MachineList() {
           queryResult={query}
           renderItem={(machine: Machine, index) => (
             <MachineListItem
+              machine={machine as any}
               key={machine.id}
               index={index}
               machineId={machine.id}

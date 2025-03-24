@@ -141,6 +141,7 @@ export const isMachineDeprecated = (machine: any) =>
 // -------------------------components-------------------------
 
 export function MachineListItem({
+  machine,
   machineId,
   isExpanded,
   refetchQuery,
@@ -150,6 +151,7 @@ export function MachineListItem({
   showMigrateDialog = true,
   children,
 }: {
+  machine: any;
   machineId: any;
   isExpanded?: boolean;
   refetchQuery: any;
@@ -169,7 +171,7 @@ export function MachineListItem({
     useState(false);
   const router = useRouter();
   const [isStartingSession, setIsStartingSession] = useState(false);
-  const { data: machine, isLoading: isMachineLoading } = useMachine(machineId);
+  // const { data: machine, isLoading: isMachineLoading } = useMachine(machineId);
 
   // Check if Docker command steps are null (for disabling buttons)
   const isDockerCommandStepsNull =
@@ -212,7 +214,7 @@ export function MachineListItem({
   //   setIsStartingSession(false);
   // };
 
-  if (isMachineLoading) return null;
+  // if (isMachineLoading) return null;
 
   const content = (
     <div

@@ -6,6 +6,7 @@ import {
   useMatchRoute,
   useRouter,
 } from "@tanstack/react-router";
+import React, { useEffect, useRef, useState } from "react";
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
     ? () => null // Render nothing in production
@@ -27,7 +28,6 @@ import {
   useAuth,
   useOrganizationList,
 } from "@clerk/clerk-react";
-import React, { useEffect, useRef, useState } from "react";
 import { Toaster } from "sonner";
 import { Providers, queryClient } from "../lib/providers";
 import { orgPrefixPaths } from "@/orgPrefixPaths";

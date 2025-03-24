@@ -20,7 +20,7 @@ import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { useRouter } from "node_modules/@tanstack/react-router/dist/esm/useRouter";
+import { useRouter } from "@tanstack/react-router";
 import { usePostHog } from "posthog-js/react";
 import Calendar from "./Cal";
 
