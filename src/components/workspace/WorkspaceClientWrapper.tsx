@@ -138,9 +138,8 @@ export function WorkspaceClientWrapper({
   if (Number.parseInt(machineBuilderVersion) >= 4) {
     return (
       <>
-        <div className="absolute inset-x-0 bottom-0 z-0 mx-auto max-w-xl">
-          <MachineUpdateChecker machineId={machine.id} />
-        </div>
+        {/* <div className="absolute inset-x-0 bottom-0 z-0 mx-auto max-w-xl">
+        </div> */}
         <MyDrawer
           desktopClassName="w-[600px]"
           open={sessionCreation.isOpen}
@@ -195,7 +194,7 @@ export function WorkspaceClientWrapper({
         </motion.div>
 
         {!sessionId ? (
-          <div className="flex h-full w-full items-center justify-center max-w-lg mx-auto">
+          <div className="mt-28 mx-auto flex h-full w-full max-w-xl flex-col gap-4">
             {/* <div className="flex flex-col items-center gap-2 "> */}
             <SessionCreatorForm
               workflowId={props.workflow_id}
@@ -203,6 +202,8 @@ export function WorkspaceClientWrapper({
               defaultMachineId={workflow?.selected_machine_id}
               defaultMachineVersionId={workflow?.selected_machine_version_id}
             />
+            <MachineUpdateChecker machineId={machine.id} />
+
             {/* </div> */}
           </div>
         ) : (
