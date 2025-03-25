@@ -601,9 +601,13 @@ export function AppSidebar() {
   const { data: currentGitBranch } = useQuery({
     queryKey: ["currentGitBranch"],
     queryFn: async () => {
-      const response = await fetch("/git-info.json");
-      const data = await response.json();
-      return data;
+      try {
+        const response = await fetch("/git-info.json");
+        const data = await response.json();
+        return data;
+      } catch (error) {
+        return null;
+      }
     },
     refetchInterval: 3000,
     enabled: window.location.hostname === "localhost",
