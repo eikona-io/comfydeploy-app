@@ -213,7 +213,7 @@ export function DeploymentPage() {
         </div>
 
         <div className="mx-2 mt-4 mb-1 flex items-center justify-between">
-          <h3 className="font-medium text-sm">Deployment Status (Last 24h)</h3>
+          <h3 className="font-medium text-sm">Requests Status (Last 24 hrs)</h3>
           <FilterDropdown
             workflowId={workflowId}
             buttonSize="sm"
@@ -300,6 +300,9 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        <span className="flex items-center gap-1 text-2xs text-muted-foreground hover:underline">
+          API docs <ChevronRight size={13} />
+        </span>
       </div>
     </div>
   );
@@ -834,7 +837,7 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
           {!runs || runs.length === 0 ? (
             <div className="flex h-[300px] items-center justify-center">
               <p className="text-muted-foreground text-xs">
-                No deployment data available
+                No requests data in the last 24 hours
               </p>
             </div>
           ) : (
