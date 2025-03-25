@@ -371,7 +371,12 @@ export default function WorkflowImport() {
                   url: `machine/custom/${validation.selectedMachineId}`,
                   init: {
                     method: "PATCH",
-                    body: JSON.stringify(validation.machineConfig),
+                    body: JSON.stringify({
+                      name: validation.machineConfig.name,
+                      type: validation.machineConfig.type,
+                      endpoint: validation.machineConfig.endpoint,
+                      auth_token: validation.machineConfig.auth_token,
+                    }),
                   },
                 });
 
@@ -391,6 +396,7 @@ export default function WorkflowImport() {
                     },
                   });
                 }
+                return true;
               } else {
                 response = await api({
                   url: `machine/serverless/${validation.selectedMachineId}`,
