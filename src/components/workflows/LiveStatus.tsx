@@ -92,7 +92,9 @@ export function LiveStatus({
         <div className="col-span-2 flex-col items-start gap-2 text-2xs">
           {!ended && realtimeStatus && (
             <>
-              <p className="flex justify-center">{liveStatus}</p>
+              <p className="flex justify-center whitespace-nowrap">
+                {liveStatus}
+              </p>
               <Progress value={run.progress * 100} className="w-full" />
             </>
           )}
