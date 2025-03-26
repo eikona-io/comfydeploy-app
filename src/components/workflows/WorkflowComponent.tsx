@@ -29,6 +29,10 @@ import {
   Loader2,
   Settings2Icon,
   Zap,
+  CheckCircle,
+  XCircle,
+  ChevronDown,
+  LinkIcon,
 } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { type ReactNode, useMemo } from "react";
@@ -114,6 +118,12 @@ export function RunDetails(props: {
       setSelectedTab("inputs");
     }
   }, [isPlayground]);
+
+  useEffect(() => {
+    if (!run?.webhook && selectedTab === "webhook") {
+      setSelectedTab(null);
+    }
+  }, [run?.id]);
 
   if (isLoading) {
     return (
@@ -227,9 +237,11 @@ export function RunDetails(props: {
               <TabsTrigger value="outputs">Outputs</TabsTrigger>
             )}
             <>
-              {/* <TabsTrigger value="timeline">Timeline</TabsTrigger> */}
               <TabsTrigger value="logs">Logs</TabsTrigger>
-              <TabsTrigger value="graph">Execution</TabsTrigger>
+              {/* <TabsTrigger value="graph">Execution</TabsTrigger> */}
+              {run.webhook && (
+                <TabsTrigger value="webhook">Webhook</TabsTrigger>
+              )}
             </>
           </TabsList>
           <TabsContent value="inputs">
@@ -297,6 +309,9 @@ export function RunDetails(props: {
                 </Alert>
               )}
             </ErrorBoundary>
+          </TabsContent>
+          <TabsContent value="webhook">
+            <WebhookTab run={run} webhook={run.webhook} />
           </TabsContent>
         </Tabs>
       </div>
@@ -751,6 +766,252 @@ export function LogsTab({ runId }: { runId: string }) {
   return (
     <div className="h-[300px] w-full">
       <LogsViewer logs={logs} stickToBottom hideTimestamp />
+    </div>
+  );
+}
+
+type WebhookData = {
+  timestamp: string;
+  type: string;
+  message: {
+    status: number;
+    latency_ms: number;
+    message?: string;
+    workflow_run_status?: string;
+    workflow_run_live_status?: string;
+    workflow_run_progress?: number;
+  };
+};
+
+function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
+  const fetchToken = useAuthStore((state) => state.fetchToken);
+  const [webhookEvents, setWebhookEvents] = useState<WebhookData[]>([]);
+  const [expandedEventIndex, setExpandedEventIndex] = useState<number | null>(
+    null,
+  );
+
+  useEffect(() => {
+    let eventSource: EventSource;
+    let unmounted = false;
+
+    setWebhookEvents([]);
+    setExpandedEventIndex(null);
+
+    const setupEventSource = async () => {
+      const token = await fetchToken();
+
+      if (unmounted) return;
+
+      const url = new URL(
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/stream-logs`,
+      );
+      url.searchParams.append("run_id", run.id);
+      url.searchParams.append("log_level", "webhook");
+
+      eventSource = new EventSourcePolyfill(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }) as unknown as EventSource;
+
+      eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === "keepalive") return;
+
+        try {
+          const parsedMessage = JSON.parse(data.message);
+          const webhookData: WebhookData = {
+            timestamp: data.timestamp,
+            type: data.type,
+            message: parsedMessage,
+          };
+
+          setWebhookEvents((prev) => [...prev, webhookData]);
+        } catch (error) {
+          console.error("Error parsing webhook data:", error);
+        }
+      };
+
+      eventSource.onerror = (event) => {
+        console.error("EventSource failed:", event);
+        eventSource.close();
+      };
+    };
+
+    setupEventSource();
+
+    return () => {
+      unmounted = true;
+      if (eventSource) {
+        eventSource.close();
+      }
+    };
+  }, [run.id, fetchToken]);
+
+  const toggleExpand = (index: number) => {
+    setExpandedEventIndex(expandedEventIndex === index ? null : index);
+  };
+
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString();
+  };
+
+  const formatDateTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleString();
+  };
+
+  const formatLatency = (ms: number) => {
+    if (ms >= 1000) {
+      return `${(ms / 1000).toFixed(2)}s`;
+    }
+    return `${ms.toFixed(0)}ms`;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <LinkIcon size={14} />
+          <span className="text-sm">URL</span>
+        </div>
+        <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+          <span className="overflow-hidden text-ellipsis text-muted-foreground text-xs">
+            {webhook}
+          </span>
+        </div>
+      </div>
+
+      <div className="rounded-md border">
+        <div className="border-b bg-muted/40 px-3 py-2">
+          <h3 className="text-sm">Events</h3>
+        </div>
+
+        <ScrollArea className="h-[300px]">
+          <ul className="divide-y">
+            {webhookEvents
+              .slice()
+              .reverse()
+              .map((event, index) => {
+                return (
+                  <li key={index} className="px-3 py-2">
+                    {/* biome-ignore lint/a11y/useButtonType: <explanation> */}
+                    <button
+                      onClick={() => toggleExpand(index)}
+                      className="flex w-full items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        {event.message.status === 200 ? (
+                          <CheckCircle size={16} className="text-green-500" />
+                        ) : (
+                          <XCircle size={16} className="text-red-500" />
+                        )}
+                        <span className="text-2xs text-muted-foreground">
+                          {formatTime(event.timestamp)}
+                        </span>
+                        <Badge
+                          variant={
+                            event.message.status === 200
+                              ? "green"
+                              : "destructive"
+                          }
+                          className="!text-2xs !py-0"
+                        >
+                          {event.message.status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="mr-2 font-mono text-2xs text-muted-foreground">
+                          {formatLatency(event.message.latency_ms)}
+                        </span>
+                        <ChevronDown
+                          size={16}
+                          className={cn(
+                            "text-muted-foreground transition-transform",
+                            expandedEventIndex === index
+                              ? "rotate-180 transform"
+                              : "",
+                          )}
+                        />
+                      </div>
+                    </button>
+
+                    {expandedEventIndex === index && (
+                      <div className="mt-2 rounded bg-muted/40 p-2 text-xs">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <p className="font-medium">Created at</p>
+                            <p className="text-muted-foreground">
+                              {formatDateTime(event.timestamp)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-medium">Status</p>
+                            <p className="text-muted-foreground">
+                              {event.message.status}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-medium">Latency</p>
+                            <p className="font-mono text-muted-foreground">
+                              {formatLatency(event.message.latency_ms)}
+                            </p>
+                          </div>
+                          {event.message.workflow_run_status && (
+                            <div>
+                              <p className="font-medium">Run Status</p>
+                              <p className="text-muted-foreground">
+                                {event.message.workflow_run_status}
+                              </p>
+                            </div>
+                          )}
+                          {event.message.workflow_run_live_status && (
+                            <div>
+                              <p className="font-medium">Live Status</p>
+                              <p className="text-muted-foreground">
+                                {event.message.workflow_run_live_status}
+                              </p>
+                            </div>
+                          )}
+                          {event.message.workflow_run_progress !==
+                            undefined && (
+                            <div>
+                              <p className="font-medium">Progress</p>
+                              <p className="text-muted-foreground">
+                                {Math.round(
+                                  event.message.workflow_run_progress * 100,
+                                )}
+                                %
+                              </p>
+                            </div>
+                          )}
+                          {event.message.message && (
+                            <div className="col-span-2">
+                              <p className="font-medium">Error Message</p>
+                              <p className="break-words text-muted-foreground">
+                                {event.message.message}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
+
+            {run.status !== "success" &&
+              run.status !== "failed" &&
+              run.status !== "cancelled" && (
+                <div className="flex items-center justify-center p-2 text-2xs text-muted-foreground">
+                  <Loader2 className="mr-2 h-[14px] w-[14px] animate-spin" />
+                  Waiting for webhook events...
+                </div>
+              )}
+          </ul>
+        </ScrollArea>
+      </div>
     </div>
   );
 }
