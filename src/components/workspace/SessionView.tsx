@@ -152,7 +152,7 @@ export function SessionCreator(props: {
   sessionIdOverride?: string;
 }) {
   const { cdSetup, setCDSetup } = useCDStore();
-
+  const [hasInitiallyConnected, setHasInitiallyConnected] = useState(false);
   const sessionId = props.sessionIdOverride;
 
   const {
@@ -182,20 +182,31 @@ export function SessionCreator(props: {
       try {
         const response = await fetch(url, { method: "HEAD" });
         if (!response.ok) throw new Error("Failed to connect");
+
+        // Set hasInitiallyConnected to true on first successful connection
+        if (!hasInitiallyConnected) {
+          setHasInitiallyConnected(true);
+        }
         return true;
       } catch (e) {
         // Only show toast if we previously had a successful connection
         const prevIsLive = queryKey[3] as boolean | undefined;
         if (prevIsLive) {
           toast.error("Session disconnected");
-          setCDSetup(false);
+          // Don't reset cdSetup here anymore
+          // setCDSetup(false);
         }
         return false;
       }
     },
-    enabled: !!url,
+    enabled: !!url && !hasInitiallyConnected, // Only run the query until we get first connection
     refetchInterval: 1000,
   });
+
+  // Reset hasInitiallyConnected when session changes
+  useEffect(() => {
+    setHasInitiallyConnected(false);
+  }, [sessionId]);
 
   useEffect(() => {
     // When session id changed
@@ -241,7 +252,8 @@ export function SessionCreator(props: {
           </motion.div>
         )}
       </AnimatePresence>
-      {url && isLive && (
+
+      {url && (hasInitiallyConnected || isLive) && (
         <Workspace
           sessionIdOverride={props.sessionIdOverride}
           nativeMode={true}
