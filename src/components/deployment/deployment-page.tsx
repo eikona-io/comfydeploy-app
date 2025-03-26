@@ -47,7 +47,7 @@ import { useQueryState } from "nuqs";
 import { Area } from "recharts";
 import { ChartTooltipContent } from "../ui/chart";
 import { ChartTooltip } from "../ui/chart";
-import { XAxis } from "recharts";
+import { XAxis, YAxis } from "recharts";
 import { type ChartConfig, ChartContainer } from "../ui/chart";
 import { AreaChart, CartesianGrid } from "recharts";
 import { ErrorBoundary } from "../error-boundary";
@@ -847,7 +847,7 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
                 data={chartData}
                 height={200}
                 margin={{
-                  left: 0,
+                  left: 10,
                   right: 20,
                   top: 10,
                   bottom: 0,
@@ -871,6 +871,16 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
                     }
                     return value;
                   }}
+                />
+                <YAxis
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                  tick={{ fontSize: 10 }}
+                  tickFormatter={(value) =>
+                    Number.isInteger(value) ? value.toString() : ""
+                  }
+                  width={30}
                 />
                 <ChartTooltip
                   cursor={false}
