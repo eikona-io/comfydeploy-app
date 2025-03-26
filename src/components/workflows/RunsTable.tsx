@@ -171,6 +171,7 @@ export function useRuns(props: {
           pageParams: [0],
         }
       : undefined,
+    refetchOnWindowFocus: false,
   });
 }
 
