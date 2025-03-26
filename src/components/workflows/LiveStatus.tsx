@@ -73,9 +73,6 @@ export function LiveStatus({
             url: `run/${run.id}/cancel`,
             init: {
               method: "POST",
-              body: JSON.stringify({
-                function_id: run.modal_function_call_id,
-              }),
             },
           });
 

@@ -37,7 +37,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { parseAsBoolean, useQueryState } from "nuqs";
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { Fab } from "../fab";
 import { MyDrawer } from "../drawer";
@@ -50,6 +56,7 @@ import { Separator } from "../ui/separator";
 import { AlertDescription } from "../ui/alert";
 import { useSearch } from "@tanstack/react-router";
 import { useSelectedVersion } from "../version-select";
+import { api } from "@/lib/api";
 
 type run = {
   status:
@@ -66,6 +73,7 @@ type run = {
   id: string;
   created_at: string;
   run_duration?: number;
+  modal_function_call_id?: string;
 };
 
 export function useRun(runId?: string) {
@@ -396,7 +404,7 @@ export function Playground(props: {
 }
 
 function RunDisplay({ runId }: { runId?: string }) {
-  const { data: run, isLoading } = useRun(runId);
+  const { data: run, isLoading, refetch } = useRun(runId);
   const { total: totalUrlCount, urls: urlList } = getTotalUrlCountAndUrls(
     run?.outputs || [],
   );
@@ -463,6 +471,28 @@ function RunDisplay({ runId }: { runId?: string }) {
       }
     }
   }, [viewingImageIndex]);
+
+  const handleCancel = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (run?.modal_function_call_id) {
+        try {
+          const res = await api({
+            url: `run/${run.id}/cancel`,
+            init: {
+              method: "POST",
+            },
+          });
+
+          toast.success(res.message);
+          refetch?.();
+        } catch (error: any) {
+          toast.error(`Failed to cancel: ${error.message}`);
+        }
+      }
+    },
+    [run?.id, run?.modal_function_call_id, refetch],
+  );
 
   // Common container styles for status messages
   const containerClass = "flex h-full w-full items-center justify-center";
@@ -639,6 +669,16 @@ function RunDisplay({ runId }: { runId?: string }) {
             value={(run.progress || 0) * 100}
             className="w-64 opacity-60"
           />
+          {run.modal_function_call_id && (
+            <Button
+              variant="destructive"
+              onClick={handleCancel}
+              size="sm"
+              className="mt-2"
+            >
+              Cancel
+            </Button>
+          )}
         </div>
       );
   }
