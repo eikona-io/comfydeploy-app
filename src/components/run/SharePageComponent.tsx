@@ -882,7 +882,7 @@ export function UserIcon({
   );
 }
 
-function getFormattedInputs(run: any): Record<string, any> {
+export function getFormattedInputs(run: any): Record<string, any> {
   if (
     run.workflow_inputs &&
     typeof run.workflow_inputs === "object" &&
