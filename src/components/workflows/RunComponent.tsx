@@ -4,18 +4,31 @@ import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { FilterDropdown, RunsTable } from "./RunsTable";
 
 import { motion } from "framer-motion";
-import { useQueryState } from "nuqs";
+import { parseAsBoolean, useQueryState } from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Play } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { ChevronDown, ChevronUp, Play } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { MyDrawer } from "../drawer";
+import { useSearch } from "@tanstack/react-router";
+import {
+  getDefaultValuesFromWorkflow,
+  getInputsFromWorkflow,
+} from "@/lib/getInputsFromWorkflow";
+import { RunWorkflowInline } from "../run/RunWorkflowInline";
+import { useSelectedVersion } from "../version-select";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { LoadingIcon } from "../ui/custom/loading-icon";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { getFormattedInputs } from "../run/SharePageComponent";
 
 export default function RunComponent(props: {
   defaultData?: any;
 }) {
   const workflow_id = useWorkflowIdInWorkflowPage();
-  const [runId, _] = useQueryState("run-id");
-  const navigate = useNavigate();
+  const [runId] = useQueryState("run-id");
+  const [inputModalOpen] = useQueryState("input");
 
   if (!workflow_id) {
     return null;
@@ -26,6 +39,7 @@ export default function RunComponent(props: {
       <div
         className={cn(
           "relative h-fit w-full transition-all duration-300",
+          inputModalOpen && "xl:w-[calc(100%-494px)]",
           runId && "xl:w-[calc(100%-594px)]",
         )}
       >
@@ -34,16 +48,7 @@ export default function RunComponent(props: {
             <h2 className="font-bold text-2xl">Requests</h2>
             <div className="flex items-center gap-2">
               <FilterDropdown workflowId={workflow_id} />
-              <Button
-                onClick={() => {
-                  navigate({
-                    to: "/workflows/$workflowId/$view",
-                    params: { workflowId: workflow_id, view: "playground" },
-                  });
-                }}
-              >
-                <Play className="mr-2 h-4 w-4" /> Run
-              </Button>
+              <InputComponent workflowId={workflow_id} />
             </div>
           </div>
           <LoadingWrapper tag="runs">
@@ -53,7 +58,116 @@ export default function RunComponent(props: {
             />
           </LoadingWrapper>
         </CardContent>
+
+        <div className="mx-6 flex items-center justify-end gap-1 text-2xs text-muted-foreground">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Up"
+            disabled
+          >
+            <ChevronUp size={16} />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Down"
+            disabled
+          >
+            <ChevronDown size={16} />
+          </Button>
+          <span>Navigate Requests</span>
+        </div>
       </div>
     </motion.div>
+  );
+}
+
+function InputComponent({ workflowId }: { workflowId: string }) {
+  const [inputModalOpen, setInputModalOpen] = useQueryState(
+    "input",
+    parseAsBoolean,
+  );
+  const [runId, setRunId] = useQueryState("run-id");
+  const { tweak } = useSearch({ from: "/workflows/$workflowId/$view" });
+  const [_, setTweakQuery] = useQueryState("tweak");
+  const { value: version, isLoading: isVersionLoading } = useSelectedVersion(
+    workflowId ?? "",
+  );
+  const { workflow } = useCurrentWorkflow(workflowId);
+  const { data: run, isLoading: isRunLoading } = useQuery({
+    enabled: !!runId,
+    queryKey: ["run", runId],
+    queryKeyHashFn: (queryKey) => [...queryKey, "outputs"].toString(),
+  });
+  const lastRunIdRef = useRef<string | null>(null);
+
+  const [default_values, setDefaultValues] = useState(
+    getDefaultValuesFromWorkflow(getInputsFromWorkflow(version)),
+  );
+
+  useEffect(() => {
+    setDefaultValues(
+      getDefaultValuesFromWorkflow(getInputsFromWorkflow(version)),
+    );
+  }, [version?.version]);
+
+  useEffect(() => {
+    if (runId) {
+      setInputModalOpen(null);
+    }
+  }, [runId]);
+
+  useEffect(() => {
+    if (tweak && runId && run && runId !== lastRunIdRef.current) {
+      setDefaultValues(getFormattedInputs(run));
+      toast.success("Input values updated.");
+      lastRunIdRef.current = runId;
+      setTweakQuery(null);
+      setRunId(null);
+      setInputModalOpen(true);
+    }
+  }, [runId, run, tweak]);
+
+  return (
+    <>
+      <Button
+        onClick={() => {
+          setInputModalOpen(!inputModalOpen);
+          setRunId(null);
+        }}
+      >
+        <Play className="mr-2 h-4 w-4" /> Run
+      </Button>
+      {inputModalOpen && (
+        <MyDrawer
+          desktopClassName="w-[500px] shadow-lg border border-gray-200"
+          backgroundInteractive={true}
+          open={inputModalOpen}
+          onClose={() => {
+            setInputModalOpen(false);
+            setInputModalOpen(null);
+          }}
+        >
+          <div>
+            {isVersionLoading ? (
+              <div className="flex h-full w-full items-center justify-center">
+                <LoadingIcon />
+              </div>
+            ) : (
+              <RunWorkflowInline
+                blocking={false}
+                default_values={default_values}
+                inputs={getInputsFromWorkflow(version)}
+                workflow_version_id={version?.id}
+                machine_id={workflow?.selected_machine_id}
+              />
+            )}
+          </div>
+        </MyDrawer>
+      )}
+    </>
   );
 }

@@ -351,51 +351,61 @@ function MediaDisplay({
     document.body.removeChild(a);
   }, []);
 
-  return (
-    <div
-      key={urlImage.url}
-      className="group relative flex overflow-clip rounded-[8px]"
-    >
-      <Skeleton className={cn("aspect-square min-w-[230px]")} />
-      <FileURLRender
-        url={urlImage.url}
-        imgClasses={cn(imgClasses, "absolute top-0 left-0 pointer-events-none")}
-        lazyLoading={lazyLoading}
-      />
+  const [open, setOpen] = useState(false);
 
-      <div className="absolute top-0 right-0 w-full rounded-t-[4px] bg-gradient-to-t from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="flex items-center justify-end">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="hover:bg-transparent"
-              >
-                <Ellipsis className="h-3.5 w-3.5 text-white/90" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-52">
-              {urlImage.filename && (
-                <>
-                  <DropdownMenuLabel className="line-clamp-1">
-                    {urlImage.filename}
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              <DropdownMenuItem
-                onClick={(event) => {
-                  event.stopPropagation();
-                  expandImage({ url: urlImage.url });
-                }}
-              >
-                <div className="flex w-full items-center justify-between">
-                  View Full Resolution <Expand className="h-3.5 w-3.5" />
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {/* <DropdownMenuItem
+  return (
+    <>
+      {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+      <div
+        key={urlImage.url}
+        className="group relative flex cursor-pointer overflow-clip rounded-[8px]"
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        <Skeleton className={cn("aspect-square min-w-[230px]")} />
+        <FileURLRender
+          url={urlImage.url}
+          imgClasses={cn(
+            imgClasses,
+            "absolute top-0 left-0 pointer-events-none",
+          )}
+          lazyLoading={lazyLoading}
+        />
+
+        <div className="absolute top-0 right-0 w-full rounded-t-[4px] bg-gradient-to-t from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="flex items-center justify-end">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-transparent"
+                >
+                  <Ellipsis className="h-3.5 w-3.5 text-white/90" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-52">
+                {urlImage.filename && (
+                  <>
+                    <DropdownMenuLabel className="line-clamp-1">
+                      {urlImage.filename}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    expandImage({ url: urlImage.url });
+                  }}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    View Full Resolution <Expand className="h-3.5 w-3.5" />
+                  </div>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {/* <DropdownMenuItem
                 onClick={async (event) => {
                   event.stopPropagation();
                   try {
@@ -418,40 +428,58 @@ function MediaDisplay({
                   Add to assets <FolderOpen className="h-3.5 w-3.5" />
                 </div>
               </DropdownMenuItem> */}
-              <DropdownMenuItem
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  await downloadImage({
-                    url: urlImage.url,
-                    fileName: urlImage.filename,
-                  });
-                }}
-                disabled={!canDownload}
-              >
-                <div className="flex w-full items-center justify-between">
-                  Download <Download className="h-3.5 w-3.5" />
-                </div>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-      <div className="absolute bottom-0 left-0 w-full rounded-b-[4px] bg-gradient-to-b from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-        <div className="flex items-center justify-between px-3 py-2 drop-shadow-md">
-          <div className="flex items-center gap-2">
-            <span className="text-white/90 text-xs">
-              {Math.round(urlImage.upload_duration * 100) / 100}s
-            </span>
-            {urlImage.filename && (
-              <span className="w-28 truncate rounded bg-white/20 px-1.5 py-0.5 text-[10px] text-white/90">
-                {urlImage.filename}
-              </span>
-            )}
+                <DropdownMenuItem
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await downloadImage({
+                      url: urlImage.url,
+                      fileName: urlImage.filename,
+                    });
+                  }}
+                  disabled={!canDownload}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    Download <Download className="h-3.5 w-3.5" />
+                  </div>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <Search className="h-3.5 w-3.5 text-white/90" />
+        </div>
+        <div className="absolute bottom-0 left-0 w-full rounded-b-[4px] bg-gradient-to-b from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="flex items-center justify-between px-3 py-2 drop-shadow-md">
+            <div className="flex items-center gap-2">
+              <span className="text-white/90 text-xs">
+                {Math.round(urlImage.upload_duration * 100) / 100}s
+              </span>
+              {urlImage.filename && (
+                <span className="w-28 truncate rounded bg-white/20 px-1.5 py-0.5 text-[10px] text-white/90">
+                  {urlImage.filename}
+                </span>
+              )}
+            </div>
+            <Search className="h-3.5 w-3.5 text-white/90" />
+          </div>
         </div>
       </div>
-    </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent
+          className="h-screen max-w-full border-none bg-transparent shadow-none"
+          onClick={() => {
+            setOpen(false);
+          }}
+        >
+          <div className="flex h-full w-full items-center justify-center">
+            <FileURLRender
+              url={urlImage.url}
+              imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
+              lazyLoading={lazyLoading}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
