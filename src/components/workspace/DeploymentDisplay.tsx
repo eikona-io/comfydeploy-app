@@ -957,7 +957,7 @@ export function APIDocs({
               examples.
             </p>
             <a
-              href="https://api.comfydeploy.com"
+              href="https://comfydeploy.com/docs"
               target="_blank"
               className="mt-2 inline-flex items-center text-blue-600 hover:underline"
               rel="noreferrer"
