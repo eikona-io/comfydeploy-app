@@ -308,7 +308,10 @@ export function RunsTableVirtualized(props: {
   // Update virtualizer to scroll to the current item
   useEffect(() => {
     if (currentIndex !== null && rowVirtualizer) {
-      rowVirtualizer.scrollToIndex(currentIndex, { align: "center" });
+      rowVirtualizer.scrollToIndex(currentIndex, {
+        align: "center",
+        behavior: "smooth",
+      });
     }
   }, [currentIndex, rowVirtualizer]);
 
