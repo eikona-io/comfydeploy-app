@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
-import { Play } from "lucide-react";
+import { ChevronDown, ChevronUp, Play } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MyDrawer } from "../drawer";
 import { useSearch } from "@tanstack/react-router";
@@ -58,6 +58,28 @@ export default function RunComponent(props: {
             />
           </LoadingWrapper>
         </CardContent>
+
+        <div className="mx-6 flex items-center justify-end gap-1 text-2xs text-muted-foreground">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Up"
+            disabled
+          >
+            <ChevronUp size={16} />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Down"
+            disabled
+          >
+            <ChevronDown size={16} />
+          </Button>
+          <span>Navigate Requests</span>
+        </div>
       </div>
     </motion.div>
   );

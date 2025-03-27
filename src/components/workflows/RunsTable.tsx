@@ -1,5 +1,3 @@
-"use client";
-
 import { LoadingWrapper } from "@/components/loading-wrapper";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,15 +13,14 @@ import { RunInputs } from "@/components/workflows/RunInputs";
 import { RunOutputs } from "@/components/workflows/RunOutputs";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Check, Settings2, Settings2Icon, Trash, X } from "lucide-react";
+import { Check, Settings2Icon, Trash, X } from "lucide-react";
 import { useQueryState } from "nuqs";
-import React, { Suspense, use, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { create } from "zustand";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LiveStatus } from "@/components/workflows/LiveStatus";
-import { useRealtimeWorkflow } from "@/components/workflows/RealtimeRunUpdate";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -96,6 +93,7 @@ export function RunsTable(props: {
           minimal={props.minimal}
           filterWorkspace={props.filterWorkspace}
           loadingIndicatorClassName={props.loadingIndicatorClassName}
+          arrowNavigateRequests={true}
         />
       </ErrorBoundary>
       <Dialog
@@ -186,6 +184,7 @@ export function RunsTableVirtualized(props: {
   RunRowComponent?: RunRowRenderer; // New prop for custom row renderer
   className?: string;
   setInputValues?: (values: any) => void; // for tweaking run inputs
+  arrowNavigateRequests?: boolean;
 }) {
   const parentRef = React.useRef<HTMLDivElement>(null);
   const [runId, setRunId] = useQueryState("run-id");
@@ -236,7 +235,84 @@ export function RunsTableVirtualized(props: {
     overscan: 5,
   });
 
-  React.useEffect(() => {
+  // Add state for the current index, but don't initialize it
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+
+  // Add state to track if a key is already pressed to prevent rapid firing
+  const isKeyDownRef = React.useRef(false);
+
+  // Handle arrow key navigation
+  useEffect(() => {
+    if (!props.arrowNavigateRequests) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is typing in an input field
+      const isTyping =
+        ["INPUT", "TEXTAREA", "SELECT"].includes(
+          (e.target as HTMLElement).tagName,
+        ) || (e.target as HTMLElement).isContentEditable;
+
+      // Don't handle navigation if typing or key is already down
+      if (!flatData.length || isKeyDownRef.current || isTyping) return;
+
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        isKeyDownRef.current = true;
+
+        setCurrentIndex((prev) => {
+          // If no current selection, select the first item on any arrow key
+          if (prev === null) {
+            setRunId(flatData[0].id);
+            return 0;
+          }
+
+          // Otherwise move up or down accordingly
+          const nextIndex =
+            e.key === "ArrowDown"
+              ? Math.min(prev + 1, flatData.length - 1)
+              : Math.max(prev - 1, 0);
+
+          if (nextIndex >= 0 && nextIndex < flatData.length) {
+            setRunId(flatData[nextIndex].id);
+          }
+          return nextIndex;
+        });
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        isKeyDownRef.current = false;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [flatData, setRunId, props.arrowNavigateRequests]);
+
+  // Update currentIndex if runId changes from outside (e.g., from clicking)
+  useEffect(() => {
+    if (runId && flatData.length > 0) {
+      const index = flatData.findIndex((run) => run.id === runId);
+      if (index !== -1) {
+        setCurrentIndex(index);
+      }
+    }
+  }, [runId, flatData]);
+
+  // Update virtualizer to scroll to the current item
+  useEffect(() => {
+    if (currentIndex !== null && rowVirtualizer) {
+      rowVirtualizer.scrollToIndex(currentIndex, { align: "center" });
+    }
+  }, [currentIndex, rowVirtualizer]);
+
+  useEffect(() => {
     const lastItem = rowVirtualizer.getVirtualItems().at(-1);
     if (!lastItem) {
       return;
@@ -308,6 +384,7 @@ export function RunsTableVirtualized(props: {
           isRefetching && "pointer-events-none opacity-50",
           props.className,
         )}
+        tabIndex={0}
       >
         <div
           style={{
@@ -352,8 +429,6 @@ export function RunsTableVirtualized(props: {
             <LoadingSpinner />
           </div>
         )}
-        {/* <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-full rounded-b-md bg-gradient-to-b from-transparent to-white" /> */}
-        {/* <ScrollBar orientation="vertical" /> */}
       </div>
     </div>
   );
