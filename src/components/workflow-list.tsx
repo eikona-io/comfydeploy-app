@@ -381,9 +381,9 @@ function WorkflowCard({
         }
         className="flex w-full flex-col md:max-w-[320px]"
       >
-        <Card className="group relative flex aspect-square h-[320px] w-full flex-col overflow-hidden rounded-md">
+        <Card className="group relative flex aspect-square h-[320px] w-full flex-col overflow-hidden rounded-md transition-all duration-300 ease-in-out hover:shadow-lg">
           <div className="h-full w-full">
-            {latest_output?.images?.[0] && latest_output.images[0].url ? (
+            {latest_output?.images?.[0]?.url ? (
               <FileURLRender
                 url={latest_output.images[0].url}
                 // alt={workflow.name}
@@ -443,7 +443,7 @@ function WorkflowCard({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="h-8 w-8 bg-black/30 p-0 text-white"
+                    className="h-8 w-8 bg-black/30 p-0 text-white opacity-0 transition-all duration-300 group-hover:opacity-100 data-[state=open]:opacity-100"
                   >
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
@@ -515,7 +515,7 @@ function WorkflowCard({
           )}
         </Card>
         <div className="flex flex-col px-2 pt-2">
-          <div className="flex w-full flex-row justify-between truncate font-semibold text-gray-700 text-md">
+          <div className="flex w-full flex-row justify-between truncate font-medium text-gray-700 text-md">
             <div className="mr-2 truncate">{workflow.name}</div>
             {status && (
               <Badge
@@ -527,13 +527,13 @@ function WorkflowCard({
             )}
           </div>
           <div className="flex flex-row justify-between">
-            <div className="flex items-center gap-2 truncate text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 truncate text-muted-foreground text-xs">
               {workflow.user_id && (
                 <UserIcon user_id={workflow.user_id} className="h-4 w-4" />
               )}
               {workflow.user_name || "Unknown"}
             </div>
-            <div className="shrink-0 text-xs">
+            <div className="shrink-0 text-2xs text-muted-foreground">
               {lastest_run_at ? (
                 getRelativeTime(lastest_run_at)
               ) : (
