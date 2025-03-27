@@ -1,16 +1,9 @@
-"use client";
-
-import { Icon as IconWord } from "@/components/icon-word";
-
 import {
   ArrowLeft,
   Book,
-  BookCheck,
   Box,
-  ChevronLeft,
   CircleGauge,
   CreditCard,
-  Cross,
   Database,
   ExternalLink,
   Folder,
@@ -26,13 +19,10 @@ import {
   Save,
   Server,
   Settings,
-  Terminal,
   Workflow,
-  X,
 } from "lucide-react";
 
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -40,11 +30,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Progress } from "@/components/ui/progress";
 import {
   Select,
@@ -67,16 +52,17 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
-import { LogDisplay } from "@/components/workspace/LogDisplay";
 import {
   useSessionIdInSessionView,
   useWorkflowIdInSessionView,
   useWorkflowIdInWorkflowPage,
 } from "@/hooks/hook";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
+import {
+  useCurrentPlan,
+  useCurrentPlanWithStatus,
+} from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
-import { orgPrefixPaths } from "@/orgPrefixPaths";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { getOrgPathInfo } from "@/utils/org-path";
 import {
@@ -93,8 +79,7 @@ import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { parseAsString } from "nuqs";
 import { useQueryState } from "nuqs";
-import type React from "react";
-import { use, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
 import { VersionSelectV2 } from "./version-select";
@@ -107,6 +92,7 @@ import {
 } from "./workspace/increase-session";
 import { useSelectedVersion, VersionList } from "@/components/version-select";
 import { SessionTimer } from "@/components/workspace/SessionTimer";
+import { Skeleton } from "./ui/skeleton";
 
 // Add Session type
 interface Session {
@@ -626,14 +612,22 @@ export function AppSidebar() {
     <>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex flex-row items-start justify-between">
+          <div className="flex flex-row items-start justify-between pt-2.5">
             <Link
               href="/"
               className="flex flex-row items-start justify-between"
             >
-              <IconWord />
+              <img
+                src="/icon-light.svg"
+                alt="comfydeploy"
+                className="ml-1 h-7 w-7"
+              />
+              {/* <IconWord /> */}
             </Link>
-            <UserMenu />
+            <div className="flex items-center gap-1">
+              <PlanBadge />
+              <UserMenu />
+            </div>
           </div>
 
           {workflow_id && parentPath === "workflows" && (
@@ -786,6 +780,43 @@ export function AppSidebar() {
         </div>
       )}
     </>
+  );
+}
+
+function PlanBadge() {
+  const { data: plan, isLoading } = useCurrentPlanWithStatus();
+  console.log(isLoading);
+
+  const planId = plan?.plans?.plans[0] || "";
+
+  let displayPlan = "Free";
+  let badgeColor = "secondary";
+
+  // Logic to determine which plan to display
+  if (planId.includes("pro")) {
+    displayPlan = "Pro";
+  } else if (planId.includes("creator") || planId.includes("creator_")) {
+    displayPlan = "Creator";
+    badgeColor = "yellow";
+  } else if (planId.includes("deployment")) {
+    displayPlan = "Deployment";
+    badgeColor = "blue";
+  } else if (planId.includes("business")) {
+    displayPlan = "Business";
+    badgeColor = "purple";
+  }
+
+  if (isLoading) {
+    return <Skeleton className="h-5 w-12" />;
+  }
+
+  return (
+    <Badge
+      variant={badgeColor as "secondary" | "yellow" | "purple" | "blue"}
+      className="!text-2xs py-0 font-medium"
+    >
+      {displayPlan}
+    </Badge>
   );
 }
 
