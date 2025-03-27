@@ -62,7 +62,7 @@ export default function WorkflowComponent() {
       {runId && (
         <MyDrawer
           backgroundInteractive={true}
-          desktopClassName="w-[600px] ring-1 ring-gray-200"
+          desktopClassName="w-[600px] ring-1 ring-gray-200 shadow-xl"
           open={!!runId}
           onClose={() => {
             handleCloseRun();
