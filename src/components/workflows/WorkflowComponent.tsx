@@ -66,7 +66,7 @@ export default function WorkflowComponent() {
       {runId && (
         <MyDrawer
           backgroundInteractive={true}
-          desktopClassName="w-[600px] ring-1 ring-gray-200"
+          desktopClassName="w-[600px] ring-1 ring-gray-200 shadow-xl"
           open={!!runId}
           onClose={() => {
             handleCloseRun();
@@ -152,7 +152,7 @@ export function RunDetails(props: {
       to: "/workflows/$workflowId/$view",
       params: {
         workflowId: run.workflow_id,
-        view: "playground",
+        view: isPlayground ? "playground" : "requests",
       },
       search: (prev) => ({
         ...prev,
@@ -178,8 +178,8 @@ export function RunDetails(props: {
         </div>
         <div className="flex items-center justify-between">
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handleClick}>
-              <Settings2Icon size={16} /> Tweak it
+            <Button variant="outline" onClick={handleClick} className="gap-1">
+              <Settings2Icon size={16} /> Tweak
             </Button>
             {process.env.NODE_ENV === "development" &&
               run.machine_type === "comfy-deploy-serverless" && (
@@ -274,9 +274,6 @@ export function RunDetails(props: {
                   <DialogDescription>
                     <div className="flex items-center justify-between">
                       You can view your run&apos;s outputs here
-                      <Button variant="outline" onClick={handleClick}>
-                        <Settings2Icon size={16} /> Tweak it
-                      </Button>
                     </div>
                   </DialogDescription>
                 </DialogHeader>

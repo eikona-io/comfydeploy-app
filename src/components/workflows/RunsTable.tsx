@@ -1,5 +1,3 @@
-"use client";
-
 import { LoadingWrapper } from "@/components/loading-wrapper";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,15 +13,14 @@ import { RunInputs } from "@/components/workflows/RunInputs";
 import { RunOutputs } from "@/components/workflows/RunOutputs";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Check, Settings2, Settings2Icon, Trash, X } from "lucide-react";
+import { Check, Settings2Icon, Trash, X } from "lucide-react";
 import { useQueryState } from "nuqs";
-import React, { Suspense, use, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { create } from "zustand";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LiveStatus } from "@/components/workflows/LiveStatus";
-import { useRealtimeWorkflow } from "@/components/workflows/RealtimeRunUpdate";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
@@ -96,6 +93,7 @@ export function RunsTable(props: {
           minimal={props.minimal}
           filterWorkspace={props.filterWorkspace}
           loadingIndicatorClassName={props.loadingIndicatorClassName}
+          arrowNavigateRequests={true}
         />
       </ErrorBoundary>
       <Dialog
@@ -186,6 +184,7 @@ export function RunsTableVirtualized(props: {
   RunRowComponent?: RunRowRenderer; // New prop for custom row renderer
   className?: string;
   setInputValues?: (values: any) => void; // for tweaking run inputs
+  arrowNavigateRequests?: boolean;
 }) {
   const parentRef = React.useRef<HTMLDivElement>(null);
   const [runId, setRunId] = useQueryState("run-id");
@@ -236,7 +235,119 @@ export function RunsTableVirtualized(props: {
     overscan: 5,
   });
 
-  React.useEffect(() => {
+  // Add state for the current index, but don't initialize it
+  const [currentIndex, setCurrentIndex] = useState<number | null>(null);
+
+  // Handle arrow key navigation
+  useEffect(() => {
+    if (!props.arrowNavigateRequests) return;
+
+    let navigationInterval: NodeJS.Timeout | null = null;
+
+    const performNavigation = (direction: "up" | "down") => {
+      setCurrentIndex((prev) => {
+        // If no current selection, select the first item on any arrow key
+        if (prev === null) {
+          setRunId(flatData[0].id);
+          return 0;
+        }
+
+        // Otherwise move up or down accordingly
+        const nextIndex =
+          direction === "down"
+            ? Math.min(prev + 1, flatData.length - 1)
+            : Math.max(prev - 1, 0);
+
+        if (nextIndex >= 0 && nextIndex < flatData.length) {
+          setRunId(flatData[nextIndex].id);
+        }
+        return nextIndex;
+      });
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if user is typing in an input field
+      const isTyping =
+        ["INPUT", "TEXTAREA", "SELECT"].includes(
+          (e.target as HTMLElement).tagName,
+        ) || (e.target as HTMLElement).isContentEditable;
+
+      // Don't handle navigation if typing or interval is already set
+      if (!flatData.length || navigationInterval || isTyping) return;
+
+      let direction: "up" | "down" | null = null;
+
+      if (e.key === "ArrowDown") {
+        direction = "down";
+      } else if (e.key === "ArrowUp") {
+        direction = "up";
+      } else {
+        return; // Not an arrow key we care about
+      }
+
+      e.preventDefault();
+
+      // Perform immediate navigation
+      performNavigation(direction);
+
+      // Set up interval for continuous navigation (after a short delay)
+      const initialDelay = 200;
+      const navigationSpeed = 200; // Slowed to 200ms between navigations (5 items per second)
+
+      navigationInterval = setTimeout(() => {
+        // Clear the timeout and start an interval
+        clearTimeout(navigationInterval as NodeJS.Timeout);
+        navigationInterval = setInterval(() => {
+          performNavigation(direction as "up" | "down");
+        }, navigationSpeed);
+      }, initialDelay);
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        if (navigationInterval) {
+          clearTimeout(navigationInterval);
+          clearInterval(navigationInterval);
+          navigationInterval = null;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+
+    // Clean up
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      if (navigationInterval) {
+        clearTimeout(navigationInterval);
+        clearInterval(navigationInterval);
+      }
+    };
+  }, [flatData, setRunId, props.arrowNavigateRequests]);
+
+  // Update currentIndex if runId changes from outside (e.g., from clicking)
+  useEffect(() => {
+    if (runId && flatData.length > 0) {
+      const index = flatData.findIndex((run) => run.id === runId);
+      if (index !== -1) {
+        setCurrentIndex(index);
+      }
+    }
+  }, [runId, flatData]);
+
+  // Update virtualizer to scroll to the current item
+  useEffect(() => {
+    if (currentIndex !== null && rowVirtualizer) {
+      rowVirtualizer.scrollToIndex(currentIndex, {
+        align: "center",
+        behavior: "smooth",
+      });
+    }
+  }, [currentIndex, rowVirtualizer]);
+
+  useEffect(() => {
     const lastItem = rowVirtualizer.getVirtualItems().at(-1);
     if (!lastItem) {
       return;
@@ -308,6 +419,7 @@ export function RunsTableVirtualized(props: {
           isRefetching && "pointer-events-none opacity-50",
           props.className,
         )}
+        tabIndex={0}
       >
         <div
           style={{
@@ -352,8 +464,6 @@ export function RunsTableVirtualized(props: {
             <LoadingSpinner />
           </div>
         )}
-        {/* <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-full rounded-b-md bg-gradient-to-b from-transparent to-white" /> */}
-        {/* <ScrollBar orientation="vertical" /> */}
       </div>
     </div>
   );
