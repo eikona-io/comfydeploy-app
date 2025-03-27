@@ -238,12 +238,32 @@ export function RunsTableVirtualized(props: {
   // Add state for the current index, but don't initialize it
   const [currentIndex, setCurrentIndex] = useState<number | null>(null);
 
-  // Add state to track if a key is already pressed to prevent rapid firing
-  const isKeyDownRef = React.useRef(false);
-
   // Handle arrow key navigation
   useEffect(() => {
     if (!props.arrowNavigateRequests) return;
+
+    let navigationInterval: NodeJS.Timeout | null = null;
+
+    const performNavigation = (direction: "up" | "down") => {
+      setCurrentIndex((prev) => {
+        // If no current selection, select the first item on any arrow key
+        if (prev === null) {
+          setRunId(flatData[0].id);
+          return 0;
+        }
+
+        // Otherwise move up or down accordingly
+        const nextIndex =
+          direction === "down"
+            ? Math.min(prev + 1, flatData.length - 1)
+            : Math.max(prev - 1, 0);
+
+        if (nextIndex >= 0 && nextIndex < flatData.length) {
+          setRunId(flatData[nextIndex].id);
+        }
+        return nextIndex;
+      });
+    };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if user is typing in an input field
@@ -252,46 +272,58 @@ export function RunsTableVirtualized(props: {
           (e.target as HTMLElement).tagName,
         ) || (e.target as HTMLElement).isContentEditable;
 
-      // Don't handle navigation if typing or key is already down
-      if (!flatData.length || isKeyDownRef.current || isTyping) return;
+      // Don't handle navigation if typing or interval is already set
+      if (!flatData.length || navigationInterval || isTyping) return;
 
-      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault();
-        isKeyDownRef.current = true;
+      let direction: "up" | "down" | null = null;
 
-        setCurrentIndex((prev) => {
-          // If no current selection, select the first item on any arrow key
-          if (prev === null) {
-            setRunId(flatData[0].id);
-            return 0;
-          }
-
-          // Otherwise move up or down accordingly
-          const nextIndex =
-            e.key === "ArrowDown"
-              ? Math.min(prev + 1, flatData.length - 1)
-              : Math.max(prev - 1, 0);
-
-          if (nextIndex >= 0 && nextIndex < flatData.length) {
-            setRunId(flatData[nextIndex].id);
-          }
-          return nextIndex;
-        });
+      if (e.key === "ArrowDown") {
+        direction = "down";
+      } else if (e.key === "ArrowUp") {
+        direction = "up";
+      } else {
+        return; // Not an arrow key we care about
       }
+
+      e.preventDefault();
+
+      // Perform immediate navigation
+      performNavigation(direction);
+
+      // Set up interval for continuous navigation (after a short delay)
+      const initialDelay = 200;
+      const navigationSpeed = 200; // Slowed to 200ms between navigations (5 items per second)
+
+      navigationInterval = setTimeout(() => {
+        // Clear the timeout and start an interval
+        clearTimeout(navigationInterval as NodeJS.Timeout);
+        navigationInterval = setInterval(() => {
+          performNavigation(direction as "up" | "down");
+        }, navigationSpeed);
+      }, initialDelay);
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        isKeyDownRef.current = false;
+        if (navigationInterval) {
+          clearTimeout(navigationInterval);
+          clearInterval(navigationInterval);
+          navigationInterval = null;
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
+    // Clean up
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
+      if (navigationInterval) {
+        clearTimeout(navigationInterval);
+        clearInterval(navigationInterval);
+      }
     };
   }, [flatData, setRunId, props.arrowNavigateRequests]);
 
