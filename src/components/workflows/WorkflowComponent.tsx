@@ -48,6 +48,7 @@ import {
 } from "../workspace/ContainersTable";
 import { cn } from "@/lib/utils";
 import { EventSourcePolyfill } from "event-source-polyfill";
+import { CodeBlock } from "../ui/code-blocks";
 
 export default function WorkflowComponent() {
   const [runId, setRunId] = useQueryState("run-id");
@@ -774,9 +775,7 @@ type WebhookData = {
     status: number;
     latency_ms: number;
     message?: string;
-    workflow_run_status?: string;
-    workflow_run_live_status?: string;
-    workflow_run_progress?: number;
+    payload?: string;
   };
 };
 
@@ -955,32 +954,18 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
                               {formatLatency(event.message.latency_ms)}
                             </p>
                           </div>
-                          {event.message.workflow_run_status && (
-                            <div>
-                              <p className="font-medium">Run Status</p>
-                              <p className="text-muted-foreground">
-                                {event.message.workflow_run_status}
-                              </p>
-                            </div>
-                          )}
-                          {event.message.workflow_run_live_status && (
-                            <div>
-                              <p className="font-medium">Live Status</p>
-                              <p className="text-muted-foreground">
-                                {event.message.workflow_run_live_status}
-                              </p>
-                            </div>
-                          )}
-                          {event.message.workflow_run_progress !==
-                            undefined && (
-                            <div>
-                              <p className="font-medium">Progress</p>
-                              <p className="text-muted-foreground">
-                                {Math.round(
-                                  event.message.workflow_run_progress * 100,
+                          {event.message.payload && (
+                            <div className="col-span-2">
+                              <p className="font-medium">Payload</p>
+                              <CodeBlock
+                                className="h-[200px] text-2xs"
+                                code={JSON.stringify(
+                                  JSON.parse(event.message.payload),
+                                  null,
+                                  2,
                                 )}
-                                %
-                              </p>
+                                lang="json"
+                              />
                             </div>
                           )}
                           {event.message.message && (
