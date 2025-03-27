@@ -989,9 +989,17 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
                           {event.message.message && (
                             <div className="col-span-2">
                               <p className="font-medium">Error Message</p>
-                              <p className="break-words text-muted-foreground">
-                                {event.message.message}
-                              </p>
+                              <div className="mt-1 rounded bg-gray-100 p-2 font-mono text-2xs">
+                                <pre className="whitespace-pre-wrap break-words text-red-600">
+                                  {typeof event.message.message === "string"
+                                    ? event.message.message
+                                    : JSON.stringify(
+                                        event.message.message,
+                                        null,
+                                        2,
+                                      )}
+                                </pre>
+                              </div>
                             </div>
                           )}
                         </div>
