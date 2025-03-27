@@ -163,10 +163,10 @@ export function StepForm<T>({
   }
 
   return (
-    <div className="flex min-h-screen relative w-full flex-col">
+    <div className="relative flex min-h-screen w-full flex-col">
       {!hideProgressBar && (
-        <div className="left-0 max-w-5xl mx-auto mt-10 sticky top-0 w-full z-50">
-          <div className="bg-background overflow-hidden relative">
+        <div className="sticky top-0 left-0 z-50 mx-auto mt-10 w-full max-w-5xl">
+          <div className="relative overflow-hidden bg-background">
             <Breadcrumb>
               <BreadcrumbList>
                 {steps.map((stepItem, index) => {
@@ -231,7 +231,7 @@ export function StepForm<T>({
                         {index === step && (
                           <motion.div
                             layoutId="underline"
-                            className="absolute bg-current bottom-0 h-[1px] left-0 right-0"
+                            className="absolute right-0 bottom-0 left-0 h-[1px] bg-current"
                             transition={{
                               type: "spring",
                               bounce: 0.2,
