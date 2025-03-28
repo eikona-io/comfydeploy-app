@@ -204,6 +204,7 @@ export function DeploymentPage() {
                 params: { workflowId, view: "requests" },
                 search: (prev) => ({
                   ...prev,
+                  "filter-rf": undefined,
                 }),
               });
             }}
@@ -218,6 +219,7 @@ export function DeploymentPage() {
             workflowId={workflowId}
             buttonSize="sm"
             isDeploymentPage={true}
+            hideTimeFilter={true}
           />
         </div>
         <ErrorBoundary fallback={(error) => <div>Error: {error.message}</div>}>

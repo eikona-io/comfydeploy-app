@@ -13,7 +13,7 @@ import { RunInputs } from "@/components/workflows/RunInputs";
 import { RunOutputs } from "@/components/workflows/RunOutputs";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Check, Settings2Icon, Trash, X } from "lucide-react";
+import { Check, Clock, Settings2Icon, Trash, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import React, { useEffect, useState } from "react";
 import { create } from "zustand";
@@ -37,6 +37,13 @@ import {
   DropdownMenuSeparator,
 } from "../ui/dropdown-menu";
 import { DropdownMenu, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RunsTableState {
   selectedRun: any | null;
@@ -147,6 +154,7 @@ export function useRuns(props: {
   defaultData?: any;
   status?: string;
   deployment_id?: string;
+  rf?: string;
 }) {
   return useInfiniteQuery({
     queryKey: ["v2", "workflow", props.workflow_id, "runs"],
@@ -155,6 +163,7 @@ export function useRuns(props: {
       params: {
         ...(props.status ? { status: props.status } : {}),
         ...(props.deployment_id ? { deployment_id: props.deployment_id } : {}),
+        ...(props.rf ? { rf: props.rf } : {}),
       },
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -193,6 +202,7 @@ export function RunsTableVirtualized(props: {
 
   const [deploymentId, setDeploymentId] = useQueryState("filter-deployment-id");
   const [filterStatus, setFilterStatus] = useQueryState("filter-status");
+  const [filterFromTime, setFilterFromTime] = useQueryState("filter-rf");
 
   const {
     data,
@@ -206,6 +216,7 @@ export function RunsTableVirtualized(props: {
     ...props,
     deployment_id: deploymentId || undefined,
     status: filterStatus || undefined,
+    rf: filterFromTime || undefined,
   });
 
   useEffect(() => {
@@ -403,7 +414,9 @@ export function RunsTableVirtualized(props: {
   if (!data || flatData.length === 0) {
     return (
       <div className="flex items-center justify-center">
-        <p className="p-4 text-muted-foreground text-xs">No runs available</p>
+        <p className="p-4 text-muted-foreground text-xs">
+          No runs available within the selected time range
+        </p>
       </div>
     );
   }
@@ -689,15 +702,18 @@ export function FilterDropdown({
   workflowId,
   buttonSize,
   isDeploymentPage = false,
+  hideTimeFilter = false,
 }: {
   workflowId: string;
   buttonSize?: string;
   isDeploymentPage?: boolean;
+  hideTimeFilter?: boolean;
 }) {
   const [statusFilter, setStatusFilter] = useQueryState("filter-status");
   const [deploymentIdFilter, setDeploymentIdFilter] = useQueryState(
     "filter-deployment-id",
   );
+  const [filterFromTime, setFilterFromTime] = useQueryState("filter-rf");
 
   const { data: deployments } = useWorkflowDeployments(workflowId);
 
@@ -747,12 +763,21 @@ export function FilterDropdown({
 
       setDefaultEnvironment();
     }
+
+    // Set default time filter to 1 day for deployment page
+    if (isDeploymentPage && !filterFromTime) {
+      const oneDayInMinutes = 1440; // 24 hours * 60 minutes
+      const timestamp = Math.floor(Date.now() / 1000) - oneDayInMinutes * 60;
+      setFilterFromTime(timestamp.toString());
+    }
   }, [
     isDeploymentPage,
     deployments,
     deploymentIdFilter,
     deploymentsByEnvironment,
     setDeploymentIdFilter,
+    filterFromTime,
+    setFilterFromTime,
   ]);
 
   // Get the current environment name based on the deployment ID
@@ -769,16 +794,25 @@ export function FilterDropdown({
     workflow_id: workflowId,
     status: statusFilter || undefined,
     deployment_id: deploymentIdFilter || undefined,
+    rf: filterFromTime || undefined,
   });
 
   // Helper function to handle status filter changes
-  const handleStatusFilterChange = async (newStatus: string | null) => {
+  const handleStatusFilterChange = async (
+    newStatus: string | null,
+    e?: React.MouseEvent,
+  ) => {
+    e?.preventDefault();
     await setStatusFilter(newStatus);
     refetch();
   };
 
   // Helper function to handle environment filter changes
-  const handleEnvironmentFilterChange = async (environment: string | null) => {
+  const handleEnvironmentFilterChange = async (
+    environment: string | null,
+    e?: React.MouseEvent,
+  ) => {
+    e?.preventDefault();
     if (environment === null) {
       await setDeploymentIdFilter(null);
     } else {
@@ -793,15 +827,43 @@ export function FilterDropdown({
     refetch();
   };
 
-  // New function to clear all filters
-  const clearAllFilters = async () => {
-    await setStatusFilter(null);
-    await setDeploymentIdFilter(null);
+  // Helper function to convert minutes to Unix timestamp
+  const getUnixTimestampFromMinutes = (minutes: number): number => {
+    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    return now - minutes * 60; // Subtract minutes converted to seconds
+  };
+
+  // Helper function to handle time filter changes
+  const handleTimeFilterChange = async (
+    minutes: number | null,
+    e?: React.MouseEvent,
+  ) => {
+    e?.preventDefault();
+    if (minutes === null) {
+      await setFilterFromTime(null);
+    } else {
+      const timestamp = getUnixTimestampFromMinutes(minutes);
+      await setFilterFromTime(timestamp.toString());
+    }
     refetch();
   };
 
-  // Check if any filters are active
-  const hasActiveFilters = statusFilter || deploymentIdFilter;
+  // Get display text for current time filter
+  const getTimeFilterDisplay = (timestamp: string | null) => {
+    if (!timestamp) return "All time";
+
+    const now = Math.floor(Date.now() / 1000);
+    const minutes = Math.floor((now - Number.parseInt(timestamp)) / 60);
+
+    if (minutes < 60) return `Last ${minutes} mins`;
+    if (minutes < 24 * 60) return `Last ${Math.floor(minutes / 60)} hours`;
+    return `Last ${Math.floor(minutes / (24 * 60))} days`;
+  };
+
+  // Update hasActiveFilters to include time filter
+  const hasActiveFilters = statusFilter || deploymentIdFilter || filterFromTime;
+
+  const [activeTab, setActiveTab] = useState("status");
 
   return (
     <div className="flex items-center gap-2">
@@ -810,7 +872,7 @@ export function FilterDropdown({
           <Badge
             variant={statusFilter === "success" ? "green" : "red"}
             className="cursor-pointer gap-x-1"
-            onClick={() => handleStatusFilterChange(null)}
+            onClick={(e) => handleStatusFilterChange(null, e)}
           >
             <span>
               {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
@@ -825,15 +887,28 @@ export function FilterDropdown({
               getEnvColor(currentEnvironment),
               "cursor-pointer gap-x-1",
             )}
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
               if (isDeploymentPage) return;
-              handleEnvironmentFilterChange(null);
+              handleEnvironmentFilterChange(null, e);
             }}
           >
             <span>
               {currentEnvironment.charAt(0).toUpperCase() +
                 currentEnvironment.slice(1)}
             </span>
+            <X className="h-2.5 w-2.5" />
+          </Badge>
+        )}
+
+        {!hideTimeFilter && filterFromTime && (
+          <Badge
+            variant="purple"
+            className="cursor-pointer gap-x-1"
+            onClick={(e) => handleTimeFilterChange(null, e)}
+          >
+            <Clock className="h-3 w-3" />
+            <span>{getTimeFilterDisplay(filterFromTime)}</span>
             <X className="h-2.5 w-2.5" />
           </Badge>
         )}
@@ -858,96 +933,176 @@ export function FilterDropdown({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-[220px]">
-            <DropdownMenuLabel>Status</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.preventDefault();
-                handleStatusFilterChange(null);
-              }}
-            >
-              All
-              {!statusFilter && <Check className="ml-auto h-4 w-4" />}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.preventDefault();
-                handleStatusFilterChange("success");
-              }}
-            >
-              <div className="flex items-center">
-                <Badge variant={"green"}>Success</Badge>
+            <div className="flex border-b">
+              {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+              <div
+                className={cn(
+                  "flex-1 cursor-pointer border-b-2 p-1 px-2 text-center text-sm",
+                  activeTab === "status"
+                    ? "border-primary font-medium"
+                    : "border-transparent text-muted-foreground hover:text-foreground",
+                )}
+                onClick={() => setActiveTab("status")}
+              >
+                Status
               </div>
-              {statusFilter === "success" && (
-                <Check className="ml-auto h-4 w-4" />
-              )}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={(e) => {
-                e.preventDefault();
-                handleStatusFilterChange("failed");
-              }}
-            >
-              <div className="flex items-center">
-                <Badge variant={"red"}>Failed</Badge>
-              </div>
-              {statusFilter === "failed" && (
-                <Check className="ml-auto h-4 w-4" />
-              )}
-            </DropdownMenuItem>
-
-            {environments.length > 0 && (
-              <>
-                <DropdownMenuLabel className="mt-2">
-                  Environment
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleEnvironmentFilterChange(null);
-                  }}
+              {environments.length > 0 && (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                <div
+                  className={cn(
+                    "flex-1 cursor-pointer border-b-2 p-1 px-2 text-center text-sm",
+                    activeTab === "env"
+                      ? "border-primary font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                  onClick={() => setActiveTab("env")}
                 >
-                  All
-                  {!currentEnvironment && <Check className="ml-auto h-4 w-4" />}
-                </DropdownMenuItem>
-                {environments.map((env) => (
+                  Env
+                </div>
+              )}
+              {!hideTimeFilter && (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                <div
+                  className={cn(
+                    "flex-1 cursor-pointer border-b-2 p-1 px-2 text-center text-sm",
+                    activeTab === "time"
+                      ? "border-primary font-medium"
+                      : "border-transparent text-muted-foreground hover:text-foreground",
+                  )}
+                  onClick={() => setActiveTab("time")}
+                >
+                  Time
+                </div>
+              )}
+            </div>
+
+            <div className="p-1">
+              {activeTab === "status" && (
+                <div>
                   <DropdownMenuItem
-                    key={env}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleEnvironmentFilterChange(env);
-                    }}
+                    className="w-full justify-between"
+                    onClick={(e) => handleStatusFilterChange(null, e)}
                   >
-                    <div className="flex items-center">
-                      <Badge className={cn("mr-2", getEnvColor(env))}>
-                        {env}
-                      </Badge>
-                    </div>
-                    {currentEnvironment === env && (
-                      <Check className="ml-auto h-4 w-4" />
+                    All
+                    {!statusFilter && <Check className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="w-full justify-between"
+                    onClick={(e) => handleStatusFilterChange("success", e)}
+                  >
+                    <Badge variant="green">Success</Badge>
+                    {statusFilter === "success" && (
+                      <Check className="h-4 w-4" />
                     )}
                   </DropdownMenuItem>
-                ))}
-              </>
-            )}
+                  <DropdownMenuItem
+                    className="w-full justify-between"
+                    onClick={(e) => handleStatusFilterChange("failed", e)}
+                  >
+                    <Badge variant="red">Failed</Badge>
+                    {statusFilter === "failed" && <Check className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                </div>
+              )}
+
+              {activeTab === "time" && (
+                <div>
+                  <DropdownMenuItem
+                    className="w-full justify-between"
+                    onClick={(e) => handleTimeFilterChange(null, e)}
+                  >
+                    All time
+                    {!filterFromTime && <Check className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                  {[
+                    { label: "Last 30 mins", value: 30 },
+                    { label: "Last 1 hour", value: 60 },
+                    { label: "Last 3 hours", value: 180 },
+                    { label: "Last 6 hours", value: 360 },
+                    { label: "Last 12 hours", value: 720 },
+                    { label: "Last 24 hours", value: 1440 },
+                  ].map((option) => (
+                    <DropdownMenuItem
+                      key={option.value}
+                      className="w-full justify-between"
+                      onClick={(e) => handleTimeFilterChange(option.value, e)}
+                    >
+                      {option.label}
+                      {filterFromTime ===
+                        getUnixTimestampFromMinutes(
+                          option.value,
+                        ).toString() && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                  ))}
+                  <DropdownMenuSeparator />
+                  <Select
+                    onValueChange={(value) =>
+                      handleTimeFilterChange(Number.parseInt(value), undefined)
+                    }
+                    value={filterFromTime || ""}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Custom range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        { label: "Last 2 days", value: "2880" },
+                        { label: "Last 7 days", value: "10080" },
+                        { label: "Last 14 days", value: "20160" },
+                        { label: "Last 30 days", value: "43200" },
+                      ].map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {activeTab === "env" && environments.length > 0 && (
+                <div>
+                  <DropdownMenuItem
+                    className="w-full justify-between"
+                    onClick={(e) => handleEnvironmentFilterChange(null, e)}
+                  >
+                    All
+                    {!deploymentIdFilter && <Check className="h-4 w-4" />}
+                  </DropdownMenuItem>
+                  {environments.map((env) => (
+                    <DropdownMenuItem
+                      key={env}
+                      className="w-full justify-between"
+                      onClick={(e) => handleEnvironmentFilterChange(env, e)}
+                    >
+                      <Badge className={cn(getEnvColor(env))}>{env}</Badge>
+                      {currentEnvironment === env && (
+                        <Check className="h-4 w-4" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {hasActiveFilters && (
-              <>
-                <DropdownMenuSeparator />
+              <div className="border-t pt-1">
                 <DropdownMenuItem
-                  onClick={(e) => {
+                  className="w-full justify-between text-red-500 hover:text-red-600"
+                  onClick={async (e) => {
                     e.preventDefault();
-                    clearAllFilters();
+                    await Promise.all([
+                      setStatusFilter(null),
+                      setDeploymentIdFilter(null),
+                      setFilterFromTime(null),
+                    ]);
+                    refetch();
                   }}
-                  className="text-red-500"
                 >
-                  <div className="flex w-full items-center justify-between">
-                    Clear all filters
-                    <Trash className="h-4 w-4" />
-                  </div>
+                  Clear all filters
+                  <Trash className="h-4 w-4" />
                 </DropdownMenuItem>
-              </>
+              </div>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
