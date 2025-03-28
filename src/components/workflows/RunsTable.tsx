@@ -905,7 +905,10 @@ export function FilterDropdown({
           <Badge
             variant="purple"
             className="cursor-pointer gap-x-1"
-            onClick={(e) => handleTimeFilterChange(null, e)}
+            onClick={(e) => {
+              if (isDeploymentPage) return;
+              handleTimeFilterChange(null, e);
+            }}
           >
             <Clock className="h-3 w-3" />
             <span>{getTimeFilterDisplay(filterFromTime)}</span>
