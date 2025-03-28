@@ -1042,10 +1042,36 @@ export function FilterDropdown({
                     onValueChange={(value) =>
                       handleTimeFilterChange(Number.parseInt(value), undefined)
                     }
-                    value={filterFromTime || ""}
+                    // @ts-ignore
+                    value={
+                      filterFromTime
+                        ? Math.round(
+                            (Math.floor(Date.now() / 1000) -
+                              Number.parseInt(filterFromTime)) /
+                              60,
+                          ).toString()
+                        : null
+                    }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Custom range" />
+                      <SelectValue>
+                        {filterFromTime
+                          ? [
+                              { label: "Last 2 days", value: "2880" },
+                              { label: "Last 7 days", value: "10080" },
+                              { label: "Last 14 days", value: "20160" },
+                              { label: "Last 30 days", value: "43200" },
+                            ].find(
+                              (option) =>
+                                option.value ===
+                                Math.round(
+                                  (Math.floor(Date.now() / 1000) -
+                                    Number.parseInt(filterFromTime)) /
+                                    60,
+                                ).toString(),
+                            )?.label || "More"
+                          : "More"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {[
