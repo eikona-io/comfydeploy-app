@@ -18,6 +18,7 @@ import { Route as PricingImport } from './routes/pricing'
 import { Route as OrgNotFoundImport } from './routes/org-not-found'
 import { Route as OnboardingCallImport } from './routes/onboarding-call'
 import { Route as ModelsImport } from './routes/models'
+import { Route as CreateOrgImport } from './routes/create-org'
 import { Route as AssetsImport } from './routes/assets'
 import { Route as ApiKeysImport } from './routes/api-keys'
 import { Route as IndexImport } from './routes/index'
@@ -76,6 +77,12 @@ const OnboardingCallRoute = OnboardingCallImport.update({
 const ModelsRoute = ModelsImport.update({
   id: '/models',
   path: '/models',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const CreateOrgRoute = CreateOrgImport.update({
+  id: '/create-org',
+  path: '/create-org',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -207,6 +214,13 @@ declare module '@tanstack/react-router' {
       path: '/assets'
       fullPath: '/assets'
       preLoaderRoute: typeof AssetsImport
+      parentRoute: typeof rootRoute
+    }
+    '/create-org': {
+      id: '/create-org'
+      path: '/create-org'
+      fullPath: '/create-org'
+      preLoaderRoute: typeof CreateOrgImport
       parentRoute: typeof rootRoute
     }
     '/models': {
@@ -358,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
   '/assets': typeof AssetsRoute
+  '/create-org': typeof CreateOrgRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
@@ -384,6 +399,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
   '/assets': typeof AssetsRoute
+  '/create-org': typeof CreateOrgRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
@@ -411,6 +427,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
   '/assets': typeof AssetsRoute
+  '/create-org': typeof CreateOrgRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
@@ -439,6 +456,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api-keys'
     | '/assets'
+    | '/create-org'
     | '/models'
     | '/onboarding-call'
     | '/org-not-found'
@@ -464,6 +482,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api-keys'
     | '/assets'
+    | '/create-org'
     | '/models'
     | '/onboarding-call'
     | '/org-not-found'
@@ -489,6 +508,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api-keys'
     | '/assets'
+    | '/create-org'
     | '/models'
     | '/onboarding-call'
     | '/org-not-found'
@@ -516,6 +536,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiKeysRoute: typeof ApiKeysRoute
   AssetsRoute: typeof AssetsRoute
+  CreateOrgRoute: typeof CreateOrgRoute
   ModelsRoute: typeof ModelsRoute
   OnboardingCallRoute: typeof OnboardingCallRoute
   OrgNotFoundRoute: typeof OrgNotFoundRoute
@@ -542,6 +563,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiKeysRoute: ApiKeysRoute,
   AssetsRoute: AssetsRoute,
+  CreateOrgRoute: CreateOrgRoute,
   ModelsRoute: ModelsRoute,
   OnboardingCallRoute: OnboardingCallRoute,
   OrgNotFoundRoute: OrgNotFoundRoute,
@@ -579,6 +601,7 @@ export const routeTree = rootRoute
         "/",
         "/api-keys",
         "/assets",
+        "/create-org",
         "/models",
         "/onboarding-call",
         "/org-not-found",
@@ -609,6 +632,9 @@ export const routeTree = rootRoute
     },
     "/assets": {
       "filePath": "assets.tsx"
+    },
+    "/create-org": {
+      "filePath": "create-org.tsx"
     },
     "/models": {
       "filePath": "models.tsx"
