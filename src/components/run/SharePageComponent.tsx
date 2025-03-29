@@ -234,7 +234,7 @@ export function Playground(props: {
   return (
     <>
       <div className="flex h-full w-full justify-between pt-4">
-        <div className="hidden h-full w-[400px] flex-col 2xl:flex">
+        <div className="hidden h-full w-[400px] flex-col xl:flex">
           <div
             className={cn(
               "flex flex-col transition-all",
@@ -373,7 +373,7 @@ export function Playground(props: {
 
       <Fab
         refScrollingContainerKey="fab-playground"
-        className="z-50 2xl:hidden"
+        className="z-50 xl:hidden"
         mainItem={{
           onClick: () =>
             setShowRunInputsMobileLayout(!showRunInputsMobileLayout),
@@ -387,7 +387,7 @@ export function Playground(props: {
           open={showRunInputsMobileLayout}
           backgroundInteractive={true}
           onClose={() => setShowRunInputsMobileLayout(false)}
-          desktopClassName="w-[500px] 2xl:hidden shadow-lg border border-gray-200"
+          desktopClassName="w-[500px] xl:hidden shadow-lg border border-gray-200"
         >
           <RunWorkflowInline
             blocking={false}
