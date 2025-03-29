@@ -7,6 +7,14 @@ import {
 } from "@/components/machine/machine-schema";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   type SubscriptionPlan,
@@ -20,9 +28,11 @@ import {
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { useCachedQuery } from "@/lib/use-cached-query";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
 import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
 import { isEqual } from "lodash";
@@ -70,16 +80,6 @@ import {
   useUnsavedChangesWarning,
 } from "../unsaved-changes-warning";
 import { ExtraDockerCommands } from "./extra-docker-commands";
-import { useQuery } from "@tanstack/react-query";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { useCachedQuery } from "@/lib/use-cached-query";
 
 export function MachineSettingsWrapper({
   machine,
@@ -324,6 +324,8 @@ function ServerlessSettings({
       python_version: machine.python_version,
       extra_args: machine.extra_args,
       prestart_command: machine.prestart_command,
+
+      optimized_runner: machine.optimized_runner,
     },
   });
 
@@ -508,8 +510,31 @@ function ServerlessSettings({
                 readonly && "pointer-events-none opacity-70",
               )}
             >
-              <h3 className="font-medium text-sm">Builder Version</h3>
-              <BuilderVersionSelectBox
+              <div>
+                <div className="flex flex-row items-center gap-4">
+                  <Switch
+                    id="optimized_runner"
+                    checked={form.watch("optimized_runner")}
+                    onCheckedChange={(value) =>
+                      form.setValue("optimized_runner", value)
+                    }
+                  />
+                  <Label
+                    htmlFor="optimized_runner"
+                    className="flex items-center gap-2"
+                  >
+                    Optimized Cold Start
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                  </Label>
+                </div>
+                <p className="mt-2 text-muted-foreground text-xs">
+                  Enables optimizations to reduce container startup time. This
+                  may increase memory usage.
+                </p>
+              </div>
+
+              {/* <h3 className="font-medium text-sm mt-6">Builder Version</h3> */}
+              {/* <BuilderVersionSelectBox
                 value={form.watch("machine_builder_version") || "4"}
                 onChange={(value) =>
                   form.setValue(
@@ -517,7 +542,7 @@ function ServerlessSettings({
                     value as "2" | "3" | "4",
                   )
                 }
-              />
+              /> */}
             </div>
 
             <Accordion type="single" defaultValue="docker">
