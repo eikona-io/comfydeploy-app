@@ -1125,7 +1125,7 @@ function FinishedRunLogDisplay({
             )}
             onClick={() => setShowRawLogs(false)}
           >
-            Concise
+            Grouped
           </Button>
           <Button
             variant="ghost"
