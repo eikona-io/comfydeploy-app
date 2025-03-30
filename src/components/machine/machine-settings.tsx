@@ -448,7 +448,7 @@ function ServerlessSettings({
               <div
                 className={cn(
                   "flex flex-col gap-4 md:flex-row",
-                  readonly && "pointer-events-none opacity-70",
+                  readonly && "pointer-events-none opacity-50",
                 )}
               >
                 <FormField
@@ -491,23 +491,25 @@ function ServerlessSettings({
                   )}
                 />
               </div>
-              {machine.type === "comfy-deploy-serverless" && !isWorkflow && (
-                <div className="mb-4">
-                  <VersionChecker
-                    machineId={machine.id}
-                    variant="inline"
-                    onUpdate={(e) => {
-                      e.preventDefault();
-                      // Navigate to update dialog
-                      navigate({
-                        to: "/machines/$machineId",
-                        params: { machineId: machine.id },
-                        search: { action: "update-custom-nodes" },
-                      });
-                    }}
-                  />
-                </div>
-              )}
+              {machine.type === "comfy-deploy-serverless" &&
+                !isWorkflow &&
+                !readonly && (
+                  <div className="mb-4">
+                    <VersionChecker
+                      machineId={machine.id}
+                      variant="inline"
+                      onUpdate={(e) => {
+                        e.preventDefault();
+                        // Navigate to update dialog
+                        navigate({
+                          to: "/machines/$machineId",
+                          params: { machineId: machine.id },
+                          search: { action: "update-custom-nodes" },
+                        });
+                      }}
+                    />
+                  </div>
+                )}
               <FormField
                 control={form.control}
                 name="docker_command_steps"
@@ -543,7 +545,12 @@ function ServerlessSettings({
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="space-y-4 pt-4 rounded-lg border p-4">
+                        <div
+                          className={cn(
+                            "space-y-4 rounded-lg border p-4 pt-4",
+                            readonly && "pointer-events-none opacity-50",
+                          )}
+                        >
                           <FormField
                             control={form.control}
                             name="python_version"
@@ -637,7 +644,7 @@ function ServerlessSettings({
             <div
               className={cn(
                 "space-y-1 p-2 pt-4",
-                readonly && "pointer-events-none opacity-70",
+                readonly && "pointer-events-none opacity-50",
               )}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -726,7 +733,7 @@ function ServerlessSettings({
               <Accordion type="single" collapsible className="w-full">
                 {/* Runtime Settings */}
                 <AccordionItem value="runtime" className="border-none">
-                  <AccordionTrigger className="flex items-center gap-2 hover:bg-accent hover:no-underline rounded-md px-4">
+                  <AccordionTrigger className="flex items-center gap-2 rounded-md px-4 hover:bg-accent hover:no-underline">
                     <div className="flex items-center gap-2">
                       <Play className="h-5 w-5 text-muted-foreground" />
                       <h3 className="font-medium text-md">Runtime Settings</h3>
@@ -736,7 +743,12 @@ function ServerlessSettings({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="rounded-lg border p-4 space-y-4">
+                    <div
+                      className={cn(
+                        "space-y-4 rounded-lg border p-4",
+                        readonly && "pointer-events-none opacity-50",
+                      )}
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -810,13 +822,18 @@ function ServerlessSettings({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-4 rounded-lg border p-4">
+                    <div
+                      className={cn(
+                        "space-y-4 rounded-lg border p-4",
+                        readonly && "pointer-events-none opacity-50",
+                      )}
+                    >
                       <FormField
                         control={form.control}
                         name="optimized_runner"
                         render={({ field }) => {
                           const [showDialog, setShowDialog] = useState(false);
-                          
+
                           return (
                             <FormItem className="flex flex-row items-center gap-4 space-y-0">
                               <FormControl>
@@ -864,7 +881,12 @@ function ServerlessSettings({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-4 rounded-lg border p-4">
+                    <div
+                      className={cn(
+                        "space-y-4 rounded-lg border p-4",
+                        readonly && "pointer-events-none opacity-50",
+                      )}
+                    >
                       <FormField
                         control={form.control}
                         name="extra_docker_commands"
@@ -1716,17 +1738,20 @@ function OptimizedRunnerDialog({
               <li>ComfyUI version &gt;= 0.3.26</li>
               <li>Latest Comfy Deploy custom nodes</li>
             </ul>
-            Please make sure your environment meets these requirements before enabling.
+            Please make sure your environment meets these requirements before
+            enabling.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => {
-            onConfirm();
-            onOpenChange(false);
-          }}>
+          <Button
+            onClick={() => {
+              onConfirm();
+              onOpenChange(false);
+            }}
+          >
             Enable
           </Button>
         </DialogFooter>
