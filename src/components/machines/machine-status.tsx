@@ -54,7 +54,7 @@ export function MachineStatus(props: {
   >(() => {
     if (
       !props.machine.import_failed_logs ||
-      props.machine.import_failed_logs.length == 0
+      props.machine.import_failed_logs.length === 0
     )
       return [];
     return JSON.parse(props.machine.import_failed_logs);
@@ -85,10 +85,10 @@ export function MachineStatus(props: {
               </TooltipContent>
             </Tooltip>
           ) : (
-            <Check size={16} className={"text-green-500"} />
+            <div className="w-2 h-2 rounded-full bg-green-500" />
           ))}
         {props.machine.status === "running" && (
-          <Check size={16} className="text-green-500" />
+          <div className="w-2 h-2 rounded-full bg-green-500" />
         )}
         {props.machine.status === "paused" && (
           <Pause size={16} className="text-yellow-500" />
@@ -113,33 +113,33 @@ export function MachineStatus(props: {
           {props.machine.status} <LoadingIcon />
         </Badge>
       )}
-      {props.machine.static_assets_status == "building" && (
+      {props.machine.static_assets_status === "building" && (
         <Badge variant="amber" className="capitalize">
           Front end {props.machine.static_assets_status} <LoadingIcon />
         </Badge>
       )}
-      {props.machine.static_assets_status == "ready" && (
+      {props.machine.static_assets_status === "ready" && (
         <Badge variant="success" className="capitalize">
           Front end {props.machine.static_assets_status}
         </Badge>
       )}
-      {props.machine.static_assets_status == "error" && (
+      {props.machine.static_assets_status === "error" && (
         <Badge variant="destructive" className="capitalize">
           Front end {props.machine.static_assets_status}
         </Badge>
       )}
       {!props.machine.disabled &&
         props.machine.status &&
-        props.machine.status != "building" && (
+        props.machine.status !== "building" && (
           <Tooltip delayDuration={0}>
             <TooltipTrigger>
               <Badge
                 variant={
-                  (props.machine.status == "ready" ||
-                    props.machine.status == "running") &&
+                  (props.machine.status === "ready" ||
+                    props.machine.status === "running") &&
                   !isImportFailed
                     ? "success"
-                    : props.machine.status == "paused" || isImportFailed
+                    : props.machine.status === "paused" || isImportFailed
                       ? "yellow"
                       : "destructive"
                 }

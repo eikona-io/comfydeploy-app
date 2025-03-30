@@ -106,12 +106,14 @@ export function MachineSettingsWrapper({
   title,
   disableUnsavedChangesWarningServerless = false,
   readonly = false,
+  className,
 }: {
   machine: any;
   onValueChange?: (key: string, value: any) => void;
   title?: ReactNode;
   disableUnsavedChangesWarningServerless?: boolean;
   readonly?: boolean;
+  className?: string;
 }) {
   const isServerless = machine.type === "comfy-deploy-serverless";
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -125,100 +127,103 @@ export function MachineSettingsWrapper({
 
   return (
     <div>
-      <div>
-        <div className="sticky top-[57px] z-10 flex h-[72px] flex-col bg-background/80 backdrop-blur-sm md:h-12 md:flex-row md:items-center md:justify-between">
-          {title ?? (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center">
-                <div className="font-medium text-xl">Settings</div>
-              </div>
+      <div
+        className={cn(
+          "sticky top-[57px] z-10 flex h-[72px] flex-col bg-background/80 backdrop-blur-sm md:h-12 md:flex-row md:items-center md:justify-between",
+          className,
+        )}
+      >
+        {title ?? (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center">
+              <div className="font-medium text-xl">Settings</div>
             </div>
-          )}
-          <div className="relative mt-4 pr-4">
-            {machine.type === "comfy-deploy-serverless" && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setView(null)}
-                  className={cn(
-                    "p-4 py-0 text-muted-foreground text-sm",
-                    view === "environment" && "text-foreground",
-                  )}
-                >
-                  Environment
-                </button>
-
-                {!isNew && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setView("autoscaling")}
-                      className={cn(
-                        "p-4 py-0 text-muted-foreground text-sm",
-                        view === "autoscaling" && "text-foreground",
-                      )}
-                    >
-                      Auto Scaling
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setView("advanced")}
-                      className={cn(
-                        "p-4 py-0 text-muted-foreground text-sm",
-                        view === "advanced" && "text-foreground",
-                      )}
-                    >
-                      Advanced
-                    </button>
-                  </>
-                )}
-                {/* Animated underline */}
-                <motion.div
-                  className="-bottom-1 absolute h-0.5 bg-primary"
-                  initial={false}
-                  animate={{
-                    width: "100px",
-                    x:
-                      view === "advanced"
-                        ? "calc(200% + 24px)"
-                        : view === "autoscaling"
-                          ? "calc(100% + 20px)"
-                          : "6px",
-                  }}
-                  transition={{
-                    ease: "easeInOut",
-                    duration: 0.2,
-                  }}
-                />
-              </>
-            )}
           </div>
-        </div>
-        <Card className="mb-20 flex flex-col rounded-[16px] px-2 pb-2">
-          {isServerless ? (
-            <ServerlessSettings
-              machine={machine}
-              formRef={formRef}
-              isLoading={isLoading}
-              setIsLoading={setIsLoading}
-              view={view}
-              onValueChange={onValueChange}
-              disableUnsavedChangesWarning={
-                disableUnsavedChangesWarningServerless
-              }
-              readonly={readonly}
-            />
-          ) : (
-            <ClassicSettings
-              machine={machine}
-              formRef={formRef}
-              isLoading={isLoading}
-              setIsLoading={setIsLoading}
-              view={view}
-            />
+        )}
+        <div className="relative mt-4 pr-4">
+          {machine.type === "comfy-deploy-serverless" && (
+            <>
+              <button
+                type="button"
+                onClick={() => setView(null)}
+                className={cn(
+                  "p-4 py-0 text-muted-foreground text-sm",
+                  view === "environment" && "text-foreground",
+                )}
+              >
+                Environment
+              </button>
+
+              {!isNew && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setView("autoscaling")}
+                    className={cn(
+                      "p-4 py-0 text-muted-foreground text-sm",
+                      view === "autoscaling" && "text-foreground",
+                    )}
+                  >
+                    Auto Scaling
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setView("advanced")}
+                    className={cn(
+                      "p-4 py-0 text-muted-foreground text-sm",
+                      view === "advanced" && "text-foreground",
+                    )}
+                  >
+                    Advanced
+                  </button>
+                </>
+              )}
+              {/* Animated underline */}
+              <motion.div
+                className="-bottom-1 absolute h-0.5 bg-primary"
+                initial={false}
+                animate={{
+                  width: "100px",
+                  x:
+                    view === "advanced"
+                      ? "calc(200% + 24px)"
+                      : view === "autoscaling"
+                        ? "calc(100% + 20px)"
+                        : "6px",
+                }}
+                transition={{
+                  ease: "easeInOut",
+                  duration: 0.2,
+                }}
+              />
+            </>
           )}
-        </Card>
+        </div>
       </div>
+      <Card className="mb-20 flex flex-col rounded-[16px] px-2 pb-2">
+        {isServerless ? (
+          <ServerlessSettings
+            machine={machine}
+            formRef={formRef}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+            view={view}
+            onValueChange={onValueChange}
+            disableUnsavedChangesWarning={
+              disableUnsavedChangesWarningServerless
+            }
+            readonly={readonly}
+          />
+        ) : (
+          <ClassicSettings
+            machine={machine}
+            formRef={formRef}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+            view={view}
+          />
+        )}
+      </Card>
     </div>
   );
 }

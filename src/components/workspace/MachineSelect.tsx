@@ -19,24 +19,37 @@ import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { ChevronDown, ExternalLink, Search, Settings } from "lucide-react";
 import * as React from "react";
 import { useDebounce } from "use-debounce";
+import { UserIcon } from "../run/SharePageComponent";
 import { VirtualizedInfiniteList } from "../virtualized-infinite-list";
 import { MachineBuildSettingsDialog } from "./MachineBuildSettingsDialog";
-import { Link } from "@tanstack/react-router";
 // import { MachineBuildSettingsDialog } from "./MachineBuildSettingsDialog";
+
+interface MachineSelectProps {
+  workflow_id: string;
+  leaveEmpty?: boolean;
+  className?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  onSettingsClick?: (machineId: string) => void;
+}
 
 export function MachineSelect({
   workflow_id,
   leaveEmpty = false,
   className,
-}: {
-  workflow_id: string;
-  leaveEmpty?: boolean;
-  className?: string;
-}) {
+  value,
+  onChange,
+  onSettingsClick,
+}: MachineSelectProps) {
   const { workflow, mutateWorkflow } = useCurrentWorkflow(workflow_id);
+
+  // Use either the controlled value or the workflow's selected machine
+  const machineId = value ?? workflow?.selected_machine_id;
+  const { data: valueData } = useMachine(machineId);
 
   const [open, setOpen] = React.useState(false);
   const [searchValue, setSearchValue] = React.useState("");
@@ -49,15 +62,33 @@ export function MachineSelect({
     [query.data],
   );
 
-  // const [value] = useSelectedMachine(undefined, workflow, true);
-  const { data: value } = useMachine(workflow?.selected_machine_id);
-
-  // const value = flatData?.find((x) => x.id === valueId);
-  const posthog = usePostHog();
-
   React.useEffect(() => {
     query.refetch();
   }, [debouncedSearchValue]);
+
+  const handleSelect = async (selectedMachine: any) => {
+    if (onChange) {
+      // Controlled mode - just call onChange
+      onChange(selectedMachine.id);
+    } else {
+      // Uncontrolled mode - update workflow's selected machine
+      await callServerPromise(
+        api({
+          url: `workflow/${workflow_id}`,
+          init: {
+            method: "PATCH",
+            body: JSON.stringify({
+              selected_machine_id: selectedMachine.id,
+            }),
+          },
+        }),
+      );
+      mutateWorkflow();
+    }
+    setOpen(false);
+  };
+
+  const posthog = usePostHog();
 
   return (
     <div className={cn("flex w-full items-center", className)}>
@@ -72,27 +103,21 @@ export function MachineSelect({
             >
               <span className="w-full truncate text-ellipsis text-start">
                 <>
-                  {value ? (
+                  {valueData ? (
                     <div className="flex w-full items-center">
-                      <div className="flex min-w-0 flex-grow items-center">
-                        {value?.gpu && (
-                          <>
-                            <span className="flex-shrink-0">{value?.gpu}</span>
-                            <Separator
-                              orientation="vertical"
-                              className="mx-2"
-                            />
-                          </>
+                      <div className="flex min-w-0 gap-1 flex-grow items-center">
+                        {valueData?.gpu && (
+                          <Badge className="flex-shrink-0">
+                            {valueData?.gpu}
+                          </Badge>
                         )}
-                        <span className="truncate">{value?.name}</span>
+                        <span className="truncate text-xs">
+                          {valueData?.name}
+                        </span>
                       </div>
                       <MachineStatus
                         machine={{
-                          // disabled: false,
-                          // status: "ready",
-                          // static_assets_status: "ready",
-                          // keep_warm: 0,
-                          ...(value || {}),
+                          ...(valueData || {}),
                         }}
                         mini={true}
                       />
@@ -124,39 +149,41 @@ export function MachineSelect({
               renderItem={(item) => (
                 <MachineRow
                   item={item}
-                  selected={value}
-                  onSelect={async (value) => {
-                    await callServerPromise(
-                      api({
-                        url: `workflow/${workflow_id}`,
-                        init: {
-                          method: "PATCH",
-                          body: JSON.stringify({
-                            selected_machine_id: value.id,
-                          }),
-                        },
-                      }),
-                    );
-                    mutateWorkflow();
-                  }}
-                  // shareMachine={shareMachine}
+                  selected={valueData}
+                  onSelect={handleSelect}
                 />
               )}
               renderLoading={() => <LoadingRow />}
-              estimateSize={80}
+              estimateSize={58}
             />
           </PopoverContent>
         </Popover>
       </div>
       <Separator orientation="vertical" className="z-10 h-[40px] flex-none" />
-      <Link to="/machines/$machineId" params={{ machineId: value?.id }}>
+      {onSettingsClick ? (
         <Button
           variant={"ghost"}
           className="flex-none border-none hover:bg-transparent"
+          onClick={() => valueData?.id && onSettingsClick(valueData.id)}
         >
           <Settings size={14} />
         </Button>
-      </Link>
+      ) : (
+        <Link
+          to="/workflows/$workflowId/$view"
+          params={{
+            workflowId: workflow_id,
+            view: "machine",
+          }}
+        >
+          <Button
+            variant={"ghost"}
+            className="flex-none border-none hover:bg-transparent"
+          >
+            <Settings size={14} />
+          </Button>
+        </Link>
+      )}
     </div>
   );
 }
@@ -171,29 +198,40 @@ function MachineRow({
   onSelect: (value: any) => void;
   // shareMachine?: any;
 }) {
-  // const isShareMachine = item.id === shareMachine?.id;
+  const isSelected = selected?.id === item.id;
 
   return (
     <div
       className={cn(
-        "flex h-full items-center overflow-hidden transition-colors",
-        // isShareMachine && "bg-gray-100",
+        "flex h-full items-center overflow-hidden transition-colors cursor-pointer",
+        isSelected ? "bg-accent" : "hover:bg-accent/50",
       )}
+      onClick={() => onSelect(item)}
     >
-      <div className="relative flex h-full w-[400px] flex-shrink items-center gap-2 px-4 py-2 text-xs ">
-        <div className="flex w-full flex-col gap-1 ">
-          <span className="flex w-full items-center justify-between gap-2 break-words">
-            <div className="flex items-center gap-2">
-              <MachineStatus machine={item} mini={true} />
+      <div className="relative flex h-full w-[400px] flex-shrink items-center gap-1 px-2 py-1 text-xs">
+        <div className="flex w-full flex-col gap-0.5">
+          <span className="flex w-full items-center justify-between gap-1">
+            <div className="flex items-center gap-4">
+              <UserIcon user_id={item.user_id} className="w-6 h-6" />
               <div className="flex flex-col">
-                {item?.name}
-                <div className="text-2xs text-muted-foreground leading-tight">
+                <div
+                  className={cn(
+                    "flex items-center gap-1",
+                    isSelected && "font-medium",
+                  )}
+                >
+                  {item?.name}
+                </div>
+                <div className="text-[10px] text-muted-foreground leading-none">
                   {item?.id.slice(0, 8)}
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {item.gpu && <Badge>{item.gpu}</Badge>}
+              {item.gpu && (
+                <Badge className="text-[10px] px-2 py-0">{item.gpu}</Badge>
+              )}
+              <MachineStatus machine={item} mini={true} />
               <Button
                 variant={"ghost"}
                 // disabled={isShareMachine}
@@ -202,18 +240,9 @@ function MachineRow({
                   e.stopPropagation();
                   window.open("/machines/" + item.id, "_blank");
                 }}
+                className="h-6 w-6 p-0 hover:bg-background/80"
               >
-                <ExternalLink size={14} />
-              </Button>
-              <Button
-                variant={selected?.id === item.id ? "default" : "outline"}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onSelect(item);
-                }}
-              >
-                Select
+                <ExternalLink size={12} />
               </Button>
             </div>
           </span>

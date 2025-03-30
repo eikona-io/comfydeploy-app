@@ -1,6 +1,7 @@
 import { GalleryView } from "@/components/GalleryView";
 import { PaddingLayout } from "@/components/PaddingLayout";
 import { DeploymentPage } from "@/components/deployment/deployment-page";
+import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
 import { SessionItem } from "@/components/sessions/SessionItem";
@@ -44,6 +45,7 @@ import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { WorkspaceStatusBar } from "@/components/workspace/WorkspaceStatusBar";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { cn } from "@/lib/utils";
 import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
@@ -61,7 +63,7 @@ import { useEffect, useState } from "react";
 //   "gallery",
 // ];
 
-const workspace = ["workspace", "playground", "gallery"];
+const workspace = ["workspace", "playground", "gallery", "machine"];
 const deployment = ["deployment", "requests"];
 
 export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
@@ -89,8 +91,10 @@ function WorkflowPageComponent() {
   let view: React.ReactNode;
 
   const { workflow } = useCurrentWorkflow(workflowId);
+  const { data: machine } = useMachine(workflow?.selected_machine_id);
 
   const { value: version } = useSelectedVersion(workflowId);
+  const isAdminAndMember = useIsAdminAndMember();
 
   switch (currentView) {
     case "requests":
@@ -130,9 +134,20 @@ function WorkflowPageComponent() {
     case "gallery":
       view = <GalleryView workflowID={workflowId} />;
       break;
+    case "machine":
+      view = (
+        <div className="relative p-4">
+          {machine && (
+            <MachineSettingsWrapper
+              machine={machine}
+              readonly={!isAdminAndMember}
+              className="top-0"
+            />
+          )}
+        </div>
+      );
+      break;
   }
-
-  const isAdminAndMember = useIsAdminAndMember();
 
   const tabs = isAdminAndMember ? workspace : ["playground", "gallery"];
 
@@ -180,9 +195,12 @@ function WorkflowPageComponent() {
                           currentView === tab && "bg-gray-200 text-gray-900",
                           "transition-colors capitalize",
                         )}
-                        // asChild
                       >
-                        {tab === "workspace" ? "ComfyUI" : tab}
+                        {tab === "workspace"
+                          ? "ComfyUI"
+                          : tab === "machine"
+                            ? "Environment"
+                            : tab}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
