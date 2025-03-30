@@ -1,6 +1,7 @@
 import { GalleryView } from "@/components/GalleryView";
 import { PaddingLayout } from "@/components/PaddingLayout";
 import { DeploymentPage } from "@/components/deployment/deployment-page";
+import { MachineVersionWrapper } from "@/components/machine/machine-overview";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
@@ -136,14 +137,17 @@ function WorkflowPageComponent() {
       break;
     case "machine":
       view = (
-        <PaddingLayout className="max-w-screen-lg mx-auto">
+        <PaddingLayout className="mx-auto mt-8 max-w-screen-lg">
           {machine && (
-            <MachineSettingsWrapper
-              title="Machine Settings"
-              machine={machine}
-              readonly={!isAdminAndMember}
-              className="top-0"
-            />
+            <>
+              <MachineVersionWrapper machine={machine} />
+              <MachineSettingsWrapper
+                title="Machine Settings"
+                machine={machine}
+                readonly={!isAdminAndMember}
+                className="top-0"
+              />
+            </>
           )}
         </PaddingLayout>
       );

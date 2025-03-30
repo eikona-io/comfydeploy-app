@@ -349,7 +349,7 @@ const MachineVersionSkeleton = () => {
   );
 };
 
-function MachineVersionWrapper({ machine }: { machine: any }) {
+export function MachineVersionWrapper({ machine }: { machine: any }) {
   const { data: machineVersion, isLoading: isLoadingMachineVersion } =
     useMachineVersion(machine.id, machine.machine_version_id);
   const { data: machineVersions, isLoading: isLoadingMachineVersions } =
