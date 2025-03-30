@@ -136,15 +136,16 @@ function WorkflowPageComponent() {
       break;
     case "machine":
       view = (
-        <div className="relative p-4">
+        <PaddingLayout className="max-w-screen-lg mx-auto">
           {machine && (
             <MachineSettingsWrapper
+              title="Machine Settings"
               machine={machine}
               readonly={!isAdminAndMember}
               className="top-0"
             />
           )}
-        </div>
+        </PaddingLayout>
       );
       break;
   }
