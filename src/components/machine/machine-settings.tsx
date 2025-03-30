@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { useBlocker, useNavigate } from "@tanstack/react-router";
+import { useBlocker, useMatch, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
 import { isEqual } from "lodash";
 import {
@@ -311,6 +311,13 @@ function ServerlessSettings({
   disableUnsavedChangesWarning?: boolean;
   readonly?: boolean;
 }) {
+  const match = useMatch({
+    from: "/workflows/",
+    shouldThrow: false,
+  });
+
+  const isWorkflow = !!match;
+
   const [isFormDirty, setIsFormDirty] = useState(false);
   const isNew = machine.id === "new";
   const { controls } = useUnsavedChangesWarning({
@@ -484,7 +491,7 @@ function ServerlessSettings({
                   )}
                 />
               </div>
-              {machine.type === "comfy-deploy-serverless" && (
+              {machine.type === "comfy-deploy-serverless" && !isWorkflow && (
                 <div className="mb-4">
                   <VersionChecker
                     machineId={machine.id}
