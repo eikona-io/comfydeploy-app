@@ -98,6 +98,7 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "../ui/hover-card";
+import { VersionChecker } from "./version-checker";
 
 export function MachineSettingsWrapper({
   machine,
@@ -478,6 +479,23 @@ function ServerlessSettings({
                   )}
                 />
               </div>
+              {machine.type === "comfy-deploy-serverless" && (
+                <div className="mb-4">
+                  <VersionChecker
+                    machineId={machine.id}
+                    variant="inline"
+                    onUpdate={(e) => {
+                      e.preventDefault();
+                      // Navigate to update dialog
+                      navigate({
+                        to: "/machines/$machineId",
+                        params: { machineId: machine.id },
+                        search: { action: "update-custom-nodes" },
+                      });
+                    }}
+                  />
+                </div>
+              )}
               <FormField
                 control={form.control}
                 name="docker_command_steps"
@@ -501,40 +519,6 @@ function ServerlessSettings({
               {/* Build Time Settings */}
               <div className="mt-8 space-y-4">
                 <div className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="python_version"
-                    render={({ field }) => (
-                      <FormItem>
-                        <div className="flex items-center gap-2">
-                          <FormLabel>Python Version</FormLabel>
-                          <FormDescription>
-                            Select the Python version for your machine
-                          </FormDescription>
-                        </div>
-                        <Select
-                          value={field.value ?? "3.11"}
-                          onValueChange={field.onChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Python Version" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="3.9">3.9</SelectItem>
-                            <SelectItem value="3.10">3.10</SelectItem>
-                            <SelectItem value="3.11">
-                              3.11 (Recommended)
-                            </SelectItem>
-                            <SelectItem value="3.12">3.12</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem
                       value="advanced-build"
@@ -548,6 +532,40 @@ function ServerlessSettings({
                       </AccordionTrigger>
                       <AccordionContent>
                         <div className="space-y-4 pt-4 rounded-lg border p-4">
+                          <FormField
+                            control={form.control}
+                            name="python_version"
+                            render={({ field }) => (
+                              <FormItem>
+                                <div className="flex items-center gap-2">
+                                  <FormLabel>Python Version</FormLabel>
+                                  <FormDescription>
+                                    Select the Python version for your machine
+                                  </FormDescription>
+                                </div>
+                                <Select
+                                  value={field.value ?? "3.11"}
+                                  onValueChange={field.onChange}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Python Version" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="3.9">3.9</SelectItem>
+                                    <SelectItem value="3.10">3.10</SelectItem>
+                                    <SelectItem value="3.11">
+                                      3.11 (Recommended)
+                                    </SelectItem>
+                                    <SelectItem value="3.12">3.12</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
                           <FormField
                             control={form.control}
                             name="base_docker_image"

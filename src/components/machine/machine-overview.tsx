@@ -166,13 +166,20 @@ export function MachineOverview({ machine }: { machine: any }) {
       machineVersionsAll[0]?.id === machine.machine_version_id
     );
   }, [machine?.machine_version_id, machineVersionsAll, isLoadingVersions]);
+  const navigate = useNavigate();
 
   return (
     <div className="w-full">
       <UpdateCustomNodesDialog
         machine={machine}
         open={isUpdateDialogOpen}
-        onOpenChange={setIsUpdateDialogOpen}
+        onOpenChange={(open) => {
+          setIsUpdateDialogOpen(open);
+          navigate({
+            to: "/machines/$machineId",
+            params: { machineId: machine.id },
+          });
+        }}
       />
       <div className="px-4 py-1">
         <MachineAlert
@@ -185,7 +192,7 @@ export function MachineOverview({ machine }: { machine: any }) {
       <div className="relative grid grid-cols-1 gap-8 px-4 py-2">
         <MachineVersionWrapper machine={machine} />
         <MachineSettingsWrapper machine={machine} />
-        {machine.type === "comfy-deploy-serverless" && (
+        {/* {machine.type === "comfy-deploy-serverless" && (
           <div className="sticky bottom-0 inset-x-0 mx-auto max-w-xl z-20">
             <VersionChecker
               machineId={machine.id}
@@ -193,7 +200,7 @@ export function MachineOverview({ machine }: { machine: any }) {
               onUpdate={() => setIsUpdateDialogOpen(true)}
             />
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );
