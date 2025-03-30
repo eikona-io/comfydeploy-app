@@ -37,12 +37,16 @@ import { useBlocker, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
 import { isEqual } from "lodash";
 import {
+  ArchiveX,
   ExternalLinkIcon,
   Info,
   Loader2,
   Lock,
   PencilIcon,
+  Play,
   Save,
+  TestTubeDiagonal,
+  Wrench,
 } from "lucide-react";
 import { useQueryState } from "nuqs";
 import {
@@ -80,6 +84,20 @@ import {
   useUnsavedChangesWarning,
 } from "../unsaved-changes-warning";
 import { ExtraDockerCommands } from "./extra-docker-commands";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "../ui/hover-card";
 
 export function MachineSettingsWrapper({
   machine,
@@ -348,7 +366,6 @@ function ServerlessSettings({
 
   useEffect(() => {
     const errors = form.formState.errors;
-    // console.log(errors);
     for (const [field, error] of Object.entries(errors)) {
       if (error?.message) {
         toast.error(`${field}: ${error.message}`);
@@ -411,285 +428,449 @@ function ServerlessSettings({
 
   return (
     <>
-      <form ref={formRef} onSubmit={form.handleSubmit(handleSubmit)}>
-        {view === "environment" && (
-          <div className="space-y-4 p-2 pt-4">
-            <div
-              className={cn(
-                "flex flex-col gap-4 md:flex-row",
-                readonly && "pointer-events-none opacity-70",
-              )}
-            >
-              <div className="w-full">
-                <Badge className="mb-2 font-medium text-sm">
-                  ComfyUI Version
-                </Badge>
-                <ComfyUIVersionSelectBox
-                  value={form.watch("comfyui_version")}
-                  onChange={(value) => form.setValue("comfyui_version", value)}
-                />
-              </div>
-              <div className="w-full">
-                <Badge className="mb-2 font-medium text-sm">GPU</Badge>
-                <GPUSelectBox
-                  value={form.watch("gpu")}
-                  onChange={(value) => form.setValue("gpu", value)}
-                  disabled={false}
-                />
-              </div>
-            </div>
-            <CustomNodeSetupWrapper
-              value={form.watch("docker_command_steps")}
-              onChange={(value) => form.setValue("docker_command_steps", value)}
-              readonly={readonly}
-            />
-          </div>
-        )}
-
-        {view === "autoscaling" && (
-          <div
-            className={cn(
-              "space-y-1 p-2 pt-4",
-              readonly && "pointer-events-none opacity-70",
-            )}
-          >
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col items-start justify-between">
-                <div className="flex flex-col gap-2">
-                  <Badge className="font-medium text-sm">
-                    Max Parallel GPU
-                  </Badge>
-                </div>
-                <div className="w-full">
-                  <MaxParallelGPUSlider
-                    value={form.watch("concurrency_limit")}
-                    onChange={(value) =>
-                      form.setValue("concurrency_limit", value)
-                    }
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col items-start justify-between">
-                <div className="flex flex-col gap-2">
-                  <Badge className="mb-2 font-medium text-sm">
-                    Keep Always On
-                  </Badge>
-                </div>
-                <div className="w-full">
-                  <MaxAlwaysOnSlider
-                    value={form.watch("keep_warm") || 0}
-                    onChange={(value) => form.setValue("keep_warm", value)}
-                  />
-                </div>
-              </div>
-              <div>
-                <Badge className="mb-2 font-medium text-sm">
-                  Workflow Timeout
-                </Badge>
-                <WorkflowTimeOut
-                  value={form.watch("run_timeout")}
-                  onChange={(value) => form.setValue("run_timeout", value)}
-                />
-              </div>
-              <div>
-                <Badge className="mb-2 font-medium text-sm">Warm Time</Badge>
-                <WarmTime
-                  value={form.watch("idle_timeout")}
-                  onChange={(value) => form.setValue("idle_timeout", value)}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {view === "advanced" && (
-          <div className="space-y-10 p-2 pt-4">
-            <div
-              className={cn(
-                "flex flex-col gap-2",
-                readonly && "pointer-events-none opacity-70",
-              )}
-            >
-              <div>
-                <div className="flex flex-row items-center gap-4">
-                  <Switch
-                    id="optimized_runner"
-                    checked={form.watch("optimized_runner")}
-                    onCheckedChange={(value) =>
-                      form.setValue("optimized_runner", value)
-                    }
-                  />
-                  <Label
-                    htmlFor="optimized_runner"
-                    className="flex items-center gap-2"
-                  >
-                    Optimized Cold Start
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </Label>
-                </div>
-                <p className="mt-2 text-muted-foreground text-xs">
-                  Enables optimizations to reduce container startup time. This
-                  may increase memory usage.
-                </p>
-              </div>
-
-              {/* <h3 className="font-medium text-sm mt-6">Builder Version</h3> */}
-              {/* <BuilderVersionSelectBox
-                value={form.watch("machine_builder_version") || "4"}
-                onChange={(value) =>
-                  form.setValue(
-                    "machine_builder_version",
-                    value as "2" | "3" | "4",
-                  )
-                }
-              /> */}
-            </div>
-
-            <Accordion type="single" defaultValue="docker">
-              <AccordionItem value="docker">
-                <AccordionTrigger className="py-4">
-                  Docker Configuration
-                </AccordionTrigger>
-                <AccordionContent
-                  className={cn(
-                    "space-y-6",
-                    readonly && "pointer-events-none opacity-70",
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} ref={formRef}>
+          {view === "environment" && (
+            <div className="space-y-4 p-2 pt-4">
+              <div
+                className={cn(
+                  "flex flex-col gap-4 md:flex-row",
+                  readonly && "pointer-events-none opacity-70",
+                )}
+              >
+                <FormField
+                  control={form.control}
+                  name="comfyui_version"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>ComfyUI Version</FormLabel>
+                      <FormControl>
+                        <ComfyUIVersionSelectBox
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Select the ComfyUI version to use
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                >
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Base Docker Image</h3>
-                    <Input
-                      value={form.watch("base_docker_image") ?? ""}
-                      onChange={(e) =>
-                        form.setValue("base_docker_image", e.target.value)
-                      }
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      Optional base docker image for the machine.
-                    </p>
-                  </div>
-                  <ExtraDockerCommands
-                    value={form.watch("extra_docker_commands")}
-                    onChange={(value) =>
-                      form.setValue("extra_docker_commands", value)
-                    }
-                  />
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="system">
-                <AccordionTrigger className="py-4">
-                  System Settings
-                </AccordionTrigger>
-                <AccordionContent
-                  className={cn(
-                    "space-y-6",
-                    readonly && "pointer-events-none opacity-70",
+                />
+                <FormField
+                  control={form.control}
+                  name="gpu"
+                  render={({ field }) => (
+                    <FormItem className="w-full">
+                      <FormLabel>GPU</FormLabel>
+                      <FormControl>
+                        <GPUSelectBox
+                          value={field.value}
+                          onChange={field.onChange}
+                          disabled={false}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Select the GPU type for your machine
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                >
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Python Version</h3>
-                    <Select
-                      value={form.watch("python_version") ?? "3.11"}
-                      onValueChange={(value) =>
-                        form.setValue("python_version", value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Python Version" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="3.9">3.9</SelectItem>
-                        <SelectItem value="3.10">3.10</SelectItem>
-                        <SelectItem value="3.11">3.11 (Recommended)</SelectItem>
-                        <SelectItem value="3.12">3.12</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Queue per GPU</h3>
-                    <RangeSlider
-                      value={form.watch("allow_concurrent_inputs") || 1}
-                      onChange={(value) =>
-                        form.setValue("allow_concurrent_inputs", value)
-                      }
-                      min={1}
-                      max={10}
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      The queue size is the number of inputs that can be queued
-                      to 1 container before spinning up a new container.
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="custom">
-                <AccordionTrigger className="py-4">
-                  Custom Settings
-                </AccordionTrigger>
-                <AccordionContent
-                  className={cn(
-                    "space-y-6",
-                    readonly && "pointer-events-none opacity-70",
-                  )}
-                >
-                  <div>
-                    <div className="flex flex-row items-center gap-4">
-                      <Switch
-                        id="install_custom_node_with_gpu"
-                        checked={form.watch("install_custom_node_with_gpu")}
-                        onCheckedChange={(value) =>
-                          form.setValue("install_custom_node_with_gpu", value)
-                        }
+                />
+              </div>
+              <FormField
+                control={form.control}
+                name="docker_command_steps"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <CustomNodeSetupWrapper
+                        value={field.value}
+                        onChange={field.onChange}
+                        readonly={readonly}
                       />
-                      <Label htmlFor="install_custom_node_with_gpu">
-                        Install custom nodes with GPU
-                      </Label>
-                    </div>
-                    <p className="mt-2 text-muted-foreground text-xs">
-                      Some custom nodes require GPU while being initialized.
-                    </p>
-                  </div>
+                    </FormControl>
+                    <FormDescription>
+                      Configure custom nodes for your machine
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Extra arguments</h3>
-                    <Input
-                      value={form.watch("extra_args") ?? ""}
-                      onChange={(e) =>
-                        form.setValue("extra_args", e.target.value)
-                      }
-                    />
-                    <p className="flex flex-row items-center gap-1 text-muted-foreground text-xs">
-                      ComfyUI extra arguments.
-                      <a
-                        href="https://github.com/comfyanonymous/ComfyUI/blob/master/comfy/cli_args.py"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex flex-row items-center gap-1 text-blue-500"
-                      >
-                        Examples
-                        <ExternalLinkIcon className="h-3 w-3" />
-                      </a>
-                    </p>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <h3 className="font-medium text-sm">Prestart Command</h3>
-                    <Input
-                      value={form.watch("prestart_command") ?? ""}
-                      onChange={(e) =>
-                        form.setValue("prestart_command", e.target.value)
-                      }
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      Command to run before the machine starts.
-                    </p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-          </div>
-        )}
-      </form>
+              {/* Build Time Settings */}
+              <div className="mt-8 space-y-4">
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="python_version"
+                    render={({ field }) => (
+                      <FormItem>
+                        <div className="flex items-center gap-2">
+                          <FormLabel>Python Version</FormLabel>
+                          <FormDescription>
+                            Select the Python version for your machine
+                          </FormDescription>
+                        </div>
+                        <Select
+                          value={field.value ?? "3.11"}
+                          onValueChange={field.onChange}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Python Version" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="3.9">3.9</SelectItem>
+                            <SelectItem value="3.10">3.10</SelectItem>
+                            <SelectItem value="3.11">
+                              3.11 (Recommended)
+                            </SelectItem>
+                            <SelectItem value="3.12">3.12</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem
+                      value="advanced-build"
+                      className="border-none"
+                    >
+                      <AccordionTrigger className="hover:bg-accent hover:no-underline rounded-md px-4">
+                        <div className="flex items-center gap-2">
+                          <Wrench className="h-4 w-4 text-muted-foreground" />
+                          <span>Advanced Build Options</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="space-y-4 pt-4 rounded-lg border p-4">
+                          <FormField
+                            control={form.control}
+                            name="base_docker_image"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Base Docker Image</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="nvidia/cuda:12.8.0-devel-ubuntu22.04"
+                                    value={field.value ?? ""}
+                                    onChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Specify a custom base Docker image for your
+                                  machine
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="install_custom_node_with_gpu"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center gap-4 space-y-0">
+                                <FormControl>
+                                  <Switch
+                                    id="install_custom_node_with_gpu"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div>
+                                  <FormLabel>
+                                    Install custom nodes with GPU
+                                  </FormLabel>
+                                  <FormDescription>
+                                    Enable GPU support for custom node
+                                    installation
+                                  </FormDescription>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {view === "autoscaling" && (
+            <div
+              className={cn(
+                "space-y-1 p-2 pt-4",
+                readonly && "pointer-events-none opacity-70",
+              )}
+            >
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="concurrency_limit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Max Parallel GPU</FormLabel>
+                      <FormControl>
+                        <MaxParallelGPUSlider
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Maximum number of parallel GPU instances
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="keep_warm"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Keep Always On</FormLabel>
+                      <FormControl>
+                        <MaxAlwaysOnSlider
+                          value={field.value || 0}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Number of instances to keep warm
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="run_timeout"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Workflow Timeout</FormLabel>
+                      <FormControl>
+                        <WorkflowTimeOut
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Maximum time for workflow execution
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="idle_timeout"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Warm Time</FormLabel>
+                      <FormControl>
+                        <WarmTime
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Time to keep instance warm after completion
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          )}
+
+          {view === "advanced" && (
+            <div className="space-y-8 p-2 pt-4">
+              <Accordion type="single" collapsible className="w-full">
+                {/* Runtime Settings */}
+                <AccordionItem value="runtime" className="border-none">
+                  <AccordionTrigger className="flex items-center gap-2 hover:bg-accent hover:no-underline rounded-md px-4">
+                    <div className="flex items-center gap-2">
+                      <Play className="h-5 w-5 text-muted-foreground" />
+                      <h3 className="font-medium text-md">Runtime Settings</h3>
+                      <FormDescription>
+                        Settings that affect how the machine runs
+                      </FormDescription>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="rounded-lg border p-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="extra_args"
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="flex items-center gap-2">
+                                <FormLabel>Extra ComfyUI arguments</FormLabel>
+                                <FormDescription>
+                                  <div className="flex flex-row items-center gap-1">
+                                    ComfyUI extra arguments.
+                                    <a
+                                      href="https://github.com/comfyanonymous/ComfyUI/blob/master/comfy/cli_args.py"
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="flex flex-row items-center gap-1 text-blue-500"
+                                    >
+                                      Examples
+                                      <ExternalLinkIcon className="h-3 w-3" />
+                                    </a>
+                                  </div>
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Input
+                                  placeholder="--use-flash-attention --fp32-vae"
+                                  value={field.value ?? ""}
+                                  onChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="prestart_command"
+                          render={({ field }) => (
+                            <FormItem>
+                              <div className="flex items-center gap-2">
+                                <FormLabel>Prestart Command</FormLabel>
+                                <FormDescription>
+                                  Command to run before the machine starts
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Input
+                                  placeholder="ollama serve && ollama run llava"
+                                  value={field.value ?? ""}
+                                  onChange={field.onChange}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Performance Optimizations */}
+                <AccordionItem value="experimental" className="border-none">
+                  <AccordionTrigger className="flex items-center gap-2 hover:bg-accent hover:no-underline rounded-md px-4">
+                    <div className="flex items-center gap-2">
+                      <TestTubeDiagonal className="h-5 w-5 text-muted-foreground" />
+                      <h3 className="font-medium text-md">
+                        Performance Optimizations
+                      </h3>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4 rounded-lg border p-4">
+                      <FormField
+                        control={form.control}
+                        name="optimized_runner"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center gap-4 space-y-0">
+                            <FormControl>
+                              <Switch
+                                id="optimized_runner"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div>
+                              <FormLabel>Optimized Cold Start</FormLabel>
+                              <FormDescription>
+                                Enables optimizations to reduce container
+                                startup time. This may increase memory usage.
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* Legacy Settings */}
+                <AccordionItem value="deprecated" className="border-none">
+                  <AccordionTrigger className="flex items-center gap-2 hover:bg-accent hover:no-underline rounded-md px-4">
+                    <div className="flex items-center gap-2">
+                      <ArchiveX className="h-5 w-5 text-muted-foreground" />
+                      <h3 className="font-medium text-md">Legacy Settings</h3>
+                      <Badge variant="destructive" className="ml-2">
+                        Deprecated
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-4 rounded-lg border p-4">
+                      <FormField
+                        control={form.control}
+                        name="extra_docker_commands"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Extra Docker Commands</FormLabel>
+                            <FormControl>
+                              <ExtraDockerCommands
+                                value={field.value}
+                                onChange={field.onChange}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              Additional Docker commands to run during setup
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="allow_concurrent_inputs"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Queue per GPU</FormLabel>
+                            <FormControl>
+                              <RangeSlider
+                                value={field.value || 1}
+                                onChange={field.onChange}
+                                min={1}
+                                max={10}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              The queue size is the number of inputs that can be
+                              queued to 1 container before spinning up a new
+                              container.
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          )}
+        </form>
+      </Form>
 
       <UnsavedChangesWarning
         isDirty={isFormDirty}
