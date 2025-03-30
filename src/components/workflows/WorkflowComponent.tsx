@@ -49,6 +49,8 @@ import {
 import { cn } from "@/lib/utils";
 import { EventSourcePolyfill } from "event-source-polyfill";
 import { CodeBlock } from "../ui/code-blocks";
+import { TooltipTrigger } from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider } from "../ui/tooltip";
 
 export default function WorkflowComponent() {
   const [runId, setRunId] = useQueryState("run-id");
@@ -294,18 +296,10 @@ export function RunDetails(props: {
           </TabsContent>
           <TabsContent value="logs">
             <ErrorBoundary fallback={() => <div>Error loading logs</div>}>
-              {run.modal_function_call_id && <LogsTab runId={run.id} />}
-              {!run.modal_function_call_id && (
-                <Alert
-                  variant="default"
-                  className="w-auto max-w-md border-muted bg-muted/50"
-                >
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-muted-foreground text-sm">
-                    We're unable to display logs for runs from the workspace.
-                  </AlertDescription>
-                </Alert>
-              )}
+              <FinishedRunLogDisplay
+                runId={run.id}
+                modalFnCallId={run.modal_function_call_id}
+              />
             </ErrorBoundary>
           </TabsContent>
           <TabsContent value="webhook">
@@ -1002,6 +996,212 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
           </ul>
         </ScrollArea>
       </div>
+    </div>
+  );
+}
+
+type RunLog = {
+  run_id: string;
+  timestamp: string;
+  log: string;
+};
+
+function FinishedRunLogDisplay({
+  runId,
+  modalFnCallId,
+}: { runId: string; modalFnCallId: string }) {
+  const { data: runLogs, isLoading } = useQuery<RunLog[]>({
+    queryKey: ["clickhouse-run-logs", runId],
+    enabled: !!runId,
+  });
+
+  const [showRawLogs, setShowRawLogs] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <Loader2 className="h-4 w-4 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!runLogs || runLogs.length === 0) {
+    return (
+      <div className="p-2 text-muted-foreground text-xs">
+        No logs found for this run.
+      </div>
+    );
+  }
+
+  // Function to try parsing JSON in log entries
+  const formatLogContent = (logText: string) => {
+    if (!logText) return;
+
+    try {
+      const jsonData = JSON.parse(logText);
+
+      // Handle validation error format
+      if (jsonData.error?.error?.type === "prompt_outputs_failed_validation") {
+        const nodeErrors = jsonData.error.node_errors;
+        const firstError = Object.values(nodeErrors)[0] as any;
+
+        return (
+          <div className="space-y-2">
+            {/* Simplified error message */}
+            <div className="rounded-md bg-red-50 p-2">
+              <div className="font-medium text-2xs text-destructive">
+                {firstError.errors[0].details}
+              </div>
+            </div>
+
+            {/* Full error details in collapsible */}
+            <details>
+              <summary className="cursor-pointer font-medium text-2xs text-muted-foreground">
+                View full error details
+              </summary>
+              <pre className="mt-1 rounded bg-muted p-2 text-[10px] leading-snug">
+                {JSON.stringify(jsonData, null, 2)}
+              </pre>
+            </details>
+          </div>
+        );
+      }
+
+      // If it's an exception log with traceback, format it specially
+      if (jsonData.exception_message && jsonData.traceback) {
+        return (
+          <div className="text-2xs">
+            <div className="rounded-md bg-red-50 p-2">
+              <div className="font-medium text-destructive">
+                {jsonData.exception_type}: {jsonData.exception_message}
+              </div>
+            </div>
+            <pre className="mt-1 rounded bg-muteds p-1 text-[10px] leading-snug">
+              {jsonData.traceback.join("")}
+            </pre>
+            {jsonData.current_inputs && (
+              <details className="mt-1">
+                <summary className="cursor-pointer font-medium text-2xs">
+                  Inputs
+                </summary>
+                <pre className="mt-1 rounded bg-muted p-1 text-[10px] leading-snug">
+                  {JSON.stringify(jsonData.current_inputs, null, 2)}
+                </pre>
+              </details>
+            )}
+          </div>
+        );
+      }
+
+      // Otherwise just pretty-print the JSON with improved formatting
+      return (
+        <pre className="whitespace-pre-wrap break-words rounded bg-muted p-1 text-[10px] leading-snug">
+          {JSON.stringify(jsonData, null, 2)}
+        </pre>
+      );
+    } catch {
+      // Not JSON, return as plain text with word wrapping
+      return (
+        <div className="whitespace-pre-wrap text-2xs">
+          {logText.replace(/\r/g, "\n")}
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="overflow-hidden rounded-[10px] border">
+      <div className="flex items-center justify-between border-b bg-muted/50 px-3 py-1.5 font-medium text-xs">
+        <span>Logs</span>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="xs"
+            className={cn(
+              "h-6 rounded-none text-[10px]",
+              !showRawLogs
+                ? "-mb-[2px] border-primary border-b-2 bg-muted/80"
+                : "text-muted-foreground",
+            )}
+            onClick={() => setShowRawLogs(false)}
+          >
+            Concise
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            className={cn(
+              "h-6 rounded-none text-[10px]",
+              showRawLogs
+                ? "-mb-[2px] border-primary border-b-2 bg-muted/80"
+                : "text-muted-foreground",
+            )}
+            onClick={() => setShowRawLogs(true)}
+          >
+            Raw
+          </Button>
+        </div>
+      </div>
+
+      {showRawLogs ? (
+        <div>
+          {modalFnCallId ? (
+            <LogsTab runId={runId} />
+          ) : (
+            <Alert
+              variant="default"
+              className="w-auto max-w-md border-muted bg-muted/50"
+            >
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-muted-foreground text-sm">
+                We're unable to display logs for runs from the workspace.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      ) : (
+        <ScrollArea>
+          <div className="h-[calc(100vh-500px)]">
+            {runLogs.map((entry, index) => {
+              return (
+                <div
+                  key={index}
+                  className="border-b px-3 py-1 hover:bg-muted/50"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex w-20 flex-shrink-0 justify-end">
+                      <TooltipProvider>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger>
+                            <div className="mt-[3px] font-mono text-[10px] text-muted-foreground">
+                              {new Date(entry.timestamp).toLocaleTimeString()}
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            <div className="font-mono text-[11px]">
+                              <div className="grid grid-cols-[70px_auto]">
+                                <div>Date</div>
+                                <div>
+                                  {new Date(entry.timestamp).toLocaleString()}
+                                </div>
+                                <div>Timestamp</div>
+                                <div>{Number(entry.timestamp)}</div>
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                    <div className="flex-grow">
+                      {formatLogContent(entry.log)}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      )}
     </div>
   );
 }
