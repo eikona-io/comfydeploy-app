@@ -807,24 +807,39 @@ function ServerlessSettings({
                       <FormField
                         control={form.control}
                         name="optimized_runner"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center gap-4 space-y-0">
-                            <FormControl>
-                              <Switch
-                                id="optimized_runner"
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
+                        render={({ field }) => {
+                          const [showDialog, setShowDialog] = useState(false);
+                          
+                          return (
+                            <FormItem className="flex flex-row items-center gap-4 space-y-0">
+                              <FormControl>
+                                <Switch
+                                  id="optimized_runner"
+                                  checked={field.value}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setShowDialog(true);
+                                    } else {
+                                      field.onChange(false);
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <div>
+                                <FormLabel>Optimized Cold Start</FormLabel>
+                                <FormDescription>
+                                  Enables optimizations to reduce container
+                                  startup time. This may increase memory usage.
+                                </FormDescription>
+                              </div>
+                              <OptimizedRunnerDialog
+                                open={showDialog}
+                                onOpenChange={setShowDialog}
+                                onConfirm={() => field.onChange(true)}
                               />
-                            </FormControl>
-                            <div>
-                              <FormLabel>Optimized Cold Start</FormLabel>
-                              <FormDescription>
-                                Enables optimizations to reduce container
-                                startup time. This may increase memory usage.
-                              </FormDescription>
-                            </div>
-                          </FormItem>
-                        )}
+                            </FormItem>
+                          );
+                        }}
                       />
                     </div>
                   </AccordionContent>
@@ -1671,5 +1686,44 @@ function BuilderVersionSelectBox({
         </p>
       )}
     </div>
+  );
+}
+
+function OptimizedRunnerDialog({
+  open,
+  onOpenChange,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Enable Optimized Cold Start</DialogTitle>
+          <DialogDescription>
+            This feature requires:
+            <ul className="list-disc pl-6 mt-2 space-y-1">
+              <li>ComfyUI version >= 0.3.26</li>
+              <li>Latest Comfy Deploy custom nodes</li>
+            </ul>
+            Please make sure your environment meets these requirements before enabling.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={() => {
+            onConfirm();
+            onOpenChange(false);
+          }}>
+            Enable
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
