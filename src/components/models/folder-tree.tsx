@@ -49,6 +49,17 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useQueryState } from "nuqs";
 
+// Format file size to human-readable format (KB, MB, GB)
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const size = (bytes / Math.pow(1024, i)).toFixed(1);
+
+  return `${size} ${units[i]}`;
+}
+
 interface FileEntry {
   path: string;
   type: 1 | 2;
@@ -340,6 +351,11 @@ function TreeNode({
           {node.type === 2 && node.children.length > 0 && (
             <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
               {getTotalChildrenCount(node)}
+            </span>
+          )}
+          {node.type === 1 && (
+            <span className="ml-1.5 text-muted-foreground text-xs">
+              {formatFileSize(node.size)}
             </span>
           )}
         </button>
