@@ -1027,8 +1027,20 @@ function FinishedRunLogDisplay({
 
   if (!runLogs || runLogs.length === 0) {
     return (
-      <div className="p-2 text-muted-foreground text-xs">
-        No logs found for this run.
+      <div>
+        {modalFnCallId ? (
+          <LogsTab runId={runId} />
+        ) : (
+          <Alert
+            variant="default"
+            className="w-auto max-w-md border-muted bg-muted/50"
+          >
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-muted-foreground text-sm">
+              We're unable to display logs for runs from the workspace.
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
     );
   }
