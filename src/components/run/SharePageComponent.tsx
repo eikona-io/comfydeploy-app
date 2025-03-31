@@ -321,7 +321,7 @@ export function Playground(props: {
           </div>
         </div>
 
-        <div className="w-full flex-1 lg:mx-4">
+        <div className="w-full min-w-0 flex-1 lg:mx-4">
           <div className="relative h-full">
             {/* Useless Background */}
             <motion.div
@@ -347,7 +347,7 @@ export function Playground(props: {
           </div>
         </div>
 
-        <div className="hidden h-full w-[120px] flex-col lg:flex">
+        <div className="hidden h-full min-w-[120px] max-w-[120px] flex-col lg:flex">
           <span className="mb-1 ml-2 font-semibold text-sm">Gallery</span>
           <div className="relative mb-2 flex-1 overflow-hidden rounded-sm border border-gray-200 shadow-sm">
             <VirtualizedInfiniteList
