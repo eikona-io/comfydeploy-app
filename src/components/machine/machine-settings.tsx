@@ -311,13 +311,18 @@ function ServerlessSettings({
   disableUnsavedChangesWarning?: boolean;
   readonly?: boolean;
 }) {
-  const match = useMatch({
+  const matchWorkflow = useMatch({
     from: "/workflows/",
     shouldThrow: false,
   });
 
-  const isWorkflow = !!match;
+  const matchMachine = useMatch({
+    from: "/machines/",
+    shouldThrow: false,
+  });
 
+  const isWorkflow = !!matchWorkflow;
+  const isMachine = !!matchMachine;
   const [isFormDirty, setIsFormDirty] = useState(false);
   const isNew = machine.id === "new";
   const { controls } = useUnsavedChangesWarning({
@@ -493,6 +498,7 @@ function ServerlessSettings({
               </div>
               {machine.type === "comfy-deploy-serverless" &&
                 !isWorkflow &&
+                !isMachine &&
                 !readonly && (
                   <div className="mb-4">
                     <VersionChecker
