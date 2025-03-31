@@ -169,7 +169,7 @@ function getButtonLabel(
 }
 
 export function UpgradeButton(props: PlanButtonProps) {
-  const { userId } = useAuth();
+  const { userId, orgId } = useAuth();
   const [invoice, setInvoice] = useState<Invoice | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
@@ -289,6 +289,13 @@ export function UpgradeButton(props: PlanButtonProps) {
                 //     encodeURIComponent("ComfyDeploy Enterprise"),
                 //   "_blank",
                 // );
+                return;
+              }
+
+              if (!orgId) {
+                router.navigate({
+                  to: "/create-org",
+                });
                 return;
               }
 
