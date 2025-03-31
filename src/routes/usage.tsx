@@ -529,7 +529,7 @@ export function UsageTable(props: {
                   ))}
                   <TableRow>
                     <TableCell colSpan={3} className="font-bold text-right">
-                      Total Usage:
+                      Total Estimated Usage:
                     </TableCell>
                     <TableCell className="font-bold">
                       $ {usage.total_cost.toFixed(4)}
