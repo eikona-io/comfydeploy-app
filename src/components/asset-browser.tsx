@@ -232,7 +232,7 @@ export function AssetBrowser({
                   </div>
 
                   {/* Name column */}
-                  <div className="min-w-0 flex-1 px-2">
+                  <div className="flex-1 px-2">
                     {asset.is_folder ? (
                       <button
                         type="button"
@@ -242,7 +242,7 @@ export function AssetBrowser({
                         {asset.name}
                       </button>
                     ) : (
-                      <div className="w-full truncate text-sm">
+                      <div className="max-w-[300px] truncate text-sm">
                         {asset.name}
                       </div>
                     )}
