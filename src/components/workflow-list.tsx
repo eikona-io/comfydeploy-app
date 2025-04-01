@@ -179,7 +179,7 @@ export function WorkflowList() {
       </div>
       <ScrollArea className="fab-workflow-list flex-grow" ref={parentRef}>
         {isLoading ? (
-          <div className="mx-auto w-full grid grid-cols-1 gap-4 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mx-auto grid w-full max-w-screen-2xl grid-cols-1 justify-items-center gap-4 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }, (_, index) => (
               <WorkflowCardSkeleton key={index} />
             ))}
