@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, getOptimizedImage } from "@/lib/utils";
@@ -82,6 +83,7 @@ type fileURLRenderProps = {
   lazyLoading?: boolean;
   onLoad?: () => void;
   isMainView?: boolean;
+  canFullScreen?: boolean;
 };
 
 function _FileURLRender({
@@ -174,6 +176,8 @@ function _FileURLRender({
 }
 
 export function FileURLRender(props: fileURLRenderProps) {
+  const [open, setOpen] = useState(false);
+
   return (
     <ErrorBoundary
       fallback={(e) => (
@@ -188,7 +192,33 @@ export function FileURLRender(props: fileURLRenderProps) {
         </div>
       )}
     >
-      <_FileURLRender {...props} />
+      {props.canFullScreen ? (
+        <>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger className="h-full w-full">
+              <_FileURLRender {...props} />
+            </DialogTrigger>
+
+            <DialogContent
+              className="h-screen max-w-full border-none bg-transparent shadow-none"
+              onClick={() => {
+                setOpen(false);
+              }}
+            >
+              <DialogTitle className="hidden" />
+              <div className="flex h-full w-full items-center justify-center">
+                <_FileURLRender
+                  url={props.url}
+                  imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
+                  lazyLoading={props.lazyLoading}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : (
+        <_FileURLRender {...props} />
+      )}
     </ErrorBoundary>
   );
 }

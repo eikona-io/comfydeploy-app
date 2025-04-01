@@ -13,6 +13,7 @@ import { UploadButton } from "@/components/upload/upload-button";
 import { UploadProgress } from "@/components/upload/upload-progress";
 import { UploadZone } from "@/components/upload/upload-zone";
 import { useCreateFolder } from "@/hooks/hook";
+import { useAssetBrowserStore } from "@/stores/asset-browser-store";
 import { createFileRoute } from "@tanstack/react-router";
 import { FolderPlus } from "lucide-react";
 import { useState } from "react";
@@ -26,6 +27,7 @@ export function AssetsPage() {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const { mutateAsync: createFolder } = useCreateFolder();
+  const { currentPath } = useAssetBrowserStore();
 
   const handleCreateFolder = async () => {
     if (!newFolderName) return;
@@ -33,7 +35,7 @@ export function AssetsPage() {
     try {
       await createFolder({
         name: newFolderName,
-        parent_path: "/",
+        parent_path: currentPath,
       });
       setShowNewFolderDialog(false);
       setNewFolderName("");
