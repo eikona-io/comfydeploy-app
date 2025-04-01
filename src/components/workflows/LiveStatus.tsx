@@ -114,25 +114,13 @@ export function LiveStatus({
               !liveStatus &&
               run.machine_type === "comfy-deploy-serverless" &&
               (run.queued_at !== undefined ? (
-                <Badge>Cold Starting</Badge>
+                // <Badge>Cold Starting</Badge>
+                <></>
               ) : (
                 <Badge>In Queue</Badge>
               ))}
           </div>
         </div>
-        {/* <div className="flex justify-end items-center col-span-3 space-x-2">
-          <div className="flex items-start flex-col">
-            <div className="text-2xs text-ellipsis whitespace-nowrap overflow-hidden">
-              {!ended &&
-                !liveStatus &&
-                (run.queued_at != undefined ? (
-                  <Badge>Cold Starting</Badge>
-                ) : (
-                  <Badge>In Queue</Badge>
-                ))}
-            </div>
-          </div>
-        </div> */}
         {canBeCancelled && (
           <div className="flex justify-center">
             <Button
@@ -171,7 +159,8 @@ export function LiveStatus({
               !liveStatus &&
               run.machine_type === "comfy-deploy-serverless" &&
               (run.queued_at !== undefined ? (
-                <Badge className="text-2xs">Cold Starting</Badge>
+                // <Badge className="text-2xs">Cold Starting</Badge>
+                <></>
               ) : (
                 <Badge className="text-2xs">In Queue</Badge>
               ))}

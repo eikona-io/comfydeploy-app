@@ -64,7 +64,7 @@ export function RunDuration({
     run.started_at !== undefined &&
     (run.cold_start_duration === undefined || run.cold_start_duration <= 5);
 
-  const { workflow_api, workflow_inputs, run_log, ...rest } = run;
+  const { workflow_api, workflow_inputs, run_log, status, ...rest } = run;
 
   const parseDateIfString = (
     date: Date | string | undefined,
@@ -102,6 +102,7 @@ export function RunDuration({
     run.comfy_deploy_cold_start,
     "orange",
   );
+  // let coldStartBadge = undefined;
   const coldStartBadge =
     run.comfy_deploy_cold_start !== undefined && queued_at != null
       ? createBadge(
@@ -120,6 +121,10 @@ export function RunDuration({
           "green",
         )
       : undefined;
+
+  if (status === "not-started") {
+    return <></>;
+  }
 
   return (
     <Tooltip>
