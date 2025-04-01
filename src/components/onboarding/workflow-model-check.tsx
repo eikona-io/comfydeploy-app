@@ -189,6 +189,20 @@ export const NodeToBeFocus: NodeCategories = {
 
 // -----------------------components------------------------
 
+// Helper function to get the model name without parent folder
+export function getModelNameWithoutParent(path: string) {
+  if (!path) return "";
+
+  // Split the path by '/'
+  const parts = path.split("/");
+
+  // If there's only one part or no parts, return the original path
+  if (parts.length <= 1) return path;
+
+  // Return just the filename without the parent folder path
+  return parts[parts.length - 1];
+}
+
 export function WorkflowModelCheck({
   validation,
   setValidation,
@@ -506,7 +520,11 @@ const OptionList = memo(
         nodeValue &&
         fileList.some((f) => f.category === category) &&
         fileList.some((f) =>
-          f.filePaths.some((filePath) => filePath.name === nodeValue),
+          f.filePaths.some(
+            (filePath) =>
+              filePath.name === nodeValue ||
+              getModelNameWithoutParent(filePath.name) === nodeValue,
+          ),
         )
       );
     };
@@ -584,8 +602,9 @@ const OptionList = memo(
             <StatusTooltip
               content={
                 <div>
-                  Fail to find the <b>"{value}"</b> file! Please update / add it
-                  back to the <b>{folders}</b> folder.
+                  Fail to find the <b>"{getModelNameWithoutParent(value)}"</b>{" "}
+                  file! Please update / add it back to the <b>{folders}</b>{" "}
+                  folder.
                 </div>
               }
               variant="yellow"
@@ -599,7 +618,7 @@ const OptionList = memo(
           <StatusTooltip
             content={
               <div>
-                File found! [<b>{value}</b>]
+                File found! [<b>{getModelNameWithoutParent(value)}</b>]
               </div>
             }
             variant="success"
@@ -778,6 +797,20 @@ const OptionList = memo(
   },
 );
 
+// Function to get display name (remove the parent folder path)
+const getDisplayName = (path: string) => {
+  if (!path) return "";
+
+  // Split the path by '/'
+  const parts = path.split("/");
+
+  // If there's only one part or no parts, return the original path
+  if (parts.length <= 1) return path;
+
+  // Remove the first part (category) and join the rest
+  return parts.slice(1).join("/");
+};
+
 export function ModelSelectComboBox({
   selectedNode,
   setSelectedNode,
@@ -813,24 +846,12 @@ export function ModelSelectComboBox({
     setOpenStates(new Array(numInputs).fill(false));
   }, [numInputs]);
 
-  // Function to get display name (remove only the first level of the path)
-  const getDisplayName = (path: string) => {
-    if (!path) return "";
-
-    // Split the path by '/'
-    const parts = path.split("/");
-
-    // If there's only one part or no parts, return the original path
-    if (parts.length <= 1) return path;
-
-    // Remove the first part (category) and join the rest
-    return parts.slice(1).join("/");
-  };
-
   const renderComboBox = (index: number) => {
     const currentValue = selectedNode.widgets_values[index] || "";
     const isValid = categoryFiles?.filePaths.some(
-      (file) => file.name === currentValue,
+      (file) =>
+        file.name === currentValue ||
+        getModelNameWithoutParent(file.name) === currentValue,
     );
 
     return (
@@ -885,8 +906,11 @@ export function ModelSelectComboBox({
                           newWidgetsValues.push("");
                         }
 
-                        // Update the value at the specified index
-                        newWidgetsValues[index] = file.name;
+                        // Update the value at the specified index with just the model name
+                        // not the parent folder
+                        newWidgetsValues[index] = getModelNameWithoutParent(
+                          file.name,
+                        );
 
                         // Create a new node object with the updated widgets_values
                         const updatedNode = {
@@ -907,7 +931,8 @@ export function ModelSelectComboBox({
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            currentValue === file.name
+                            currentValue ===
+                              getModelNameWithoutParent(file.name)
                               ? "opacity-100"
                               : "opacity-0",
                           )}
