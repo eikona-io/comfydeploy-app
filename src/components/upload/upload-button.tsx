@@ -12,8 +12,6 @@ export function UploadButton({ className }: UploadButtonProps) {
 
   return (
     <Button
-      variant="outline"
-      size="sm"
       onClick={() => fileInput?.click()}
       disabled={isUploading}
       className={className}

@@ -109,7 +109,6 @@ export function useAssetUpload() {
     }) => {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("parent_path", parent_path);
 
       return await api({
         url: "assets/upload",
@@ -117,6 +116,9 @@ export function useAssetUpload() {
         init: {
           method: "POST",
           body: formData,
+        },
+        params: {
+          parent_path,
         },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.lengthComputable && onProgress) {

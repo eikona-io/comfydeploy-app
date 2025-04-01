@@ -44,21 +44,20 @@ export function AssetsPage() {
   };
 
   return (
-    <UploadZone className="h-full w-full max-w-[1000px]">
-      <div className="mx-auto flex h-full w-full flex-col">
+    <UploadZone className="h-full w-full max-w-[1200px]">
+      <div className="mx-auto flex h-full w-full flex-col pt-2">
         <div className="flex items-center justify-between px-4 py-2">
           <h1 className="font-semibold text-lg">Assets</h1>
           <div className="flex items-center gap-2">
-            <UploadButton />
             <Button
               variant="outline"
-              size="sm"
               onClick={() => setShowNewFolderDialog(true)}
             >
               <FolderPlus className="mr-2 h-4 w-4" />
               New Folder
             </Button>
-            <UploadProgress className="absolute right-4 top-16" />
+            <UploadButton />
+            <UploadProgress className="absolute top-16 right-4" />
           </div>
         </div>
         <AssetBrowser showNewFolderButton={false} />

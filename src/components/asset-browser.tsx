@@ -66,9 +66,6 @@ export function AssetBrowser({
   }
 
   return (
-    // <UploadZone
-    //   className={cn("relative flex h-full w-full flex-col", className)}
-    // >
     <div
       className={cn(
         "@container flex h-full w-full flex-col gap-2 overflow-hidden",
@@ -157,6 +154,5 @@ export function AssetBrowser({
         </div>
       </div>
     </div>
-    // </UploadZone>
   );
 }
