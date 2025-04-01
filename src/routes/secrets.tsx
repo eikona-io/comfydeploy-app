@@ -1,3 +1,4 @@
+import { SecretsList } from "@/components/secrets-list";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/secrets")({
@@ -5,5 +6,5 @@ export const Route = createFileRoute("/secrets")({
 });
 
 function RouteComponent() {
-  return <div>Hello "/secrets"!</div>;
+  return <SecretsList />;
 }
