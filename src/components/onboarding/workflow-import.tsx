@@ -323,7 +323,7 @@ export default function WorkflowImport() {
     },
     {
       id: 4,
-      title: "Model Checking (Beta)",
+      title: "Model Check",
       component: WorkflowModelCheck,
       validate: (validation) => {
         return { isValid: true };

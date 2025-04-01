@@ -647,8 +647,7 @@ const OptionList = memo(
       <div>
         <div className="flex items-center justify-between gap-2">
           <span className="block text-muted-foreground text-sm leading-normal">
-            Model Checking helps you verify if any workflow nodes are missing
-            models or inputs. You can modify and update them here.
+            Model Check helps find missing models and inputs for your workflow.
           </span>
           <Button
             variant={"outline"}
