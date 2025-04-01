@@ -288,7 +288,7 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
       </div>
 
       {/* Center column - Machine info */}
-      <div className="flex items-center justify-center gap-4 overflow-hidden">
+      <div className="flex items-center justify-start overflow-hidden">
         <Button
           onClick={(e) => {
             e.preventDefault();
@@ -302,10 +302,10 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
           }}
           variant="link"
           size="sm"
-          className="max-w-[150px] truncate text-muted-foreground text-xs flex items-center gap-1"
+          className="flex h-5 max-w-[150px] items-center gap-1 truncate text-2xs text-muted-foreground"
           title={deployment.machine.name}
         >
-          <Server size={13} />
+          <Server size={13} className="shrink-0" />
           {deployment.machine.name}
         </Button>
         {deployment.gpu && (
@@ -514,19 +514,14 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                   {getRelativeTime(item.created_at)}
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 p-0.5"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
-                    >
-                      <MoreVertical size={16} />
-                    </Button>
+                  <DropdownMenuTrigger
+                    asChild
+                    className="h-full w-full cursor-pointer rounded-sm p-2 hover:bg-gray-50"
+                    onClick={(e) => e.stopPropagation()} // Prevent triggering the row click
+                  >
+                    <MoreVertical size={16} />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[200px]">
+                  <DropdownMenuContent className="w-[200px]">
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();
@@ -571,7 +566,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                     className={cn(
                       "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                       selectedEnvironment === "staging"
-                        ? "bg-gradient-to-b from-white to-orange-100 shadow-sm ring-1 ring-gray-200/50"
+                        ? "bg-gradient-to-b from-white to-yellow-100 shadow-sm ring-1 ring-gray-200/50"
                         : "text-gray-600 hover:bg-gray-100",
                     )}
                   >
