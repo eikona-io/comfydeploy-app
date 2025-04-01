@@ -99,7 +99,7 @@ import {
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { VersionChecker } from "./version-checker";
-import { SecretsList } from "../secrets-list";
+import { SecretsList } from "../secrets/secrets-list";
 
 export function MachineSettingsWrapper({
   machine,

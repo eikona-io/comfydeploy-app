@@ -1,8 +1,14 @@
 import { create } from "zustand";
 
+export interface EnvironmentVariable {
+  key: string;
+  value: string;
+}
+
 export type Secret = {
   id: string;
-  key: string;
+  secretName: string;
+  keys: string[];
   user_id: string;
   org_id: string | null;
   created_at: Date;

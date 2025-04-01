@@ -1,4 +1,4 @@
-import { SecretsList } from "@/components/secrets-list";
+import { SecretsList } from "@/components/secrets/secrets-list";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/secrets")({

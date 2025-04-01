@@ -1,8 +1,8 @@
 import { useDebounce } from "@/hooks/use-debounce";
 import { type Secret, useUpdateSecrets } from "@/stores/update-secrets";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Input } from "./ui/input";
-import { ScrollTable } from "./common/scroll-table";
+import { Input } from "../ui/input";
+import { ScrollTable } from "../common/scroll-table";
 import {
   type ColumnDef,
   getCoreRowModel,
@@ -15,8 +15,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
-import { Button } from "./ui/button";
+} from "../ui/dropdown-menu";
+import { Button } from "../ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { getRelativeTime } from "@/lib/get-relative-time";
@@ -56,7 +56,9 @@ export const SecretsList = ({
         header: () => <div className="text-left">Key</div>,
         cell: ({ row }) => {
           return (
-            <div className="text-left font-medium">{row.original.key}</div>
+            <div className="text-left font-medium">
+              {row.original.secretName}
+            </div>
           );
         },
       },
@@ -141,7 +143,9 @@ export const SecretsList = ({
   useEffect(() => {
     if (debouncedSearchValue) {
       const updatedSecrets = secrets.filter((item) =>
-        item.key.toLowerCase().includes(debouncedSearchValue.toLowerCase()),
+        item.secretName
+          .toLowerCase()
+          .includes(debouncedSearchValue.toLowerCase()),
       );
       setFilteredSecrets(updatedSecrets);
     } else {
@@ -181,7 +185,6 @@ export const SecretsList = ({
             className="max-w-sm"
           />
           <div className="ml-auto flex gap-2">
-            {/* <ApiKeyAdd onKeyCreated={() => refetch()} /> */}
             <AddSecret />
           </div>
         </div>

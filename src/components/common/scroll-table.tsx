@@ -9,12 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
-import type { APIKey } from "../api-key-list";
 import { forwardRef } from "react";
 import type { Secret } from "@/stores/update-secrets";
 
 interface Props {
-  table: Table<APIKey | Secret>;
+  table: Table<Secret>;
   colSpan: number;
   isMachinesPage?: boolean;
   selectedId?: string;
