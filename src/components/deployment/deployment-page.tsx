@@ -5,13 +5,14 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
   ChevronRight,
   Copy,
   Loader2,
   MoreVertical,
   Rocket,
+  Server,
 } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
@@ -236,6 +237,7 @@ export function DeploymentPage() {
 
 function DeploymentHistory({ deployment }: { deployment: Deployment }) {
   const { setSelectedDeployment } = useSelectedDeploymentStore();
+  const navigate = useNavigate();
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -249,37 +251,6 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
       <div className="flex items-center gap-3">
         <span className="shrink-0 font-mono text-2xs text-muted-foreground">
           #{deployment.id.slice(0, 8)}
-        </span>
-        <Badge className={cn("!text-2xs", getEnvColor(deployment.environment))}>
-          {deployment.environment}
-        </Badge>
-
-        {deployment.version?.version && (
-          <Badge variant="secondary" className="!text-2xs py-0 font-medium">
-            v{deployment.version.version}
-          </Badge>
-        )}
-      </div>
-
-      {/* Center column - Machine info */}
-      <div className="flex items-center justify-center gap-4 overflow-hidden">
-        <span
-          className="max-w-[150px] truncate text-muted-foreground text-xs"
-          title={deployment.machine.name}
-        >
-          {deployment.machine.name}
-        </span>
-        {deployment.gpu && (
-          <Badge variant="outline" className="!text-2xs font-normal">
-            {deployment.gpu}
-          </Badge>
-        )}
-      </div>
-
-      {/* Right column */}
-      <div className="flex items-center justify-end gap-3">
-        <span className="whitespace-nowrap text-2xs text-muted-foreground">
-          {getRelativeTime(deployment.updated_at)}
         </span>
         <TooltipProvider>
           <Tooltip delayDuration={0}>
@@ -305,6 +276,51 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        <Badge className={cn("!text-2xs", getEnvColor(deployment.environment))}>
+          {deployment.environment}
+        </Badge>
+
+        {deployment.version?.version && (
+          <Badge variant="secondary" className="!text-2xs py-0 font-medium">
+            v{deployment.version.version}
+          </Badge>
+        )}
+      </div>
+
+      {/* Center column - Machine info */}
+      <div className="flex items-center justify-center gap-4 overflow-hidden">
+        <Button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.preventDefault();
+            e.nativeEvent.stopPropagation();
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId: deployment.machine_id },
+            });
+          }}
+          variant="link"
+          size="sm"
+          className="max-w-[150px] truncate text-muted-foreground text-xs flex items-center gap-1"
+          title={deployment.machine.name}
+        >
+          <Server size={13} />
+          {deployment.machine.name}
+        </Button>
+        {deployment.gpu && (
+          <Badge variant="outline" className="!text-2xs font-normal">
+            {deployment.gpu}
+          </Badge>
+        )}
+      </div>
+
+      {/* Right column */}
+      <div className="flex items-center justify-end gap-3">
+        <span className="whitespace-nowrap text-2xs text-muted-foreground">
+          {getRelativeTime(deployment.updated_at)}
+        </span>
+
         <span className="flex items-center gap-1 text-2xs text-muted-foreground hover:underline">
           API docs <ChevronRight size={13} />
         </span>
@@ -539,7 +555,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
         {selectedVersion && (
           <div className="space-y-4">
             <h3 className="text-lg font-medium">
-              Deploy Version <Badge>{selectedVersion.version}</Badge>
+              Deploy Version <Badge>v{selectedVersion.version}</Badge>
             </h3>
             <div className="space-y-2">
               <h3 className="text-sm font-medium">Environment</h3>
