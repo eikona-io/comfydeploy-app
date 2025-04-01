@@ -232,17 +232,19 @@ export function AssetBrowser({
                   </div>
 
                   {/* Name column */}
-                  <div className="flex-1 px-2">
+                  <div className="min-w-0 flex-1 px-2">
                     {asset.is_folder ? (
                       <button
                         type="button"
                         onClick={() => handleNavigate(asset.path)}
-                        className="truncate text-sm hover:underline"
+                        className="block w-full truncate text-left text-sm hover:underline"
                       >
                         {asset.name}
                       </button>
                     ) : (
-                      <div className="truncate text-sm">{asset.name}</div>
+                      <div className="w-full truncate text-sm">
+                        {asset.name}
+                      </div>
                     )}
                   </div>
 
