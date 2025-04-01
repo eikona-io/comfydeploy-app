@@ -453,28 +453,27 @@ function TimerDialog({
       toast.error("Session details not found");
       return;
     }
-
-    toast.promise(
-      callServerPromise(
-        api({
-          url: `session/${sessionId}/increase-timeout`,
-          init: {
-            method: "POST",
-            body: JSON.stringify({
-              minutes: Number(selectedIncrement),
-            }),
-          },
-        }),
-      ).then(() => onRefetch()),
+  
+    // Option 1: Use either toast.promise or callServerPromise, not both
+    callServerPromise(
+      api({
+        url: `session/${sessionId}/increase-timeout`,
+        init: {
+          method: "POST",
+          body: JSON.stringify({
+            minutes: Number(selectedIncrement),
+          }),
+        },
+      }),
       {
-        loading: "Increasing session time...",
-        success: "Session time increased successfully",
-        error: "Failed to increase session time",
-      },
-    );
-
-    onOpenChange(false);
-  };
+        loadingText: "Increasing session time...",
+        successMessage: "Session time increased successfully",
+      }
+    ).then(() => {
+      onRefetch();
+      onOpenChange(false);
+    });
+  
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
