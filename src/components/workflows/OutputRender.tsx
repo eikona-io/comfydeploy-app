@@ -145,13 +145,18 @@ function _FileURLRender({
     }
   }, [imageError, onLoad]);
 
-  if (
-    lowercaseFilename.endsWith(".png") ||
-    lowercaseFilename.endsWith(".gif") ||
-    lowercaseFilename.endsWith(".jpg") ||
-    lowercaseFilename.endsWith(".webp") ||
-    lowercaseFilename.endsWith(".jpeg")
-  ) {
+  const imageExtensions = [
+    ".png",
+    ".gif",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".avif",
+    ".heic",
+    ".heif",
+  ];
+
+  if (imageExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
     if (imageError) {
       return (
         <div
