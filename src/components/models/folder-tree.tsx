@@ -44,10 +44,22 @@ import {
   Trash2,
   Upload,
   XCircle,
+  ArrowDownUp,
+  ArrowUp,
+  ArrowDown,
+  ArrowDownUp as ArrowDownUpIcon,
+  ArrowUpDown,
+  Check as CheckIcon,
 } from "lucide-react";
-import { useState } from "react";
+import type React from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useQueryState } from "nuqs";
+import {
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 // Format file size to human-readable format (KB, MB, GB)
 function formatFileSize(bytes: number): string {
@@ -55,7 +67,7 @@ function formatFileSize(bytes: number): string {
 
   const units = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  const size = (bytes / Math.pow(1024, i)).toFixed(1);
+  const size = (bytes / 1024 ** i).toFixed(1);
 
   return `${size} ${units[i]}`;
 }
@@ -84,6 +96,10 @@ interface TreeNode {
 }
 
 type ModelFilter = "private" | "public" | "all";
+
+// Add a type for sort options
+type SortOption = "name" | "size";
+type SortDirection = "asc" | "desc";
 
 function buildTree(files: FileEntry[], isPrivate: boolean): TreeNode[] {
   const root: TreeNode[] = [];
@@ -680,6 +696,8 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [frontendFolderPaths, setFrontendFolderPaths] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"name" | "size">("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery<
     FileEntry[]
@@ -774,6 +792,44 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     filter === "private" || filter === "all",
     filter === "public" || filter === "all",
   );
+
+  // Sort function
+  const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
+    // Create a copy to avoid mutating original
+    return [...nodes]
+      .sort((a, b) => {
+        // Folders always come first
+        if (a.type !== b.type) {
+          return a.type === 2 ? -1 : 1;
+        }
+
+        if (sortBy === "name") {
+          const nameA = a.name.toLowerCase();
+          const nameB = b.name.toLowerCase();
+          return sortDirection === "asc"
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+        } else {
+          // Sort by size
+          return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
+        }
+      })
+      .map((node) => ({
+        ...node,
+        children: sortNodes(node.children),
+      }));
+  };
+
+  // Apply sorting to the merged tree
+  const sortedTree = useMemo(() => {
+    console.log("Sorting by:", sortBy, "Direction:", sortDirection);
+    return sortNodes(mergedTree);
+  }, [mergedTree, sortBy, sortDirection]);
+
+  // Get display text for current sorting option
+  const getSortDisplayText = () => {
+    return sortBy === "name" ? "Name" : "File size";
+  };
 
   // Helper to check if tree has any visible content based on filter
   const hasVisibleContent = (nodes: TreeNode[]): boolean => {
@@ -912,6 +968,79 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           />
         </div>
 
+        {/* Updated UI with "Ordering" text and current selection in dropdown button */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <ArrowDownUp className="h-5 w-5" />
+            <span className="text-sm font-medium">Ordering</span>
+          </div>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                className="flex items-center gap-2 min-w-[120px]"
+              >
+                <span>{sortBy === "name" ? "Name" : "File size"}</span>
+                <ChevronDownIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="px-3 py-2 text-base font-medium">Sort by</div>
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as "name" | "size")}
+              >
+                <DropdownMenuRadioItem
+                  value="name"
+                  className="flex items-center"
+                >
+                  <div className="flex-1">Name</div>
+                  {sortBy === "name" && <ArrowUp className="h-4 w-4" />}
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="size"
+                  className="flex items-center"
+                >
+                  <div className="flex-1">File size</div>
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setSortDirection("asc")}
+                className="flex items-center"
+              >
+                <ArrowUp className="mr-2 h-4 w-4" />
+                <div className="flex-1">Ascending</div>
+                {sortDirection === "asc" && <CheckIcon className="h-4 w-4" />}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setSortDirection("desc")}
+                className="flex items-center"
+              >
+                <ArrowDown className="mr-2 h-4 w-4" />
+                <div className="flex-1">Descending</div>
+                {sortDirection === "desc" && <CheckIcon className="h-4 w-4" />}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() =>
+              setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
+            }
+            className="h-10 w-10"
+          >
+            {sortDirection === "asc" ? (
+              <ArrowUp className="h-4 w-4" />
+            ) : (
+              <ArrowDown className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+
         <div className="flex gap-2">
           <Button
             variant="ghost"
@@ -981,7 +1110,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
         </Tabs>
       </div>
 
-      <div className="flex-1 overflow-auto border border-gray-200 bg-muted/20 rounded-sm">
+      <div className="flex-1 overflow-auto rounded-sm border border-gray-200 bg-muted/20">
         {isLoadingPrivate || isLoadingPublic ? (
           <div className="flex flex-col gap-4 p-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -1032,7 +1161,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           </div>
         ) : (
           <div className="flex flex-col">
-            {mergedTree.map((node) => (
+            {sortedTree.map((node) => (
               <TreeNode
                 key={node.path}
                 node={node}
