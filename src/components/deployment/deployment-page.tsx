@@ -1,15 +1,34 @@
-import { useNavigate, useParams } from "@tanstack/react-router";
-import type { GpuTypes } from "../onboarding/workflow-machine-import";
-import { VersionList } from "../version-select";
-import { cn } from "@/lib/utils";
-import {
-  getEnvColor,
-  useWorkflowDeployments,
-} from "../workspace/ContainersTable";
-import { useQuery } from "@tanstack/react-query";
-import { Badge } from "../ui/badge";
-import { UserIcon } from "../run/SharePageComponent";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { getRelativeTime } from "@/lib/get-relative-time";
+import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import {
+  ChevronRight,
+  Copy,
+  Loader2,
+  MoreVertical,
+  Rocket,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
+import { Area } from "recharts";
+import { XAxis, YAxis } from "recharts";
+import { AreaChart, CartesianGrid } from "recharts";
+import { toast } from "sonner";
+import { create } from "zustand";
+import { MyDrawer } from "../drawer";
+import { ErrorBoundary } from "../error-boundary";
+import type { GpuTypes } from "../onboarding/workflow-machine-import";
+import { UserIcon } from "../run/SharePageComponent";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { ChartTooltipContent } from "../ui/chart";
+import { ChartTooltip } from "../ui/chart";
+import { type ChartConfig, ChartContainer } from "../ui/chart";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,39 +37,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import {
-  ChevronRight,
-  Copy,
-  Loader2,
-  MoreVertical,
-  Rocket,
-} from "lucide-react";
-import { Button } from "../ui/button";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
-import { useMachine } from "@/hooks/use-machine";
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useEffect, useState } from "react";
-import { create } from "zustand";
-import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { VersionList } from "../version-select";
+import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
 import { FilterDropdown, RunsTableVirtualized } from "../workflows/RunsTable";
 import WorkflowComponent from "../workflows/WorkflowComponent";
-import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
-import { useQueryState } from "nuqs";
-import { Area } from "recharts";
-import { ChartTooltipContent } from "../ui/chart";
-import { ChartTooltip } from "../ui/chart";
-import { XAxis, YAxis } from "recharts";
-import { type ChartConfig, ChartContainer } from "../ui/chart";
-import { AreaChart, CartesianGrid } from "recharts";
-import { ErrorBoundary } from "../error-boundary";
+import {
+  getEnvColor,
+  useWorkflowDeployments,
+} from "../workspace/ContainersTable";
+import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
+import { MachineSelect } from "../workspace/MachineSelect";
 
 export interface Deployment {
   id: string;
@@ -326,7 +329,26 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
   });
   const { setSelectedDeployment } = useSelectedDeploymentStore();
   const [isPromoting, setIsPromoting] = useState(false);
-
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<
+    "staging" | "production"
+  >("staging");
+  const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
+    null,
+  );
+  useEffect(() => {
+    if (deployments) {
+      const deployment = deployments.find(
+        (d: Deployment) => d.environment === selectedEnvironment,
+      );
+      if (deployment?.machine_id) {
+        setSelectedMachineId(deployment?.machine_id);
+        return;
+      }
+    }
+    setSelectedMachineId(machine?.id ?? null);
+  }, [deployments, selectedEnvironment]);
   const handlePromoteToEnv = async ({
     environment,
     workflowVersionId,
@@ -365,84 +387,30 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
     }
   };
 
+  const final_machine = useMachine(selectedMachineId ?? machine?.id);
+
   return (
     <>
       {versions?.[0] && (
         <div className="-top-1 absolute right-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="default"
-                className="h-[30px] rounded-[8px] text-2xs focus-visible:ring-transparent"
-                size="sm"
-              >
-                Deploy Latest
-                <Badge
-                  variant="outline"
-                  className="!text-[11px] ml-2 h-[18px] bg-gray-400/50 py-0 text-white"
-                >
-                  v{versions?.[0].version}
-                </Badge>
-                <Rocket className="ml-2" size={13} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 overflow-visible">
-              <DropdownMenuItem
-                className="p-0"
-                disabled={isPromoting}
-                onClick={async (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.preventDefault();
-                  e.nativeEvent.stopPropagation();
-                  await handlePromoteToEnv({
-                    environment: "production",
-                    workflowVersionId: versions[0].id,
-                    machineId: machine?.id,
-                    machineVersionId: machine?.machine_version_id,
-                  });
-                }}
-              >
-                <Button
-                  variant={"ghost"}
-                  className="w-full justify-between gap-2 px-2 font-normal"
-                >
-                  <div className="flex flex-row gap-2">
-                    Promote to
-                    <Badge variant="blue">production</Badge>
-                  </div>
-                  {isPromoting && <Loader2 className="h-4 w-4 animate-spin" />}
-                </Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="p-0"
-                disabled={isPromoting}
-                onClick={async (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.preventDefault();
-                  e.nativeEvent.stopPropagation();
-                  await handlePromoteToEnv({
-                    environment: "staging",
-                    workflowVersionId: versions[0].id,
-                    machineId: machine?.id,
-                    machineVersionId: machine?.machine_version_id,
-                  });
-                }}
-              >
-                <Button
-                  variant={"ghost"}
-                  className="w-full justify-between gap-2 px-2 font-normal"
-                >
-                  <div className="flex flex-row gap-2">
-                    Promote to
-                    <Badge variant="yellow">staging</Badge>
-                  </div>
-                  {isPromoting && <Loader2 className="h-4 w-4 animate-spin" />}
-                </Button>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="default"
+            className="h-[30px] rounded-[8px] text-2xs focus-visible:ring-transparent"
+            size="sm"
+            onClick={() => {
+              setSelectedVersion(versions[0]);
+              setIsDrawerOpen(true);
+            }}
+          >
+            Deploy Latest
+            <Badge
+              variant="outline"
+              className="!text-[11px] ml-2 h-[18px] bg-gray-400/50 py-0 text-white"
+            >
+              v{versions?.[0].version}
+            </Badge>
+            <Rocket className="ml-2" size={13} />
+          </Button>
         </div>
       )}
       <VersionList
@@ -530,78 +498,27 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                   {getRelativeTime(item.created_at)}
                 </div>
                 <DropdownMenu>
-                  <DropdownMenuTrigger
-                    asChild
-                    className="h-full w-full cursor-pointer rounded-sm p-2 hover:bg-gray-50"
-                    onClick={(e) => e.stopPropagation()} // Prevent triggering the row click
-                  >
-                    <MoreVertical size={16} />
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 p-0.5"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      <MoreVertical size={16} />
+                    </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 overflow-visible">
-                    <DropdownMenuLabel className="flex flex-row items-center gap-2 py-1 font-medium text-xs">
-                      Deployment
-                      <Badge variant="secondary" className="!text-2xs py-0">
-                        v{item.version}
-                      </Badge>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                  <DropdownMenuContent align="end" className="w-[200px]">
                     <DropdownMenuItem
-                      className="p-0"
-                      disabled={isPromoting}
-                      onClick={async (e) => {
-                        e.preventDefault();
+                      onClick={(e) => {
                         e.stopPropagation();
-                        e.nativeEvent.preventDefault();
-                        e.nativeEvent.stopPropagation();
-                        await handlePromoteToEnv({
-                          environment: "production",
-                          workflowVersionId: item.id,
-                          machineId: machine?.id,
-                          machineVersionId: machine?.machine_version_id,
-                        });
+                        setSelectedVersion(item);
+                        setIsDrawerOpen(true);
                       }}
                     >
-                      <Button
-                        variant={"ghost"}
-                        className="w-full justify-between gap-2 px-2 font-normal"
-                      >
-                        <div className="flex flex-row gap-2">
-                          Promote to
-                          <Badge variant="blue">production</Badge>
-                        </div>
-                        {isPromoting && (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        )}
-                      </Button>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="p-0"
-                      disabled={isPromoting}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.nativeEvent.preventDefault();
-                        e.nativeEvent.stopPropagation();
-                        await handlePromoteToEnv({
-                          environment: "staging",
-                          workflowVersionId: item.id,
-                          machineId: machine?.id,
-                          machineVersionId: machine?.machine_version_id,
-                        });
-                      }}
-                    >
-                      <Button
-                        variant={"ghost"}
-                        className="w-full justify-between gap-2 px-2 font-normal"
-                      >
-                        <div className="flex flex-row gap-2">
-                          Promote to
-                          <Badge variant="yellow">staging</Badge>
-                        </div>
-                        {isPromoting && (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        )}
-                      </Button>
+                      Deploy Version
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -610,6 +527,102 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
           );
         }}
       />
+      <MyDrawer
+        open={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedVersion(null);
+          setSelectedEnvironment("staging");
+          setSelectedMachineId(null);
+        }}
+      >
+        {selectedVersion && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">
+              Deploy Version <Badge>{selectedVersion.version}</Badge>
+            </h3>
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Environment</h3>
+              <Tabs
+                value={selectedEnvironment}
+                onValueChange={(value) =>
+                  setSelectedEnvironment(value as "staging" | "production")
+                }
+              >
+                <TabsList className="inline-flex items-center rounded-lg bg-white/95 h-fit ring-1 ring-gray-200/50">
+                  <TabsTrigger
+                    value="staging"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      selectedEnvironment === "staging"
+                        ? "bg-gradient-to-b from-white to-orange-100 shadow-sm ring-1 ring-gray-200/50"
+                        : "text-gray-600 hover:bg-gray-100",
+                    )}
+                  >
+                    Staging
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="production"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      selectedEnvironment === "production"
+                        ? "bg-gradient-to-b from-white to-blue-100 shadow-sm ring-1 ring-gray-200/50"
+                        : "text-gray-600 hover:bg-gray-100",
+                    )}
+                  >
+                    Production
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Machine</h3>
+              <MachineSelect
+                workflow_id={workflowId}
+                leaveEmpty
+                value={selectedMachineId ?? ""}
+                onChange={(value) => setSelectedMachineId(value)}
+                className="rounded-md border bg-background"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setSelectedEnvironment("staging");
+                  setSelectedMachineId(null);
+                  setIsDrawerOpen(false);
+                  setSelectedVersion(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={
+                  isPromoting || !selectedMachineId || final_machine.isLoading
+                }
+                onClick={async () => {
+                  await handlePromoteToEnv({
+                    environment: selectedEnvironment,
+                    workflowVersionId: selectedVersion.id,
+                    machineId: final_machine.data?.id,
+                    machineVersionId: final_machine.data?.machine_version_id,
+                  });
+                  setIsDrawerOpen(false);
+                  setSelectedVersion(null);
+                }}
+              >
+                {isPromoting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Deploy
+              </Button>
+            </div>
+          </div>
+        )}
+      </MyDrawer>
     </>
   );
 }
