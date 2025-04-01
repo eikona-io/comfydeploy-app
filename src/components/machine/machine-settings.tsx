@@ -99,6 +99,7 @@ import {
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { VersionChecker } from "./version-checker";
+import { SecretsList } from "../secrets-list";
 
 export function MachineSettingsWrapper({
   machine,
@@ -168,6 +169,16 @@ export function MachineSettingsWrapper({
                   </button>
                   <button
                     type="button"
+                    onClick={() => setView("secrets")}
+                    className={cn(
+                      "p-4 py-0 text-muted-foreground text-sm",
+                      view === "secrets" && "text-foreground",
+                    )}
+                  >
+                    Secrets
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setView("advanced")}
                     className={cn(
                       "p-4 py-0 text-muted-foreground text-sm",
@@ -186,9 +197,9 @@ export function MachineSettingsWrapper({
                   width: "100px",
                   x:
                     view === "advanced"
-                      ? "calc(200% + 24px)"
+                      ? "calc(295%)"
                       : view === "autoscaling"
-                        ? "calc(100% + 20px)"
+                        ? "calc(100% + 20px)": view === "secrets"? "calc(203% + 10px)"
                         : "6px",
                 }}
                 transition={{
@@ -907,8 +918,15 @@ function ServerlessSettings({
               </Accordion>
             </div>
           )}
+
         </form>
       </Form>
+      
+      {view === "secrets" && (
+        <div className="pt-4">
+          <SecretsList isMachinesPage />
+        </div>
+      )}
 
       <UnsavedChangesWarning
         isDirty={isFormDirty}

@@ -34,8 +34,9 @@ type ApiKeyAddProps = {
 };
 
 export function AddSecret({ onKeyCreated }: ApiKeyAddProps) {
-  const { secrets, setSecrets, setFilteredSecrets, filteredSecrets } =
-    useUpdateSecrets((state) => state);
+  const { secrets, setSecrets, setFilteredSecrets } = useUpdateSecrets(
+    (state) => state,
+  );
   const [open, setOpen] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,7 +66,6 @@ export function AddSecret({ onKeyCreated }: ApiKeyAddProps) {
       <DialogContent className="sm:max-w-[425px]">
         <Form {...form}>
           <form
-            {...form}
             onSubmit={form.handleSubmit(async (data) => {
               //   const response = await addNewAPIKey(data.name);
               //   setAPIKey(response.key);

@@ -16,10 +16,12 @@ import type { Secret } from "@/stores/update-secrets";
 interface Props {
   table: Table<APIKey | Secret>;
   colSpan: number;
+  isMachinesPage?: boolean;
+  selectedId?: string;
 }
 
 export const ScrollTable = forwardRef<HTMLDivElement, Props>(
-  ({ table, colSpan }, ref) => {
+  ({ table, colSpan, isMachinesPage, selectedId }, ref) => {
     return (
       <ScrollArea
         className="w-full overflow-x-auto rounded-md border"
@@ -51,6 +53,11 @@ export const ScrollTable = forwardRef<HTMLDivElement, Props>(
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className={
+                      isMachinesPage && selectedId === row.id
+                        ? "bg-muted/50"
+                        : ""
+                    }
                   >
                     {row.getVisibleCells().map((cell) => {
                       return (

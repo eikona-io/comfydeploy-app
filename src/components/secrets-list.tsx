@@ -22,9 +22,14 @@ import { toast } from "sonner";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { AddSecret } from "./add-secret";
 
-export const SecretsList = () => {
+export const SecretsList = ({
+  isMachinesPage,
+}: {
+  isMachinesPage?: boolean;
+}) => {
   const [searchValue, setSearchValue] = useState("");
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
+  const [selectedId, setSelectedId] = useState("");
   const { secrets, filteredSecrets, setFilteredSecrets, setSecrets } =
     useUpdateSecrets((state) => state);
 
@@ -36,7 +41,7 @@ export const SecretsList = () => {
         accessorKey: "id",
         header: ({ column }) => {
           return (
-            <button type="button" className="flex items-center ">
+            <button type="button" className="flex items-center">
               Id
             </button>
           );
@@ -103,15 +108,35 @@ export const SecretsList = () => {
                     // refetch();
                   }}
                 >
-                  Delete API Key
+                  Delete Secret
                 </DropdownMenuItem>
+                {isMachinesPage && (
+                  <DropdownMenuItem
+                    className=""
+                    onClick={async () => {
+                      // await deleteAPIKey(apiKey.id);
+                      if (selectedId === row.id) {
+                        setSelectedId("");
+                        toast.success("Secret deselected");
+                      } else {
+                        setSelectedId(row.id);
+                        toast.success("Secret selected");
+                      }
+                      // refetch();
+                    }}
+                  >
+                    {row.id === selectedId
+                      ? "Deselect Secret"
+                      : "Select Secret"}
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           );
         },
       },
     ];
-  }, [secrets, setFilteredSecrets, setSecrets]);
+  }, [secrets, setFilteredSecrets, setSecrets, isMachinesPage, selectedId]);
 
   useEffect(() => {
     if (debouncedSearchValue) {
@@ -160,7 +185,13 @@ export const SecretsList = () => {
             <AddSecret />
           </div>
         </div>
-        <ScrollTable ref={parentRef} colSpan={columns.length} table={table} />
+        <ScrollTable
+          isMachinesPage={isMachinesPage}
+          selectedId={selectedId}
+          ref={parentRef}
+          colSpan={columns.length}
+          table={table}
+        />
       </div>
     </div>
   );
