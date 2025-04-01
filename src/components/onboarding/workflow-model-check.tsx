@@ -84,6 +84,7 @@ export type NodeCategory = {
   type: string;
   folder: string | string[];
   noOfNodes?: number;
+  onlyRootFiles?: boolean;
 };
 
 export type NodeCategories = {
@@ -110,6 +111,7 @@ export const NodeToBeFocus: NodeCategories = {
   Image: {
     type: "LoadImage",
     folder: "input",
+    onlyRootFiles: true,
   },
   Checkpoint: {
     type: "CheckpointLoaderSimple",
@@ -401,6 +403,16 @@ function organizeFilesByCategory(
           : [config.folder];
 
         if (folders.includes(folderPath)) {
+          // Skip files in subdirectories if onlyRootFiles is true
+          if (config.onlyRootFiles) {
+            // Check if this is a file directly in the root folder
+            // The path should have exactly one slash or none (top level file)
+            const parts = filePath.split("/");
+            if (parts.length > 2) {
+              continue; // Skip this file, it's in a subdirectory
+            }
+          }
+
           const existingPaths = categoryMap.get(category) || [];
           existingPaths.push({
             name: filePath,
