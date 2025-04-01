@@ -123,7 +123,13 @@ export function RunDuration({
       : undefined;
 
   if (status === "not-started") {
-    return <></>;
+    return (
+      <div className="flex justify-between gap-2 truncate">
+        <div className="flex items-center gap-2 text-2xs">
+          <StatusBadge status={run.status} mini={true} />
+        </div>
+      </div>
+    );
   }
 
   return (
