@@ -132,6 +132,11 @@ export function HuggingfaceForm({
             black-forest-labs/FLUX.1-dev)
           </p>
         )}
+        {validation && !validation.exists && !isValidating && (
+          <p className="text-red-500 text-sm">
+            Repository does not exist. Please check the repository ID.
+          </p>
+        )}
       </div>
 
       {error && (
