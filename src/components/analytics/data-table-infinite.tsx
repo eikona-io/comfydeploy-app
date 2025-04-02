@@ -374,27 +374,19 @@ export function DataTableInfinite<TData, TValue>({
                 )}
                 <TableRow className="hover:bg-transparent data-[state=selected]:bg-transparent">
                   <TableCell colSpan={columns.length} className="text-center">
-                    {totalRowsFetched < filterRows ||
-                    !table.getCoreRowModel().rows?.length ? (
+                    {data[data.length - 1]?.length > 0 ? (
                       <Button
-                        disabled={isFetching || isLoading}
                         onClick={() => fetchNextPage()}
+                        disabled={isFetching || isLoading}
                         size="sm"
                         variant="outline"
                         className="text-xs"
                       >
-                        {isFetching ? (
-                          <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                        ) : null}
                         Load More
                       </Button>
                     ) : (
                       <p className="text-muted-foreground text-xs">
-                        No more data to load (total:{" "}
-                        <span className="font-medium font-mono">
-                          {formatCompactNumber(totalRows)}
-                        </span>{" "}
-                        rows)
+                        No more data to load
                       </p>
                     )}
                   </TableCell>
