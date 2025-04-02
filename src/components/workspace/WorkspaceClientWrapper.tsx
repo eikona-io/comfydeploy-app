@@ -229,7 +229,7 @@ export function WorkspaceClientWrapper({
             <Button
               variant="ghost"
               onClick={() => setShowPreview(!showPreview)}
-              className="ml-4 p-2"
+              className="ml-4 p-2 hidden md:block"
             >
               {showPreview ? (
                 <ChevronRight size={20} />
@@ -239,7 +239,7 @@ export function WorkspaceClientWrapper({
             </Button>
             {versionData && showPreview && (
               <motion.div
-                className="flex h-full w-full items-center justify-center bg-gray-50 shadow-lg rounded-l-lg border border-1 my-2 overflow-hidden"
+                className="hidden md:flex h-full w-full items-center justify-center bg-gray-50 shadow-lg rounded-l-lg border border-1 my-2 overflow-hidden"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
