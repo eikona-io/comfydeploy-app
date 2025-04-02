@@ -65,6 +65,7 @@ export function AssetsBrowserPopup() {
                 }
                 setOpen(false); // Close the drawer after selection
               }}
+              isPanel={true}
             />
           </div>
         </Drawer.Content>
