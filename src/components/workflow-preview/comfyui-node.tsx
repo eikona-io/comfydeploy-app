@@ -153,19 +153,7 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
       });
     }
 
-    // Add outputs next
-    if (data.outputs) {
-      data.outputs.forEach((output, index) => {
-        ports.push({
-          type: "output",
-          name: output.name || formatTypeName(output.type),
-          portType: output.type,
-          index: ports.length,
-        });
-      });
-    }
-
-    // Add direct inputs last
+    // Add direct inputs (widgets) after inputs
     if (data.apiInputs) {
       Object.entries(data.apiInputs)
         .filter(([_, value]) => !Array.isArray(value))
@@ -191,12 +179,33 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
     return ports;
   };
 
+  // Helper function to get output ports
+  const getOutputPorts = (): UnifiedPort[] => {
+    const ports: UnifiedPort[] = [];
+
+    if (data.outputs) {
+      data.outputs.forEach((output, index) => {
+        ports.push({
+          type: "output",
+          name: output.name || formatTypeName(output.type),
+          portType: output.type,
+          index: index, // Use original index for outputs
+        });
+      });
+    }
+
+    return ports;
+  };
+
   const unifiedPorts = getUnifiedPorts();
+  const outputPorts = getOutputPorts();
   const handleSpacing = 28;
   const baseHeight = 80;
-  const minHeight = baseHeight + unifiedPorts.length * handleSpacing;
-  const headerHeight = 40; // Height of the header section
-  const topPadding = 12; // Increased padding from the top
+  const minHeight =
+    baseHeight +
+    Math.max(unifiedPorts.length, outputPorts.length) * handleSpacing;
+  const headerHeight = 40;
+  const topPadding = 12;
 
   // Determine if the label and type are the same to avoid duplication
   // This improved check handles cases where the strings are semantically the same
@@ -353,7 +362,6 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
           const handleColor = port.portType
             ? getHandleColorByType(port.portType)
             : "#888888";
-          const isLeftSide = port.type === "input" || port.type === "direct";
           const position = headerHeight + topPadding + index * handleSpacing;
 
           return (
@@ -361,99 +369,79 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
               key={`${port.type}-${index}`}
               className="absolute flex items-center"
               style={{
-                [isLeftSide ? "left" : "right"]: -8,
+                left: -8,
                 top: position,
-                width: isLeftSide ? "auto" : "140px",
-                height: "24px", // Fixed height for consistent vertical centering
+                width: "auto",
+                height: "24px",
               }}
             >
-              {isLeftSide && (
-                <div className="absolute flex items-center">
-                  {/* Handle circle and dot for inputs */}
-                  {port.type === "input" && (
+              <div className="absolute flex items-center">
+                {/* Handle circle and dot for inputs */}
+                {port.type === "input" && (
+                  <div
+                    className="relative -translate-x-4"
+                    style={{ width: "20px", height: "20px" }}
+                  >
                     <div
-                      className="relative -translate-x-4"
-                      style={{ width: "20px", height: "20px" }}
-                    >
-                      <div
-                        className="absolute rounded-full border-2 transition-all"
-                        style={{
-                          width: 16,
-                          height: 16,
-                          left: 2,
-                          top: 2,
-                          borderColor: handleColor,
-                          backgroundColor: port.isConnected
-                            ? "rgba(0,0,0,0.3)"
-                            : "rgba(0,0,0,0.1)",
-                        }}
-                      />
-                      <div
-                        className="absolute rounded-full transition-all"
-                        style={{
-                          width: 6,
-                          height: 6,
-                          left: 7,
-                          top: 7,
-                          backgroundColor: handleColor,
-                          zIndex: 10,
-                          opacity: port.isConnected ? 1 : 0.5,
-                        }}
-                      />
-                      <Handle
-                        type="target"
-                        position={Position.Left}
-                        id={`input-${port.originalIndex}`}
-                        style={{
-                          width: 20,
-                          height: 20,
-                          left: 0,
-                          top: 10,
-                          opacity: 0,
-                          zIndex: 20,
-                        }}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                      className="absolute rounded-full border-2 transition-all"
+                      style={{
+                        width: 16,
+                        height: 16,
+                        left: 2,
+                        top: 2,
+                        borderColor: handleColor,
+                        backgroundColor: port.isConnected
+                          ? "rgba(0,0,0,0.3)"
+                          : "rgba(0,0,0,0.1)",
+                      }}
+                    />
+                    <div
+                      className="absolute rounded-full transition-all"
+                      style={{
+                        width: 6,
+                        height: 6,
+                        left: 7,
+                        top: 7,
+                        backgroundColor: handleColor,
+                        zIndex: 10,
+                        opacity: port.isConnected ? 1 : 0.5,
+                      }}
+                    />
+                    <Handle
+                      type="target"
+                      position={Position.Left}
+                      id={`input-${port.originalIndex}`}
+                      style={{
+                        width: 20,
+                        height: 20,
+                        left: 0,
+                        top: 10,
+                        opacity: 0,
+                        zIndex: 20,
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
 
               {/* Port label and value */}
               <div
-                className={`flex items-center ${isLeftSide ? "ml-4" : "mr-4"} ${
-                  !isLeftSide ? "justify-end" : ""
-                }`}
+                className="flex items-center ml-4"
                 style={{
-                  width: !isLeftSide ? "140px" : "auto",
                   height: "24px",
                 }}
               >
-                {!isLeftSide && (
-                  <span
-                    className="text-xs text-white bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap"
-                    style={{
-                      maxWidth: "120px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title={port.name}
-                  >
-                    {port.name}
-                  </span>
-                )}
-                {isLeftSide && (
-                  <span
-                    className="text-xs text-white bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap"
-                    style={{
-                      maxWidth: "120px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title={port.name}
-                  >
-                    {port.name}
-                  </span>
-                )}
+                <span
+                  className="text-xs text-white bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap"
+                  style={{
+                    maxWidth: "120px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                  title={port.name}
+                >
+                  {port.name}
+                </span>
 
                 {/* Show value only for unconnected ports */}
                 {port.value !== undefined && !port.isConnected && (
@@ -470,52 +458,92 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
                   </span>
                 )}
               </div>
+            </div>
+          );
+        })}
+
+        {/* Output ports rendering */}
+        {outputPorts.map((port, index) => {
+          const handleColor = port.portType
+            ? getHandleColorByType(port.portType)
+            : "#888888";
+          const position = headerHeight + topPadding + index * handleSpacing;
+
+          return (
+            <div
+              key={`output-${index}`}
+              className="absolute flex items-center"
+              style={{
+                right: -8,
+                top: position,
+                width: "140px",
+                height: "24px",
+              }}
+            >
+              {/* Port label */}
+              <div
+                className="flex items-center justify-end"
+                style={{
+                  width: "140px",
+                  height: "24px",
+                }}
+              >
+                <span
+                  className="text-xs text-white bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap"
+                  style={{
+                    maxWidth: "120px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                  title={port.name}
+                >
+                  {port.name}
+                </span>
+              </div>
 
               {/* Handle for outputs */}
-              {!isLeftSide && (
-                <div className="relative flex items-center">
+              <div className="relative flex items-center">
+                <div
+                  className="relative translate-x-4"
+                  style={{ width: "20px", height: "20px" }}
+                >
                   <div
-                    className="relative translate-x-4"
-                    style={{ width: "20px", height: "20px" }}
-                  >
-                    <div
-                      className="absolute rounded-full border-2 transition-all"
-                      style={{
-                        width: 16,
-                        height: 16,
-                        right: 2,
-                        top: 2,
-                        borderColor: handleColor,
-                        backgroundColor: "rgba(0,0,0,0.3)",
-                      }}
-                    />
-                    <div
-                      className="absolute rounded-full transition-all"
-                      style={{
-                        width: 6,
-                        height: 6,
-                        right: 7,
-                        top: 7,
-                        backgroundColor: handleColor,
-                        zIndex: 10,
-                      }}
-                    />
-                    <Handle
-                      type="source"
-                      position={Position.Right}
-                      id={`output-${index}`}
-                      style={{
-                        width: 20,
-                        height: 20,
-                        right: 0,
-                        top: 10,
-                        opacity: 0,
-                        zIndex: 20,
-                      }}
-                    />
-                  </div>
+                    className="absolute rounded-full border-2 transition-all"
+                    style={{
+                      width: 16,
+                      height: 16,
+                      right: 2,
+                      top: 2,
+                      borderColor: handleColor,
+                      backgroundColor: "rgba(0,0,0,0.3)",
+                    }}
+                  />
+                  <div
+                    className="absolute rounded-full transition-all"
+                    style={{
+                      width: 6,
+                      height: 6,
+                      right: 7,
+                      top: 7,
+                      backgroundColor: handleColor,
+                      zIndex: 10,
+                    }}
+                  />
+                  <Handle
+                    type="source"
+                    position={Position.Right}
+                    id={`output-${index}`}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      right: 0,
+                      top: 10,
+                      opacity: 0,
+                      zIndex: 20,
+                    }}
+                  />
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
