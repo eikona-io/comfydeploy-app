@@ -93,6 +93,8 @@ export function HuggingfaceForm({
     }
   };
 
+  const isValidFormat = repoId.includes("/") && repoId.split("/").length === 2;
+
   return (
     <form
       onSubmit={handleFormSubmit}
@@ -100,37 +102,37 @@ export function HuggingfaceForm({
     >
       <FolderPathDisplay path={folderPath} />
 
-      <div className="relative">
-        <Input
-          placeholder="Enter repository ID (e.g. stabilityai/stable-diffusion-xl-base-1.0)"
-          value={repoId}
-          onChange={(e) => setRepoId(e.target.value)}
-          className={cn(
-            "pr-10",
-            validation?.exists && "border-green-500",
-            validation && !validation.exists && "border-red-500",
-          )}
-          onKeyDown={handleKeyDown}
-        />
-        <div className="-translate-y-1/2 absolute top-1/2 right-3">
-          {isValidating ? (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          ) : validation?.exists ? (
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          ) : validation ? (
-            <XCircle className="h-4 w-4 text-red-500" />
-          ) : null}
+      <div className="space-y-2">
+        <div className="relative">
+          <Input
+            id="repoId"
+            placeholder="e.g. black-forest-labs/FLUX.1-dev"
+            value={repoId}
+            onChange={(e) => setRepoId(e.target.value)}
+            className={cn(
+              "pr-10",
+              validation?.exists && "border-green-500",
+              validation && !validation.exists && "border-red-500",
+            )}
+            onKeyDown={handleKeyDown}
+          />
+          <div className="-translate-y-1/2 absolute top-1/2 right-3">
+            {isValidating ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            ) : validation?.exists ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            ) : validation ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : null}
+          </div>
         </div>
+        {repoId && !isValidFormat && !isValidating && (
+          <p className="text-red-500 text-sm">
+            Please enter a valid format: owner/repository (e.g.,
+            black-forest-labs/FLUX.1-dev)
+          </p>
+        )}
       </div>
-
-      {validation?.exists && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription className="text-green-800">
-            Model will be added to:{" "}
-            <span className="font-medium">{modelPath}</span>
-          </AlertDescription>
-        </Alert>
-      )}
 
       {error && (
         <Alert variant="destructive">
