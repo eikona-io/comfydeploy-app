@@ -434,7 +434,7 @@ function TreeNode({
                 {!node.isPrivate && (
                   <DropdownMenuItem
                     disabled
-                    className="opacity-50 text-muted-foreground"
+                    className="text-muted-foreground opacity-50"
                   >
                     <span className="mr-2 text-xs italic">
                       Public models cannot be modified
@@ -1119,7 +1119,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
               <Button
                 variant="default"
                 size="sm"
-                className="bg-blue-600 border-blue-700 hover:bg-blue-700 shadow-sm text-white"
+                className="border-blue-700 bg-blue-600 text-white shadow-sm hover:bg-blue-700"
                 onClick={() => onAddModel("")}
               >
                 <Upload className="mr-2 h-4 w-4" />
