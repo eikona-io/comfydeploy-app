@@ -98,8 +98,19 @@ export function VersionChecker({
           <div className="flex flex-col gap-3">
             <div className="flex items-center">
               <ArrowUpCircle className="h-4 mr-2 text-amber-500 w-4" />
-              <div className="font-semibold text-amber-500 text-sm">
+              <div className="font-semibold text-amber-500 text-sm flex justify-between w-full items-center">
                 Update Available for ComfyDeploy custom node
+                {!hideUpdateButton && onUpdate && (
+                  <Button
+                    className="h-8 hover:bg-amber-500/20 hover:text-amber-600 text-xs w-fit"
+                    onClick={onUpdate}
+                    size="sm"
+                    variant="outline"
+                  >
+                    <ArrowUpCircle className="h-3 mr-2 w-3" />
+                    Update Now
+                  </Button>
+                )}
               </div>
             </div>
 
@@ -164,18 +175,6 @@ export function VersionChecker({
                   </tbody>
                 </table>
               </div>
-
-              {!hideUpdateButton && onUpdate && (
-                <Button
-                  className="h-8 hover:bg-amber-500/20 hover:text-amber-600 text-xs w-fit"
-                  onClick={onUpdate}
-                  size="sm"
-                  variant="outline"
-                >
-                  <ArrowUpCircle className="h-3 mr-2 w-3" />
-                  Update Now
-                </Button>
-              )}
             </AlertDescription>
           </div>
         </Alert>

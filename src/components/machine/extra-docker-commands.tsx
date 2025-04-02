@@ -76,8 +76,50 @@ export function ExtraDockerCommands({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium text-sm">Extra Docker Commands</h3>
+      <div>
+        {commands.length === 0 ? (
+          <div className="rounded-sm bg-gray-50 px-4 py-2 text-sm text-gray-500">
+            No extra Docker commands configured
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {commands.map((cmd, index) => (
+              <li
+                key={index}
+                className="flex w-full items-center justify-between rounded-sm bg-gray-50 px-4 py-2 text-sm"
+              >
+                <div className="flex flex-col break-all">
+                  {cmd.commands.map((x, cmdIndex) => (
+                    <div key={cmdIndex} className="font-mono">
+                      {x}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge>{cmd.when}</Badge>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => openEditDialog(index)}
+                  >
+                    <Edit size={14} />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => deleteCommand(index)}
+                  >
+                    <Trash size={14} />
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="flex items-center justify-end">
+        {/* <h3 className="font-medium text-sm">Extra Docker Commands</h3> */}
         <Button
           type="button"
           variant="secondary"
@@ -86,45 +128,11 @@ export function ExtraDockerCommands({
             setNewCommand("");
             setIsOpen(true);
           }}
+          size="sm"
+          className="gap-2"
         >
-          <Plus size={16} />
+          Add Command <Plus size={16} />
         </Button>
-      </div>
-
-      <div>
-        <ul className="space-y-2">
-          {commands.map((cmd, index) => (
-            <li
-              key={index}
-              className="flex w-full items-center justify-between rounded-sm bg-gray-50 px-4 py-2 text-sm"
-            >
-              <div className="flex flex-col break-all">
-                {cmd.commands.map((x, cmdIndex) => (
-                  <div key={cmdIndex} className="font-mono">
-                    {x}
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge>{cmd.when}</Badge>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => openEditDialog(index)}
-                >
-                  <Edit size={14} />
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => deleteCommand(index)}
-                >
-                  <Trash size={14} />
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
       </div>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>

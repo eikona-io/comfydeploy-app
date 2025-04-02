@@ -51,7 +51,9 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { VersionList, useSelectedVersion } from "@/components/version-select";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
+import { SessionTimer } from "@/components/workspace/SessionTimer";
 import {
   useSessionIdInSessionView,
   useWorkflowIdInSessionView,
@@ -82,6 +84,7 @@ import { useQueryState } from "nuqs";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
+import { Skeleton } from "./ui/skeleton";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
 import { WorkflowCommitVersion } from "./workspace/WorkflowCommitVersion";
@@ -90,9 +93,6 @@ import {
   SessionIncrementDialog,
   useSessionIncrementStore,
 } from "./workspace/increase-session";
-import { useSelectedVersion, VersionList } from "@/components/version-select";
-import { SessionTimer } from "@/components/workspace/SessionTimer";
-import { Skeleton } from "./ui/skeleton";
 
 // Add Session type
 interface Session {
@@ -454,26 +454,24 @@ function TimerDialog({
       return;
     }
 
-    toast.promise(
-      callServerPromise(
-        api({
-          url: `session/${sessionId}/increase-timeout`,
-          init: {
-            method: "POST",
-            body: JSON.stringify({
-              minutes: Number(selectedIncrement),
-            }),
-          },
-        }),
-      ).then(() => onRefetch()),
+    callServerPromise(
+      api({
+        url: `session/${sessionId}/increase-timeout`,
+        init: {
+          method: "POST",
+          body: JSON.stringify({
+            minutes: Number(selectedIncrement),
+          }),
+        },
+      }),
       {
-        loading: "Increasing session time...",
-        success: "Session time increased successfully",
-        error: "Failed to increase session time",
+        loadingText: "Increasing session time...",
+        successMessage: "Session time increased successfully",
       },
-    );
-
-    onOpenChange(false);
+    ).then(() => {
+      onRefetch();
+      onOpenChange(false);
+    });
   };
 
   return (
@@ -584,6 +582,8 @@ export function AppSidebar() {
   const isAdminAndMember = useIsAdminAndMember();
   const workflow_id = useWorkflowIdInWorkflowPage();
 
+  const router = useRouter();
+
   const { data: currentGitBranch } = useQuery({
     queryKey: ["currentGitBranch"],
     queryFn: async () => {
@@ -633,15 +633,32 @@ export function AppSidebar() {
           {workflow_id && parentPath === "workflows" && (
             <>
               <WorkflowsBreadcrumb />
-              <div className="flex w-full flex-row gap-2 rounded-md border bg-gray-100 p-2">
-                <WorkflowDropdown
-                  workflow_id={workflow_id}
-                  className="min-w-0 flex-grow"
-                />
-                <VersionSelectV2
-                  workflow_id={workflow_id}
-                  className="w-20 flex-shrink-0"
-                />
+              <div className="flex flex-col relative">
+                <div className="flex w-full flex-row gap-2 rounded-t-md rounded-b-none border bg-gray-100 p-2">
+                  <WorkflowDropdown
+                    workflow_id={workflow_id}
+                    className="min-w-0 flex-grow"
+                  />
+                  <VersionSelectV2
+                    workflow_id={workflow_id}
+                    className="w-20 flex-shrink-0"
+                  />
+                </div>
+                {workflow_id &&
+                  parentPath === "workflows" &&
+                  isAdminAndMember && (
+                    <MachineSelect
+                      workflow_id={workflow_id}
+                      leaveEmpty
+                      onSettingsClick={(machineId) => {
+                        router.navigate({
+                          to: "/workflows/$workflowId/$view",
+                          params: { workflowId: workflow_id, view: "machine" },
+                        });
+                      }}
+                      className="rounded-b-md rounded-t-none border-b border-x bg-slate-100"
+                    />
+                  )}
               </div>
             </>
           )}
@@ -742,14 +759,6 @@ export function AppSidebar() {
           )}
         </SidebarContent>
         <SidebarFooter className="flex w-full flex-col justify-center gap-2">
-          {workflow_id && parentPath === "workflows" && isAdminAndMember && (
-            <MachineSelect
-              workflow_id={workflow_id}
-              leaveEmpty
-              className="rounded-full border bg-slate-100 p-2"
-            />
-          )}
-
           <OrganizationSwitcher
             organizationProfileUrl="/organization-profile"
             organizationProfileMode="navigation"

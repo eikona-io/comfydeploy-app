@@ -7,6 +7,8 @@ import { CustomNodeList } from "@/components/machines/custom-node-list";
 import { analyzeWorkflowJson } from "@/components/onboarding/workflow-analyze";
 import {
   AccordionOption,
+  type CustomNodeData,
+  type DockerCommandStep,
   type StepValidation,
 } from "@/components/onboarding/workflow-import";
 import {
@@ -560,9 +562,9 @@ export function WorkflowImportMachineSetup({
       ? {
           ...existingMachine,
           docker_command_steps: {
-            steps: [
-              ...(existingMachine?.docker_command_steps?.steps || []),
-              ...(validation.existingMachineMissingNodes?.map((node) => ({
+            steps: mergeDockerCommandSteps(
+              existingMachine?.docker_command_steps?.steps || [],
+              validation.existingMachineMissingNodes?.map((node) => ({
                 id: crypto.randomUUID().slice(0, 10),
                 type: "custom-node",
                 data: {
@@ -574,8 +576,8 @@ export function WorkflowImportMachineSetup({
                   hash: node.meta?.latest_hash,
                   meta: node.meta,
                 },
-              })) || []),
-            ],
+              })) || [],
+            ),
           },
           comfyui_version: existingMachine.comfyui_version,
           gpu: existingMachine.gpu,
@@ -646,6 +648,33 @@ export function WorkflowImportMachineSetup({
       />
     </div>
   );
+}
+
+// Add this helper function to merge docker command steps without duplicates
+function mergeDockerCommandSteps(
+  existingSteps: DockerCommandStep[],
+  newSteps: DockerCommandStep[],
+): DockerCommandStep[] {
+  if (!existingSteps) return newSteps || [];
+  if (!newSteps || newSteps.length === 0) return existingSteps || [];
+
+  // Create a map of existing URLs in lowercase for case-insensitive comparison
+  const existingUrls = new Map<string, boolean>();
+
+  for (const step of existingSteps) {
+    if (step.type === "custom-node" && (step.data as CustomNodeData)?.url) {
+      existingUrls.set((step.data as CustomNodeData).url.toLowerCase(), true);
+    }
+  }
+
+  // Filter out new steps that have URLs already in existing steps
+  const uniqueNewSteps = newSteps.filter((step) => {
+    if (step.type !== "custom-node" || !(step.data as CustomNodeData)?.url)
+      return true;
+    return !existingUrls.has((step.data as CustomNodeData).url.toLowerCase());
+  });
+
+  return [...existingSteps, ...uniqueNewSteps];
 }
 
 export function WorkflowImportCustomNodeSetup({

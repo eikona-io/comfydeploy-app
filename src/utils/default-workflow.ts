@@ -1,310 +1,431 @@
-import { comfydeploy_hash } from "@/utils/comfydeploy-hash";
-
-export const defaultWorkflowTemplate = {
-  name: "sd1.5",
-  description: "Text to image with sd 1.5 base model",
-  machine_deps: {
-    files: {},
-    models: {
-      checkpoints: [
+const sd1_5 = {
+  id: "6019867a-604b-4d50-bb6d-26475d9f4aa9",
+  revision: 0,
+  last_node_id: 14,
+  last_link_id: 11,
+  nodes: [
+    {
+      id: 3,
+      type: "KSampler",
+      pos: [863, 186],
+      size: [315, 474],
+      flags: {},
+      order: 6,
+      mode: 0,
+      inputs: [
         {
-          hash: "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
-          name: "v1-5-pruned-emaonly.ckpt",
+          name: "model",
+          type: "MODEL",
+          link: 1,
+        },
+        {
+          name: "positive",
+          type: "CONDITIONING",
+          link: 4,
+        },
+        {
+          name: "negative",
+          type: "CONDITIONING",
+          link: 6,
+        },
+        {
+          name: "latent_image",
+          type: "LATENT",
+          link: 2,
         },
       ],
-    },
-    comfyui: "8dc19e40d129c8ee049be7be2657458509717ba5",
-    custom_nodes: {
-      "https://github.com/BennyKok/comfyui-deploy": {
-        url: "https://github.com/BennyKok/comfyui-deploy",
-        hash: comfydeploy_hash,
-        name: "ComfyUI Deploy",
-        files: ["https://github.com/BennyKok/comfyui-deploy"],
-        install_type: "git-clone",
+      outputs: [
+        {
+          name: "LATENT",
+          type: "LATENT",
+          slot_index: 0,
+          links: [7],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "KSampler",
       },
+      widgets_values: [
+        1004563962940012,
+        "randomize",
+        20,
+        8,
+        "euler",
+        "normal",
+        1,
+      ],
     },
-    missing_nodes: [],
+    {
+      id: 8,
+      type: "VAEDecode",
+      pos: [1209, 188],
+      size: [210, 46],
+      flags: {},
+      order: 7,
+      mode: 0,
+      inputs: [
+        {
+          name: "samples",
+          type: "LATENT",
+          link: 7,
+        },
+        {
+          name: "vae",
+          type: "VAE",
+          link: 8,
+        },
+      ],
+      outputs: [
+        {
+          name: "IMAGE",
+          type: "IMAGE",
+          slot_index: 0,
+          links: [9],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "VAEDecode",
+      },
+      widgets_values: [],
+    },
+    {
+      id: 9,
+      type: "SaveImage",
+      pos: [1451, 189],
+      size: [210, 270],
+      flags: {},
+      order: 8,
+      mode: 0,
+      inputs: [
+        {
+          name: "images",
+          type: "IMAGE",
+          link: 9,
+        },
+      ],
+      outputs: [],
+      properties: {},
+      widgets_values: ["ComfyUI", ""],
+    },
+    {
+      id: 6,
+      type: "CLIPTextEncode",
+      pos: [415, 186],
+      size: [422.84503173828125, 164.31304931640625],
+      flags: {},
+      order: 4,
+      mode: 0,
+      inputs: [
+        {
+          name: "clip",
+          type: "CLIP",
+          link: 3,
+        },
+        {
+          name: "text",
+          type: "STRING",
+          widget: {
+            name: "text",
+          },
+          link: 10,
+        },
+      ],
+      outputs: [
+        {
+          name: "CONDITIONING",
+          type: "CONDITIONING",
+          slot_index: 0,
+          links: [4],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "CLIPTextEncode",
+      },
+      widgets_values: [
+        "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
+      ],
+    },
+    {
+      id: 7,
+      type: "CLIPTextEncode",
+      pos: [413, 389],
+      size: [425.27801513671875, 180.6060791015625],
+      flags: {},
+      order: 5,
+      mode: 0,
+      inputs: [
+        {
+          name: "clip",
+          type: "CLIP",
+          link: 5,
+        },
+        {
+          name: "text",
+          type: "STRING",
+          widget: {
+            name: "text",
+          },
+          link: 11,
+        },
+      ],
+      outputs: [
+        {
+          name: "CONDITIONING",
+          type: "CONDITIONING",
+          slot_index: 0,
+          links: [6],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "CLIPTextEncode",
+      },
+      widgets_values: ["text, watermark"],
+    },
+    {
+      id: 13,
+      type: "ComfyUIDeployExternalText",
+      pos: [-84.390625, -61.3984375],
+      size: [400, 200],
+      flags: {},
+      order: 0,
+      mode: 0,
+      inputs: [],
+      outputs: [
+        {
+          name: "text",
+          shape: 3,
+          type: "STRING",
+          slot_index: 0,
+          links: [11],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalText",
+      },
+      widgets_values: ["negative_prompt", "text, watermark", "", ""],
+    },
+    {
+      id: 12,
+      type: "ComfyUIDeployExternalText",
+      pos: [-81.55859375, 191.56640625],
+      size: [400, 200],
+      flags: {},
+      order: 1,
+      mode: 0,
+      inputs: [],
+      outputs: [
+        {
+          name: "text",
+          shape: 3,
+          type: "STRING",
+          slot_index: 0,
+          links: [10],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalText",
+      },
+      widgets_values: [
+        "positive_prompt",
+        "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
+        "",
+        "",
+      ],
+    },
+    {
+      id: 4,
+      type: "CheckpointLoaderSimple",
+      pos: [1.1140031814575195, 474.3717956542969],
+      size: [315, 98],
+      flags: {},
+      order: 2,
+      mode: 0,
+      inputs: [],
+      outputs: [
+        {
+          name: "MODEL",
+          type: "MODEL",
+          slot_index: 0,
+          links: [1],
+        },
+        {
+          name: "CLIP",
+          type: "CLIP",
+          slot_index: 1,
+          links: [3, 5],
+        },
+        {
+          name: "VAE",
+          type: "VAE",
+          slot_index: 2,
+          links: [8],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "CheckpointLoaderSimple",
+      },
+      widgets_values: ["v1-5-pruned-emaonly-fp16.safetensors"],
+    },
+    {
+      id: 5,
+      type: "EmptyLatentImage",
+      pos: [420.93292236328125, 631.154296875],
+      size: [315, 106],
+      flags: {},
+      order: 3,
+      mode: 0,
+      inputs: [],
+      outputs: [
+        {
+          name: "LATENT",
+          type: "LATENT",
+          slot_index: 0,
+          links: [2],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "EmptyLatentImage",
+      },
+      widgets_values: [512, 512, 1],
+    },
+  ],
+  links: [
+    [1, 4, 0, 3, 0, "MODEL"],
+    [2, 5, 0, 3, 3, "LATENT"],
+    [3, 4, 1, 6, 0, "CLIP"],
+    [4, 6, 0, 3, 1, "CONDITIONING"],
+    [5, 4, 1, 7, 0, "CLIP"],
+    [6, 7, 0, 3, 2, "CONDITIONING"],
+    [7, 3, 0, 8, 0, "LATENT"],
+    [8, 4, 2, 8, 1, "VAE"],
+    [9, 8, 0, 9, 0, "IMAGE"],
+    [10, 12, 0, 6, 1, "STRING"],
+    [11, 13, 0, 7, 1, "STRING"],
+  ],
+  groups: [
+    {
+      id: 1,
+      title: "Input",
+      bounding: [
+        -115.6541748046875, -153.20025634765625, 463.41796875, 570.1640625,
+      ],
+      color: "#3f789e",
+      font_size: 24,
+      flags: {},
+    },
+  ],
+  config: {},
+  extra: {
+    ds: {
+      scale: 1,
+      offset: [528.4148452244707, 336.45586524805117],
+    },
   },
-  workflow: {
-    extra: {},
-    links: [
-      [1, 4, 0, 3, 0, "MODEL"],
-      [2, 5, 0, 3, 3, "LATENT"],
-      [3, 4, 1, 6, 0, "CLIP"],
-      [4, 6, 0, 3, 1, "CONDITIONING"],
-      [5, 4, 1, 7, 0, "CLIP"],
-      [6, 7, 0, 3, 2, "CONDITIONING"],
-      [7, 3, 0, 8, 0, "LATENT"],
-      [8, 4, 2, 8, 1, "VAE"],
-      [9, 8, 0, 9, 0, "IMAGE"],
-      [10, 12, 0, 6, 1, "STRING"],
-      [11, 13, 0, 7, 1, "STRING"],
-    ],
-    nodes: [
-      {
-        id: 5,
-        pos: [473, 609],
-        mode: 0,
-        size: { "0": 315, "1": 106 },
-        type: "EmptyLatentImage",
-        flags: {},
-        order: 0,
-        outputs: [
-          { name: "LATENT", type: "LATENT", links: [2], slot_index: 0 },
-        ],
-        properties: { "Node name for S&R": "EmptyLatentImage" },
-        widgets_values: [512, 512, 1],
-      },
-      {
-        id: 3,
-        pos: [863, 186],
-        mode: 0,
-        size: { "0": 315, "1": 262 },
-        type: "KSampler",
-        flags: {},
-        order: 7,
-        inputs: [
-          { link: 1, name: "model", type: "MODEL" },
-          { link: 4, name: "positive", type: "CONDITIONING" },
-          { link: 6, name: "negative", type: "CONDITIONING" },
-          { link: 2, name: "latent_image", type: "LATENT" },
-        ],
-        outputs: [
-          { name: "LATENT", type: "LATENT", links: [7], slot_index: 0 },
-        ],
-        properties: { "Node name for S&R": "KSampler" },
-        widgets_values: [
-          156680208700286,
-          "randomize",
-          20,
-          8,
-          "euler",
-          "normal",
-          1,
-        ],
-      },
-      {
-        id: 8,
-        pos: [1209, 188],
-        mode: 0,
-        size: { "0": 210, "1": 46 },
-        type: "VAEDecode",
-        flags: {},
-        order: 8,
-        inputs: [
-          { link: 7, name: "samples", type: "LATENT" },
-          { link: 8, name: "vae", type: "VAE" },
-        ],
-        outputs: [{ name: "IMAGE", type: "IMAGE", links: [9], slot_index: 0 }],
-        properties: { "Node name for S&R": "VAEDecode" },
-      },
-      {
-        id: 9,
-        pos: [1451, 189],
-        mode: 0,
-        size: { "0": 210, "1": 58 },
-        type: "SaveImage",
-        flags: {},
-        order: 9,
-        inputs: [{ link: 9, name: "images", type: "IMAGE" }],
-        properties: {},
-        widgets_values: ["ComfyUI"],
-      },
-      {
-        id: 4,
-        pos: [26, 474],
-        mode: 0,
-        size: { "0": 315, "1": 98 },
-        type: "CheckpointLoaderSimple",
-        flags: {},
-        order: 1,
-        outputs: [
-          { name: "MODEL", type: "MODEL", links: [1], slot_index: 0 },
-          { name: "CLIP", type: "CLIP", links: [3, 5], slot_index: 1 },
-          { name: "VAE", type: "VAE", links: [8], slot_index: 2 },
-        ],
-        properties: { "Node name for S&R": "CheckpointLoaderSimple" },
-        widgets_values: ["v1-5-pruned-emaonly.ckpt"],
-      },
-      {
-        id: 6,
-        pos: [415, 186],
-        mode: 0,
-        size: [422.84503173828125, 164.31304931640625],
-        type: "CLIPTextEncode",
-        flags: {},
-        order: 6,
-        inputs: [
-          { link: 3, name: "clip", type: "CLIP" },
-          {
-            link: 10,
-            name: "text",
-            type: "STRING",
-            widget: { name: "text" },
-          },
-        ],
-        outputs: [
-          {
-            name: "CONDITIONING",
-            type: "CONDITIONING",
-            links: [4],
-            slot_index: 0,
-          },
-        ],
-        properties: { "Node name for S&R": "CLIPTextEncode" },
-        widgets_values: [
-          "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
-        ],
-      },
-      {
-        id: 7,
-        pos: [413, 389],
-        mode: 0,
-        size: [425.27801513671875, 180.6060791015625],
-        type: "CLIPTextEncode",
-        flags: {},
-        order: 5,
-        inputs: [
-          { link: 5, name: "clip", type: "CLIP" },
-          {
-            link: 11,
-            name: "text",
-            type: "STRING",
-            widget: { name: "text" },
-          },
-        ],
-        outputs: [
-          {
-            name: "CONDITIONING",
-            type: "CONDITIONING",
-            links: [6],
-            slot_index: 0,
-          },
-        ],
-        properties: { "Node name for S&R": "CLIPTextEncode" },
-        widgets_values: ["text, watermark"],
-      },
-      {
-        id: 13,
-        pos: [-70, -60],
-        mode: 0,
-        size: { "0": 400, "1": 200 },
-        type: "ComfyUIDeployExternalText",
-        flags: {},
-        order: 2,
-        outputs: [
-          {
-            name: "text",
-            type: "STRING",
-            links: [11],
-            shape: 3,
-            slot_index: 0,
-          },
-        ],
-        properties: { "Node name for S&R": "ComfyUIDeployExternalText" },
-        widgets_values: ["negative_prompt", "text, watermark"],
-      },
-      {
-        id: 12,
-        pos: [-72, 193],
-        mode: 0,
-        size: { "0": 400, "1": 200 },
-        type: "ComfyUIDeployExternalText",
-        flags: {},
-        order: 3,
-        outputs: [
-          {
-            name: "text",
-            type: "STRING",
-            links: [10],
-            shape: 3,
-            slot_index: 0,
-          },
-        ],
-        properties: { "Node name for S&R": "ComfyUIDeployExternalText" },
-        widgets_values: [
-          "positive_prompt",
-          "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
-        ],
-      },
-      {
-        id: 14,
-        pos: [419, 23],
-        mode: 0,
-        size: { "0": 210, "1": 96 },
-        type: "ComfyDeploy",
-        color: "#432",
-        flags: {},
-        order: 4,
-        bgcolor: "#653",
-        properties: { version: "", workflow_id: "", workflow_name: "" },
-        widgets_values: [
-          "Simple SD Template",
-          "ccc9debe-bd01-4913-8853-9046738359c7",
-          1,
-        ],
-      },
-    ],
-    config: {},
-    groups: [],
-    version: 0.4,
-    last_link_id: 11,
-    last_node_id: 14,
+  version: 0.4,
+};
+
+const sd1_5_api = {
+  "3": {
+    inputs: {
+      seed: 1004563962940012,
+      steps: 20,
+      cfg: 8,
+      sampler_name: "euler",
+      scheduler: "normal",
+      denoise: 1,
+      model: ["4", 0],
+      positive: ["6", 0],
+      negative: ["7", 0],
+      latent_image: ["5", 0],
+    },
+    class_type: "KSampler",
+    _meta: {
+      title: "KSampler",
+    },
   },
-  workflow_api: {
-    "3": {
-      inputs: {
-        cfg: 8,
-        seed: 156680208700286,
-        model: ["4", 0],
-        steps: 20,
-        denoise: 1,
-        negative: ["7", 0],
-        positive: ["6", 0],
-        scheduler: "normal",
-        latent_image: ["5", 0],
-        sampler_name: "euler",
-      },
-      class_type: "KSampler",
+  "4": {
+    inputs: {
+      ckpt_name: "v1-5-pruned-emaonly-fp16.safetensors",
     },
-    "4": {
-      inputs: { ckpt_name: "v1-5-pruned-emaonly.ckpt" },
-      class_type: "CheckpointLoaderSimple",
+    class_type: "CheckpointLoaderSimple",
+    _meta: {
+      title: "Load Checkpoint",
     },
-    "5": {
-      inputs: { width: 512, height: 512, batch_size: 1 },
-      class_type: "EmptyLatentImage",
+  },
+  "5": {
+    inputs: {
+      width: 512,
+      height: 512,
+      batch_size: 1,
     },
-    "6": {
-      inputs: { clip: ["4", 1], text: ["12", 0] },
-      class_type: "CLIPTextEncode",
+    class_type: "EmptyLatentImage",
+    _meta: {
+      title: "Empty Latent Image",
     },
-    "7": {
-      inputs: { clip: ["4", 1], text: ["13", 0] },
-      class_type: "CLIPTextEncode",
+  },
+  "6": {
+    inputs: {
+      text: ["12", 0],
+      clip: ["4", 1],
     },
-    "8": {
-      inputs: { vae: ["4", 2], samples: ["3", 0] },
-      class_type: "VAEDecode",
+    class_type: "CLIPTextEncode",
+    _meta: {
+      title: "CLIP Text Encode (Prompt)",
     },
-    "9": {
-      inputs: { images: ["8", 0], filename_prefix: "ComfyUI" },
-      class_type: "SaveImage",
+  },
+  "7": {
+    inputs: {
+      text: ["13", 0],
+      clip: ["4", 1],
     },
-    "12": {
-      inputs: {
-        input_id: "positive_prompt",
-        default_value:
-          "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
-      },
-      class_type: "ComfyUIDeployExternalText",
+    class_type: "CLIPTextEncode",
+    _meta: {
+      title: "CLIP Text Encode (Prompt)",
     },
-    "13": {
-      inputs: {
-        input_id: "negative_prompt",
-        default_value: "text, watermark",
-      },
-      class_type: "ComfyUIDeployExternalText",
+  },
+  "8": {
+    inputs: {
+      samples: ["3", 0],
+      vae: ["4", 2],
+    },
+    class_type: "VAEDecode",
+    _meta: {
+      title: "VAE Decode",
+    },
+  },
+  "9": {
+    inputs: {
+      filename_prefix: "ComfyUI",
+      images: ["8", 0],
+    },
+    class_type: "SaveImage",
+    _meta: {
+      title: "Save Image",
+    },
+  },
+  "12": {
+    inputs: {
+      input_id: "positive_prompt",
+      default_value:
+        "beautiful scenery nature glass bottle landscape, , purple galaxy bottle,",
+      display_name: "",
+      description: "",
+    },
+    class_type: "ComfyUIDeployExternalText",
+    _meta: {
+      title: "External Text (ComfyUI Deploy)",
+    },
+  },
+  "13": {
+    inputs: {
+      input_id: "negative_prompt",
+      default_value: "text, watermark",
+      display_name: "",
+      description: "",
+    },
+    class_type: "ComfyUIDeployExternalText",
+    _meta: {
+      title: "External Text (ComfyUI Deploy)",
     },
   },
 };
@@ -1313,8 +1434,8 @@ export const defaultWorkflowTemplates: defaultWorkflowTemplateType[] = [
     workflowId: "sd1.5",
     workflowName: "Stable Diffusion v1.5",
     workflowDescription: "Text to image with sd 1.5 base model. ",
-    workflowJson: JSON.stringify(defaultWorkflowTemplate.workflow),
-    workflowApi: JSON.stringify(defaultWorkflowTemplate.workflow_api),
+    workflowJson: JSON.stringify(sd1_5),
+    workflowApi: JSON.stringify(sd1_5_api),
     workflowImageUrl:
       "https://comfy-deploy-output.s3.amazonaws.com/outputs/runs/ae92370b-315a-4578-af29-ed83b00828d1/ComfyUI_00001_.png",
   },

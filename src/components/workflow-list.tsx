@@ -179,7 +179,7 @@ export function WorkflowList() {
       </div>
       <ScrollArea className="fab-workflow-list flex-grow" ref={parentRef}>
         {isLoading ? (
-          <div className="mx-auto grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mx-auto grid w-full max-w-screen-2xl grid-cols-1 justify-items-center gap-4 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }, (_, index) => (
               <WorkflowCardSkeleton key={index} />
             ))}
@@ -211,7 +211,7 @@ export function WorkflowList() {
             )}
           </div>
         ) : (
-          <div className="mx-auto grid grid-cols-1 gap-4 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="mx-auto grid w-full max-w-screen-2xl grid-cols-1 justify-items-center gap-4 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {flatData &&
               flatData.map((workflow) => (
                 <WorkflowCard
@@ -237,7 +237,7 @@ export function WorkflowList() {
 function WorkflowCardSkeleton() {
   return (
     <div className="flex w-full flex-col md:max-w-[320px]">
-      <Card className="group relative flex aspect-square h-[320px] w-full flex-col overflow-hidden rounded-md">
+      <Card className="group relative flex aspect-square w-full flex-col overflow-hidden rounded-md">
         <div className="flex h-full w-full flex-col items-center justify-center">
           <Skeleton className="mb-2 h-10 w-10 rounded-full" />
         </div>
@@ -381,7 +381,7 @@ function WorkflowCard({
         }
         className="flex w-full flex-col md:max-w-[320px]"
       >
-        <Card className="group relative flex aspect-square h-[320px] w-full flex-col overflow-hidden rounded-md transition-all duration-300 ease-in-out hover:shadow-lg">
+        <Card className="group relative flex aspect-square w-full flex-col overflow-hidden rounded-md transition-all duration-300 ease-in-out hover:shadow-lg">
           <div className="h-full w-full">
             {latest_output?.images?.[0]?.url ? (
               <FileURLRender
@@ -516,7 +516,7 @@ function WorkflowCard({
         </Card>
         <div className="flex flex-col px-2 pt-2">
           <div className="flex w-full flex-row justify-between truncate font-medium text-gray-700 text-md">
-            <div className="mr-2 truncate">{workflow.name}</div>
+            <div className="mr-2 truncate text-sm">{workflow.name}</div>
             {status && (
               <Badge
                 variant={status === "success" ? "success" : "secondary"}

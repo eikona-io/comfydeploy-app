@@ -143,6 +143,11 @@ export const serverlessFormSchema = z.object({
     .default("")
     .optional()
     .describe("Prestart command"),
+  optimized_runner: z
+    .boolean()
+    .default(false)
+    .optional()
+    .describe("Optimized runner"),
 });
 
 interface GPUConfig {

@@ -400,7 +400,7 @@ function SearchNodeList({
     <div
       className={cn(
         "flex w-full flex-col gap-4 rounded-sm border border-gray-200 bg-white px-4 pb-4 shadow-sm",
-        readonly && "pointer-events-none opacity-70",
+        readonly && "pointer-events-none opacity-40",
       )}
     >
       <div className="flex flex-row items-center gap-2">

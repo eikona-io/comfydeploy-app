@@ -71,20 +71,27 @@ export function SessionIncrementDialog() {
       return;
     }
 
-    await increaseSessionTimeout(
-      Number(selectedIncrement),
-      sessionDetails.machine_id,
-      sessionDetails.session_id,
-      sessionDetails.gpu,
-    );
-    setSessionTimeout((prevState: number | undefined) =>
-      prevState ? prevState + Number.parseInt(selectedIncrement) : 0,
-    );
+    try {
+      await increaseSessionTimeout(
+        Number(selectedIncrement),
+        sessionDetails.machine_id,
+        sessionDetails.session_id,
+        sessionDetails.gpu,
+      );
+      setSessionTimeout((prevState: number | undefined) =>
+        prevState ? prevState + Number.parseInt(selectedIncrement) : 0,
+      );
 
-    toast.success(
-      `Session time increased to ${sessionTimeout + Number.parseInt(selectedIncrement)} minutes`,
-    );
-    setOpen(false);
+      toast.success(
+        `Session time increased to ${sessionTimeout + Number.parseInt(selectedIncrement)} minutes`,
+      );
+
+      setOpen(false);
+    } catch (error) {
+      toast.error(
+        `Failed to increase session time: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   };
 
   if (!sessionDetails) return null;

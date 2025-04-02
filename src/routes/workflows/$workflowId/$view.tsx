@@ -7,6 +7,7 @@ const pages = [
   "deployment",
   "playground",
   "gallery",
+  "machine",
 ];
 
 export const Route = createFileRoute("/workflows/$workflowId/$view")({

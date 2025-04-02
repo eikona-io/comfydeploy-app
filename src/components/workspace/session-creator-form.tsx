@@ -25,29 +25,31 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useLogStore } from "@/components/workspace/LogContext";
+import { MachineSelect } from "@/components/workspace/MachineSelect";
+import { SessionTimer } from "@/components/workspace/SessionTimer";
 import {
   useMachine,
-  useMachines,
   useMachineVersion,
+  useMachines,
 } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
+import { api } from "@/lib/api";
 import { useParams, useRouter } from "@tanstack/react-router";
 import {
+  ArrowRightToLine,
   Droplets,
   Loader2,
+  RotateCw,
   Search,
   StopCircle,
-  ArrowRightToLine,
-  RotateCw,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
-import { api } from "@/lib/api";
-import { useQueryState } from "nuqs";
 import { UserIcon } from "../run/SharePageComponent";
-import { SessionTimer } from "@/components/workspace/SessionTimer";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 
 interface SessionForm {
   machineId: string;
@@ -164,23 +166,17 @@ export function SessionCreatorForm({
 }: SessionCreatorFormProps) {
   const router = useRouter();
   const { createSession: createDynamicSession } = useSessionAPI();
-  const [searchValue, setSearchValue] = useState("");
-  const [debouncedSearchValue] = useDebounce(searchValue, 250);
-  const { data: machinesData } = useMachines(debouncedSearchValue);
-  const machines = machinesData?.pages.flat() ?? [];
+  const { workflow } = useCurrentWorkflow(workflowId);
+  const { data: selectedMachine } = useMachine(workflow?.selected_machine_id);
 
   const [_, setSessionId] = useQueryState("sessionId");
 
   const form = useForm<SessionForm>({
     defaultValues: {
-      machineId: defaultMachineId || "",
-      gpu: "A10G",
+      gpu: selectedMachine?.gpu || "A10G",
       timeout: 15,
     },
   });
-
-  const selectedMachineId = form.watch("machineId");
-  const { data: selectedMachine } = useMachine(selectedMachineId);
 
   const { data: machineVersionData } = useMachineVersion(
     defaultMachineId || "",
@@ -191,31 +187,18 @@ export function SessionCreatorForm({
     defaultIsFluidVersion ?? !!machineVersionData?.modal_image_id;
 
   const onSubmit = async (data: SessionForm) => {
+    if (!workflow?.selected_machine_id) {
+      toast.error("Please select a machine first");
+      return;
+    }
+
     try {
       const response = await createDynamicSession.mutateAsync({
         gpu: data.gpu,
         timeout: data.timeout,
-        machine_id: data.machineId,
+        machine_id: workflow.selected_machine_id,
         machine_version_id: defaultMachineVersionId,
       });
-
-      // Update workflow's machine if not a fluid version and machine has changed
-      if (!isFluidVersion && data.machineId !== defaultMachineId) {
-        try {
-          await api({
-            url: `workflow/${workflowId}`,
-            init: {
-              method: "PATCH",
-              body: JSON.stringify({
-                selected_machine_id: data.machineId,
-              }),
-            },
-          });
-        } catch (error) {
-          console.error("Failed to update workflow machine:", error);
-          // Don't block session creation if this fails
-        }
-      }
 
       useLogStore.getState().clearLogs();
 
@@ -264,96 +247,23 @@ export function SessionCreatorForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="machineId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Machine</FormLabel>
-                {isFluidVersion ? (
-                  <div className="bg-muted border border-input rounded-md px-3 py-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-green-500" />
-                      <span>{selectedMachine?.name}</span>
-                    </div>
-                    {field.value && (
-                      <MachineSessionsList machineId={field.value} />
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <div className="relative mb-2">
-                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Search machines..."
-                        className="pl-10 text-sm"
-                        value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
-                      />
-                    </div>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        const selectedMachine = machines.find(
-                          (m) => m.id === value,
-                        );
-                        if (selectedMachine?.gpu) {
-                          form.setValue("gpu", selectedMachine.gpu);
-                        }
-                      }}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a machine">
-                            {selectedMachine && (
-                              <div className="flex items-center gap-2">
-                                <div className="h-2 w-2 rounded-full bg-green-500" />
-                                <span>{selectedMachine.name}</span>
-                                {selectedMachine.gpu && (
-                                  <Badge variant="outline" className="ml-2">
-                                    {selectedMachine.gpu}
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {machines.map((machine) => (
-                          <SelectItem
-                            key={machine.id}
-                            value={machine.id}
-                            className="py-2"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-green-500" />
-                              <span>{machine.name}</span>
-                              {machine.gpu && (
-                                <Badge variant="outline" className="ml-2">
-                                  {machine.gpu}
-                                </Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {field.value && (
-                      <MachineSessionsList machineId={field.value} />
-                    )}
-                  </>
-                )}
-                <FormDescription>
-                  {isFluidVersion
-                    ? "Machine is pre-configured for this fluid version"
-                    : "Choose the machine to run this workflow version on"}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
+          <FormItem>
+            <FormLabel>Machine</FormLabel>
+            <MachineSelect
+              workflow_id={workflowId}
+              leaveEmpty
+              className="rounded-md border bg-background"
+            />
+            {workflow?.selected_machine_id && (
+              <MachineSessionsList machineId={workflow.selected_machine_id} />
             )}
-          />
+            <FormDescription>
+              {isFluidVersion
+                ? "Machine is pre-configured for this fluid version"
+                : "Choose the machine to run this workflow version on"}
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
 
           <FormField
             control={form.control}

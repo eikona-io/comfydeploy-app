@@ -151,7 +151,7 @@ function InputComponent({ workflowId }: { workflowId: string }) {
             setInputModalOpen(null);
           }}
         >
-          <div>
+          <div className="h-full">
             {isVersionLoading ? (
               <div className="flex h-full w-full items-center justify-center">
                 <LoadingIcon />
