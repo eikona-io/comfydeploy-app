@@ -233,7 +233,7 @@ export function WorkspaceClientWrapper({
             <Button
               variant="ghost"
               onClick={() => setShowPreview(!showPreview)}
-              className="ml-4 p-2 hidden md:block"
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hidden md:block"
             >
               {showPreview ? (
                 <ChevronRight size={20} />
@@ -243,7 +243,7 @@ export function WorkspaceClientWrapper({
             </Button>
             {versionData && (
               <motion.div
-                className="hidden md:flex h-full w-full items-center justify-center bg-gray-50 shadow-lg rounded-l-lg border border-1 my-2 overflow-hidden"
+                className="hidden md:flex h-full w-full items-center justify-center bg-gray-50 shadow-lg rounded-l-lg border border-1 my-2 overflow-hidden relative"
                 layout={showPreview}
                 animate={{
                   opacity: showPreview ? 1 : 0,
@@ -261,6 +261,16 @@ export function WorkspaceClientWrapper({
                       : "absolute",
                 }}
               >
+                {showPreview && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowPreview(false)}
+                    className="absolute left-2 top-2 z-10 bg-white/80 hover:bg-white shadow-sm"
+                  >
+                    <ChevronRight size={20} />
+                  </Button>
+                )}
                 <ComfyUIFlow
                   workflow={versionData.workflow}
                   apiFormat={versionData.workflow_api}
