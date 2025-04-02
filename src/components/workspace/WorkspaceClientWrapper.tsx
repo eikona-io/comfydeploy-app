@@ -6,7 +6,7 @@ import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { easeOut } from "framer-motion";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { ChevronLeft } from "lucide-react";
 import { useQueryState } from "nuqs";
@@ -69,6 +69,7 @@ export function WorkspaceClientWrapper({
   });
 
   const [showPreview, setShowPreview] = useState(true);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const [cachedSessionId, setCachedSessionId] = useState<string | null>(null);
   const [hasActiveSession, setHasActiveSession] = useState(false);
@@ -213,7 +214,10 @@ export function WorkspaceClientWrapper({
 
         {!sessionId ? (
           <div className="flex h-full w-full items-center justify-center">
-            <div className="pt-20 mx-auto flex h-full w-full max-w-xl px-4 flex-col gap-4">
+            <motion.div
+              className="pt-20 mx-auto flex h-full w-full max-w-xl px-4 flex-col gap-4"
+              layout
+            >
               <div className="flex items-center justify-between">
                 <SessionCreatorForm
                   workflowId={props.workflow_id}
@@ -225,7 +229,7 @@ export function WorkspaceClientWrapper({
                 />
               </div>
               <MachineUpdateChecker machineId={machine.id} />
-            </div>
+            </motion.div>
             <Button
               variant="ghost"
               onClick={() => setShowPreview(!showPreview)}
@@ -237,13 +241,25 @@ export function WorkspaceClientWrapper({
                 <ChevronLeft size={20} />
               )}
             </Button>
-            {versionData && showPreview && (
+            {versionData && (
               <motion.div
                 className="hidden md:flex h-full w-full items-center justify-center bg-gray-50 shadow-lg rounded-l-lg border border-1 my-2 overflow-hidden"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                layout={showPreview}
+                animate={{
+                  opacity: showPreview ? 1 : 0,
+                  x: showPreview ? 0 : +20,
+                }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
+                onAnimationStart={() => setIsAnimating(true)}
+                onAnimationComplete={() => setIsAnimating(false)}
+                style={{
+                  pointerEvents: showPreview ? "auto" : "none",
+                  position: isAnimating
+                    ? "relative"
+                    : showPreview
+                      ? "relative"
+                      : "absolute",
+                }}
               >
                 <ComfyUIFlow
                   workflow={versionData.workflow}
