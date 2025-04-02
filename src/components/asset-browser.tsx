@@ -30,12 +30,14 @@ interface AssetBrowserProps {
   className?: string;
   showNewFolderButton?: boolean;
   onItemClick?: (asset: { url: string; name: string; id: string }) => void;
+  isPanel?: boolean;
 }
 
 export function AssetBrowser({
   className,
   showNewFolderButton = true,
   onItemClick,
+  isPanel = false,
 }: AssetBrowserProps) {
   const { currentPath, setCurrentPath } = useAssetBrowserStore();
   const { data: assets, isLoading } = useAssetList(currentPath);
@@ -147,9 +149,17 @@ export function AssetBrowser({
                     <Folder className="h-12 w-12 text-gray-400" />
                   </button>
                 ) : (
-                  <div className="relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border">
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                  <div
+                    className="relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border"
+                    onClick={() => {
+                      if (isPanel) {
+                        onItemClick?.(asset);
+                      }
+                    }}
+                  >
                     <FileURLRender
-                      canFullScreen={true}
+                      canFullScreen={!isPanel}
                       url={asset.url || ""}
                       imgClasses="max-w-[230px] w-full h-[230px] object-cover object-center rounded-[8px] transition-all duration-300 ease-in-out group-hover:scale-105"
                     />
@@ -203,9 +213,17 @@ export function AssetBrowser({
               <div className="flex flex-1 items-center">
                 <div className="w-8" /> {/* Space for icon */}
                 <div className="flex-1 px-2">Name</div>
-                <div className="hidden w-32 text-center lg:block">Size</div>
-                <div className="hidden w-32 text-center lg:block">Modified</div>
-                <div className="hidden w-32 text-center lg:block">Owner</div>
+                {!isPanel && (
+                  <div className="hidden w-32 text-center lg:block">Size</div>
+                )}
+                {!isPanel && (
+                  <div className="hidden w-32 text-center lg:block">
+                    Modified
+                  </div>
+                )}
+                {!isPanel && (
+                  <div className="hidden w-32 text-center lg:block">Owner</div>
+                )}
               </div>
               <div className="w-8" /> {/* Space for actions */}
             </div>
@@ -237,35 +255,43 @@ export function AssetBrowser({
                       <button
                         type="button"
                         onClick={() => handleNavigate(asset.path)}
-                        className="truncate text-sm hover:underline"
+                        className="block w-full truncate text-left text-sm hover:underline"
                       >
                         {asset.name}
                       </button>
                     ) : (
-                      <div className="truncate text-sm">{asset.name}</div>
+                      <div className="max-w-[300px] truncate text-sm">
+                        {asset.name}
+                      </div>
                     )}
                   </div>
 
                   {/* Size column */}
-                  <div className="hidden w-32 text-center text-muted-foreground text-xs lg:block">
-                    {!asset.is_folder && asset.mime_type
-                      ? `${asset.mime_type.split("/")[1].toUpperCase()} • ${formatFileSize(asset.file_size)}`
-                      : "-"}
-                  </div>
+                  {!isPanel && (
+                    <div className="hidden w-32 text-center text-muted-foreground text-xs lg:block">
+                      {!asset.is_folder && asset.mime_type
+                        ? `${asset.mime_type.split("/")[1].toUpperCase()} • ${formatFileSize(asset.file_size)}`
+                        : "-"}
+                    </div>
+                  )}
 
                   {/* Time column */}
-                  <div className="hidden w-32 text-center text-muted-foreground text-xs lg:block">
-                    {getRelativeTime(asset.created_at)}
-                  </div>
+                  {!isPanel && (
+                    <div className="hidden w-32 text-center text-muted-foreground text-xs lg:block">
+                      {getRelativeTime(asset.created_at)}
+                    </div>
+                  )}
 
                   {/* User column */}
-                  <div className="hidden w-32 justify-center lg:flex">
-                    <UserIcon
-                      displayName
-                      user_id={asset.user_id}
-                      className="h-5 w-5"
-                    />
-                  </div>
+                  {!isPanel && (
+                    <div className="hidden w-32 justify-center lg:flex">
+                      <UserIcon
+                        displayName
+                        user_id={asset.user_id}
+                        className="h-5 w-5"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions column */}

@@ -84,6 +84,7 @@ export type NodeCategory = {
   type: string;
   folder: string | string[];
   noOfNodes?: number;
+  onlyRootFiles?: boolean;
 };
 
 export type NodeCategories = {
@@ -110,6 +111,7 @@ export const NodeToBeFocus: NodeCategories = {
   Image: {
     type: "LoadImage",
     folder: "input",
+    onlyRootFiles: true,
   },
   Checkpoint: {
     type: "CheckpointLoaderSimple",
@@ -188,6 +190,21 @@ export const NodeToBeFocus: NodeCategories = {
 };
 
 // -----------------------components------------------------
+
+// Helper function to get the model name without parent
+export function getModelNameWithoutParent(path: string) {
+  if (!path) return "";
+
+  // Split the path by '/'
+  const parts = path.split("/");
+
+  // If there's only one part or no parts, return the original path
+  if (parts.length <= 1) return path;
+
+  // Remove only the first part (top-level category folder)
+  // But keep all subdirectories and the filename
+  return parts.slice(1).join("/");
+}
 
 export function WorkflowModelCheck({
   validation,
@@ -387,6 +404,16 @@ function organizeFilesByCategory(
           : [config.folder];
 
         if (folders.includes(folderPath)) {
+          // Skip files in subdirectories if onlyRootFiles is true
+          if (config.onlyRootFiles) {
+            // Check if this is a file directly in the root folder
+            // The path should have exactly one slash or none (top level file)
+            const parts = filePath.split("/");
+            if (parts.length > 2) {
+              continue; // Skip this file, it's in a subdirectory
+            }
+          }
+
           const existingPaths = categoryMap.get(category) || [];
           existingPaths.push({
             name: filePath,
@@ -502,11 +529,17 @@ const OptionList = memo(
     }, [privateFiles, publicFiles]);
 
     const isNodeSuccessful = (nodeValue: string, category: string) => {
+      // If no value, it's not successful
+      if (!nodeValue) return false;
+
       return (
-        nodeValue &&
         fileList.some((f) => f.category === category) &&
         fileList.some((f) =>
-          f.filePaths.some((filePath) => filePath.name === nodeValue),
+          f.filePaths.some((filePath) => {
+            // Compare with the extracted path (without top dir)
+            const extractedPath = extractModelPathWithoutTopDir(filePath.name);
+            return extractedPath === nodeValue;
+          }),
         )
       );
     };
@@ -628,8 +661,7 @@ const OptionList = memo(
       <div>
         <div className="flex items-center justify-between gap-2">
           <span className="block text-muted-foreground text-sm leading-normal">
-            Model Checking helps you verify if any workflow nodes are missing
-            models or inputs. You can modify and update them here.
+            Model Check helps find missing models and inputs for your workflow.
           </span>
           <Button
             variant={"outline"}
@@ -778,6 +810,21 @@ const OptionList = memo(
   },
 );
 
+// Clean up duplicate functions and replace with a single, well-named utility function
+export function extractModelPathWithoutTopDir(path: string) {
+  if (!path) return "";
+
+  // Split the path by '/'
+  const parts = path.split("/");
+
+  // If there's only one part or no parts, return the original path
+  if (parts.length <= 1) return path;
+
+  // Remove only the first part (top-level category folder)
+  // But keep all subdirectories and the filename
+  return parts.slice(1).join("/");
+}
+
 export function ModelSelectComboBox({
   selectedNode,
   setSelectedNode,
@@ -813,24 +860,19 @@ export function ModelSelectComboBox({
     setOpenStates(new Array(numInputs).fill(false));
   }, [numInputs]);
 
-  // Function to get display name (remove only the first level of the path)
-  const getDisplayName = (path: string) => {
-    if (!path) return "";
+  const processedFiles = useMemo(() => {
+    if (!categoryFiles) return [];
 
-    // Split the path by '/'
-    const parts = path.split("/");
-
-    // If there's only one part or no parts, return the original path
-    if (parts.length <= 1) return path;
-
-    // Remove the first part (category) and join the rest
-    return parts.slice(1).join("/");
-  };
+    return categoryFiles.filePaths.map((file) => ({
+      ...file,
+      displayPath: extractModelPathWithoutTopDir(file.name),
+    }));
+  }, [categoryFiles]);
 
   const renderComboBox = (index: number) => {
     const currentValue = selectedNode.widgets_values[index] || "";
-    const isValid = categoryFiles?.filePaths.some(
-      (file) => file.name === currentValue,
+    const isValid = processedFiles.some(
+      (file) => file.name === currentValue || file.displayPath === currentValue,
     );
 
     return (
@@ -857,9 +899,7 @@ export function ModelSelectComboBox({
               )}
             >
               <span className="truncate">
-                {currentValue
-                  ? getDisplayName(currentValue)
-                  : "Select model..."}
+                {currentValue ? currentValue : "Select model..."}
               </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -870,7 +910,7 @@ export function ModelSelectComboBox({
               <CommandList>
                 <CommandEmpty>No files found.</CommandEmpty>
                 <CommandGroup>
-                  {categoryFiles?.filePaths.map((file) => (
+                  {processedFiles.map((file) => (
                     <CommandItem
                       key={`${file.name}-${index}`}
                       value={file.name}
@@ -885,8 +925,9 @@ export function ModelSelectComboBox({
                           newWidgetsValues.push("");
                         }
 
-                        // Update the value at the specified index
-                        newWidgetsValues[index] = file.name;
+                        // Store the model path without the top directory
+                        // This preserves subdirectories like "upscale/x4-upscaler-ema.safetensors"
+                        newWidgetsValues[index] = file.displayPath;
 
                         // Create a new node object with the updated widgets_values
                         const updatedNode = {
@@ -907,12 +948,12 @@ export function ModelSelectComboBox({
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            currentValue === file.name
+                            currentValue === file.displayPath
                               ? "opacity-100"
                               : "opacity-0",
                           )}
                         />
-                        <span>{getDisplayName(file.name)}</span>
+                        <span>{file.displayPath}</span>
                       </div>
                     </CommandItem>
                   ))}

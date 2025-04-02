@@ -99,10 +99,13 @@ function _FileURLRender({
     return <div className="bg-slate-300">Not possible to render</div>;
   }
 
+  // Convert filename to lowercase once for all checks
+  const lowercaseFilename = filename.toLowerCase();
+
   if (
-    filename.endsWith(".mp4") ||
-    filename.endsWith(".webm") ||
-    filename.endsWith(".mov")
+    lowercaseFilename.endsWith(".mp4") ||
+    lowercaseFilename.endsWith(".webm") ||
+    lowercaseFilename.endsWith(".mov")
   ) {
     return (
       <video
@@ -121,7 +124,10 @@ function _FileURLRender({
   }
 
   // For 3D models, use the separate component
-  if (filename.endsWith(".glb") || filename.endsWith(".gltf")) {
+  if (
+    lowercaseFilename.endsWith(".glb") ||
+    lowercaseFilename.endsWith(".gltf")
+  ) {
     return (
       <ModelRenderer
         url={url}
@@ -139,13 +145,18 @@ function _FileURLRender({
     }
   }, [imageError, onLoad]);
 
-  if (
-    filename.endsWith(".png") ||
-    filename.endsWith(".gif") ||
-    filename.endsWith(".jpg") ||
-    filename.endsWith(".webp") ||
-    filename.endsWith(".jpeg")
-  ) {
+  const imageExtensions = [
+    ".png",
+    ".gif",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".avif",
+    ".heic",
+    ".heif",
+  ];
+
+  if (imageExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
     if (imageError) {
       return (
         <div

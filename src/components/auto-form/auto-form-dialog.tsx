@@ -258,13 +258,13 @@ export function InsertModal<
           <DialogTitle>{props.title}</DialogTitle>
           <DialogDescription>{props.description}</DialogDescription>
         </DialogHeader>
-        {/* <ScrollArea> */}
         <AutoForm
           containerClassName={props.containerClassName}
           dependencies={props.dependencies}
           values={props.data}
           fieldConfig={props.fieldConfig}
           formSchema={props.formSchema}
+          extraUI={props.extraUI}
           onSubmit={async (data) => {
             setIsLoading(true);
             await props.serverAction(data);
