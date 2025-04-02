@@ -326,6 +326,8 @@ function TreeNode({
           className={cn(
             "flex items-center gap-2 rounded px-2 py-1 hover:bg-accent",
             node.isVirtual && "text-muted-foreground",
+            node.type === 2 &&
+              "hover:border hover:border-blue-200 hover:border-dashed hover:bg-blue-50",
           )}
           onClick={() => setIsOpen(!isOpen)}
         >
@@ -337,7 +339,11 @@ function TreeNode({
                 <ChevronRightIcon className="h-4 w-4" />
               )}
               <FolderIcon
-                className={cn("h-4 w-4", node.isVirtual && "opacity-50")}
+                className={cn(
+                  "h-4 w-4",
+                  node.isVirtual && "opacity-50",
+                  node.type === 2 && "text-blue-600 group-hover:text-blue-700",
+                )}
               />
             </>
           ) : (
@@ -359,11 +365,11 @@ function TreeNode({
           )}
         </button>
 
-        {node.type === 2 && node.isPrivate && (
+        {node.type === 2 && (
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+            className="h-7 w-7 border border-blue-200 bg-blue-50 text-blue-700 opacity-0 transition-opacity hover:bg-blue-100 hover:text-blue-800 group-hover:opacity-100"
             onClick={() => onAddModel(node.path)}
             title={`Upload model to ${node.path}`}
           >
@@ -392,40 +398,51 @@ function TreeNode({
               Copy Path
             </DropdownMenuItem>
 
-            {node.isPrivate &&
-              (node.type === 2 ? (
-                <>
+            {node.type === 2 ? (
+              <>
+                <DropdownMenuItem onClick={() => setShowNewFolderDialog(true)}>
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  New Folder
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAddModel(node.path)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Model
+                </DropdownMenuItem>
+              </>
+            ) : (
+              <>
+                {node.isPrivate && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setNewName(node.name);
+                        setShowRenameDialog(true);
+                      }}
+                    >
+                      <PencilIcon className="mr-2 h-4 w-4" />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {!node.isPrivate && (
                   <DropdownMenuItem
-                    onClick={() => setShowNewFolderDialog(true)}
+                    disabled
+                    className="opacity-50 text-muted-foreground"
                   >
-                    <FolderPlus className="mr-2 h-4 w-4" />
-                    New Folder
+                    <span className="mr-2 text-xs italic">
+                      Public models cannot be modified
+                    </span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onAddModel(node.path)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Model
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setNewName(node.name);
-                      setShowRenameDialog(true);
-                    }}
-                  >
-                    <PencilIcon className="mr-2 h-4 w-4" />
-                    Rename
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-destructive"
-                    onClick={() => setShowDeleteDialog(true)}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
-                  </DropdownMenuItem>
-                </>
-              ))}
+                )}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -1089,26 +1106,26 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                   ? "No private models found. Upload models to your folders or create a new folder."
                   : "No public models available at the moment."}
             </p>
-            {filter !== "public" && (
-              <div className="mt-4 flex gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowNewFolderDialog(true)}
-                >
-                  <FolderPlus className="mr-2 h-4 w-4" />
-                  Create Folder
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  onClick={() => onAddModel("")}
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Model
-                </Button>
-              </div>
-            )}
+            {/* Allow upload even for public filter */}
+            <div className="mt-4 flex gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNewFolderDialog(true)}
+              >
+                <FolderPlus className="mr-2 h-4 w-4" />
+                Create Folder
+              </Button>
+              <Button
+                variant="default"
+                size="sm"
+                className="bg-blue-600 border-blue-700 hover:bg-blue-700 shadow-sm text-white"
+                onClick={() => onAddModel("")}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Model
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col">
