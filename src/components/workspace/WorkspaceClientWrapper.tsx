@@ -216,7 +216,7 @@ export function WorkspaceClientWrapper({
           <div className="flex h-full w-full items-center justify-center">
             <motion.div
               className="pt-20 mx-auto flex h-full w-full max-w-xl px-4 flex-col gap-4"
-              layout
+              // layout
             >
               <div className="flex items-center justify-between">
                 <SessionCreatorForm
@@ -244,7 +244,7 @@ export function WorkspaceClientWrapper({
             {versionData && (
               <motion.div
                 className="hidden md:flex h-full w-full items-center justify-center bg-gray-50 shadow-lg rounded-l-lg border border-1 my-2 overflow-hidden relative"
-                layout={showPreview}
+                // layout={showPreview}
                 animate={{
                   opacity: showPreview ? 1 : 0,
                   x: showPreview ? 0 : +20,
