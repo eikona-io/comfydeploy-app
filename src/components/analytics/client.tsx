@@ -6,6 +6,7 @@ import { filterFields as defaultFilterFields, filterFields } from "./constants";
 import { DataTableInfinite } from "./data-table-infinite";
 import { dataOptions } from "./query-options";
 import { searchParamsParser } from "./search-params";
+import { startOfDay, endOfDay } from "date-fns";
 
 export function AnalyticsClient() {
   const [search] = useQueryStates(searchParamsParser);
@@ -26,6 +27,29 @@ export function AnalyticsClient() {
 
   const { offset, limit, id, ...filter } = search;
 
+  // Prepare default column filters with today's date range if needed
+  const defaultFilters = React.useMemo(() => {
+    const filters = Object.entries(filter)
+      .map(([key, value]) => ({
+        id: key,
+        value,
+      }))
+      .filter(({ value }) => value ?? undefined);
+
+    // Add default time range if not already set
+    const timeFilterExists = filters.some(
+      (filter) => filter.id === "created_at",
+    );
+    if (!timeFilterExists) {
+      filters.push({
+        id: "created_at",
+        value: [startOfDay(new Date()), endOfDay(new Date())],
+      });
+    }
+
+    return filters;
+  }, []);
+
   return (
     <DataTableInfinite
       columns={columns}
@@ -34,12 +58,7 @@ export function AnalyticsClient() {
       filterRows={filterDBRowCount}
       totalRowsFetched={totalFetched}
       // currentPercentiles={currentPercentiles}
-      defaultColumnFilters={Object.entries(filter)
-        .map(([key, value]) => ({
-          id: key,
-          value,
-        }))
-        .filter(({ value }) => value ?? undefined)}
+      defaultColumnFilters={defaultFilters}
       // defaultColumnSorting={sort ? [sort] : undefined}
       defaultRowSelection={search.id ? { [search.id]: true } : undefined}
       filterFields={filterFields()}
