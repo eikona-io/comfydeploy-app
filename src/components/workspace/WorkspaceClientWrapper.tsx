@@ -2,23 +2,31 @@
 
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
-import { cn } from "@/lib/utils";
 import { getRelativeTime } from "@/lib/get-relative-time";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { easeOut } from "framer-motion";
+import { motion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
+import { useQueryState } from "nuqs";
+import { lazy, useEffect, useState } from "react";
+import { MyDrawer } from "../drawer";
+import { VersionChecker } from "../machine/version-checker";
 import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { LoadingIcon } from "../ui/custom/loading-icon";
 import { useWorkflowVersion } from "../workflow-list";
 import { SessionCreator } from "./SessionView";
 import { WorkspaceLoading, WorkspaceMachineLoading } from "./WorkspaceLoading";
-import { Button } from "../ui/button";
 import { SessionCreationDialog } from "./session-creator-dialog";
-import { MyDrawer } from "../drawer";
-import { useState, useEffect } from "react";
-import { VersionChecker } from "../machine/version-checker";
-import { useQueryState } from "nuqs";
-import { easeOut } from "framer-motion";
-import { motion } from "framer-motion";
 import { SessionCreatorForm } from "./session-creator-form";
+
+const ComfyUIFlow = lazy(() =>
+  import("../workflow-preview/comfyui-flow").then((mod) => ({
+    default: mod.ComfyUIFlow,
+  })),
+);
 
 interface WorkspaceClientWrapperProps {
   workflow_id: string;
@@ -60,6 +68,8 @@ export function WorkspaceClientWrapper({
     machineVersionId: "",
   });
 
+  const [showPreview, setShowPreview] = useState(true);
+
   const [cachedSessionId, setCachedSessionId] = useState<string | null>(null);
   const [hasActiveSession, setHasActiveSession] = useState(false);
 
@@ -84,6 +94,14 @@ export function WorkspaceClientWrapper({
     meta: {
       limit: 1,
     },
+  });
+
+  const [version] = useQueryState("version", {
+    defaultValue: String(workflow?.versions[0].version ?? 1),
+  });
+
+  const { data: versionData, status } = useQuery<any>({
+    queryKey: ["workflow", props.workflow_id, "version", version.toString()],
   });
 
   const { data: machine, isLoading } = useMachine(
@@ -194,17 +212,45 @@ export function WorkspaceClientWrapper({
         </motion.div>
 
         {!sessionId ? (
-          <div className="mt-28 mx-auto flex h-full w-full max-w-xl flex-col gap-4">
-            {/* <div className="flex flex-col items-center gap-2 "> */}
-            <SessionCreatorForm
-              workflowId={props.workflow_id}
-              version={versions[0]?.version ?? 0}
-              defaultMachineId={workflow?.selected_machine_id}
-              defaultMachineVersionId={workflow?.selected_machine_version_id}
-            />
-            <MachineUpdateChecker machineId={machine.id} />
-
-            {/* </div> */}
+          <div className="flex h-full w-full items-center justify-center">
+            <div className="pt-20 mx-auto flex h-full w-full max-w-xl px-4 flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <SessionCreatorForm
+                  workflowId={props.workflow_id}
+                  version={versions[0]?.version ?? 0}
+                  defaultMachineId={workflow?.selected_machine_id}
+                  defaultMachineVersionId={
+                    workflow?.selected_machine_version_id
+                  }
+                />
+              </div>
+              <MachineUpdateChecker machineId={machine.id} />
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setShowPreview(!showPreview)}
+              className="ml-4 p-2"
+            >
+              {showPreview ? (
+                <ChevronRight size={20} />
+              ) : (
+                <ChevronLeft size={20} />
+              )}
+            </Button>
+            {versionData && showPreview && (
+              <motion.div
+                className="flex h-full w-full items-center justify-center bg-gray-50 shadow-lg rounded-l-lg border border-1 my-2 overflow-hidden"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+              >
+                <ComfyUIFlow
+                  workflow={versionData.workflow}
+                  apiFormat={versionData.workflow_api}
+                />
+              </motion.div>
+            )}
           </div>
         ) : (
           <></>
