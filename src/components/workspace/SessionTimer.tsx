@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Session {
   created_at: string;
@@ -123,6 +124,24 @@ export function SessionTimer({
   className,
 }: SessionTimerProps) {
   const { countdown, progressPercentage } = useSessionTimer(session);
+  const hasTriggeredRef = useRef(false);
+
+  // Update useEffect to check countdown time and call onClick if < 30s
+  useEffect(() => {
+    if (!onClick || !countdown) return;
+
+    const [hours, minutes, seconds] = countdown.split(":").map(Number);
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+    if (totalSeconds > 0 && totalSeconds < 30 && !hasTriggeredRef.current) {
+      toast.info("Session ending soon, increasing session time...");
+      hasTriggeredRef.current = true;
+      onClick();
+    } else if (totalSeconds >= 30) {
+      // Reset the flag if the time goes above 30 seconds again
+      hasTriggeredRef.current = false;
+    }
+  }, [countdown, onClick]);
 
   const timerDisplay = showFullCountdown
     ? countdown
