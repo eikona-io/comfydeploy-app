@@ -191,7 +191,7 @@ export const NodeToBeFocus: NodeCategories = {
 
 // -----------------------components------------------------
 
-// Helper function to get the model name without parent folder
+// Helper function to get the model name without parent
 export function getModelNameWithoutParent(path: string) {
   if (!path) return "";
 
@@ -201,8 +201,9 @@ export function getModelNameWithoutParent(path: string) {
   // If there's only one part or no parts, return the original path
   if (parts.length <= 1) return path;
 
-  // Return just the filename without the parent folder path
-  return parts[parts.length - 1];
+  // Remove only the first part (top-level category folder)
+  // But keep all subdirectories and the filename
+  return parts.slice(1).join("/");
 }
 
 export function WorkflowModelCheck({
@@ -528,15 +529,17 @@ const OptionList = memo(
     }, [privateFiles, publicFiles]);
 
     const isNodeSuccessful = (nodeValue: string, category: string) => {
+      // If no value, it's not successful
+      if (!nodeValue) return false;
+
       return (
-        nodeValue &&
         fileList.some((f) => f.category === category) &&
         fileList.some((f) =>
-          f.filePaths.some(
-            (filePath) =>
-              filePath.name === nodeValue ||
-              getModelNameWithoutParent(filePath.name) === nodeValue,
-          ),
+          f.filePaths.some((filePath) => {
+            // Compare with the extracted path (without top dir)
+            const extractedPath = extractModelPathWithoutTopDir(filePath.name);
+            return extractedPath === nodeValue;
+          }),
         )
       );
     };
@@ -614,9 +617,8 @@ const OptionList = memo(
             <StatusTooltip
               content={
                 <div>
-                  Fail to find the <b>"{getModelNameWithoutParent(value)}"</b>{" "}
-                  file! Please update / add it back to the <b>{folders}</b>{" "}
-                  folder.
+                  Fail to find the <b>"{value}"</b> file! Please update / add it
+                  back to the <b>{folders}</b> folder.
                 </div>
               }
               variant="yellow"
@@ -630,7 +632,7 @@ const OptionList = memo(
           <StatusTooltip
             content={
               <div>
-                File found! [<b>{getModelNameWithoutParent(value)}</b>]
+                File found! [<b>{value}</b>]
               </div>
             }
             variant="success"
@@ -808,8 +810,8 @@ const OptionList = memo(
   },
 );
 
-// Function to get display name (remove the parent folder path)
-const getDisplayName = (path: string) => {
+// Clean up duplicate functions and replace with a single, well-named utility function
+export function extractModelPathWithoutTopDir(path: string) {
   if (!path) return "";
 
   // Split the path by '/'
@@ -818,9 +820,10 @@ const getDisplayName = (path: string) => {
   // If there's only one part or no parts, return the original path
   if (parts.length <= 1) return path;
 
-  // Remove the first part (category) and join the rest
+  // Remove only the first part (top-level category folder)
+  // But keep all subdirectories and the filename
   return parts.slice(1).join("/");
-};
+}
 
 export function ModelSelectComboBox({
   selectedNode,
@@ -857,12 +860,19 @@ export function ModelSelectComboBox({
     setOpenStates(new Array(numInputs).fill(false));
   }, [numInputs]);
 
+  const processedFiles = useMemo(() => {
+    if (!categoryFiles) return [];
+
+    return categoryFiles.filePaths.map((file) => ({
+      ...file,
+      displayPath: extractModelPathWithoutTopDir(file.name),
+    }));
+  }, [categoryFiles]);
+
   const renderComboBox = (index: number) => {
     const currentValue = selectedNode.widgets_values[index] || "";
-    const isValid = categoryFiles?.filePaths.some(
-      (file) =>
-        file.name === currentValue ||
-        getModelNameWithoutParent(file.name) === currentValue,
+    const isValid = processedFiles.some(
+      (file) => file.name === currentValue || file.displayPath === currentValue,
     );
 
     return (
@@ -889,9 +899,7 @@ export function ModelSelectComboBox({
               )}
             >
               <span className="truncate">
-                {currentValue
-                  ? getDisplayName(currentValue)
-                  : "Select model..."}
+                {currentValue ? currentValue : "Select model..."}
               </span>
               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
@@ -902,7 +910,7 @@ export function ModelSelectComboBox({
               <CommandList>
                 <CommandEmpty>No files found.</CommandEmpty>
                 <CommandGroup>
-                  {categoryFiles?.filePaths.map((file) => (
+                  {processedFiles.map((file) => (
                     <CommandItem
                       key={`${file.name}-${index}`}
                       value={file.name}
@@ -917,11 +925,9 @@ export function ModelSelectComboBox({
                           newWidgetsValues.push("");
                         }
 
-                        // Update the value at the specified index with just the model name
-                        // not the parent folder
-                        newWidgetsValues[index] = getModelNameWithoutParent(
-                          file.name,
-                        );
+                        // Store the model path without the top directory
+                        // This preserves subdirectories like "upscale/x4-upscaler-ema.safetensors"
+                        newWidgetsValues[index] = file.displayPath;
 
                         // Create a new node object with the updated widgets_values
                         const updatedNode = {
@@ -942,13 +948,12 @@ export function ModelSelectComboBox({
                         <Check
                           className={cn(
                             "mr-2 h-4 w-4",
-                            currentValue ===
-                              getModelNameWithoutParent(file.name)
+                            currentValue === file.displayPath
                               ? "opacity-100"
                               : "opacity-0",
                           )}
                         />
-                        <span>{getDisplayName(file.name)}</span>
+                        <span>{file.displayPath}</span>
                       </div>
                     </CommandItem>
                   ))}
