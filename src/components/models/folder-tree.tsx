@@ -15,13 +15,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -38,18 +31,11 @@ import {
   FolderPlus,
   MoreHorizontal,
   PencilIcon,
-  PlusIcon,
   RefreshCcw,
   Search,
   Trash2,
   Upload,
   XCircle,
-  ArrowDownUp,
-  ArrowUp,
-  ArrowDown,
-  ArrowDownUp as ArrowDownUpIcon,
-  ArrowUpDown,
-  Check as CheckIcon,
   ArrowDownNarrowWide,
   ArrowUpWideNarrow,
 } from "lucide-react";
@@ -60,7 +46,6 @@ import { useQueryState } from "nuqs";
 import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
 // Format file size to human-readable format (KB, MB, GB)
@@ -367,7 +352,7 @@ function TreeNode({
           )}
           <span>{node.name}</span>
           {node.type === 2 && node.children.length > 0 && (
-            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
               {getTotalChildrenCount(node)}
             </span>
           )}
@@ -510,7 +495,7 @@ function TreeNode({
                   ) : null}
                 </div>
               </div>
-              <p className="text-sm text-red-500">{validationMessage}</p>
+              <p className="text-red-500 text-sm">{validationMessage}</p>
             </div>
 
             {newName !== node.name && isValidName && (
@@ -559,7 +544,6 @@ function TreeNode({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
@@ -570,7 +554,7 @@ function TreeNode({
           <div className="flex flex-col gap-4">
             <div>
               <p>Are you sure you want to delete this file?</p>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 <span className="font-medium">{node.path}</span>
               </p>
               <Alert variant="destructive" className="mt-4">
@@ -811,10 +795,9 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           return sortDirection === "asc"
             ? nameA.localeCompare(nameB)
             : nameB.localeCompare(nameA);
-        } else {
-          // Sort by size
-          return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
         }
+        // Sort by size
+        return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
       })
       .map((node) => ({
         ...node,
@@ -935,28 +918,6 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
 
   return (
     <div className={cn("flex h-full flex-col gap-4", className)}>
-      {/* <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-lg">Models</h2>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["volume"] })
-            }
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowNewFolderDialog(true)}
-          >
-            <FolderPlus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div> */}
-
       <DownloadingModels />
 
       <div className="flex items-center gap-4">
@@ -971,10 +932,10 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
         </div>
 
         {/* Updated sorting UI with select dropdown and separate sort button */}
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 rounded-md border bg-white/95 p-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center gap-1">
+              <Button variant="ghost" className="flex h-8 items-center gap-1">
                 <span>{sortBy === "name" ? "Name" : "File size"}</span>
                 <ChevronDownIcon className="h-4 w-4" />
               </Button>
@@ -992,9 +953,12 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          <div className="h-5 w-[1px] bg-gray-200" />
+
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
+            className="h-8 w-8"
             onClick={() =>
               setSortDirection(sortDirection === "asc" ? "desc" : "asc")
             }
@@ -1013,9 +977,10 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
             size="icon"
             iconPlacement="left"
             Icon={RefreshCcw}
-            onClick={async () =>
-              await queryClient.invalidateQueries({ queryKey: ["volume"] })
-            }
+            onClick={async () => {
+              await queryClient.invalidateQueries({ queryKey: ["volume"] });
+              toast.success("Models refreshed");
+            }}
           />
           <Button
             variant="ghost"
@@ -1036,10 +1001,10 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                 <TabsTrigger
                   value="private"
                   className={cn(
-                    "font-medium px-4 py-1.5 rounded-md text-sm transition-all",
+                    "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                     filter === "private"
-                      ? "bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm"
-                      : "hover:bg-gray-100 text-gray-600",
+                      ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                      : "text-gray-600 hover:bg-gray-100",
                   )}
                 >
                   Private
@@ -1049,10 +1014,10 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                 <TabsTrigger
                   value="public"
                   className={cn(
-                    "font-medium px-4 py-1.5 rounded-md text-sm transition-all",
+                    "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                     filter === "public"
-                      ? "bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm"
-                      : "hover:bg-gray-100 text-gray-600",
+                      ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                      : "text-gray-600 hover:bg-gray-100",
                   )}
                 >
                   Public
@@ -1062,10 +1027,10 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                 <TabsTrigger
                   value="all"
                   className={cn(
-                    "font-medium px-4 py-1.5 rounded-md text-sm transition-all",
+                    "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                     filter === "all"
-                      ? "bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm"
-                      : "hover:bg-gray-100 text-gray-600",
+                      ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                      : "text-gray-600 hover:bg-gray-100",
                   )}
                 >
                   All
@@ -1106,7 +1071,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
               <FolderIcon className="h-6 w-6 text-gray-400" />
             </div>
             <div className="font-medium text-gray-900">No models found</div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {filter === "all"
                 ? "No models available. Create a folder and upload your models to get started."
                 : filter === "private"
