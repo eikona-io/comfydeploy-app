@@ -338,7 +338,7 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
         <CardHeader className="p-3 pb-2">
           <div className="flex items-center justify-between">
             <CardTitle
-              className="text-sm font-medium truncate text-white"
+              className="w-full truncate border-white/20 border-b pb-1 font-medium text-white text-xs"
               title={data.label}
             >
               {data.label}
@@ -432,7 +432,7 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
                 }}
               >
                 <span
-                  className="text-xs text-white bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap"
+                  className="whitespace-nowrap rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white"
                   style={{
                     maxWidth: "120px",
                     overflow: "hidden",
@@ -444,19 +444,21 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
                 </span>
 
                 {/* Show value only for unconnected ports */}
-                {port.value !== undefined && !port.isConnected && (
-                  <span
-                    className="text-xs text-white/70 bg-black/30 px-2 py-0.5 ml-2 rounded-full whitespace-nowrap"
-                    style={{
-                      maxWidth: "120px",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                    title={`Value: ${port.value}`}
-                  >
-                    {formatWidgetValue(port.value)}
-                  </span>
-                )}
+                {port.value !== undefined &&
+                  port.value !== "" &&
+                  !port.isConnected && (
+                    <span
+                      className="ml-2 whitespace-nowrap rounded-full bg-black/30 px-2 py-0.5 text-[10px] text-white/70"
+                      style={{
+                        maxWidth: "120px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                      title={`Value: ${port.value}`}
+                    >
+                      {formatWidgetValue(port.value)}
+                    </span>
+                  )}
               </div>
             </div>
           );
@@ -489,7 +491,7 @@ export function ComfyNode({ id, data }: NodeProps<ComfyNodeData>) {
                 }}
               >
                 <span
-                  className="text-xs text-white bg-black/50 px-2 py-0.5 rounded-full whitespace-nowrap"
+                  className="whitespace-nowrap rounded-full bg-black/50 px-2 py-0.5 text-[10px] text-white"
                   style={{
                     maxWidth: "120px",
                     overflow: "hidden",
