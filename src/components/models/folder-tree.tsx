@@ -359,6 +359,18 @@ function TreeNode({
           )}
         </button>
 
+        {node.type === 2 && node.isPrivate && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={() => onAddModel(node.path)}
+            title={`Upload model to ${node.path}`}
+          >
+            <Upload className="h-3.5 w-3.5" />
+          </Button>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -982,6 +994,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
               variant="ghost"
               size="icon"
               onClick={() => setShowNewFolderDialog(true)}
+              title="Create folder"
             >
               <FolderPlus className="h-4 w-4" />
             </Button>
@@ -1071,21 +1084,30 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
             <div className="font-medium text-gray-900">No models found</div>
             <p className="text-muted-foreground text-sm">
               {filter === "all"
-                ? "No models available. Create a folder and upload your models to get started."
+                ? "No models available. Upload models to your folders or create a new folder."
                 : filter === "private"
-                  ? "No private models found. Create a folder and upload your models to get started."
+                  ? "No private models found. Upload models to your folders or create a new folder."
                   : "No public models available at the moment."}
             </p>
             {filter !== "public" && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => setShowNewFolderDialog(true)}
-              >
-                <FolderPlus className="mr-2 h-4 w-4" />
-                Create Folder
-              </Button>
+              <div className="mt-4 flex gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowNewFolderDialog(true)}
+                >
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  Create Folder
+                </Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => onAddModel("")}
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Model
+                </Button>
+              </div>
             )}
           </div>
         ) : (
