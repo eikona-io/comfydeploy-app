@@ -1,9 +1,10 @@
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowUpCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useMachine } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowUpCircle } from "lucide-react";
 
 interface CustomNodesVersionResponse {
   status: string;
@@ -33,9 +34,15 @@ export function VersionChecker({
   onUpdate,
   hideUpdateButton = false,
 }: VersionCheckerProps) {
+  const { data: machine } = useMachine(machineId);
+
   const { data, isLoading } = useQuery<CustomNodesVersionResponse>({
     queryKey: ["machine", machineId, "check-custom-nodes"],
   });
+
+  if (machine?.type !== "comfy-deploy-serverless") {
+    return null;
+  }
 
   if (isLoading) {
     return (
