@@ -968,78 +968,62 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           />
         </div>
 
-        {/* Updated UI with "Ordering" text and current selection in dropdown button */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <ArrowDownUp className="h-5 w-5" />
-            <span className="text-sm font-medium">Ordering</span>
-          </div>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex items-center gap-2 min-w-[120px]"
-              >
-                <span>{sortBy === "name" ? "Name" : "File size"}</span>
-                <ChevronDownIcon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="px-3 py-2 text-base font-medium">Sort by</div>
-              <DropdownMenuRadioGroup
-                value={sortBy}
-                onValueChange={(v) => setSortBy(v as "name" | "size")}
-              >
-                <DropdownMenuRadioItem
-                  value="name"
-                  className="flex items-center"
-                >
-                  <div className="flex-1">Name</div>
-                  {sortBy === "name" && <ArrowUp className="h-4 w-4" />}
-                </DropdownMenuRadioItem>
-                <DropdownMenuRadioItem
-                  value="size"
-                  className="flex items-center"
-                >
-                  <div className="flex-1">File size</div>
-                </DropdownMenuRadioItem>
-              </DropdownMenuRadioGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => setSortDirection("asc")}
-                className="flex items-center"
-              >
-                <ArrowUp className="mr-2 h-4 w-4" />
-                <div className="flex-1">Ascending</div>
-                {sortDirection === "asc" && <CheckIcon className="h-4 w-4" />}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setSortDirection("desc")}
-                className="flex items-center"
-              >
-                <ArrowDown className="mr-2 h-4 w-4" />
-                <div className="flex-1">Descending</div>
-                {sortDirection === "desc" && <CheckIcon className="h-4 w-4" />}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() =>
-              setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
-            }
-            className="h-10 w-10"
-          >
-            {sortDirection === "asc" ? (
-              <ArrowUp className="h-4 w-4" />
-            ) : (
-              <ArrowDown className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
+        {/* Replace with compact icon dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label="Sort options"
+              className="h-10 w-10"
+              size="icon"
+              variant="ghost"
+            >
+              <ArrowDownUp className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="px-3 py-2 text-base font-medium">Sort by</div>
+            <DropdownMenuRadioGroup
+              value={sortBy}
+              onValueChange={(v) => setSortBy(v as "name" | "size")}
+            >
+              <DropdownMenuRadioItem value="name" className="flex items-center">
+                <div className="flex-1">Name</div>
+                {sortBy === "name" && sortDirection === "asc" && (
+                  <ArrowUp className="h-4 w-4" />
+                )}
+                {sortBy === "name" && sortDirection === "desc" && (
+                  <ArrowDown className="h-4 w-4" />
+                )}
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="size" className="flex items-center">
+                <div className="flex-1">File size</div>
+                {sortBy === "size" && sortDirection === "asc" && (
+                  <ArrowUp className="h-4 w-4" />
+                )}
+                {sortBy === "size" && sortDirection === "desc" && (
+                  <ArrowDown className="h-4 w-4" />
+                )}
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setSortDirection("asc")}
+              className="flex items-center"
+            >
+              <ArrowUp className="mr-2 h-4 w-4" />
+              <div className="flex-1">Ascending</div>
+              {sortDirection === "asc" && <CheckIcon className="h-4 w-4" />}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setSortDirection("desc")}
+              className="flex items-center"
+            >
+              <ArrowDown className="mr-2 h-4 w-4" />
+              <div className="flex-1">Descending</div>
+              {sortDirection === "desc" && <CheckIcon className="h-4 w-4" />}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="flex gap-2">
           <Button
