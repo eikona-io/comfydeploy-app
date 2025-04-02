@@ -911,10 +911,8 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   return (
     <div className={cn("flex h-full flex-col gap-4", className)}>
       <div className="flex flex-col gap-4">
-        <h2 className="text-2xl font-semibold">Model Browser</h2>
-
+        <h3 className="font-bold text-2xl">Model Browser</h3>
         <DownloadingModels />
-
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-full sm:w-auto sm:flex-1">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />

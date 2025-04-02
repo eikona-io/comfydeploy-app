@@ -322,7 +322,7 @@ export function WorkflowModelCheck({
       <div className="relative hidden md:block">
         {isModelBrowserExpanded && (
           <div className="w-[500px] rounded-xl border bg-white p-4 drop-shadow-lg">
-            <div className="mt-2 h-[calc(70vh)] overflow-auto rounded-md border border-gray-200 bg-muted/20 p-4">
+            <div className="mt-2 h-[calc(70vh)] overflow-auto bg-muted/20">
               <FolderTree onAddModel={handleAddModel} />
             </div>
           </div>
