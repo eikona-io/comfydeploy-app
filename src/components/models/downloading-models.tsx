@@ -11,6 +11,8 @@ import {
   ChevronUp,
   ChevronRight,
   ImageIcon,
+  Folder,
+  Clock,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -81,11 +83,7 @@ export function DownloadingModels() {
       <CollapsibleContent>
         <div className="space-y-2 p-3 pt-0">
           {visibleModels.map((model) => (
-            <DownloadingModelItem
-              key={model.id}
-              model={model}
-              compact={useCompactMode}
-            />
+            <DownloadingModelItem key={model.id} model={model} />
           ))}
 
           {hiddenModelsCount > 0 && (
@@ -108,10 +106,8 @@ export function DownloadingModels() {
 
 function DownloadingModelItem({
   model,
-  compact = false,
 }: {
   model: DownloadingModel;
-  compact?: boolean;
 }) {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -156,147 +152,76 @@ function DownloadingModelItem({
     }
   };
 
-  const hasImage =
-    model.civitai_model_response?.images &&
-    model.civitai_model_response.images.length > 0;
-
-  const hasDescription = !!model.civitai_model_response?.description;
-  const hasError = !!model.error_log;
-  const hasDetails = hasImage || hasDescription || hasError;
-
   return (
-    <div
-      className={cn(
-        "rounded-md border bg-card overflow-hidden",
-        compact ? "text-sm" : "",
-      )}
-    >
-      <div className={cn("p-2", compact ? "py-1" : "p-3")}>
+    <div className="overflow-hidden rounded-md border bg-card">
+      <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="mr-2 flex-1 truncate">
-            <div className="truncate font-medium">{model.model_name}</div>
-            {!compact && (
-              <div className="text-xs text-muted-foreground">
-                {sourceName} • {model.folder_path} • Started {timeAgo}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <div className="truncate font-medium">{model.model_name}</div>
+                <div className="mx-2 h-3 w-[1px] bg-gray-800" />
+                <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                  <span className="flex items-center gap-1">
+                    <ImageIcon className="h-3 w-3" />
+                    {sourceName}
+                  </span>
+                  <span>•</span>
+                  <span className="flex max-w-[120px] items-center gap-1 truncate">
+                    <Folder className="h-3 w-3" />
+                    {model.folder_path}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {timeAgo}
+                  </span>
+                </div>
               </div>
-            )}
-            {compact && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <span>{sourceName}</span>
-                <span>•</span>
-                <span className="truncate">{model.folder_path}</span>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {model.status === "failed" && (
-              <AlertCircle
+            </div>
+
+            {/* Progress bar section - below the model name */}
+            <div className="mt-1 flex items-center gap-2">
+              <Progress
+                value={model.download_progress}
                 className={cn(
-                  "text-destructive",
-                  compact ? "h-4 w-4" : "h-5 w-5",
+                  "h-1.5 flex-1",
+                  model.status === "failed" && "bg-destructive/20",
                 )}
               />
-            )}
-            {hasDetails && !compact && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0"
-                onClick={() => setShowDetails(!showDetails)}
-              >
-                <ChevronRight
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    showDetails && "rotate-90",
-                  )}
-                />
-              </Button>
-            )}
-            {hasImage && compact && (
-              <ImageIcon className="h-3 w-3 text-muted-foreground" />
+              <span className="min-w-[2.5rem] text-right text-muted-foreground text-xs">
+                {model.status === "failed"
+                  ? "Failed"
+                  : `${model.download_progress}%`}
+              </span>
+              {model.status !== "failed" && (
+                <span className="min-w-[5rem] text-muted-foreground text-xs">
+                  {model.download_progress === 100
+                    ? "Processing..."
+                    : "Downloading"}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1">
+            {model.status === "failed" && (
+              <AlertCircle className="h-5 w-5 text-destructive" />
             )}
             {modelUrl && (
               <Button
                 variant="ghost"
                 size="sm"
-                className={cn(
-                  "hover:text-foreground p-0 text-muted-foreground",
-                  compact ? "h-6 w-6" : "h-8 w-8",
-                )}
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                 onClick={copyModelUrl}
                 title="Copy download link"
               >
-                <Copy className={cn(compact ? "h-3 w-3" : "h-4 w-4")} />
+                <Copy className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
-
-        <div className={cn("mt-1", compact ? "mt-0.5" : "mt-2")}>
-          <Progress
-            value={model.download_progress}
-            className={cn(
-              "h-1.5",
-              compact && "h-1",
-              model.status === "failed" && "bg-destructive/20",
-            )}
-          />
-          <div
-            className={cn(
-              "flex justify-between text-muted-foreground text-xs",
-              compact ? "mt-0.5" : "mt-1",
-            )}
-          >
-            <span>
-              {model.status === "failed"
-                ? "Failed"
-                : `${model.download_progress}%`}
-            </span>
-            {model.status !== "failed" && (
-              <span>
-                {model.download_progress === 100
-                  ? "Processing..."
-                  : "Downloading"}
-              </span>
-            )}
-          </div>
-        </div>
       </div>
-
-      {/* Only show details if not in compact mode and details are toggled on */}
-      {!compact && showDetails && hasDetails && (
-        <div className="space-y-2 border-t p-3">
-          {hasImage && (
-            <div className="mx-auto aspect-square w-full max-w-[200px] overflow-hidden rounded-md">
-              <img
-                src={model.civitai_model_response.images[0].url}
-                alt={model.model_name}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          )}
-
-          {hasDescription && (
-            <div className="text-sm">
-              <div className="mb-1 font-medium">Description</div>
-              <div className="text-muted-foreground text-xs">
-                {model.civitai_model_response.description.length > 300
-                  ? `${model.civitai_model_response.description.substring(0, 300)}...`
-                  : model.civitai_model_response.description}
-              </div>
-            </div>
-          )}
-
-          {hasError && (
-            <div className="text-sm">
-              <div className="mb-1 font-medium text-destructive">Error</div>
-              <pre className="bg-destructive/10 p-2 rounded text-destructive text-xs whitespace-pre-wrap">
-                {model.error_log}
-              </pre>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
