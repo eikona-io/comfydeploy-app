@@ -50,6 +50,8 @@ import {
   ArrowDownUp as ArrowDownUpIcon,
   ArrowUpDown,
   Check as CheckIcon,
+  ArrowDownNarrowWide,
+  ArrowUpWideNarrow,
 } from "lucide-react";
 import type React from "react";
 import { useState, useMemo } from "react";
@@ -968,62 +970,42 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           />
         </div>
 
-        {/* Replace with compact icon dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              aria-label="Sort options"
-              className="h-10 w-10"
-              size="icon"
-              variant="ghost"
-            >
-              <ArrowDownUp className="h-5 w-5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <div className="px-3 py-2 text-base font-medium">Sort by</div>
-            <DropdownMenuRadioGroup
-              value={sortBy}
-              onValueChange={(v) => setSortBy(v as "name" | "size")}
-            >
-              <DropdownMenuRadioItem value="name" className="flex items-center">
-                <div className="flex-1">Name</div>
-                {sortBy === "name" && sortDirection === "asc" && (
-                  <ArrowUp className="h-4 w-4" />
-                )}
-                {sortBy === "name" && sortDirection === "desc" && (
-                  <ArrowDown className="h-4 w-4" />
-                )}
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="size" className="flex items-center">
-                <div className="flex-1">File size</div>
-                {sortBy === "size" && sortDirection === "asc" && (
-                  <ArrowUp className="h-4 w-4" />
-                )}
-                {sortBy === "size" && sortDirection === "desc" && (
-                  <ArrowDown className="h-4 w-4" />
-                )}
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setSortDirection("asc")}
-              className="flex items-center"
-            >
-              <ArrowUp className="mr-2 h-4 w-4" />
-              <div className="flex-1">Ascending</div>
-              {sortDirection === "asc" && <CheckIcon className="h-4 w-4" />}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => setSortDirection("desc")}
-              className="flex items-center"
-            >
-              <ArrowDown className="mr-2 h-4 w-4" />
-              <div className="flex-1">Descending</div>
-              {sortDirection === "desc" && <CheckIcon className="h-4 w-4" />}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Updated sorting UI with select dropdown and separate sort button */}
+        <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-1">
+                <span>{sortBy === "name" ? "Name" : "File size"}</span>
+                <ChevronDownIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuRadioGroup
+                value={sortBy}
+                onValueChange={(v) => setSortBy(v as "name" | "size")}
+              >
+                <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="size">
+                  File size
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() =>
+              setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+            }
+          >
+            {sortDirection === "asc" ? (
+              <ArrowUpWideNarrow className="h-4 w-4" />
+            ) : (
+              <ArrowDownNarrowWide className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
 
         <div className="flex gap-2">
           <Button
