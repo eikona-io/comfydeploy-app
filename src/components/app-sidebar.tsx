@@ -93,6 +93,11 @@ import {
   SessionIncrementDialog,
   useSessionIncrementStore,
 } from "./workspace/increase-session";
+import { Separator } from "./ui/separator";
+import { MyDrawer } from "./drawer";
+import { cn } from "@/lib/utils";
+import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
+import { sendWorkflow } from "./workspace/sendEventToCD";
 
 // Add Session type
 interface Session {
@@ -295,7 +300,7 @@ function SessionSidebar() {
 
   const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
   const [displayCommit, setDisplayCommit] = useState(false);
-  const { hasChanged } = useWorkflowStore();
+  const { hasChanged, workflow } = useWorkflowStore();
   const {
     setOpen: setSessionIncrementOpen,
     setSessionId: setIncrementSessionId,
@@ -328,6 +333,14 @@ function SessionSidebar() {
 
   const [timerDialogOpen, setTimerDialogOpen] = useState(false);
   const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
+  const [modelBrowserOpen, setModelBrowserOpen] = useState(false);
+  const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
+
+  useEffect(() => {
+    if (workflow) {
+      setWorkflowUpdateTrigger((prev) => prev + 1);
+    }
+  }, [workflow]);
 
   return (
     <>
@@ -407,10 +420,23 @@ function SessionSidebar() {
                   className="relative mx-auto"
                 >
                   <GitBranch className="h-4 w-4" />
-                  <div className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
+                  <div className="-right-1 -top-1 absolute flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
                     v
                     {useSelectedVersion(workflowId || "").value?.version || "1"}
                   </div>
+                </Button>
+              </SidebarMenuItem>
+              <Separator className="mx-auto my-1 w-7" />
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(modelBrowserOpen ? "bg-primary/10" : "")}
+                  onClick={() => {
+                    setModelBrowserOpen(!modelBrowserOpen);
+                  }}
+                >
+                  <Box className="h-4 w-4" />
                 </Button>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -422,6 +448,22 @@ function SessionSidebar() {
           )}
         </SidebarFooter>
       </Sidebar>
+      {modelBrowserOpen && (
+        <MyDrawer
+          backgroundInteractive
+          open={modelBrowserOpen}
+          onClose={() => setModelBrowserOpen(false)}
+        >
+          <div className="mt-2 space-y-4">
+            <span className="font-medium">Model Check</span>
+            <WorkflowModelCheck
+              workflow={JSON.stringify(workflow)}
+              key={workflowUpdateTrigger}
+              onWorkflowUpdate={sendWorkflow}
+            />
+          </div>
+        </MyDrawer>
+      )}
     </>
   );
 }
