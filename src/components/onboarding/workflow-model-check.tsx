@@ -738,7 +738,7 @@ const OptionList = memo(
                               {category}
                             </div>
                             {success < total ? (
-                              <Badge variant="destructive">
+                              <Badge variant="yellow">
                                 {total - success} missing
                               </Badge>
                             ) : (
@@ -863,10 +863,22 @@ export function ModelSelectComboBox({
   const processedFiles = useMemo(() => {
     if (!categoryFiles) return [];
 
-    return categoryFiles.filePaths.map((file) => ({
-      ...file,
-      displayPath: extractModelPathWithoutTopDir(file.name),
-    }));
+    // Create a Map to store unique files by displayPath
+    const uniqueFiles = new Map();
+
+    for (const file of categoryFiles.filePaths) {
+      const displayPath = extractModelPathWithoutTopDir(file.name);
+      // Only keep the first occurrence of each displayPath
+      if (!uniqueFiles.has(displayPath)) {
+        uniqueFiles.set(displayPath, {
+          ...file,
+          displayPath,
+        });
+      }
+    }
+
+    // Convert Map values back to array
+    return Array.from(uniqueFiles.values());
   }, [categoryFiles]);
 
   const renderComboBox = (index: number) => {
@@ -895,7 +907,9 @@ export function ModelSelectComboBox({
               aria-expanded={openStates[index]}
               className={cn(
                 "w-full justify-between rounded-md",
-                !currentValue || isValid ? "" : "border-red-500",
+                !currentValue || isValid
+                  ? ""
+                  : "border-yellow-500 bg-yellow-50/80",
               )}
             >
               <span className="truncate">
