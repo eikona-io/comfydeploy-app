@@ -133,7 +133,7 @@ export function DataTableInfinite<TData, TValue>({
       // Check if we're near the bottom (within 100px)
       const isNearBottom = scrollHeight - scrollPosition < 100;
 
-      if (isNearBottom && !isFetching && totalRowsFetched < filterRows) {
+      if (isNearBottom && !isFetching) {
         fetchNextPage();
       }
     }
