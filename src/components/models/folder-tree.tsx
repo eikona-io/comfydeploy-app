@@ -318,6 +318,9 @@ function TreeNode({
     return count;
   };
 
+  // Determine if folder deletion should be allowed
+  const canDeleteFolder = node.type === 2 && node.isPrivate && !node.isVirtual;
+
   return (
     <div>
       <div className="group flex items-center gap-2">
@@ -408,6 +411,15 @@ function TreeNode({
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Model
                 </DropdownMenuItem>
+                {canDeleteFolder && (
+                  <DropdownMenuItem
+                    className="text-destructive"
+                    onClick={() => setShowDeleteDialog(true)}
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Folder
+                  </DropdownMenuItem>
+                )}
               </>
             ) : (
               <>
@@ -578,14 +590,18 @@ function TreeNode({
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <div>
-              <p>Are you sure you want to delete this file?</p>
+              <p>
+                Are you sure you want to delete this{" "}
+                {node.type === 2 ? "folder" : "file"}?
+              </p>
               <p className="text-muted-foreground text-sm">
                 <span className="font-medium">{node.path}</span>
               </p>
               <Alert variant="destructive" className="mt-4">
                 <AlertDescription>
-                  This action cannot be undone. The file will be permanently
-                  deleted.
+                  {node.type === 2
+                    ? "This action cannot be undone. The folder and all its contents will be permanently deleted."
+                    : "This action cannot be undone. The file will be permanently deleted."}
                 </AlertDescription>
               </Alert>
             </div>
@@ -608,7 +624,7 @@ function TreeNode({
                     <span>Deleting</span>
                   </div>
                 ) : (
-                  "Delete"
+                  `Delete ${node.type === 2 ? "Folder" : "File"}`
                 )}
               </Button>
             </div>
