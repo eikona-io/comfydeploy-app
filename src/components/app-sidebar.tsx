@@ -53,7 +53,10 @@ import {
 } from "@/components/ui/sidebar";
 import { VersionList, useSelectedVersion } from "@/components/version-select";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
-import { SessionTimer } from "@/components/workspace/SessionTimer";
+import {
+  SessionTimer,
+  useSessionTimer,
+} from "@/components/workspace/SessionTimer";
 import {
   useSessionIdInSessionView,
   useWorkflowIdInSessionView,
@@ -98,6 +101,7 @@ import { MyDrawer } from "./drawer";
 import { cn } from "@/lib/utils";
 import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
 import { sendWorkflow } from "./workspace/sendEventToCD";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // Add Session type
 interface Session {
@@ -344,14 +348,6 @@ function SessionSidebar() {
 
   return (
     <>
-      {!isLegacyMode && (
-        <TimerDialog
-          open={timerDialogOpen}
-          onOpenChange={setTimerDialogOpen}
-          session={session}
-          onRefetch={refetch}
-        />
-      )}
       <SessionIncrementDialog /> {/* This will handle the legacy mode dialog */}
       {displayCommit && (
         <WorkflowCommitVersion endpoint={url} setOpen={setDisplayCommit} />
@@ -443,8 +439,14 @@ function SessionSidebar() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          {session && (
-            <SessionTimer session={session} onClick={handleTimerClick} />
+          {!isLegacyMode ? (
+            <TimerPopover session={session} onRefetch={refetch} />
+          ) : (
+            <>
+              {session && (
+                <SessionTimer session={session} onClick={handleTimerClick} />
+              )}
+            </>
           )}
         </SidebarFooter>
       </Sidebar>
@@ -470,20 +472,27 @@ function SessionSidebar() {
   );
 }
 
-// Update TimerDialog component
-function TimerDialog({
-  open,
-  onOpenChange,
+function TimerPopover({
   session,
   onRefetch,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   session: Session | undefined;
   onRefetch: () => Promise<unknown>;
 }) {
   const [selectedIncrement, setSelectedIncrement] = useState("5");
   const sessionId = useSessionIdInSessionView();
+  const { countdown } = useSessionTimer(session);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const [hours, minutes, seconds] = countdown.split(":").map(Number);
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+  // Auto-open popover when less than 30 seconds remaining
+  useEffect(() => {
+    if (totalSeconds > 0 && totalSeconds < 30) {
+      setIsOpen(true);
+    }
+  }, [totalSeconds]);
 
   const timeIncrements = [
     { value: "1", label: "1 minute" },
@@ -514,16 +523,42 @@ function TimerDialog({
       },
     ).then(() => {
       onRefetch();
-      onOpenChange(false);
+      // Only close the popover when time is increased
+      if (totalSeconds >= 30) {
+        setIsOpen(false);
+      }
     });
   };
 
+  // Function to determine text color based on the time remaining
+  const getTimeWarningClass = () => {
+    if (totalSeconds < 30) {
+      return "text-yellow-600";
+    }
+    return "text-muted-foreground";
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle>Increase Session Time</DialogTitle>
-        </DialogHeader>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        // Only allow closing the popover if time is < 30 seconds
+        if (totalSeconds < 30 && !open) {
+          return; // Prevent closing when time is < 30 seconds
+        }
+        setIsOpen(open);
+      }}
+    >
+      <PopoverTrigger>
+        {session && <SessionTimer session={session} />}
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[340px]"
+        side="right"
+        sideOffset={14}
+        align="end"
+      >
+        <span className="font-medium text-sm">Increase Session Time</span>
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col space-y-3">
             <div className="flex items-center text-muted-foreground text-sm">
@@ -533,24 +568,40 @@ function TimerDialog({
               </span>
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center justify-between rounded-none bg-muted/50 px-2 py-3">
+              <div
+                className={`flex items-center justify-between rounded-none bg-muted/50 px-2 py-3`}
+              >
                 <div className="flex items-center gap-2">
-                  <History className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">Time Remaining</span>
+                  <History className={`h-4 w-4 ${getTimeWarningClass()}`} />
+                  <span
+                    className={`font-medium text-sm ${getTimeWarningClass()}`}
+                  >
+                    Time Remaining
+                  </span>
                 </div>
-                {session && <SessionTimer session={session} size="sm" />}
+                {session && (
+                  <SessionTimer
+                    session={session}
+                    size="sm"
+                    className={getTimeWarningClass()}
+                  />
+                )}
               </div>
               {session?.timeout_end && session?.created_at && (
-                <Progress
-                  value={
-                    ((new Date(session.timeout_end).getTime() -
-                      new Date().getTime()) /
-                      (new Date(session.timeout_end).getTime() -
-                        new Date(session.created_at).getTime())) *
-                    100
-                  }
-                  className="h-2"
-                />
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className={`h-full transition-all ${totalSeconds < 30 ? "bg-yellow-500" : "bg-primary"}`}
+                    style={{
+                      width: `${
+                        ((new Date(session.timeout_end).getTime() -
+                          new Date().getTime()) /
+                          (new Date(session.timeout_end).getTime() -
+                            new Date(session.created_at).getTime())) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -575,8 +626,8 @@ function TimerDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
   );
 }
 

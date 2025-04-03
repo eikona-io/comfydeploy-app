@@ -188,49 +188,41 @@ export function SessionTimer({
   }
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "cursor-pointer group h-8 mx-auto relative w-8",
-            className,
-          )}
-          onClick={onClick}
+    // <Popover>
+    //   <PopoverTrigger asChild>
+    <button
+      type="button"
+      className={cn("group relative mx-auto h-8 w-8 cursor-pointer", className)}
+      onClick={onClick}
+    >
+      <div className="absolute inset-0">
+        <svg
+          viewBox="0 0 32 32"
+          className="h-full w-full"
+          role="img"
+          aria-label="Session timer progress"
         >
-          <div className="absolute inset-0">
-            <svg
-              viewBox="0 0 32 32"
-              className="h-full w-full"
-              role="img"
-              aria-label="Session timer progress"
-            >
-              <circle cx="16" cy="16" r="16" className="fill-black/40" />
-              <path
-                d={(() => {
-                  const x = 16;
-                  const y = 16;
-                  const radius = 16;
-                  const angle = (progressPercentage / 100) * 360 - 90;
-                  let d = `M ${x},${y} L ${x},0 `;
-                  const largeArcFlag = progressPercentage <= 50 ? "0" : "1";
-                  const endX = x + radius * Math.cos((angle * Math.PI) / 180);
-                  const endY = y + radius * Math.sin((angle * Math.PI) / 180);
-                  d += `A ${radius},${radius} 0 ${largeArcFlag} 1 ${endX},${endY} Z`;
-                  return d;
-                })()}
-                className="fill-primary"
-              />
-            </svg>
-          </div>
-          <span className="absolute flex font-medium inset-0 items-center justify-center tabular-nums text-[10px] text-background">
-            {timerDisplay}
-          </span>
-        </button>
-      </PopoverTrigger>
-      <PopoverContent side="top" className="p-2 text-xs w-auto">
-        {`${countdown} remaining`}
-      </PopoverContent>
-    </Popover>
+          <circle cx="16" cy="16" r="16" className="fill-black/40" />
+          <path
+            d={(() => {
+              const x = 16;
+              const y = 16;
+              const radius = 16;
+              const angle = (progressPercentage / 100) * 360 - 90;
+              let d = `M ${x},${y} L ${x},0 `;
+              const largeArcFlag = progressPercentage <= 50 ? "0" : "1";
+              const endX = x + radius * Math.cos((angle * Math.PI) / 180);
+              const endY = y + radius * Math.sin((angle * Math.PI) / 180);
+              d += `A ${radius},${radius} 0 ${largeArcFlag} 1 ${endX},${endY} Z`;
+              return d;
+            })()}
+            className="fill-primary"
+          />
+        </svg>
+      </div>
+      <span className="absolute flex font-medium inset-0 items-center justify-center tabular-nums text-[10px] text-background">
+        {timerDisplay}
+      </span>
+    </button>
   );
 }
