@@ -428,7 +428,7 @@ function MediaDisplay({
                   <Ellipsis className="h-3.5 w-3.5 text-white/90" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-52">
+              <DropdownMenuContent className="w-52" blocking={true}>
                 {urlImage.filename && (
                   <>
                     <DropdownMenuLabel className="line-clamp-1">
