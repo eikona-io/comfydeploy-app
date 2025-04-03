@@ -1,5 +1,4 @@
 import type { StepValidation } from "@/components/onboarding/workflow-import";
-import type { StepComponentProps } from "@/components/step-form";
 import {
   Accordion,
   AccordionContent,
@@ -39,7 +38,7 @@ import {
   ChevronsUpDown,
   TriangleAlert,
 } from "lucide-react";
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { FolderTree } from "@/components/models/folder-tree";
 import {
   Dialog,
@@ -50,6 +49,7 @@ import {
 import { AddModelDialog } from "@/components/models/add-model-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
+import { sendEventToCD } from "../workspace/sendEventToCD";
 
 // -----------------------types------------------------
 
@@ -207,18 +207,62 @@ export function getModelNameWithoutParent(path: string) {
 }
 
 export function WorkflowModelCheck({
+  workflow: initialWorkflow,
+  onWorkflowUpdate,
   validation,
   setValidation,
-}: StepComponentProps<StepValidation>) {
-  const [workflow, setWorkflow] = useState<string>(
-    (validation.importOption === "import"
-      ? validation.importJson
-      : validation.workflowJson) || "",
-  );
+}: {
+  workflow?: string;
+  onWorkflowUpdate?: (updatedWorkflow: string) => void;
+  validation?: StepValidation;
+  setValidation?: (validation: StepValidation) => void;
+}) {
+  // Get initial workflow from either direct prop or validation object
+  const [workflow, setWorkflowInternal] = useState<string>(() => {
+    if (initialWorkflow) return initialWorkflow;
+    if (validation) {
+      return (
+        (validation.importOption === "import"
+          ? validation.importJson
+          : validation.workflowJson) || ""
+      );
+    }
+    return "";
+  });
+
   const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
   const [isModelBrowserExpanded, setIsModelBrowserExpanded] = useState(false);
   const [showAddModelDialog, setShowAddModelDialog] = useState(false);
   const [selectedFolderPath, setSelectedFolderPath] = useState("");
+
+  // Function to update workflow in all necessary places
+  const updateWorkflow = useCallback(
+    (newWorkflow: string) => {
+      // Update internal state
+      setWorkflowInternal(newWorkflow);
+
+      // If direct callback provided, use it
+      if (onWorkflowUpdate) {
+        onWorkflowUpdate(JSON.parse(newWorkflow));
+      }
+
+      // If using validation context, update that too
+      if (validation && setValidation) {
+        if (validation.importOption === "import") {
+          setValidation({
+            ...validation,
+            importJson: newWorkflow,
+          });
+        } else if (validation.importOption === "default") {
+          setValidation({
+            ...validation,
+            workflowJson: newWorkflow,
+          });
+        }
+      }
+    },
+    [onWorkflowUpdate, validation, setValidation],
+  );
 
   // Fetch model data from API
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery({
@@ -241,65 +285,59 @@ export function WorkflowModelCheck({
     },
   });
 
-  const nodesToFocus = useMemo(
-    () =>
-      JSON.parse(workflow)?.nodes?.filter((node: any) =>
+  const nodesToFocus = useMemo(() => {
+    try {
+      return JSON.parse(workflow)?.nodes?.filter((node: any) =>
         Object.values(NodeToBeFocus).some(
           (focusNode) => focusNode.type === node.type,
         ),
-      ),
-    [JSON.parse(workflow)?.nodes],
-  );
+      );
+    } catch (e) {
+      console.error("Failed to parse workflow JSON:", e);
+      return [];
+    }
+  }, [workflow]);
 
   useEffect(() => {
     if (!selectedNode) return;
 
-    // Parse the workflow JSON to get the nodes
-    const parsedWorkflow = JSON.parse(workflow);
+    try {
+      // Parse the workflow JSON to get the nodes
+      const parsedWorkflow = JSON.parse(workflow);
 
-    // Find the corresponding node in the workflow
-    const nodeIndex = parsedWorkflow.nodes.findIndex(
-      (node: any) => node.id === selectedNode.id,
-    );
+      // Find the corresponding node in the workflow
+      const nodeIndex = parsedWorkflow.nodes.findIndex(
+        (node: any) => node.id === selectedNode.id,
+      );
 
-    if (nodeIndex !== -1) {
-      const node = parsedWorkflow.nodes[nodeIndex];
+      if (nodeIndex !== -1) {
+        const node = parsedWorkflow.nodes[nodeIndex];
 
-      // Find the node type configuration to get noOfNodes
-      const nodeType = Object.entries(NodeToBeFocus).find(
-        ([_, config]) => config.type === selectedNode.type,
-      )?.[0];
-      const numInputs = nodeType ? NodeToBeFocus[nodeType].noOfNodes || 1 : 1;
+        // Find the node type configuration to get noOfNodes
+        const nodeType = Object.entries(NodeToBeFocus).find(
+          ([_, config]) => config.type === selectedNode.type,
+        )?.[0];
+        const numInputs = nodeType ? NodeToBeFocus[nodeType].noOfNodes || 1 : 1;
 
-      // Check if any of the widget values are different
-      let hasChanges = false;
-      for (let i = 0; i < numInputs; i++) {
-        if (node.widgets_values[i] !== selectedNode.widgets_values[i]) {
-          node.widgets_values[i] = selectedNode.widgets_values[i];
-          hasChanges = true;
+        // Check if any of the widget values are different
+        let hasChanges = false;
+        for (let i = 0; i < numInputs; i++) {
+          if (node.widgets_values[i] !== selectedNode.widgets_values[i]) {
+            node.widgets_values[i] = selectedNode.widgets_values[i];
+            hasChanges = true;
+          }
+        }
+
+        // Only update if there were changes
+        if (hasChanges) {
+          const updatedWorkflowJson = JSON.stringify(parsedWorkflow);
+          updateWorkflow(updatedWorkflowJson);
         }
       }
-
-      // Only update if there were changes
-      if (hasChanges) {
-        const updatedWorkflowJson = JSON.stringify(parsedWorkflow);
-
-        // Update both workflow and validation at once
-        setWorkflow(updatedWorkflowJson);
-        if (validation.importOption === "import") {
-          setValidation({
-            ...validation,
-            importJson: updatedWorkflowJson,
-          });
-        } else if (validation.importOption === "default") {
-          setValidation({
-            ...validation,
-            workflowJson: updatedWorkflowJson,
-          });
-        }
-      }
+    } catch (e) {
+      console.error("Error updating selected node:", e);
     }
-  }, [selectedNode]);
+  }, [selectedNode, workflow, updateWorkflow]);
 
   const handleAddModel = (folderPath: string) => {
     setSelectedFolderPath(folderPath);
@@ -308,7 +346,7 @@ export function WorkflowModelCheck({
 
   return (
     <div className="flex h-full gap-4">
-      <div className="flex-1">
+      <div className="w-full flex-1">
         <OptionList
           workflowNodeList={nodesToFocus}
           selectedNode={selectedNode}
@@ -317,42 +355,45 @@ export function WorkflowModelCheck({
           privateFiles={privateFiles}
           publicFiles={publicFiles}
           isLoading={isLoadingPrivate || isLoadingPublic}
+          isModal={!!initialWorkflow}
         />
       </div>
-      <div className="relative hidden md:block">
-        {isModelBrowserExpanded && (
-          <div className="w-[500px] rounded-xl border bg-white p-4 drop-shadow-lg">
-            <div className="mt-2 h-[calc(70vh)] overflow-auto bg-muted/20">
-              <FolderTree onAddModel={handleAddModel} />
+      {!initialWorkflow && (
+        <div className="relative hidden md:block">
+          {isModelBrowserExpanded && (
+            <div className="w-[500px] rounded-xl border bg-white p-4 drop-shadow-lg">
+              <div className="mt-2 h-[calc(70vh)] overflow-auto bg-muted/20">
+                <FolderTree onAddModel={handleAddModel} />
+              </div>
             </div>
+          )}
+          <div className="-translate-y-1/2 -left-5 absolute top-[50%] hidden md:block">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    size={"icon"}
+                    className="rounded-full shadow-md"
+                    onClick={() =>
+                      setIsModelBrowserExpanded(!isModelBrowserExpanded)
+                    }
+                  >
+                    {isModelBrowserExpanded ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronLeft className="h-4 w-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{isModelBrowserExpanded ? "Hide" : "Show"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
-        )}
-        <div className="-translate-y-1/2 -left-5 absolute top-[50%] hidden md:block">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={"outline"}
-                  size={"icon"}
-                  className="rounded-full shadow-md"
-                  onClick={() =>
-                    setIsModelBrowserExpanded(!isModelBrowserExpanded)
-                  }
-                >
-                  {isModelBrowserExpanded ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
-                    <ChevronLeft className="h-4 w-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{isModelBrowserExpanded ? "Hide" : "Show"}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
         </div>
-      </div>
+      )}
 
       {/* Add Model Dialog */}
       <Dialog open={showAddModelDialog} onOpenChange={setShowAddModelDialog}>
@@ -493,6 +534,7 @@ const OptionList = memo(
     privateFiles,
     publicFiles,
     isLoading,
+    isModal = false,
   }: {
     workflowNodeList: WorkflowNode[] | undefined;
     selectedNode: WorkflowNode | null;
@@ -501,6 +543,7 @@ const OptionList = memo(
     privateFiles: FileEntry[] | undefined;
     publicFiles: FileEntry[] | undefined;
     isLoading: boolean;
+    isModal?: boolean;
   }) => {
     const [fileList, setFileList] = useState<FileList[]>([]);
 
@@ -657,9 +700,16 @@ const OptionList = memo(
     return (
       <div>
         <div className="flex items-center justify-between gap-2">
-          <span className="block text-muted-foreground text-sm leading-normal">
-            Model Check helps find missing models and inputs for your workflow.
-          </span>
+          {!isModal ? (
+            <span className="block text-muted-foreground text-sm leading-normal">
+              Model Check helps find missing models and inputs for your
+              workflow.
+            </span>
+          ) : (
+            <span className="block text-muted-foreground text-sm leading-normal">
+              Click on a node to zoom in.
+            </span>
+          )}
           <Button
             variant={"outline"}
             className="shrink-0"
@@ -735,7 +785,7 @@ const OptionList = memo(
                               {category}
                             </div>
                             {success < total ? (
-                              <Badge variant="destructive">
+                              <Badge variant="yellow">
                                 {total - success} missing
                               </Badge>
                             ) : (
@@ -762,7 +812,7 @@ const OptionList = memo(
                               className={cn(
                                 "mb-0.5 flex flex-col items-center gap-2 rounded-[4px] px-2 py-2",
                                 index % 2 === 1 ? "bg-gray-100" : "",
-                                isModelBrowserExpanded
+                                isModelBrowserExpanded || isModal
                                   ? ""
                                   : "md:flex-row md:justify-between",
                               )}
@@ -770,10 +820,26 @@ const OptionList = memo(
                               <div
                                 className={cn(
                                   "flex w-full flex-row items-center justify-between gap-2",
-                                  isModelBrowserExpanded ? "" : "md:w-1/3",
+                                  isModelBrowserExpanded || isModal
+                                    ? ""
+                                    : "md:w-1/3",
                                 )}
                               >
-                                <p className="overflow-hidden truncate whitespace-nowrap">
+                                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                                <p
+                                  className={cn(
+                                    "overflow-hidden truncate whitespace-nowrap",
+                                    isModal && "cursor-pointer hover:underline",
+                                  )}
+                                  onClick={() => {
+                                    if (isModal) {
+                                      sendEventToCD("zoom_to_node", {
+                                        nodeId: workflowNode.id,
+                                        position: workflowNode.pos,
+                                      });
+                                    }
+                                  }}
+                                >
                                   {`${workflowNode.type} #${workflowNode.id}`}
                                 </p>
                                 <HandleNodeStatus
@@ -784,7 +850,9 @@ const OptionList = memo(
                               <div
                                 className={cn(
                                   "w-full",
-                                  isModelBrowserExpanded ? "" : "md:w-1/2",
+                                  isModelBrowserExpanded || isModal
+                                    ? ""
+                                    : "md:w-1/2",
                                 )}
                               >
                                 <ModelSelectComboBox
@@ -860,10 +928,22 @@ export function ModelSelectComboBox({
   const processedFiles = useMemo(() => {
     if (!categoryFiles) return [];
 
-    return categoryFiles.filePaths.map((file) => ({
-      ...file,
-      displayPath: extractModelPathWithoutTopDir(file.name),
-    }));
+    // Create a Map to store unique files by displayPath
+    const uniqueFiles = new Map();
+
+    for (const file of categoryFiles.filePaths) {
+      const displayPath = extractModelPathWithoutTopDir(file.name);
+      // Only keep the first occurrence of each displayPath
+      if (!uniqueFiles.has(displayPath)) {
+        uniqueFiles.set(displayPath, {
+          ...file,
+          displayPath,
+        });
+      }
+    }
+
+    // Convert Map values back to array
+    return Array.from(uniqueFiles.values());
   }, [categoryFiles]);
 
   const renderComboBox = (index: number) => {
@@ -892,7 +972,9 @@ export function ModelSelectComboBox({
               aria-expanded={openStates[index]}
               className={cn(
                 "w-full justify-between rounded-md",
-                !currentValue || isValid ? "" : "border-red-500",
+                !currentValue || isValid
+                  ? ""
+                  : "border-yellow-500 bg-yellow-50/80",
               )}
             >
               <span className="truncate">
