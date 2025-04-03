@@ -134,7 +134,7 @@ export function SessionTimer({
     const totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
     if (totalSeconds > 0 && totalSeconds < 30 && !hasTriggeredRef.current) {
-      toast.info("Session ending soon, increasing session time...");
+      toast.info("Session ending soon, please increase session time.");
       hasTriggeredRef.current = true;
       onClick();
     } else if (totalSeconds >= 30) {
