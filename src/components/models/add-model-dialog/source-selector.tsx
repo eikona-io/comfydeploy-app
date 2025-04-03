@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const sources: ModelSourceOption[] = [
   {
     id: "huggingface",
-    label: "Hugging Face repo",
+    label: "Hugging Face Repo",
     icon: () => (
       <img
         src="/huggingface.svg"
