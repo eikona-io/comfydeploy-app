@@ -270,8 +270,7 @@ export function WorkflowImportSelectedMachine({
   setValidation,
 }: StepComponentProps<StepValidation>) {
   const sub = useCurrentPlan();
-  // const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
-  const MACHINE_LIMIT_REACHED = true;
+  const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
 
   return (
     <div>
