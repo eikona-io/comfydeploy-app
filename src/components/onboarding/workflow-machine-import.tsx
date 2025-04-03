@@ -270,6 +270,7 @@ export function WorkflowImportSelectedMachine({
   setValidation,
 }: StepComponentProps<StepValidation>) {
   const sub = useCurrentPlan();
+  const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
 
   return (
     <div>
@@ -299,9 +300,9 @@ export function WorkflowImportSelectedMachine({
               <Tooltip>
                 <TooltipTrigger className="flex items-center gap-1">
                   <span className="mr-1">New Machine</span>
-                  {sub?.features.machineLimited && <Lock className="h-3 w-3" />}
+                  {MACHINE_LIMIT_REACHED && <Lock className="h-3 w-3" />}
                 </TooltipTrigger>
-                {sub?.features.machineLimited && (
+                {MACHINE_LIMIT_REACHED && (
                   <TooltipContent side="right">
                     <p>
                       You reached the limit of creating machines. Upgrade to
@@ -312,7 +313,7 @@ export function WorkflowImportSelectedMachine({
               </Tooltip>
             </TooltipProvider>
           }
-          disabled={sub?.features.machineLimited}
+          disabled={MACHINE_LIMIT_REACHED}
           content={
             <div>
               <span className="text-muted-foreground">
