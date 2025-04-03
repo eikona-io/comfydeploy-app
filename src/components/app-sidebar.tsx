@@ -453,6 +453,8 @@ function SessionSidebar() {
           backgroundInteractive
           open={modelBrowserOpen}
           onClose={() => setModelBrowserOpen(false)}
+          side="left"
+          offset={14}
         >
           <div className="mt-2 space-y-4">
             <span className="font-medium">Model Check</span>
