@@ -137,6 +137,7 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
                         sessionId: session.session_id,
                         waitForShutdown: true,
                       });
+                      await listSession.refetch();
                       toast.success("Session stopped successfully");
                     } catch (error) {
                       toast.error("Failed to stop session");
