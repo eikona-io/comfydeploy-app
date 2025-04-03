@@ -4,7 +4,10 @@ import {
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
-import { analyzeWorkflowJson } from "@/components/onboarding/workflow-analyze";
+import {
+  analyzeWorkflowJson,
+  type ConflictingNodeInfo,
+} from "@/components/onboarding/workflow-analyze";
 import {
   AccordionOption,
   type CustomNodeData,
@@ -799,12 +802,42 @@ export function WorkflowImportCustomNodeSetup({
           }
         }
 
+        // Auto-select the most popular implementation for each conflicting node
+        const autoSelectedConflictingNodes: {
+          [nodeName: string]: ConflictingNodeInfo[];
+        } = {};
+
+        for (const [nodeName, conflicts] of Object.entries(
+          updatedDependencies.conflicting_nodes || {},
+        )) {
+          if (conflicts.length > 0) {
+            // Find the implementation with the most stars
+            let mostPopularNode = conflicts[0];
+            let maxStars = mostPopularNode.meta?.stargazers_count || 0;
+
+            for (const node of conflicts) {
+              const stars = node.meta?.stargazers_count || 0;
+              if (stars > maxStars) {
+                mostPopularNode = node;
+                maxStars = stars;
+              }
+            }
+
+            // Add the most popular implementation to the auto-selected list
+            autoSelectedConflictingNodes[nodeName] = [mostPopularNode];
+          }
+        }
+
         // Only update validation if any changes were made
         if (
           nodesNeedBranchInfo.length > 0 ||
           conflictingNodesNeedingHash.length > 0
         ) {
-          setValidation({ ...validation, dependencies: updatedDependencies });
+          setValidation({
+            ...validation,
+            dependencies: updatedDependencies,
+            selectedConflictingNodes: autoSelectedConflictingNodes,
+          });
         }
       };
 
