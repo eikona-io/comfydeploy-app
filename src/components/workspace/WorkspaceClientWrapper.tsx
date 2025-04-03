@@ -215,7 +215,7 @@ export function WorkspaceClientWrapper({
         {!sessionId ? (
           <div className="flex h-full w-full items-center justify-center">
             <motion.div
-              className="pt-20 mx-auto flex h-full w-full max-w-xl px-4 flex-col gap-4"
+              className="pt-20 mx-auto flex h-full w-full max-w-xl px-4 flex-col gap-4 z-30"
               // layout
             >
               <div className="flex items-center justify-between">
