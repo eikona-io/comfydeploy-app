@@ -349,7 +349,16 @@ function ExistingMachine({
 }: StepComponentProps<StepValidation>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchValue] = useDebounce(searchTerm, 250);
-  const query = useMachines(debouncedSearchValue);
+  const query = useMachines(
+    debouncedSearchValue,
+    20,
+    undefined,
+    undefined,
+    false,
+    false,
+    false,
+    true,
+  );
 
   useEffect(() => {
     query.refetch();

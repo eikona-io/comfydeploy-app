@@ -2,6 +2,7 @@ import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 const BATCH_SIZE = 20;
 
+// NOTE: consider refactoring to use options object as input instead of individual arguments
 export function useMachines(
   debouncedSearchValue?: string,
   batchSize: number = BATCH_SIZE,
@@ -10,6 +11,7 @@ export function useMachines(
   is_workspace = false,
   is_self_hosted = false,
   is_docker = false,
+  include_docker_steps = false,
 ) {
   return useInfiniteQuery<any[]>({
     queryKey: ["machines"],
@@ -23,6 +25,7 @@ export function useMachines(
         is_docker,
         is_workspace,
         is_self_hosted,
+        include_docker_steps,
       },
     },
     queryKeyHashFn: (queryKey) =>
