@@ -270,7 +270,8 @@ export function WorkflowImportSelectedMachine({
   setValidation,
 }: StepComponentProps<StepValidation>) {
   const sub = useCurrentPlan();
-  const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
+  // const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
+  const MACHINE_LIMIT_REACHED = true;
 
   return (
     <div>
@@ -296,30 +297,27 @@ export function WorkflowImportSelectedMachine({
           value="new"
           selected={validation.machineOption}
           label={
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger className="flex items-center gap-1">
-                  <span className="mr-1">New Machine</span>
-                  {MACHINE_LIMIT_REACHED && <Lock className="h-3 w-3" />}
-                </TooltipTrigger>
-                {MACHINE_LIMIT_REACHED && (
-                  <TooltipContent side="right">
-                    <p>
-                      You reached the limit of creating machines. Upgrade to
-                      create more.
-                    </p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
+            <div className="flex items-center gap-1">
+              <span className="mr-1">New Machine</span>
+              {MACHINE_LIMIT_REACHED && (
+                <div className="flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  <span className="text-xs underline">
+                    Machine limit reached. You can upgrade to create more.
+                  </span>
+                </div>
+              )}
+            </div>
           }
           disabled={MACHINE_LIMIT_REACHED}
           content={
-            <div>
-              <span className="text-muted-foreground">
-                Create and configure a new machine for this workflow.
-              </span>
-            </div>
+            MACHINE_LIMIT_REACHED ? null : (
+              <div>
+                <span className="text-muted-foreground">
+                  Create and configure a new machine for this workflow.
+                </span>
+              </div>
+            )
           }
         />
 
@@ -751,6 +749,7 @@ export function WorkflowImportCustomNodeSetup({
     if (dependencies) {
       const initializeHashes = async () => {
         // First, ensure dependencies are in validation
+        console.log("INITIALIZING HASHES");
         if (!validation.dependencies) {
           setValidation({ ...validation, dependencies });
           return;
@@ -815,6 +814,7 @@ export function WorkflowImportCustomNodeSetup({
         const autoSelectedConflictingNodes: {
           [nodeName: string]: ConflictingNodeInfo[];
         } = {};
+        console.log("AUTO SELECTING CONFLICTING NODES");
 
         for (const [nodeName, conflicts] of Object.entries(
           updatedDependencies.conflicting_nodes || {},
@@ -836,11 +836,16 @@ export function WorkflowImportCustomNodeSetup({
             autoSelectedConflictingNodes[nodeName] = [mostPopularNode];
           }
         }
+        console.log(
+          "AUTO SELECTED CONFLICTING NODES",
+          autoSelectedConflictingNodes,
+        );
 
         // Only update validation if any changes were made
         if (
           nodesNeedBranchInfo.length > 0 ||
           conflictingNodesNeedingHash.length > 0
+          // Object.keys(autoSelectedConflictingNodes).length > 0
         ) {
           setValidation({
             ...validation,
