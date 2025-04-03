@@ -281,7 +281,7 @@ export function WorkflowImportSelectedMachine({
       <Accordion
         type="single"
         className="flex w-full flex-col gap-2"
-        defaultValue="existing"
+        defaultValue="new"
         value={validation.machineOption}
         onValueChange={(value) =>
           setValidation({
@@ -292,23 +292,6 @@ export function WorkflowImportSelectedMachine({
           })
         }
       >
-        <AccordionOption
-          value="existing"
-          selected={validation.machineOption}
-          label="Existing Machine"
-          content={
-            <div className="flex flex-col gap-4">
-              <span className="text-muted-foreground">
-                Non-existing custom nodes will be added to your machine.
-              </span>
-              <ExistingMachine
-                validation={validation}
-                setValidation={setValidation}
-              />
-            </div>
-          }
-        />
-
         <AccordionOption
           value="new"
           selected={validation.machineOption}
@@ -336,6 +319,23 @@ export function WorkflowImportSelectedMachine({
               <span className="text-muted-foreground">
                 Create and configure a new machine for this workflow.
               </span>
+            </div>
+          }
+        />
+
+        <AccordionOption
+          value="existing"
+          selected={validation.machineOption}
+          label="Existing Machine"
+          content={
+            <div className="flex flex-col gap-4">
+              <span className="text-muted-foreground">
+                Non-existing custom nodes will be added to your machine.
+              </span>
+              <ExistingMachine
+                validation={validation}
+                setValidation={setValidation}
+              />
             </div>
           }
         />
