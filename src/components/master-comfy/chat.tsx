@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Image, Globe, Terminal, Code, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useAuthStore } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { useWorkflowStore } from "../workspace/Workspace";
 
 // Add the suggestion type
 interface Suggestion {
@@ -20,6 +22,35 @@ interface Message {
   chunks?: string[]; // Store chunks for animation
 }
 
+// Define default suggestions
+const suggestions: Suggestion[] = [
+  {
+    icon: <Image className="h-4 w-4" />,
+    text: "Image generation",
+    prompt: "How do I generate a portrait image in ComfyUI?",
+  },
+  {
+    icon: <Globe className="h-4 w-4" />,
+    text: "Search online",
+    prompt: "Can ComfyUI search images from the web?",
+  },
+  {
+    icon: <Terminal className="h-4 w-4" />,
+    text: "Workflow tips",
+    prompt: "Give me tips for creating efficient ComfyUI workflows",
+  },
+  {
+    icon: <Code className="h-4 w-4" />,
+    text: "Custom nodes",
+    prompt: "How do I create custom nodes in ComfyUI?",
+  },
+  {
+    icon: <HelpCircle className="h-4 w-4" />,
+    text: "Help",
+    prompt: "What are the basic concepts I should know about ComfyUI?",
+  },
+];
+
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -27,34 +58,8 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fetchToken = useAuthStore((state) => state.fetchToken);
 
-  // Define default suggestions
-  const suggestions: Suggestion[] = [
-    {
-      icon: <Image className="h-4 w-4" />,
-      text: "Image generation",
-      prompt: "How do I generate a portrait image in ComfyUI?",
-    },
-    {
-      icon: <Globe className="h-4 w-4" />,
-      text: "Search online",
-      prompt: "Can ComfyUI search images from the web?",
-    },
-    {
-      icon: <Terminal className="h-4 w-4" />,
-      text: "Workflow tips",
-      prompt: "Give me tips for creating efficient ComfyUI workflows",
-    },
-    {
-      icon: <Code className="h-4 w-4" />,
-      text: "Custom nodes",
-      prompt: "How do I create custom nodes in ComfyUI?",
-    },
-    {
-      icon: <HelpCircle className="h-4 w-4" />,
-      text: "Help",
-      prompt: "What are the basic concepts I should know about ComfyUI?",
-    },
-  ];
+  // get workflow
+  const { workflow } = useWorkflowStore();
 
   // Handle suggestion click
   const handleSuggestionClick = (prompt: string) => {
@@ -101,7 +106,11 @@ export function Chat() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ message: userInput, is_testing: true }),
+        body: JSON.stringify({
+          message: userInput,
+          is_testing: true,
+          ...(workflow ? { workflow_json: JSON.stringify(workflow) } : {}),
+        }),
       });
 
       if (!response.ok) {
@@ -164,7 +173,7 @@ export function Chat() {
         const newMessages = [...prev];
         newMessages[newMessages.length - 1] = {
           role: "assistant",
-          content: "Sorry, there was an error communicating with the AI.",
+          content: "Sorry, something went wrong.",
         };
         return newMessages;
       });
@@ -204,7 +213,7 @@ export function Chat() {
                   {message.role === "user" ? (
                     <motion.div
                       className={cn(
-                        "my-1 max-w-[80%] rounded-lg rounded-tr-none bg-gradient-to-br from-primary to-zinc-700 px-4 py-2 text-primary-foreground text-sm",
+                        "my-1 max-w-[80%] break-words rounded-lg rounded-tr-none bg-gradient-to-br from-primary to-zinc-700 px-4 py-2 text-primary-foreground text-sm",
                       )}
                       initial={{ opacity: 0, scale: 0.98 }}
                       animate={{ opacity: 1, scale: 1 }}
@@ -326,12 +335,18 @@ export function Chat() {
           onSubmit={handleSubmit}
           className="flex items-center gap-2 p-3 px-1"
         >
-          <Input
+          <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about ComfyUI..."
-            className="flex-1"
+            className="min-h-[30px] flex-1 resize-none"
             disabled={isLoading}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
           />
           <Button
             type="submit"
