@@ -151,7 +151,7 @@ export default function WorkflowImport() {
     workflowJson: "",
     workflowApi: "",
     selectedMachineId: "",
-    machineOption: "existing",
+    machineOption: "new",
     machineName: "Untitled Machine",
     gpuType: "A10G",
     comfyUiHash: comfyui_hash,

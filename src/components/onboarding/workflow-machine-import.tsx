@@ -281,7 +281,6 @@ export function WorkflowImportSelectedMachine({
       <Accordion
         type="single"
         className="flex w-full flex-col gap-2"
-        defaultValue="new"
         value={validation.machineOption}
         onValueChange={(value) =>
           setValidation({
