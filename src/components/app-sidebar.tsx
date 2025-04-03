@@ -13,6 +13,7 @@ import {
   Key,
   LineChart,
   MessageCircle,
+  MessageSquare,
   Plus,
   Receipt,
   Rss,
@@ -102,6 +103,7 @@ import { cn } from "@/lib/utils";
 import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
 import { sendWorkflow } from "./workspace/sendEventToCD";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Chat } from "./master-comfy/chat";
 
 // Add Session type
 interface Session {
@@ -337,7 +339,9 @@ function SessionSidebar() {
 
   const [timerDialogOpen, setTimerDialogOpen] = useState(false);
   const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
-  const [modelBrowserOpen, setModelBrowserOpen] = useState(false);
+  const [activeDrawer, setActiveDrawer] = useState<"model" | "chat" | null>(
+    null,
+  );
   const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
 
   useEffect(() => {
@@ -345,6 +349,10 @@ function SessionSidebar() {
       setWorkflowUpdateTrigger((prev) => prev + 1);
     }
   }, [workflow]);
+
+  const toggleDrawer = (drawer: "model" | "chat") => {
+    setActiveDrawer((prevDrawer) => (prevDrawer === drawer ? null : drawer));
+  };
 
   return (
     <>
@@ -427,12 +435,22 @@ function SessionSidebar() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={cn(modelBrowserOpen ? "bg-primary/10" : "")}
-                  onClick={() => {
-                    setModelBrowserOpen(!modelBrowserOpen);
-                  }}
+                  className={cn(
+                    activeDrawer === "model" ? "bg-primary/10" : "",
+                  )}
+                  onClick={() => toggleDrawer("model")}
                 >
                   <Box className="h-4 w-4" />
+                </Button>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(activeDrawer === "chat" ? "bg-primary/10" : "")}
+                  onClick={() => toggleDrawer("chat")}
+                >
+                  <MessageSquare className="h-4 w-4" />
                 </Button>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -450,11 +468,11 @@ function SessionSidebar() {
           )}
         </SidebarFooter>
       </Sidebar>
-      {modelBrowserOpen && (
+      {activeDrawer === "model" && (
         <MyDrawer
           backgroundInteractive
-          open={modelBrowserOpen}
-          onClose={() => setModelBrowserOpen(false)}
+          open={activeDrawer === "model"}
+          onClose={() => setActiveDrawer(null)}
           side="left"
           offset={14}
         >
@@ -466,6 +484,17 @@ function SessionSidebar() {
               onWorkflowUpdate={sendWorkflow}
             />
           </div>
+        </MyDrawer>
+      )}
+      {activeDrawer === "chat" && (
+        <MyDrawer
+          backgroundInteractive
+          open={activeDrawer === "chat"}
+          onClose={() => setActiveDrawer(null)}
+          side="left"
+          offset={14}
+        >
+          <Chat />
         </MyDrawer>
       )}
     </>
