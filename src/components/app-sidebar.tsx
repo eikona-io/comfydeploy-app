@@ -224,11 +224,11 @@ function usePages() {
             path: "/api-keys",
             icon: Key,
           },
-          {
-            name: "Secrets",
-            path: "/secrets",
-            icon: LockKeyhole,
-          },
+          // {
+          //   name: "Secrets",
+          //   path: "/secrets",
+          //   icon: LockKeyhole,
+          // },
         ]
       : []),
 
