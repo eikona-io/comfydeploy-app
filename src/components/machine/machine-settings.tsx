@@ -31,6 +31,7 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { useCachedQuery } from "@/lib/use-cached-query";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useAuth } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { useBlocker, useMatch, useNavigate } from "@tanstack/react-router";
@@ -1545,6 +1546,8 @@ export function WorkflowTimeOut({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
+  const { orgId } = useAuth();
+
   const options: TimeSelectOption[] = [
     { seconds: 300 },
     { seconds: 420, requiredPlan: "pro" },
@@ -1552,6 +1555,10 @@ export function WorkflowTimeOut({
     { seconds: 1200, requiredPlan: "business" },
     { seconds: 1800, requiredPlan: "business" },
   ];
+
+  if (orgId == "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
+    options.push({ seconds: 6 * 60 * 60, requiredPlan: "business" });
+  }
 
   return (
     <TimeSelect
