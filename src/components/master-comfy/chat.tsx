@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, Image, Globe, Terminal, Code, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useAuthStore } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkflowStore } from "../workspace/Workspace";
+import ReactMarkdown from "react-markdown";
 
 // Add the suggestion type
 interface Suggestion {
@@ -20,6 +20,21 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   chunks?: string[]; // Store chunks for animation
+}
+
+interface MarkdownRendererProps {
+  markdown: string;
+  className?: string;
+}
+
+function MarkdownRenderer({ markdown, className }: MarkdownRendererProps) {
+  return (
+    <div
+      className={cn("prose dark:prose-invert prose-sm max-w-none", className)}
+    >
+      <ReactMarkdown>{markdown}</ReactMarkdown>
+    </div>
+  );
 }
 
 // Define default suggestions
@@ -98,6 +113,8 @@ export function Chat() {
       ]);
       const assistantMessageIdx = messages.length + 1; // +1 because we just added the user message
 
+      console.log("workflow", workflow);
+
       // Make a POST request to the API
       const apiUrl = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/ai`;
       const response = await fetch(apiUrl, {
@@ -108,7 +125,7 @@ export function Chat() {
         },
         body: JSON.stringify({
           message: userInput,
-          is_testing: true,
+          // is_testing: true,
           ...(workflow ? { workflow_json: JSON.stringify(workflow) } : {}),
         }),
       });
@@ -222,24 +239,11 @@ export function Chat() {
                       {message.content}
                     </motion.div>
                   ) : (
-                    <motion.div
-                      className={cn(
-                        "rounded-lg px-4 py-2 pl-0 text-foreground text-sm",
-                      )}
-                    >
-                      {/* For assistant responses, render each chunk with animation */}
-                      {message.chunks?.map((chunk, chunkIndex) => (
-                        <motion.span
-                          key={`chunk-${i}-${chunkIndex}`}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ duration: 0.15 }}
-                        >
-                          {chunk}
-                        </motion.span>
-                      ))}
-                      {/* If no chunks available, show the content directly */}
-                      {!message.chunks && message.content}
+                    <motion.div className={cn("rounded-lg px-4 py-2 pl-0")}>
+                      <MarkdownRenderer
+                        markdown={message.content}
+                        className="text-sm"
+                      />
                     </motion.div>
                   )}
                 </motion.div>
