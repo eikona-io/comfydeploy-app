@@ -1481,12 +1481,49 @@ function TimeSelect({
   )?.[0];
 
   const formatTime = (option: TimeSelectOption) => {
-    if (option.minutes) return `${option.minutes} min`;
-    if (option.seconds)
-      return option.seconds < 60
-        ? `${option.seconds} sec`
-        : `${Math.floor(option.seconds / 60)} min`;
-    return `${option.value} min`;
+    if (option.minutes) {
+      if (option.minutes >= 60) {
+        const hours = Math.floor(option.minutes / 60);
+        const remainingMinutes = option.minutes % 60;
+        return remainingMinutes > 0
+          ? `${hours} hr ${remainingMinutes} min`
+          : `${hours} hr`;
+      }
+      return `${option.minutes} min`;
+    }
+    if (option.seconds) {
+      if (option.seconds >= 3600) {
+        const hours = Math.floor(option.seconds / 3600);
+        const remainingMinutes = Math.floor((option.seconds % 3600) / 60);
+        const remainingSeconds = option.seconds % 60;
+        if (remainingMinutes > 0) {
+          return `${hours} hr ${remainingMinutes} min`;
+        }
+        if (remainingSeconds > 0) {
+          return `${hours} hr ${remainingSeconds} sec`;
+        }
+        return `${hours} hr`;
+      }
+      if (option.seconds >= 60) {
+        const minutes = Math.floor(option.seconds / 60);
+        const remainingSeconds = option.seconds % 60;
+        return remainingSeconds > 0
+          ? `${minutes} min ${remainingSeconds} sec`
+          : `${minutes} min`;
+      }
+      return `${option.seconds} sec`;
+    }
+    if (option.value) {
+      if (option.value >= 60) {
+        const hours = Math.floor(option.value / 60);
+        const remainingMinutes = option.value % 60;
+        return remainingMinutes > 0
+          ? `${hours} hr ${remainingMinutes} min`
+          : `${hours} hr`;
+      }
+      return `${option.value} min`;
+    }
+    return "0 sec";
   };
 
   return (
@@ -1557,7 +1594,7 @@ export function WorkflowTimeOut({
   ];
 
   if (orgId == "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
-    options.push({ seconds: 6 * 60 * 60, requiredPlan: "business" });
+    options.push({ seconds: 6 * 60 * 60 * 60, requiredPlan: "business" });
   }
 
   return (
