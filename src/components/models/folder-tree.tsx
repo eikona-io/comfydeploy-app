@@ -172,7 +172,7 @@ interface CreateFolderData {
 interface FileOperations {
   createFolder: (data: CreateFolderData) => Promise<void>;
   deleteFile: (path: string) => Promise<string>;
-  moveFile: (src: string, dst: string) => Promise<void>;
+  moveFile: (src: string, dst: string, overwrite?: boolean) => Promise<void>;
 }
 
 function TreeNode({
@@ -198,6 +198,13 @@ function TreeNode({
   const [validationMessage, setValidationMessage] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [moveTarget, setMoveTarget] = useState<string>("");
+  const [moveSource, setMoveSource] = useState<string>("");
+  const [isMoving, setIsMoving] = useState(false);
+  const [overwriteConfirm, setOverwriteConfirm] = useState(false);
 
   // Check if this node or any of its children match
   const nodeMatches = node.name.toLowerCase().includes(search.toLowerCase());
@@ -321,9 +328,104 @@ function TreeNode({
   // Determine if folder deletion should be allowed
   const canDeleteFolder = node.type === 2 && node.isPrivate && !node.isVirtual;
 
+  // Add drag handlers for the node
+  const handleDragStart = (e: React.DragEvent) => {
+    // Only allow dragging private files/folders
+    if (!node.isPrivate || node.isVirtual) {
+      e.preventDefault();
+      return;
+    }
+
+    e.dataTransfer.setData("text/plain", node.path);
+    e.dataTransfer.effectAllowed = "move";
+    setIsDragging(true);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Add drop target handlers for folders
+  const handleDragOver = (e: React.DragEvent) => {
+    // Only folders can be drop targets
+    if (node.type !== 2) {
+      return;
+    }
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    // Only folders can be drop targets
+    if (node.type !== 2) {
+      return;
+    }
+
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const sourcePath = e.dataTransfer.getData("text/plain");
+    if (!sourcePath || sourcePath === node.path) return;
+
+    // Check if trying to move a folder into itself or a subfolder
+    if (
+      sourcePath.split("/").length < node.path.split("/").length &&
+      node.path.startsWith(`${sourcePath}/`)
+    ) {
+      toast.error("Cannot move a folder into its own subfolder");
+      return;
+    }
+
+    const sourceFileName = sourcePath.split("/").pop() || "";
+    const destinationPath = `${node.path}/${sourceFileName}`;
+
+    setMoveSource(sourcePath);
+    setMoveTarget(destinationPath);
+    setShowMoveDialog(true);
+  };
+
+  // Handle the move operation
+  const handleMove = async (overwrite = false) => {
+    if (isMoving || !moveSource || !moveTarget) return;
+
+    try {
+      setIsMoving(true);
+      await operations.moveFile(moveSource, moveTarget, overwrite);
+      toast.success("Item moved successfully");
+      setShowMoveDialog(false);
+    } catch (error: any) {
+      if (error.message?.includes("already exists")) {
+        setOverwriteConfirm(true);
+      } else {
+        toast.error(`Failed to move item: ${error.message || "Unknown error"}`);
+        setShowMoveDialog(false);
+      }
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   return (
     <div>
-      <div className="group flex items-center gap-2">
+      <div
+        className={cn(
+          "group flex items-center gap-2",
+          isDragging && "opacity-50",
+          isDragOver && "rounded-md bg-blue-50",
+        )}
+        draggable={node.isPrivate && !node.isVirtual}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <button
           type="button"
           className={cn(
@@ -454,6 +556,20 @@ function TreeNode({
                   </DropdownMenuItem>
                 )}
               </>
+            )}
+
+            {/* Add move option for private files/folders */}
+            {node.isPrivate && !node.isVirtual && (
+              <DropdownMenuItem
+                onClick={() => {
+                  setMoveSource(node.path);
+                  setMoveTarget("");
+                  setShowMoveDialog(true);
+                }}
+              >
+                <motion.div className="mr-2 h-4 w-4" />
+                Move
+              </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -627,6 +743,94 @@ function TreeNode({
                   `Delete ${node.type === 2 ? "Folder" : "File"}`
                 )}
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Move Dialog */}
+      <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move Item</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="text-muted-foreground text-sm">
+              <p>
+                Source: <span className="font-medium">{moveSource}</span>
+              </p>
+
+              {overwriteConfirm ? (
+                <Alert className="mt-4 border-yellow-200 bg-yellow-50">
+                  <AlertDescription className="text-yellow-800">
+                    A file with this name already exists at the destination. Do
+                    you want to overwrite it?
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <>
+                  <p className="mt-2">
+                    Destination:
+                    {moveTarget ? (
+                      <span className="font-medium"> {moveTarget}</span>
+                    ) : (
+                      <div className="mt-2">
+                        <Label htmlFor="destination">
+                          Select or enter destination path:
+                        </Label>
+                        <Input
+                          id="destination"
+                          className="mt-1"
+                          value={moveTarget}
+                          onChange={(e) => setMoveTarget(e.target.value)}
+                          placeholder="Enter destination path"
+                        />
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Tip: You can also drag and drop to a folder
+                        </p>
+                      </div>
+                    )}
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowMoveDialog(false);
+                  setOverwriteConfirm(false);
+                }}
+                disabled={isMoving}
+              >
+                Cancel
+              </Button>
+
+              {overwriteConfirm ? (
+                <>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleMove(true)}
+                    disabled={isMoving}
+                  >
+                    Overwrite
+                  </Button>
+                  <Button
+                    onClick={() => setOverwriteConfirm(false)}
+                    disabled={isMoving}
+                  >
+                    Choose Different Name
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => handleMove(false)}
+                  disabled={isMoving || !moveTarget}
+                >
+                  {isMoving ? "Moving..." : "Move"}
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
@@ -901,12 +1105,20 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   });
 
   const moveFileMutation = useMutation({
-    mutationFn: async ({ src, dst }: { src: string; dst: string }) => {
+    mutationFn: async ({
+      src,
+      dst,
+      overwrite = false,
+    }: { src: string; dst: string; overwrite?: boolean }) => {
       await api({
-        url: "volume/mv",
+        url: "volume/move", // Updated to match backend route
         init: {
           method: "POST",
-          body: JSON.stringify({ src_path: src, dst_path: dst }),
+          body: JSON.stringify({
+            source_path: src,
+            destination_path: dst,
+            overwrite,
+          }),
         },
       });
     },
@@ -927,8 +1139,8 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
       setFrontendFolderPaths((prev) => [...prev, newPath]);
     },
     deleteFile: deleteFileMutation.mutateAsync,
-    moveFile: async (src, dst) => {
-      await moveFileMutation.mutateAsync({ src, dst });
+    moveFile: async (src, dst, overwrite = false) => {
+      await moveFileMutation.mutateAsync({ src, dst, overwrite });
     },
   };
 
