@@ -1594,7 +1594,10 @@ export function WorkflowTimeOut({
   ];
 
   if (orgId == "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
-    options.push({ seconds: 6 * 60 * 60 * 60, requiredPlan: "business" });
+    options.push({
+      seconds: 6 * 60 * 60, // 6 hours
+      requiredPlan: "business",
+    });
   }
 
   return (
