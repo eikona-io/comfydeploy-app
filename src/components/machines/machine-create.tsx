@@ -1,17 +1,17 @@
+import { Button } from "@/components/ui/button";
+import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useMachine } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import { comfydeploy_hash, comfyui_hash } from "@/utils/comfydeploy-hash";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryState } from "nuqs";
-import { useEffect, useState, useRef } from "react";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
-import { MachineSettingsWrapper } from "../machine/machine-settings";
-import { comfydeploy_hash, comfyui_hash } from "@/utils/comfydeploy-hash";
-import { Input } from "../ui/input";
-import { useMachine } from "@/hooks/use-machine";
-import { LoadingIcon } from "../ui/custom/loading-icon";
-import { api } from "@/lib/api";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { MachineSettingsWrapper } from "../machine/machine-settings";
+import { LoadingIcon } from "../ui/custom/loading-icon";
+import { Input } from "../ui/input";
 
 const newMachine = {
   name: "My New Machine",
@@ -66,6 +66,7 @@ export function filterMachineConfig(machine: any) {
     base_docker_image: machine.base_docker_image,
     python_version: machine.python_version,
     extra_args: machine.extra_args,
+    disable_metadata: machine.disable_metadata,
     prestart_command: machine.prestart_command,
   };
 }
