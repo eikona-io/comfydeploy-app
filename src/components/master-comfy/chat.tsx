@@ -137,12 +137,17 @@ const suggestions: Suggestion[] = [
   },
 ];
 
+const generateSessionId = () => crypto.randomUUID();
+
 export function Chat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fetchToken = useAuthStore((state) => state.fetchToken);
+
+  // Use useRef to keep the same ID across renders
+  const chatSessionIdRef = useRef<string>(generateSessionId());
 
   // get workflow
   const { workflow } = useWorkflowStore();
@@ -184,8 +189,6 @@ export function Chat() {
       ]);
       const assistantMessageIdx = messages.length + 1; // +1 because we just added the user message
 
-      console.log("workflow", workflow);
-
       // Make a POST request to the API
       const apiUrl = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/ai`;
       const response = await fetch(apiUrl, {
@@ -196,7 +199,8 @@ export function Chat() {
         },
         body: JSON.stringify({
           message: userInput,
-          is_testing: true,
+          // is_testing: true,
+          chat_session_id: chatSessionIdRef.current,
           ...(workflow ? { workflow_json: JSON.stringify(workflow) } : {}),
         }),
       });
