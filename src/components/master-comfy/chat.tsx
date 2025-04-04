@@ -1,5 +1,13 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Image, Globe, Terminal, Code, HelpCircle } from "lucide-react";
+import {
+  Send,
+  Image,
+  Globe,
+  Terminal,
+  Code,
+  HelpCircle,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -8,6 +16,8 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useWorkflowStore } from "../workspace/Workspace";
 import ReactMarkdown from "react-markdown";
+import { sendEventToCD } from "../workspace/sendEventToCD";
+import React from "react";
 
 // Add the suggestion type
 interface Suggestion {
@@ -27,15 +37,76 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
-function MarkdownRenderer({ markdown, className }: MarkdownRendererProps) {
+const NodeLink = React.memo(
+  ({ nodeId, posX, posY }: { nodeId: string; posX: string; posY: string }) => {
+    return (
+      <Button
+        variant="gooeyLeft"
+        size="xs"
+        className="mx-0.5 mb-0 rounded-[8px]"
+        onClick={(e) => {
+          e.preventDefault();
+          sendEventToCD("zoom_to_node", {
+            nodeId,
+            position: [Number.parseFloat(posX), Number.parseFloat(posY)],
+          });
+        }}
+      >
+        <Search className="mr-1 h-[12px] w-[12px]" />
+        node {nodeId}
+      </Button>
+    );
+  },
+);
+
+// Memoize the link component renderer
+const LinkRenderer = React.memo(
+  ({ href, children }: { href: string; children: React.ReactNode }) => {
+    // Check if this is our special node link
+    if (href?.startsWith("https://node:")) {
+      const [_, __, nodeId, posX, posY] = href.split(":");
+      return <NodeLink nodeId={nodeId} posX={posX} posY={posY} />;
+    }
+
+    // Regular link handling
+    return <a href={href}>{children}</a>;
+  },
+);
+
+// Memoize the entire MarkdownRenderer component
+const MarkdownRenderer = React.memo(function MarkdownRenderer({
+  markdown,
+  className,
+}: MarkdownRendererProps) {
+  // Parse the markdown for node references before passing to ReactMarkdown
+  const processedMarkdown = React.useMemo(() => {
+    if (!markdown) return "";
+
+    // Replace the special node syntax with an actual link format
+    // that ReactMarkdown will parse as a proper link
+    return markdown.replace(
+      /`?\[\[node:(\d+):([-\d.]+),([-\d.]+)\]\]`?/g,
+      (_, nodeId, posX, posY) => {
+        return `[node-${nodeId}](https://node:${nodeId}:${posX}:${posY})`;
+      },
+    );
+  }, [markdown]);
+
   return (
     <div
       className={cn("prose dark:prose-invert prose-sm max-w-none", className)}
     >
-      <ReactMarkdown>{markdown}</ReactMarkdown>
+      <ReactMarkdown
+        components={{
+          // Use the memoized link component
+          a: LinkRenderer,
+        }}
+      >
+        {processedMarkdown}
+      </ReactMarkdown>
     </div>
   );
-}
+});
 
 // Define default suggestions
 const suggestions: Suggestion[] = [
@@ -125,7 +196,7 @@ export function Chat() {
         },
         body: JSON.stringify({
           message: userInput,
-          // is_testing: true,
+          is_testing: true,
           ...(workflow ? { workflow_json: JSON.stringify(workflow) } : {}),
         }),
       });
