@@ -38,6 +38,7 @@ import {
   XCircle,
   ArrowDownNarrowWide,
   ArrowUpWideNarrow,
+  ArrowDown,
 } from "lucide-react";
 import type React from "react";
 import { useState, useMemo } from "react";
@@ -735,61 +736,62 @@ function TreeNode({
       </Dialog>
 
       <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <span>Move Item</span>
-            </DialogTitle>
+            <DialogTitle>Move Item</DialogTitle>
           </DialogHeader>
 
-          <div className="flex flex-col gap-4">
-            {/* Source information with improved visual design */}
-            <div className="rounded-md border bg-muted/30 p-3">
-              <Label className="mb-1 block text-xs font-medium text-muted-foreground">
-                Source
-              </Label>
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <FileIcon className="h-4 w-4 text-blue-600" />
-                <span className="truncate">{moveSource}</span>
+          <div className="flex flex-col gap-6 pt-2">
+            <div className="flex flex-col gap-2">
+              <div className="rounded-lg border border-gray-200 bg-white p-4">
+                <div className="flex items-center gap-3">
+                  <FileIcon className="h-5 w-5 text-blue-500" />
+                  <span className="truncate font-medium">{moveSource}</span>
+                </div>
               </div>
             </div>
 
-            {overwriteConfirm ? (
-              <Alert className="border-yellow-200 bg-yellow-50">
-                <AlertDescription className="flex flex-col gap-2">
-                  <p className="font-medium text-yellow-800">
-                    A file with this name already exists at the destination.
-                  </p>
-                  <p className="text-yellow-700 text-sm">
-                    Do you want to overwrite the existing file? This action
-                    cannot be undone.
-                  </p>
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <div className="rounded-md border bg-muted/30 p-3">
-                <Label className="mb-1 block text-xs font-medium text-muted-foreground">
-                  Destination
-                </Label>
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <FolderIcon className="h-4 w-4 text-blue-600" />
-                  <span className="truncate">{moveTarget}</span>
+            {/* Arrow indicator */}
+            <div className="flex justify-center">
+              <div className="rounded-full border border-gray-200 bg-gray-50 p-2">
+                <ArrowDown className="h-4 w-4 text-gray-500" />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {overwriteConfirm ? (
+                <Alert className="border-yellow-200 bg-yellow-50">
+                  <AlertDescription className="flex flex-col gap-2">
+                    <p className="font-medium text-yellow-800">
+                      A file with this name already exists at the destination.
+                    </p>
+                    <p className="text-sm text-yellow-700">
+                      Do you want to overwrite the existing file? This action
+                      cannot be undone.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="rounded-lg border border-gray-200 bg-white p-4">
+                  <div className="flex items-center gap-3">
+                    <FolderIcon className="h-5 w-5 text-amber-500" />
+                    <span className="truncate font-medium">{moveTarget}</span>
+                  </div>
                 </div>
+              )}
+            </div>
+
+            {/* Message */}
+            {!overwriteConfirm && moveSource && moveTarget && (
+              <div className="rounded-lg bg-blue-50 p-4 text-blue-700">
+                <p>
+                  The item will be moved to the selected destination folder.
+                </p>
               </div>
             )}
 
-            {/* Display preview of what will happen */}
-            {!overwriteConfirm && moveSource && moveTarget && (
-              <Alert className="border-blue-100 bg-blue-50">
-                <AlertDescription className="flex flex-col gap-1 text-blue-800">
-                  <p className="text-sm">
-                    The item will be moved to the selected destination folder.
-                  </p>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            <div className="flex justify-end gap-2">
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 pt-2">
               <Button
                 variant="outline"
                 onClick={() => {
@@ -797,6 +799,7 @@ function TreeNode({
                   setOverwriteConfirm(false);
                 }}
                 disabled={isMoving}
+                className="min-w-[100px]"
               >
                 Cancel
               </Button>
@@ -807,9 +810,9 @@ function TreeNode({
                     variant="destructive"
                     onClick={() => handleMove(true)}
                     disabled={isMoving}
-                    className="gap-1"
+                    className="min-w-[100px]"
                   >
-                    {isMoving ? <span>Moving...</span> : <>Overwrite</>}
+                    {isMoving ? <span>Moving...</span> : <span>Overwrite</span>}
                   </Button>
                   <Button
                     onClick={() => setOverwriteConfirm(false)}
@@ -822,9 +825,9 @@ function TreeNode({
                 <Button
                   onClick={() => handleMove(false)}
                   disabled={isMoving || !moveTarget}
-                  className="gap-1 min-w-[80px]"
+                  className="min-w-[100px] bg-black text-white hover:bg-gray-800"
                 >
-                  {isMoving ? <span>Moving...</span> : <>Move</>}
+                  {isMoving ? <span>Moving...</span> : <span>Move</span>}
                 </Button>
               )}
             </div>
