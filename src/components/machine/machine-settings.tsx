@@ -68,6 +68,20 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import { Badge } from "../ui/badge";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "../ui/hover-card";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -84,20 +98,6 @@ import {
   useUnsavedChangesWarning,
 } from "../unsaved-changes-warning";
 import { ExtraDockerCommands } from "./extra-docker-commands";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
 import { VersionChecker } from "./version-checker";
 
 export function MachineSettingsWrapper({
@@ -359,6 +359,7 @@ function ServerlessSettings({
       base_docker_image: machine.base_docker_image,
       python_version: machine.python_version,
       extra_args: machine.extra_args,
+      disable_metadata: machine.disable_metadata,
       prestart_command: machine.prestart_command,
 
       optimized_runner: machine.optimized_runner,
@@ -809,6 +810,26 @@ function ServerlessSettings({
                                 />
                               </FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="disable_metadata"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Disable Metadata</FormLabel>
+                              <FormDescription>
+                                Disable metadata in generated output
+                              </FormDescription>
+                              <FormControl>
+                                <Switch
+                                  id="disable_metadata"
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
                             </FormItem>
                           )}
                         />

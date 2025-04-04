@@ -151,7 +151,7 @@ export default function WorkflowImport() {
     workflowJson: "",
     workflowApi: "",
     selectedMachineId: "",
-    machineOption: "existing",
+    machineOption: "new",
     machineName: "Untitled Machine",
     gpuType: "A10G",
     comfyUiHash: comfyui_hash,
@@ -189,7 +189,7 @@ export default function WorkflowImport() {
       title: "Create Workflow",
       component: Import,
       validate: (validation) => {
-        if (!validation.workflowName.trim()) {
+        if (!validation.workflowName?.trim()) {
           return { isValid: false, error: "Please enter a workflow name" };
         }
         if (validation.importOption === "import") {

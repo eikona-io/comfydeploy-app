@@ -187,7 +187,7 @@ export function AssetBrowser({
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
+                    <DropdownMenuContent blocking={true}>
                       <DropdownMenuItem
                         className="text-red-600"
                         onClick={() => handleDeleteAsset(asset.id)}
@@ -260,7 +260,18 @@ export function AssetBrowser({
                         {asset.name}
                       </button>
                     ) : (
-                      <div className="max-w-[300px] truncate text-sm">
+                      // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                      <div
+                        className={cn(
+                          "max-w-[300px] truncate text-sm",
+                          isPanel && "cursor-pointer hover:underline",
+                        )}
+                        onClick={() => {
+                          if (isPanel) {
+                            onItemClick?.(asset);
+                          }
+                        }}
+                      >
                         {asset.name}
                       </div>
                     )}
@@ -306,7 +317,7 @@ export function AssetBrowser({
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent>
+                    <DropdownMenuContent blocking={true}>
                       <DropdownMenuItem
                         className="text-red-600"
                         onClick={() => handleDeleteAsset(asset.id)}

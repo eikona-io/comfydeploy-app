@@ -4,7 +4,10 @@ import {
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
-import { analyzeWorkflowJson } from "@/components/onboarding/workflow-analyze";
+import {
+  analyzeWorkflowJson,
+  type ConflictingNodeInfo,
+} from "@/components/onboarding/workflow-analyze";
 import {
   AccordionOption,
   type CustomNodeData,
@@ -267,6 +270,7 @@ export function WorkflowImportSelectedMachine({
   setValidation,
 }: StepComponentProps<StepValidation>) {
   const sub = useCurrentPlan();
+  const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
 
   return (
     <div>
@@ -278,7 +282,6 @@ export function WorkflowImportSelectedMachine({
       <Accordion
         type="single"
         className="flex w-full flex-col gap-2"
-        defaultValue="existing"
         value={validation.machineOption}
         onValueChange={(value) =>
           setValidation({
@@ -289,6 +292,34 @@ export function WorkflowImportSelectedMachine({
           })
         }
       >
+        <AccordionOption
+          value="new"
+          selected={validation.machineOption}
+          label={
+            <div className="flex items-center gap-1">
+              <span className="mr-1">New Machine</span>
+              {MACHINE_LIMIT_REACHED && (
+                <div className="flex items-center gap-1">
+                  <Lock className="h-3 w-3" />
+                  <span className="text-xs underline">
+                    Machine limit reached. You can upgrade to create more.
+                  </span>
+                </div>
+              )}
+            </div>
+          }
+          disabled={MACHINE_LIMIT_REACHED}
+          content={
+            MACHINE_LIMIT_REACHED ? null : (
+              <div>
+                <span className="text-muted-foreground">
+                  Create and configure a new machine for this workflow.
+                </span>
+              </div>
+            )
+          }
+        />
+
         <AccordionOption
           value="existing"
           selected={validation.machineOption}
@@ -305,37 +336,6 @@ export function WorkflowImportSelectedMachine({
             </div>
           }
         />
-
-        <AccordionOption
-          value="new"
-          selected={validation.machineOption}
-          label={
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger className="flex items-center gap-1">
-                  <span className="mr-1">New Machine</span>
-                  {sub?.features.machineLimited && <Lock className="h-3 w-3" />}
-                </TooltipTrigger>
-                {sub?.features.machineLimited && (
-                  <TooltipContent side="right">
-                    <p>
-                      You reached the limit of creating machines. Upgrade to
-                      create more.
-                    </p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
-          }
-          disabled={sub?.features.machineLimited}
-          content={
-            <div>
-              <span className="text-muted-foreground">
-                Create and configure a new machine for this workflow.
-              </span>
-            </div>
-          }
-        />
       </Accordion>
     </div>
   );
@@ -347,7 +347,16 @@ function ExistingMachine({
 }: StepComponentProps<StepValidation>) {
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchValue] = useDebounce(searchTerm, 250);
-  const query = useMachines(debouncedSearchValue);
+  const query = useMachines(
+    debouncedSearchValue,
+    20,
+    undefined,
+    undefined,
+    false,
+    false,
+    false,
+    true,
+  );
 
   useEffect(() => {
     query.refetch();
@@ -739,6 +748,7 @@ export function WorkflowImportCustomNodeSetup({
     if (dependencies) {
       const initializeHashes = async () => {
         // First, ensure dependencies are in validation
+        console.log("INITIALIZING HASHES");
         if (!validation.dependencies) {
           setValidation({ ...validation, dependencies });
           return;
@@ -799,12 +809,48 @@ export function WorkflowImportCustomNodeSetup({
           }
         }
 
+        // Auto-select the most popular implementation for each conflicting node
+        const autoSelectedConflictingNodes: {
+          [nodeName: string]: ConflictingNodeInfo[];
+        } = {};
+        console.log("AUTO SELECTING CONFLICTING NODES");
+
+        for (const [nodeName, conflicts] of Object.entries(
+          updatedDependencies.conflicting_nodes || {},
+        )) {
+          if (conflicts.length > 0) {
+            // Find the implementation with the most stars
+            let mostPopularNode = conflicts[0];
+            let maxStars = mostPopularNode.meta?.stargazers_count || 0;
+
+            for (const node of conflicts) {
+              const stars = node.meta?.stargazers_count || 0;
+              if (stars > maxStars) {
+                mostPopularNode = node;
+                maxStars = stars;
+              }
+            }
+
+            // Add the most popular implementation to the auto-selected list
+            autoSelectedConflictingNodes[nodeName] = [mostPopularNode];
+          }
+        }
+        console.log(
+          "AUTO SELECTED CONFLICTING NODES",
+          autoSelectedConflictingNodes,
+        );
+
         // Only update validation if any changes were made
         if (
           nodesNeedBranchInfo.length > 0 ||
           conflictingNodesNeedingHash.length > 0
+          // Object.keys(autoSelectedConflictingNodes).length > 0
         ) {
-          setValidation({ ...validation, dependencies: updatedDependencies });
+          setValidation({
+            ...validation,
+            dependencies: updatedDependencies,
+            selectedConflictingNodes: autoSelectedConflictingNodes,
+          });
         }
       };
 
