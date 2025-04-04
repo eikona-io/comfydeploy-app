@@ -330,8 +330,8 @@ function TreeNode({
 
   // Add drag handlers for the node
   const handleDragStart = (e: React.DragEvent) => {
-    // Only allow dragging private files/folders
-    if (!node.isPrivate || node.isVirtual) {
+    // Only allow dragging private files (not folders)
+    if (!node.isPrivate || node.isVirtual || node.type === 2) {
       e.preventDefault();
       return;
     }
@@ -557,20 +557,6 @@ function TreeNode({
                 )}
               </>
             )}
-
-            {/* Add move option for private files/folders */}
-            {node.isPrivate && !node.isVirtual && (
-              <DropdownMenuItem
-                onClick={() => {
-                  setMoveSource(node.path);
-                  setMoveTarget("");
-                  setShowMoveDialog(true);
-                }}
-              >
-                <motion.div className="mr-2 h-4 w-4" />
-                Move
-              </DropdownMenuItem>
-            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -748,52 +734,60 @@ function TreeNode({
         </DialogContent>
       </Dialog>
 
-      {/* Add Move Dialog */}
       <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>Move Item</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <span>Move Item</span>
+            </DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="text-muted-foreground text-sm">
-              <p>
-                Source: <span className="font-medium">{moveSource}</span>
-              </p>
 
-              {overwriteConfirm ? (
-                <Alert className="mt-4 border-yellow-200 bg-yellow-50">
-                  <AlertDescription className="text-yellow-800">
-                    A file with this name already exists at the destination. Do
-                    you want to overwrite it?
-                  </AlertDescription>
-                </Alert>
-              ) : (
-                <>
-                  <p className="mt-2">
-                    Destination:
-                    {moveTarget ? (
-                      <span className="font-medium"> {moveTarget}</span>
-                    ) : (
-                      <div className="mt-2">
-                        <Label htmlFor="destination">
-                          Select or enter destination path:
-                        </Label>
-                        <Input
-                          id="destination"
-                          className="mt-1"
-                          value={moveTarget}
-                          onChange={(e) => setMoveTarget(e.target.value)}
-                          placeholder="Enter destination path"
-                        />
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Tip: You can also drag and drop to a folder
-                        </p>
-                      </div>
-                    )}
-                  </p>
-                </>
-              )}
+          <div className="flex flex-col gap-4">
+            {/* Source information with improved visual design */}
+            <div className="rounded-md border bg-muted/30 p-3">
+              <Label className="mb-1 block text-xs font-medium text-muted-foreground">
+                Source
+              </Label>
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <FileIcon className="h-4 w-4 text-blue-600" />
+                <span className="truncate">{moveSource}</span>
+              </div>
             </div>
+
+            {overwriteConfirm ? (
+              <Alert className="border-yellow-200 bg-yellow-50">
+                <AlertDescription className="flex flex-col gap-2">
+                  <p className="font-medium text-yellow-800">
+                    A file with this name already exists at the destination.
+                  </p>
+                  <p className="text-yellow-700 text-sm">
+                    Do you want to overwrite the existing file? This action
+                    cannot be undone.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <div className="rounded-md border bg-muted/30 p-3">
+                <Label className="mb-1 block text-xs font-medium text-muted-foreground">
+                  Destination
+                </Label>
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <FolderIcon className="h-4 w-4 text-blue-600" />
+                  <span className="truncate">{moveTarget}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Display preview of what will happen */}
+            {!overwriteConfirm && moveSource && moveTarget && (
+              <Alert className="border-blue-100 bg-blue-50">
+                <AlertDescription className="flex flex-col gap-1 text-blue-800">
+                  <p className="text-sm">
+                    The item will be moved to the selected destination folder.
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="flex justify-end gap-2">
               <Button
@@ -813,8 +807,9 @@ function TreeNode({
                     variant="destructive"
                     onClick={() => handleMove(true)}
                     disabled={isMoving}
+                    className="gap-1"
                   >
-                    Overwrite
+                    {isMoving ? <span>Moving...</span> : <>Overwrite</>}
                   </Button>
                   <Button
                     onClick={() => setOverwriteConfirm(false)}
@@ -827,8 +822,9 @@ function TreeNode({
                 <Button
                   onClick={() => handleMove(false)}
                   disabled={isMoving || !moveTarget}
+                  className="gap-1 min-w-[80px]"
                 >
-                  {isMoving ? "Moving..." : "Move"}
+                  {isMoving ? <span>Moving...</span> : <>Move</>}
                 </Button>
               )}
             </div>
