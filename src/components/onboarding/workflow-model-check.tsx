@@ -1,5 +1,4 @@
 import type { StepValidation } from "@/components/onboarding/workflow-import";
-import type { StepComponentProps } from "@/components/step-form";
 import {
   Accordion,
   AccordionContent,
@@ -363,10 +362,7 @@ export function WorkflowModelCheck({
         <div className="relative hidden md:block">
           {isModelBrowserExpanded && (
             <div className="w-[500px] rounded-xl border bg-white p-4 drop-shadow-lg">
-              <div className="flex items-center justify-between font-bold">
-                <h2>Model Browser</h2>
-              </div>
-              <div className="mt-2 h-[calc(70vh)] overflow-auto rounded-md border border-gray-200 bg-muted/20 p-4">
+              <div className="mt-2 h-[calc(70vh)] overflow-auto bg-muted/20">
                 <FolderTree onAddModel={handleAddModel} />
               </div>
             </div>
@@ -1052,7 +1048,7 @@ export function ModelSelectComboBox({
   // If no category files are available, show a message
   if (!categoryFiles || categoryFiles.filePaths.length === 0) {
     return (
-      <div className="text-sm text-muted-foreground">
+      <div className="text-muted-foreground text-sm">
         No models available for this node type.
       </div>
     );

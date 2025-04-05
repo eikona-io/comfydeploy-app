@@ -4,12 +4,31 @@ import { api } from "@/lib/api";
 import type { DownloadingModel } from "@/types/models";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Copy, AlertCircle } from "lucide-react";
+import {
+  Copy,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  ChevronRight,
+  ImageIcon,
+  Folder,
+  Clock,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export function DownloadingModels() {
+  const [isExpanded, setIsExpanded] = useState(true);
+  const [showAllModels, setShowAllModels] = useState(false);
+  const MAX_VISIBLE_MODELS = 3;
+
   const { data: downloadingModels, isLoading } = useQuery({
     queryKey: ["volume", "downloading-models"],
     queryFn: async ({ queryKey }) => {
@@ -29,19 +48,69 @@ export function DownloadingModels() {
     return null;
   }
 
+  // Determine if we need to use compact mode (many downloads)
+  const useCompactMode = downloadingModels.length > 5;
+
+  // Determine which models to show based on showAllModels state
+  const visibleModels = showAllModels
+    ? downloadingModels
+    : downloadingModels.slice(0, MAX_VISIBLE_MODELS);
+
+  const hiddenModelsCount = downloadingModels.length - visibleModels.length;
+
   return (
-    <div className="mb-4 space-y-2">
-      <h3 className="font-medium">Downloading Models</h3>
-      <div className="space-y-2">
-        {downloadingModels.map((model) => (
-          <DownloadingModelItem key={model.id} model={model} />
-        ))}
+    <Collapsible
+      open={isExpanded}
+      onOpenChange={setIsExpanded}
+      className="mb-4 rounded-md border bg-card"
+    >
+      <div className="flex items-center justify-between p-3">
+        <div className="flex items-center gap-2">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              {isExpanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+          <h3 className="font-medium">Downloading Models</h3>
+          <Badge variant="outline">{downloadingModels.length}</Badge>
+        </div>
       </div>
-    </div>
+
+      <CollapsibleContent>
+        <div className="space-y-2 p-3 pt-0">
+          {visibleModels.map((model) => (
+            <DownloadingModelItem key={model.id} model={model} />
+          ))}
+
+          {hiddenModelsCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2 w-full"
+              onClick={() => setShowAllModels(!showAllModels)}
+            >
+              {showAllModels
+                ? "Show Less"
+                : `Show ${hiddenModelsCount} More Downloads`}
+            </Button>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   );
 }
 
-function DownloadingModelItem({ model }: { model: DownloadingModel }) {
+function DownloadingModelItem({
+  model,
+}: {
+  model: DownloadingModel;
+}) {
+  const [showDetails, setShowDetails] = useState(false);
+
   const getModelUrl = () => {
     if (model.civitai_url) return model.civitai_url;
     if (model.hf_url) return model.hf_url;
@@ -84,16 +153,58 @@ function DownloadingModelItem({ model }: { model: DownloadingModel }) {
   };
 
   return (
-    <div className="rounded-md border bg-card">
+    <div className="overflow-hidden rounded-md border bg-card">
       <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="mr-2 flex-1 truncate">
-            <div className="truncate font-medium">{model.model_name}</div>
-            <div className="text-muted-foreground text-xs">
-              {sourceName} • {model.folder_path} • Started {timeAgo}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <div className="truncate font-medium">{model.model_name}</div>
+                <div className="mx-2 h-3 w-[1px] bg-gray-800" />
+                <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                  <span className="flex items-center gap-1">
+                    <ImageIcon className="h-3 w-3" />
+                    {sourceName}
+                  </span>
+                  <span>•</span>
+                  <span className="flex max-w-[120px] items-center gap-1 truncate">
+                    <Folder className="h-3 w-3" />
+                    {model.folder_path}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Started {timeAgo}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Progress bar section - below the model name */}
+            <div className="mt-1 flex items-center gap-2">
+              <Progress
+                value={model.download_progress}
+                className={cn(
+                  "h-1.5 flex-1",
+                  model.status === "failed" && "bg-destructive/20",
+                )}
+              />
+              <span className="min-w-[2.5rem] text-right text-muted-foreground text-xs">
+                {model.status === "failed"
+                  ? "Failed"
+                  : `${model.download_progress}%`}
+              </span>
+              {model.status !== "failed" && (
+                <span className="min-w-[5rem] text-muted-foreground text-xs">
+                  {model.download_progress === 100
+                    ? "Processing..."
+                    : "Downloading"}
+                </span>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-1">
             {model.status === "failed" && (
               <AlertCircle className="h-5 w-5 text-destructive" />
             )}
@@ -110,63 +221,6 @@ function DownloadingModelItem({ model }: { model: DownloadingModel }) {
             )}
           </div>
         </div>
-
-        <div className="mt-2">
-          <Progress
-            value={model.download_progress}
-            className={cn(
-              model.status === "failed" && "bg-destructive/20",
-              "h-2",
-            )}
-          />
-          <div className="mt-1 flex justify-between text-muted-foreground text-xs">
-            <span>
-              {model.status === "failed"
-                ? "Failed"
-                : `${model.download_progress}%`}
-            </span>
-            {model.status !== "failed" && (
-              <span>
-                {model.download_progress === 100
-                  ? "Processing..."
-                  : "Downloading"}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-2 border-t p-3">
-        {model.civitai_model_response?.images &&
-          model.civitai_model_response.images.length > 0 && (
-            <div className="mx-auto aspect-square w-full max-w-[200px] overflow-hidden rounded-md">
-              <img
-                src={model.civitai_model_response.images[0].url}
-                alt={model.model_name}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          )}
-
-        {model.civitai_model_response?.description && (
-          <div className="text-sm">
-            <div className="mb-1 font-medium">Description</div>
-            <div className="text-muted-foreground text-xs">
-              {model.civitai_model_response.description.length > 300
-                ? `${model.civitai_model_response.description.substring(0, 300)}...`
-                : model.civitai_model_response.description}
-            </div>
-          </div>
-        )}
-
-        {model.error_log && (
-          <div className="text-sm">
-            <div className="mb-1 font-medium text-destructive">Error</div>
-            <pre className="whitespace-pre-wrap rounded bg-destructive/10 p-2 text-destructive text-xs">
-              {model.error_log}
-            </pre>
-          </div>
-        )}
       </div>
     </div>
   );
