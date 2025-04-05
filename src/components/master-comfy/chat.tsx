@@ -18,6 +18,8 @@ import { useWorkflowStore } from "../workspace/Workspace";
 import ReactMarkdown from "react-markdown";
 import { sendEventToCD } from "../workspace/sendEventToCD";
 import React from "react";
+import { useWorkflowIdInSessionView } from "@/hooks/hook";
+import { useOrganizationList } from "@clerk/clerk-react";
 
 // Add the suggestion type
 interface Suggestion {
@@ -98,8 +100,23 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({
     >
       <ReactMarkdown
         components={{
+          h1: ({ children }) => (
+            <h1 className="font-semibold text-lg">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="font-semibold text-base">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="font-semibold text-sm">{children}</h3>
+          ),
           // Use the memoized link component
           a: LinkRenderer,
+          code: ({ children }) => (
+            <code className="whitespace-pre-wrap break-words">{children}</code>
+          ),
+          // Add custom styling for list items
+          ul: ({ children }) => <ul className="my-2 pl-4">{children}</ul>,
+          li: ({ children }) => <li className="my-1 pl-1">{children}</li>,
         }}
       >
         {processedMarkdown}
@@ -140,6 +157,13 @@ const suggestions: Suggestion[] = [
 const generateSessionId = () => crypto.randomUUID();
 
 export function Chat() {
+  // ========== for testing ==========
+  const isLocalEnvironment = process.env.NODE_ENV === "development";
+  if (!isLocalEnvironment) {
+    return null;
+  }
+  // ========== end of testing ==========
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -202,6 +226,7 @@ export function Chat() {
           // is_testing: true,
           chat_session_id: chatSessionIdRef.current,
           ...(workflow ? { workflow_json: JSON.stringify(workflow) } : {}),
+          // machine_id: "fcde86e9-c37f-4b2b-9aa3-d0084894dfcf",
         }),
       });
 
