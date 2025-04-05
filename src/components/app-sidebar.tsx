@@ -68,6 +68,7 @@ import {
 } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { cn } from "@/lib/utils";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { getOrgPathInfo } from "@/utils/org-path";
 import {
@@ -86,7 +87,11 @@ import { parseAsString } from "nuqs";
 import { useQueryState } from "nuqs";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { MyDrawer } from "./drawer";
+import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
 import { Badge } from "./ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
@@ -96,12 +101,7 @@ import {
   SessionIncrementDialog,
   useSessionIncrementStore,
 } from "./workspace/increase-session";
-import { Separator } from "./ui/separator";
-import { MyDrawer } from "./drawer";
-import { cn } from "@/lib/utils";
-import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
 import { sendWorkflow } from "./workspace/sendEventToCD";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 
 // Add Session type
 interface Session {
@@ -111,6 +111,8 @@ interface Session {
   url?: string;
   tunnel_url?: string;
   gpu?: string;
+  machine_id?: string;
+  machine_version_id?: string;
 }
 
 function UserMenu() {
@@ -305,6 +307,7 @@ function SessionSidebar() {
   const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
   const [displayCommit, setDisplayCommit] = useState(false);
   const { hasChanged, workflow } = useWorkflowStore();
+
   const {
     setOpen: setSessionIncrementOpen,
     setSessionId: setIncrementSessionId,
@@ -349,8 +352,13 @@ function SessionSidebar() {
   return (
     <>
       <SessionIncrementDialog /> {/* This will handle the legacy mode dialog */}
-      {displayCommit && (
-        <WorkflowCommitVersion endpoint={url} setOpen={setDisplayCommit} />
+      {displayCommit && url && (
+        <WorkflowCommitVersion
+          endpoint={url}
+          setOpen={setDisplayCommit}
+          machine_id={session?.machine_id}
+          machine_version_id={session?.machine_version_id}
+        />
       )}
       <Dialog open={isVersionDialogOpen} onOpenChange={setIsVersionDialogOpen}>
         <DialogContent hideOverlay className="sm:max-0-w-[425px]">

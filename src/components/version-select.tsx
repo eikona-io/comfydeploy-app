@@ -2,6 +2,7 @@
 
 import { useConfirmServerActionDialog } from "@/components/auto-form/auto-form-dialog";
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
+import { UserIcon } from "@/components/run/SharePageComponent";
 import { CopyWorkflowVersion } from "@/components/run/VersionSelect";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -207,7 +208,7 @@ export function VersionList({
           )
         }
         renderLoading={() => <LoadingRow />}
-        estimateSize={height ?? 100}
+        estimateSize={height ?? 30}
       />
     </div>
   );
@@ -388,70 +389,62 @@ function VersionRow({
   setOpen: (workflow: any) => void;
 }) {
   return (
-    <div className="flex items-start space-x-4 p-3 text-sm transition-colors">
-      <div className="relative w-8 flex-shrink-0">
-        <Avatar className="h-6 w-6">
-          <AvatarImage src={(item as any).user_icon ?? undefined} />
-          <AvatarFallback>{item.user?.name?.[0]}</AvatarFallback>
-        </Avatar>
-      </div>
-      <div className="flex-grow overflow-hidden">
-        <div className="flex items-center justify-between">
-          <div className="flex min-w-0 items-center space-x-2">
-            <Badge variant="secondary" className="flex-shrink-0 text-xs">
-              v{item.version}
-            </Badge>
-            <Tooltip>
-              <TooltipTrigger>
-                <span className="truncate font-medium text-xs">
-                  {item.user?.name}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent className="max-w-[200px]">
-                {item.user?.name}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <span className="ml-2 flex-shrink-0 text-muted-foreground text-xs">
-            {getRelativeTime(item.created_at)}
-          </span>
+    <div
+      className={cn(
+        "flex flex-row items-center justify-between gap-1 rounded-[6px] px-2 py-1 transition-colors hover:bg-gray-100 cursor-pointer",
+        item.version === 1 && "rounded-b-sm",
+        selected === item.version && "bg-gray-100",
+      )}
+      onClick={() => onSelect(item)}
+    >
+      <div className="grid grid-cols-[14px_38px_auto_1fr] items-center gap-2">
+        <div className="flex h-full items-center justify-center">
+          <div
+            className={cn(
+              "absolute w-[2px] bg-gray-300",
+              item.version === 1 ? "top-0 h-[50%]" : "h-full",
+            )}
+          />
+          <div className="relative z-10 flex h-[6px] w-[6px] items-center justify-center rounded-full bg-gray-300" />
         </div>
-        <Tooltip>
-          <TooltipTrigger className="block w-full text-left">
-            <p className="mt-1 truncate text-xs">{item.comment || "-"}</p>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-[300px] whitespace-normal break-words">
-            {item.comment || "-"}
-          </TooltipContent>
-        </Tooltip>
-        <div className="mt-2 flex flex-wrap gap-2">
+
+        <Badge
+          className={cn(
+            "!py-0 !text-2xs w-fit whitespace-nowrap rounded-sm",
+            selected === item.version && "bg-primary text-primary-foreground",
+          )}
+        >
+          v{item.version}
+        </Badge>
+
+        <div className="truncate text-muted-foreground text-xs">
+          {item.comment || "-"}
+        </div>
+      </div>
+      <div className="grid grid-cols-[auto_auto_50px_30px] items-center gap-2">
+        <div />
+        <UserIcon user_id={item.user_id} className="h-4 w-4" />
+        <div className="whitespace-nowrap text-[10px] text-muted-foreground">
+          {getRelativeTime(item.created_at)}
+        </div>
+        <div className="flex items-center gap-1">
           {isAdminAndMember && (
-            <>
-              {/* <Button
-                variant="outline"
-                size="sm"
-                className="h-7 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setOpen(item);
-                  
-                }}
-              >
-                <Edit className="h-3 w-3 mr-1" /> Edit
-              </Button> */}
+            <div onClick={(e: React.MouseEvent) => e.stopPropagation()}>
               <CopyWorkflowVersion
                 workflow_id={item.workflow_id}
                 version={item.version}
-                className="h-7 text-xs"
+                className="h-6 text-[10px] w-fit"
               />
-            </>
+            </div>
           )}
           <Button
-            variant={selected === item.version ? "default" : "outline"}
+            variant={selected === item.version ? "default" : "ghost"}
             size="sm"
-            className="h-7 text-xs"
-            onClick={() => onSelect(item)}
+            className="h-6 text-[10px] px-1"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect(item);
+            }}
           >
             {selected === item.version && <Check className="mr-1 h-3 w-3" />}
             {selected === item.version ? "Active" : "Set Active"}

@@ -23,6 +23,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
@@ -30,8 +31,8 @@ import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { defaultWorkflowTemplates } from "@/utils/default-workflow";
 import { useNavigate } from "@tanstack/react-router";
-import { Circle, CircleCheckBig } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { CheckCircle2, Circle, CircleCheckBig } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Add these interfaces
@@ -50,6 +51,9 @@ export interface StepValidation {
 
   machineName?: string;
   gpuType?: GpuTypes;
+  python_version?: string;
+  install_custom_node_with_gpu?: boolean;
+  base_docker_image?: string;
   comfyUiHash?: string;
   selectedComfyOption?: "recommended" | "latest" | "custom";
   firstTimeSelectGPU?: boolean;
@@ -103,6 +107,13 @@ function getStepNavigation(
 ): StepNavigation {
   switch (currentStep) {
     case 0: // Create Workflow
+      // If docker_command_steps exists, skip to step 3 (Model Check)
+      if (validation.docker_command_steps) {
+        return {
+          next: 3,
+          prev: null,
+        };
+      }
       return {
         next: validation.importOption === "default" ? 2 : 1,
         prev: null,
@@ -115,6 +126,13 @@ function getStepNavigation(
       };
 
     case 2: // Select Machine
+      // If docker_command_steps exists, skip to step 3 (Model Check)
+      if (validation.docker_command_steps) {
+        return {
+          next: 3,
+          prev: 0,
+        };
+      }
       return {
         next: validation.importOption === "default" ? 4 : 3,
         prev: validation.importOption === "default" ? 0 : 1,
@@ -123,13 +141,17 @@ function getStepNavigation(
     case 3: // Model Checking
       return {
         next: 4,
-        prev: 2,
+        prev: validation.docker_command_steps ? 0 : 2,
       };
 
     case 4: // Machine Settings
       return {
         next: null,
-        prev: validation.importOption === "default" ? 2 : 3,
+        prev: validation.docker_command_steps
+          ? 3
+          : validation.importOption === "default"
+            ? 2
+            : 3,
       };
 
     default:
@@ -218,6 +240,11 @@ export default function WorkflowImport() {
       title: "Custom Node Setup",
       component: WorkflowImportCustomNodeSetup,
       validate: (validation) => {
+        // If docker_command_steps is already set, skip the conversion
+        if (validation.docker_command_steps) {
+          return { isValid: true };
+        }
+
         // Check if dependencies exist
         if (!validation.dependencies) {
           return { isValid: false, error: "No dependencies found" };
@@ -274,6 +301,11 @@ export default function WorkflowImport() {
       },
       actions: {
         onNext: async () => {
+          // If docker_command_steps is already set, skip the conversion
+          if (validation.docker_command_steps) {
+            return true;
+          }
+
           const docker_commands = convertToDockerSteps(
             validation.dependencies?.custom_nodes,
             validation.selectedConflictingNodes,
@@ -425,6 +457,10 @@ export default function WorkflowImport() {
                     comfyui_version: validation.comfyUiHash,
                     gpu: validation.gpuType,
                     docker_command_steps: validation.docker_command_steps,
+                    install_custom_node_with_gpu:
+                      validation.install_custom_node_with_gpu,
+                    base_docker_image: validation.base_docker_image,
+                    python_version: validation.python_version,
                   }),
                 },
               });
@@ -499,7 +535,7 @@ function Import({
 
       <div>
         <div className="mb-2">
-          <span className="font-medium text-sm">Choose an option </span>
+          <span className="font-medium text-sm">Choose an option</span>
           <span className="text-red-500">*</span>
         </div>
 
@@ -674,17 +710,58 @@ function ImportOptions({
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const postProcessImport = useCallback(
+    (text: string) => {
+      if (!text.trim()) {
+        setValidation({
+          ...validation,
+          importOption: "import",
+          importJson: "",
+          workflowJson: "",
+          workflowApi: "",
+          // Remove docker_command_steps when clearing
+          docker_command_steps: undefined,
+          gpuType: "A10G",
+          comfyUiHash: comfyui_hash,
+          install_custom_node_with_gpu: false,
+          base_docker_image: "",
+          python_version: "3.11",
+        });
+        return;
+      }
+
+      const json = JSON.parse(text);
+
+      var environment = json.environment || {};
+      var workflowAPIJson = json.workflow_api || "";
+
+      const data = {
+        ...validation,
+        importOption: "import",
+        importJson: text,
+        workflowJson: "",
+        workflowApi: workflowAPIJson, // Clear workflowApi
+
+        docker_command_steps: environment.docker_command_steps,
+        gpuType: environment.gpu,
+        comfyUiHash: environment.comfyui_version,
+        install_custom_node_with_gpu: environment.install_custom_node_with_gpu,
+        base_docker_image: environment.base_docker_image,
+        python_version: environment.python_version,
+      } as StepValidation;
+
+      console.log(data);
+
+      setValidation(data);
+    },
+    [validation, setValidation],
+  );
+
   const handleFileSelect = async (file: File) => {
     if (file && file.type === "application/json") {
       const text = await file.text();
       try {
-        setValidation({
-          ...validation,
-          importOption: "import",
-          importJson: text,
-          workflowJson: "",
-          workflowApi: "", // Clear workflowApi
-        });
+        postProcessImport(text);
       } catch (error) {
         toast.error("Invalid JSON file");
       }
@@ -743,9 +820,20 @@ function ImportOptions({
               "hover:border-gray-300",
             )}
           >
-            <span className="text-muted-foreground">
-              Click or drag and drop your workflow JSON file here.
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">
+                Click or drag and drop your workflow JSON file here.
+              </span>
+              {validation.docker_command_steps && (
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-green-100 text-green-700 hover:bg-green-100"
+                >
+                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                  Environment Detected
+                </Badge>
+              )}
+            </div>
 
             <div className="mt-2">
               <Textarea
@@ -757,27 +845,9 @@ function ImportOptions({
                 }}
                 onChange={(e) => {
                   const text = e.target.value;
-                  setValidation({
-                    ...validation,
-                    importOption: "import",
-                    importJson: text,
-                    workflowJson: "",
-                    workflowApi: "",
-                  });
-
-                  if (text.trim()) {
-                    try {
-                      setValidation({
-                        ...validation,
-                        importOption: "import",
-                        importJson: text,
-                        workflowJson: "",
-                        workflowApi: "",
-                      });
-                    } catch (error) {
-                      // If invalid JSON, we already set empty objects above
-                    }
-                  }
+                  try {
+                    postProcessImport(text);
+                  } catch (error) {}
                 }}
               />
             </div>
