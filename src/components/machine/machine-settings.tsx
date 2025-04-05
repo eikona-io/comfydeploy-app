@@ -99,7 +99,7 @@ import {
   HoverCardTrigger,
 } from "../ui/hover-card";
 import { VersionChecker } from "./version-checker";
-import { MachineSecretsTab } from "./machine-secrets";
+import { SecretsSelector } from "./secrets-selector";
 
 export function MachineSettingsWrapper({
   machine,
@@ -924,7 +924,7 @@ function ServerlessSettings({
       
       {view === "secrets" && (
         <div className="pt-4">
-          <MachineSecretsTab />
+          <SecretsSelector machine_id={machine.id} />
         </div>
       )}
 

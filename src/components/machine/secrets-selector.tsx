@@ -41,26 +41,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import {
+  addNewSecret,
+  deleteSecret,
+  type EnvironmentVariableType,
+  type SecretGroup,
+  updateSecret,
+  useGetSecrets,
+} from "@/hooks/use-secrets-api";
+import { toast } from "sonner";
 
-// Empty initial state
-const initialSecretGroups: SecretGroup[] = [];
-
-type SecretValue = {
-  id: string;
-  name: string;
-  value: string;
-};
-
-type SecretGroup = {
-  id: string;
-  name: string;
-  values: SecretValue[];
-};
-
-export function SecretsSelector() {
-  const [secretGroups, setSecretGroups] =
-    useState<SecretGroup[]>(initialSecretGroups);
-  const [visibleValues, setVisibleValues] = useState<Record<string, boolean>>(
+export function SecretsSelector({ machine_id }: { machine_id: string }) {
+  const [visibleValues, setVisibleValues] = useState<Record<number, boolean>>(
     {},
   );
   const [showNewValue, setShowNewValue] = useState(false);
@@ -69,165 +61,183 @@ export function SecretsSelector() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newValueName, setNewValueName] = useState("");
   const [newSecretValue, setNewSecretValue] = useState("");
-  const [editingValueId, setEditingValueId] = useState<string | null>(null);
+  const [editingValueIndex, setEditingValueIndex] = useState<number | null>(
+    null,
+  );
   const [editValueName, setEditValueName] = useState("");
   const [editSecretValue, setEditSecretValue] = useState("");
   const [addingMode, setAddingMode] = useState<"group" | "value">("group");
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-
-  // Delete confirmation states
   const [showDeleteValueConfirm, setShowDeleteValueConfirm] = useState(false);
   const [showDeleteGroupConfirm, setShowDeleteGroupConfirm] = useState(false);
-  const [deleteValueId, setDeleteValueId] = useState<string | null>(null);
+  const [deleteValueIndex, setDeleteValueIndex] = useState<number | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
 
-  const selectedGroup = secretGroups.find((g) => g.id === selectedGroupId);
+  const { data: secretGroups, refetch } = useGetSecrets();
 
-  const handleAddSecret = () => {
+  const selectedGroup = secretGroups?.find(
+    (g: SecretGroup) => g.id === selectedGroupId,
+  );
+
+  const handleAddSecret = async () => {
     if (
       addingMode === "group" &&
       newGroupName &&
       newValueName &&
       newSecretValue
     ) {
-      const groupId = Date.now().toString();
-      const valueId = `${groupId}-${Date.now() + 1}`;
-
-      const newGroup: SecretGroup = {
-        id: groupId,
-        name: newGroupName,
-        values: [
+      const newGroup = {
+        machine_id,
+        secret_name: newGroupName,
+        secret: [
           {
-            id: valueId,
-            name: newValueName,
+            key: newValueName,
             value: newSecretValue,
           },
         ],
       };
 
-      setSecretGroups([...secretGroups, newGroup]);
-      setSelectedGroupId(newGroup.id);
-      setNewGroupName("");
-      setNewValueName("");
-      setNewSecretValue("");
-      setIsAddingSecret(false);
-      setShowNewValue(false);
+      try {
+        const group = await addNewSecret(newGroup);
+        if (group) {
+          setSelectedGroupId(group.id);
+          setNewGroupName("");
+          setNewValueName("");
+          setNewSecretValue("");
+          setIsAddingSecret(false);
+          setShowNewValue(false);
+          refetch();
+          toast.success("Created the Secret successfully");
+        }
+      } catch (error) {
+        toast.error("Error creating the Secret");
+      }
     } else if (
       addingMode === "value" &&
       selectedGroupId &&
       newValueName &&
-      newSecretValue
+      newSecretValue &&
+      selectedGroup
     ) {
-      const updatedGroups = secretGroups.map((group) => {
-        if (group.id === selectedGroupId) {
-          const newValue: SecretValue = {
-            id: `${group.id}-${Date.now()}`,
-            name: newValueName,
-            value: newSecretValue,
-          };
-          return {
-            ...group,
-            values: [...group.values, newValue],
-          };
+      const secret = [
+        ...selectedGroup.environment_variables,
+        { key: newValueName, value: newSecretValue },
+      ];
+      try {
+        const updatedSecret = await updateSecret({
+          secret_id: selectedGroup.id,
+          secret,
+        });
+        if (updatedSecret) {
+          refetch();
+          setNewValueName("");
+          setNewSecretValue("");
+          setIsAddingSecret(false);
+          setShowNewValue(false);
+          toast.success("Added the Environment Variable successfully");
         }
-        return group;
-      });
-      setSecretGroups(updatedGroups);
-      setNewValueName("");
-      setNewSecretValue("");
-      setIsAddingSecret(false);
-      setShowNewValue(false);
+      } catch (error) {
+        toast.error("Error adding the Environment Variable");
+      }
     }
   };
 
-  const handleEditSecret = () => {
-    if (editingValueId && editValueName && editSecretValue) {
-      const updatedGroups = secretGroups.map((group) => {
-        const updatedValues = group.values.map((value) => {
-          if (value.id === editingValueId) {
+  const handleEditSecret = async () => {
+    if (
+      editingValueIndex &&
+      editValueName &&
+      editSecretValue &&
+      selectedGroup
+    ) {
+      const updatedEnvs = selectedGroup?.environment_variables.map(
+        (value: EnvironmentVariableType, index: number) => {
+          if (index + 1 === editingValueIndex) {
             return {
               ...value,
-              name: editValueName,
+              key: editValueName,
               value: editSecretValue,
             };
           }
           return value;
+        },
+      );
+
+      try {
+        const updatedSecret = await updateSecret({
+          secret_id: selectedGroup.id,
+          secret: updatedEnvs,
         });
-
-        if (updatedValues.some((v) => v.id === editingValueId)) {
-          return {
-            ...group,
-            values: updatedValues,
-          };
+        if (updatedSecret) {
+          refetch();
+          setEditingValueIndex(null);
+          setIsEditingSecret(false);
+          toast.success("Updated the Environment Variable successfully");
         }
-        return group;
-      });
-
-      setSecretGroups(updatedGroups);
-      setEditingValueId(null);
-      setIsEditingSecret(false);
+      } catch (error) {
+        toast.error("Error editing the Secret");
+      }
     }
   };
 
-  const handleDeleteValue = () => {
-    if (deleteValueId && selectedGroupId) {
-      const selectedGroup = secretGroups.find((g) => g.id === selectedGroupId);
+  const handleDeleteValue = async () => {
+    if (deleteValueIndex && selectedGroupId) {
+      const selectedGroup = secretGroups?.find(
+        (g: SecretGroup) => g.id === selectedGroupId,
+      );
 
-      // Don't allow deleting if this is the only value in the group
-      if (selectedGroup && selectedGroup.values.length <= 1) {
-        setDeleteValueId(null);
+      if (selectedGroup && selectedGroup.environment_variables.length <= 1) {
+        setDeleteValueIndex(null);
         setShowDeleteValueConfirm(false);
         return;
       }
 
-      const updatedGroups = secretGroups.map((group) => {
-        const hasValue = group.values.some((v) => v.id === deleteValueId);
+      if (!selectedGroup) return;
 
-        if (hasValue) {
-          return {
-            ...group,
-            values: group.values.filter((value) => value.id !== deleteValueId),
-          };
+      const hasValue = selectedGroup.environment_variables.some(
+        (v: EnvironmentVariableType, index: number) =>
+          index + 1 === deleteValueIndex,
+      );
+
+      if (!hasValue) return;
+
+      if (hasValue) {
+        const secret = selectedGroup.environment_variables.filter(
+          (_, index: number) => index + 1 !== deleteValueIndex,
+        );
+
+        try {
+          const updatedSecret = await updateSecret({
+            secret,
+            secret_id: selectedGroup.id,
+          });
+          if (updatedSecret) {
+            setDeleteValueIndex(null);
+            setShowDeleteValueConfirm(false);
+            refetch();
+            toast.success("Deleted the Environment Variable successfully");
+            setVisibleValues({});
+          }
+        } catch (error) {
+          toast.error("Error deleting the environment variable");
         }
-        return group;
-      });
-
-      // Remove any groups that now have no values
-      const filteredGroups = updatedGroups.filter(
-        (group) => group.values.length > 0,
-      );
-
-      setSecretGroups(filteredGroups);
-      setDeleteValueId(null);
-      setShowDeleteValueConfirm(false);
-
-      // If the group was deleted because it had no values, go back to the list view
-      if (
-        selectedGroupId &&
-        !filteredGroups.some((g) => g.id === selectedGroupId)
-      ) {
-        setSelectedGroupId(null);
       }
     }
   };
 
-  // Function to delete a group
-  const handleDeleteGroup = () => {
+  const handleDeleteGroup = async () => {
     if (deleteGroupId) {
-      setSecretGroups((prev) =>
-        prev.filter((group) => group.id !== deleteGroupId),
-      );
-
-      if (selectedGroupId === deleteGroupId) {
-        setSelectedGroupId(null);
+      try {
+        await deleteSecret({ secret_id: deleteGroupId });
+        setDeleteGroupId(null);
+        setShowDeleteGroupConfirm(false);
+        refetch();
+        toast.success("Deleted the Secret successfully");
+      } catch (error) {
+        toast.error("Error Deleting the Secret");
       }
-
-      setDeleteGroupId(null);
-      setShowDeleteGroupConfirm(false);
     }
   };
 
-  // Function to open delete confirmation
   const openDeleteConfirmation = (groupId: string) => {
     setDeleteGroupId(groupId);
     setShowDeleteGroupConfirm(true);
@@ -241,30 +251,29 @@ export function SecretsSelector() {
     setIsAddingSecret(true);
     setShowNewValue(false); // Hide new value by default
 
-    // Reset form fields
     setNewGroupName("");
     setNewValueName("");
     setNewSecretValue("");
   };
 
-  const openEditDialog = (valueId: string, name: string, value: string) => {
-    setEditingValueId(valueId);
+  const openEditDialog = (index: number, name: string, value: string) => {
+    setEditingValueIndex(index);
     setEditValueName(name);
     setEditSecretValue(value);
     setIsEditingSecret(true);
     setShowNewValue(false); // Hide value by default when editing
   };
 
-  const confirmDeleteValue = (valueId: string, e: React.MouseEvent) => {
+  const confirmDeleteValue = (index: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDeleteValueId(valueId);
+    setDeleteValueIndex(index);
     setShowDeleteValueConfirm(true);
   };
 
-  const toggleValueVisibility = (valueId: string) => {
+  const toggleValueVisibility = (index: number) => {
     setVisibleValues((prev) => ({
       ...prev,
-      [valueId]: !prev[valueId],
+      [index]: !prev[index],
     }));
   };
 
@@ -281,7 +290,7 @@ export function SecretsSelector() {
   };
 
   // Empty state - no secrets at all
-  if (secretGroups.length === 0) {
+  if (secretGroups?.length === 0) {
     return (
       <div className="py-8 text-center">
         <div className="flex flex-col items-center justify-center space-y-3 py-4">
@@ -402,7 +411,7 @@ export function SecretsSelector() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {secretGroups.map((group) => (
+            {secretGroups?.map((group: SecretGroup) => (
               <DropdownMenuItem
                 key={group.id}
                 onClick={() => selectGroup(group.id)}
@@ -458,79 +467,88 @@ export function SecretsSelector() {
 
   // If a group is selected, show its environment variables
   if (selectedGroupId && selectedGroup) {
-    const filteredValues = selectedGroup.values;
+    const filteredValues = selectedGroup.environment_variables;
 
     return (
       <div>
         <SecretGroupDropdown />
 
-        {filteredValues.length > 0 ? (
+        {filteredValues?.length > 0 ? (
           <div className="space-y-2">
-            {filteredValues.map((value) => (
-              <div key={value.id} className="overflow-hidden rounded-md border">
-                <div className="flex items-center justify-between bg-muted/10 p-2">
-                  <div className="flex flex-1 items-center">
-                    <span className="mr-4 w-1/3 truncate font-medium text-sm">
-                      {value.name}
-                    </span>
-                    <div className="flex-1 truncate font-mono text-sm">
-                      {visibleValues[value.id]
-                        ? value.value
-                        : "••••••••••••••••••••••••••••••••"}
+            {filteredValues.map(
+              (env: EnvironmentVariableType, index: number) => (
+                <div
+                  key={env.key + env.value + Math.random()}
+                  className="overflow-hidden rounded-md border"
+                >
+                  <div className="flex items-center justify-between bg-muted/10 p-2">
+                    <div className="flex flex-1 items-center">
+                      <span className="mr-4 w-1/3 truncate font-medium text-sm">
+                        {env.key}
+                      </span>
+                      <div className="flex-1 truncate font-mono text-sm">
+                        {visibleValues[index]
+                          ? env.value
+                          : "••••••••••••••••••••••••••••••••"}
+                      </div>
+                    </div>
+                    <div className="ml-2 flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => toggleValueVisibility(index)}
+                      >
+                        {visibleValues[index] ? (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
+                        <span className="sr-only">
+                          {visibleValues[index] ? "Hide" : "Show"} value
+                        </span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => {
+                          openEditDialog(index + 1, env.key, env.value);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        <span className="sr-only">
+                          Edit environment variable
+                        </span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                        onClick={(e) =>
+                          selectedGroup.environment_variables.length > 1
+                            ? confirmDeleteValue(index + 1, e)
+                            : e.stopPropagation()
+                        }
+                        disabled={
+                          selectedGroup.environment_variables.length <= 1
+                        }
+                        title={
+                          selectedGroup.environment_variables.length <= 1
+                            ? "Cannot delete the only environment variable"
+                            : "Delete environment variable"
+                        }
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span className="sr-only">
+                          Delete environment variable
+                        </span>
+                      </Button>
                     </div>
                   </div>
-                  <div className="ml-2 flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => toggleValueVisibility(value.id)}
-                    >
-                      {visibleValues[value.id] ? (
-                        <EyeOff className="h-3.5 w-3.5" />
-                      ) : (
-                        <Eye className="h-3.5 w-3.5" />
-                      )}
-                      <span className="sr-only">
-                        {visibleValues[value.id] ? "Hide" : "Show"} value
-                      </span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() =>
-                        openEditDialog(value.id, value.name, value.value)
-                      }
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      <span className="sr-only">Edit environment variable</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                      onClick={(e) =>
-                        selectedGroup.values.length > 1
-                          ? confirmDeleteValue(value.id, e)
-                          : e.stopPropagation()
-                      }
-                      disabled={selectedGroup.values.length <= 1}
-                      title={
-                        selectedGroup.values.length <= 1
-                          ? "Cannot delete the only environment variable"
-                          : "Delete environment variable"
-                      }
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      <span className="sr-only">
-                        Delete environment variable
-                      </span>
-                    </Button>
-                  </div>
                 </div>
-              </div>
-            ))}
+              ),
+            )}
           </div>
         ) : (
           <div className="rounded-md border py-4 text-center">
@@ -746,7 +764,7 @@ export function SecretsSelector() {
       <SecretGroupDropdown />
 
       <div className="space-y-2">
-        {secretGroups.map((group) => (
+        {secretGroups?.map((group: SecretGroup) => (
           <div
             key={group.id}
             className="cursor-pointer rounded-md border p-3 hover:bg-muted/10"
@@ -757,8 +775,10 @@ export function SecretsSelector() {
               <div>
                 <h4 className="font-medium">{group.name}</h4>
                 <p className="mt-1 text-muted-foreground text-xs">
-                  {group.values.length} environment{" "}
-                  {group.values.length === 1 ? "variable" : "variables"}
+                  {group.environment_variables.length} environment{" "}
+                  {group.environment_variables.length === 1
+                    ? "variable"
+                    : "variables"}
                 </p>
               </div>
               <Button
