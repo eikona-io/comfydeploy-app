@@ -103,7 +103,6 @@ import {
   useSessionIncrementStore,
 } from "./workspace/increase-session";
 import { sendWorkflow } from "./workspace/sendEventToCD";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Chat } from "./master-comfy/chat";
 
 // Add Session type
