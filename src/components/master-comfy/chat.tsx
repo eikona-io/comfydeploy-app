@@ -158,7 +158,9 @@ const generateSessionId = () => crypto.randomUUID();
 
 export function Chat() {
   // ========== for testing ==========
-  const isLocalEnvironment = process.env.NODE_ENV === "development";
+  const isLocalEnvironment =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "staging.app.comfydeploy.com";
   if (!isLocalEnvironment) {
     return null;
   }
