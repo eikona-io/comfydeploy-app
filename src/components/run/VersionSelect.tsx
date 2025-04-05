@@ -15,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -640,22 +641,19 @@ export function CopyWorkflowVersion({
   workflow_id,
   version,
   className,
-}: // workflow,
-{
+}: {
   workflow_id: string;
-  // workflow: Awaited<ReturnType<typeof findFirstTableWithVersion>>;
   version: number;
   className?: string;
 }) {
   const { workflow } = useCurrentWorkflow(workflow_id);
   const fetchToken = useAuthStore((state) => state.fetchToken);
-  // const [version, setVersion] = useWorkflowVersion(workflow);
   const posthog = usePostHog();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className={cn("h-9 gap-2", className)} variant="outline">
-          <Copy size={14} />
+        <Button className={cn("h-9 gap-2", className)} variant="ghost">
+          <Copy size={12} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56">
@@ -676,7 +674,7 @@ export function CopyWorkflowVersion({
               workflow_id: workflow.id,
               workflow_version_id: data.id,
               workflow_version: version,
-              workflow_copy_type: "classic", // idk about this name
+              workflow_copy_type: "classic",
             });
 
             navigator.clipboard.writeText(JSON.stringify(data?.workflow));
@@ -716,6 +714,38 @@ export function CopyWorkflowVersion({
           }}
         >
           Copy API (JSON)
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={async (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            if (!workflow) return;
+
+            const id = toast.loading("Loading export format...");
+            try {
+              const data = await api({
+                url: `workflow/${workflow_id}/export`,
+                params: { version },
+              });
+
+              posthog.capture("workflow_page:copy_workflow_button_click", {
+                workflow_id: workflow.id,
+                workflow_version: version,
+                workflow_copy_type: "export",
+              });
+
+              navigator.clipboard.writeText(JSON.stringify(data));
+              toast("Copied export format to clipboard");
+            } catch (error) {
+              console.error("Error copying export format:", error);
+              toast.error("Failed to copy export format");
+            } finally {
+              toast.dismiss(id);
+            }
+          }}
+        >
+          Copy Export Format
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

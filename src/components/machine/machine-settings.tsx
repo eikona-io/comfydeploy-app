@@ -31,6 +31,7 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { useCachedQuery } from "@/lib/use-cached-query";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useAuth } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { useBlocker, useMatch, useNavigate } from "@tanstack/react-router";
@@ -68,6 +69,20 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import { Badge } from "../ui/badge";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "../ui/hover-card";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -84,20 +99,6 @@ import {
   useUnsavedChangesWarning,
 } from "../unsaved-changes-warning";
 import { ExtraDockerCommands } from "./extra-docker-commands";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
 import { VersionChecker } from "./version-checker";
 
 export function MachineSettingsWrapper({
@@ -359,6 +360,7 @@ function ServerlessSettings({
       base_docker_image: machine.base_docker_image,
       python_version: machine.python_version,
       extra_args: machine.extra_args,
+      disable_metadata: machine.disable_metadata,
       prestart_command: machine.prestart_command,
 
       optimized_runner: machine.optimized_runner,
@@ -809,6 +811,26 @@ function ServerlessSettings({
                                 />
                               </FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="disable_metadata"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Disable Metadata</FormLabel>
+                              <FormDescription>
+                                Disable metadata in generated output
+                              </FormDescription>
+                              <FormControl>
+                                <Switch
+                                  id="disable_metadata"
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
                             </FormItem>
                           )}
                         />
@@ -1459,12 +1481,49 @@ function TimeSelect({
   )?.[0];
 
   const formatTime = (option: TimeSelectOption) => {
-    if (option.minutes) return `${option.minutes} min`;
-    if (option.seconds)
-      return option.seconds < 60
-        ? `${option.seconds} sec`
-        : `${Math.floor(option.seconds / 60)} min`;
-    return `${option.value} min`;
+    if (option.minutes) {
+      if (option.minutes >= 60) {
+        const hours = Math.floor(option.minutes / 60);
+        const remainingMinutes = option.minutes % 60;
+        return remainingMinutes > 0
+          ? `${hours} hr ${remainingMinutes} min`
+          : `${hours} hr`;
+      }
+      return `${option.minutes} min`;
+    }
+    if (option.seconds) {
+      if (option.seconds >= 3600) {
+        const hours = Math.floor(option.seconds / 3600);
+        const remainingMinutes = Math.floor((option.seconds % 3600) / 60);
+        const remainingSeconds = option.seconds % 60;
+        if (remainingMinutes > 0) {
+          return `${hours} hr ${remainingMinutes} min`;
+        }
+        if (remainingSeconds > 0) {
+          return `${hours} hr ${remainingSeconds} sec`;
+        }
+        return `${hours} hr`;
+      }
+      if (option.seconds >= 60) {
+        const minutes = Math.floor(option.seconds / 60);
+        const remainingSeconds = option.seconds % 60;
+        return remainingSeconds > 0
+          ? `${minutes} min ${remainingSeconds} sec`
+          : `${minutes} min`;
+      }
+      return `${option.seconds} sec`;
+    }
+    if (option.value) {
+      if (option.value >= 60) {
+        const hours = Math.floor(option.value / 60);
+        const remainingMinutes = option.value % 60;
+        return remainingMinutes > 0
+          ? `${hours} hr ${remainingMinutes} min`
+          : `${hours} hr`;
+      }
+      return `${option.value} min`;
+    }
+    return "0 sec";
   };
 
   return (
@@ -1524,6 +1583,8 @@ export function WorkflowTimeOut({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
+  const { orgId } = useAuth();
+
   const options: TimeSelectOption[] = [
     { seconds: 300 },
     { seconds: 420, requiredPlan: "pro" },
@@ -1531,6 +1592,13 @@ export function WorkflowTimeOut({
     { seconds: 1200, requiredPlan: "business" },
     { seconds: 1800, requiredPlan: "business" },
   ];
+
+  if (orgId == "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
+    options.push({
+      seconds: 7 * 60 * 60, // 7 hours
+      requiredPlan: "business",
+    });
+  }
 
   return (
     <TimeSelect

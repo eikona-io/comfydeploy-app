@@ -5,8 +5,8 @@ import {
 } from "@/components/machine/machine-schema";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
 import {
-  analyzeWorkflowJson,
   type ConflictingNodeInfo,
+  analyzeWorkflowJson,
 } from "@/components/onboarding/workflow-analyze";
 import {
   AccordionOption,
@@ -45,6 +45,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  CheckCircle,
   ChevronDown,
   ChevronUp,
   ExternalLink,
@@ -272,10 +273,19 @@ export function WorkflowImportSelectedMachine({
   const sub = useCurrentPlan();
   const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
 
+  if (validation.docker_command_steps) {
+    return (
+      <div className="mt-4 flex items-center gap-2 text-muted-foreground text-xs">
+        <CheckCircle className="h-3 w-3 text-green-500" />
+        Environment Detected, can continue to next steps
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-2">
-        <span className="font-medium text-sm">Choose an option </span>
+        <span className="font-medium text-sm">Choose an option</span>
         <span className="text-red-500">*</span>
       </div>
 
@@ -599,7 +609,12 @@ export function WorkflowImportMachineSetup({
           name: validation.machineName,
           gpu: validation.gpuType,
           docker_command_steps: validation.docker_command_steps,
+          install_custom_node_with_gpu: validation.install_custom_node_with_gpu,
+          base_docker_image: validation.base_docker_image,
+          python_version: validation.python_version,
         };
+
+  console.log(machineConfig);
 
   if (!validation.machineConfig) {
     validation.machineConfig = machineConfig;
@@ -690,6 +705,8 @@ export function WorkflowImportCustomNodeSetup({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
+  const skipCustomNodeCheck = validation.docker_command_steps !== undefined;
+
   const [showAll, setShowAll] = useState(false);
 
   const json =
@@ -706,7 +723,7 @@ export function WorkflowImportCustomNodeSetup({
     queryFn: () => (json ? analyzeWorkflowJson(json) : null),
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
-    enabled: !!json,
+    enabled: !!json && !skipCustomNodeCheck,
   });
 
   // Helper function to fetch branch info and format result
@@ -857,6 +874,17 @@ export function WorkflowImportCustomNodeSetup({
       initializeHashes();
     }
   }, [dependencies, validation.dependencies]);
+
+  if (skipCustomNodeCheck) {
+    return (
+      <>
+        <div className="mt-4 flex items-center gap-2 text-muted-foreground text-xs">
+          <CheckCircle className="h-3 w-3 text-green-500" />
+          Environment Detected, can continue to next steps
+        </div>
+      </>
+    );
+  }
 
   const description = (
     <div className="space-y-1">
