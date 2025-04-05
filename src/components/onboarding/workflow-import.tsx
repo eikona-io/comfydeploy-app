@@ -30,8 +30,10 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { defaultWorkflowTemplates } from "@/utils/default-workflow";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { CheckCircle2, Circle, CircleCheckBig } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -161,6 +163,11 @@ function getStepNavigation(
       };
   }
 }
+
+// Add type for search params
+type SearchParams = {
+  workflow_json?: string;
+};
 
 export default function WorkflowImport() {
   const navigate = useNavigate();
@@ -709,6 +716,26 @@ function ImportOptions({
 }: StepComponentProps<StepValidation>) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [workflowJsonUrl, setWorkflowJsonUrl] = useQueryState("workflow_json");
+
+  // Add useEffect to handle URL query parameter
+  useEffect(() => {
+    if (workflowJsonUrl) {
+      // Fetch the JSON from the URL
+      fetch(workflowJsonUrl)
+        .then((response) => response.text())
+        .then((text) => {
+          try {
+            postProcessImport(text);
+          } catch (error) {
+            toast.error("Failed to load workflow from URL");
+          }
+        })
+        .catch((error) => {
+          toast.error("Failed to fetch workflow from URL");
+        });
+    }
+  }, [workflowJsonUrl]);
 
   const postProcessImport = useCallback(
     (text: string) => {
