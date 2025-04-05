@@ -163,7 +163,7 @@ export function StepForm<T>({
   }
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col">
+    <div className="relative flex h-screen w-full flex-col overflow-hidden">
       {!hideProgressBar && (
         <div className="sticky top-0 left-0 z-50 mx-auto mt-10 w-full max-w-5xl">
           <div className="relative overflow-hidden bg-background">
@@ -250,7 +250,7 @@ export function StepForm<T>({
         </div>
       )}
 
-      <div className="flex h-full w-full justify-center md:py-0">
+      <div className="flex w-full flex-1 justify-center overflow-auto md:py-0">
         <div className="mx-4 my-auto w-full max-w-5xl py-20">
           <AnimatePresence mode="wait">
             <motion.div
