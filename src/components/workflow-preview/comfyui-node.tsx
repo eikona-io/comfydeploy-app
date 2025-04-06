@@ -571,7 +571,7 @@ function getHandleColorByType(type: string): string {
 
   // Check if the type contains any of the keys (case insensitive)
   for (const [key, color] of Object.entries(colorMap)) {
-    if (type.toUpperCase().includes(key)) {
+    if (typeof type === "string" && type?.toUpperCase().includes(key)) {
       return color;
     }
   }
