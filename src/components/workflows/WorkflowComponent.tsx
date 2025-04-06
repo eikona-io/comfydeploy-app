@@ -1098,7 +1098,7 @@ function FinishedRunLogDisplay({
             {/* Simplified error message */}
             <div className="rounded-md bg-red-50 p-2">
               <div className="font-medium text-2xs text-destructive">
-                {firstError.errors[0].details}
+                {firstError.errors[0].message}
               </div>
             </div>
 
