@@ -58,6 +58,9 @@ import { WorkspaceStatusBar } from "@/components/workspace/WorkspaceStatusBar";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { queryClient } from "@/lib/providers";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
@@ -377,7 +380,31 @@ function WorkflowPageComponent() {
         publicLinkOnly={true}
       />
       <DeploymentDrawer>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          <Button
+            // size="sm"
+            variant="secondary"
+            className="transition-all hover:text-white hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600"
+            confirm
+            onClick={async () => {
+              await callServerPromise(
+                api({
+                  init: {
+                    method: "DELETE",
+                  },
+                  url: "deployment/" + publicShareDeployment?.id,
+                }),
+              );
+              setSelectedDeployment(null);
+              setSelectedVersion(null);
+              setIsDrawerOpen(false);
+              await queryClient.invalidateQueries({
+                queryKey: ["workflow", workflowId, "deployments"],
+              });
+            }}
+          >
+            Delete
+          </Button>
           <Button
             // size="sm"
             onClick={() => {
