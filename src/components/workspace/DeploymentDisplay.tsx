@@ -1457,7 +1457,9 @@ export function DeploymentSettings({
   );
 }
 
-export function DeploymentDrawer() {
+export function DeploymentDrawer(props: {
+  children?: React.ReactNode;
+}) {
   const { selectedDeployment, setSelectedDeployment } =
     useSelectedDeploymentStore();
   const { data: deployment, isLoading } = useQuery<any>({
@@ -1503,11 +1505,14 @@ export function DeploymentDrawer() {
             </div>
           </div>
         ) : deployment ? (
-          <DeploymentSettings
-            key={deployment.id}
-            deployment={deployment}
-            onClose={() => setSelectedDeployment(null)}
-          />
+          <>
+            <DeploymentSettings
+              key={deployment.id}
+              deployment={deployment}
+              onClose={() => setSelectedDeployment(null)}
+            />
+            {props.children}
+          </>
         ) : null}
       </ScrollArea>
     </MyDrawer>

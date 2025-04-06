@@ -10,6 +10,7 @@ import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
 import { SessionItem } from "@/components/sessions/SessionItem";
+import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -44,7 +45,12 @@ import { useSidebar } from "@/components/ui/sidebar";
 import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
-import { ContainersTable } from "@/components/workspace/ContainersTable";
+import {
+  ContainersTable,
+  getEnvColor,
+} from "@/components/workspace/ContainersTable";
+import { useWorkflowDeployments } from "@/components/workspace/ContainersTable";
+import { DeploymentDrawer } from "@/components/workspace/DeploymentDisplay";
 import { LogDisplay } from "@/components/workspace/LogDisplay";
 import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
@@ -72,6 +78,29 @@ interface Version {
   user_id: string;
   workflow: string;
   workflow_api: string;
+}
+
+interface Deployment {
+  id: string;
+  environment: string;
+  workflow_id: string;
+  workflow_version_id: string;
+  gpu: string;
+  concurrency_limit: number;
+  run_timeout: number;
+  idle_timeout: number;
+  keep_warm: number;
+  modal_image_id?: string;
+  version?: {
+    version: number;
+  };
+  dub_link?: string;
+  machine_id: string;
+  created_at: string;
+  updated_at: string;
+  machine: {
+    name: string;
+  };
 }
 
 // const pages = [
@@ -104,6 +133,7 @@ function WorkflowPageComponent() {
       },
     },
   });
+  const { data: deployments } = useWorkflowDeployments(workflowId);
 
   const [mountedViews, setMountedViews] = useState<Set<string>>(
     new Set([currentView]),
@@ -202,6 +232,11 @@ function WorkflowPageComponent() {
     (session) => session.session_id === sessionId,
   );
 
+  // Find public share deployment if it exists
+  const publicShareDeployment = deployments?.find(
+    (d: Deployment) => d.environment === "public-share",
+  );
+
   return (
     <div className="relative flex h-full w-full flex-col">
       <Portal
@@ -240,21 +275,44 @@ function WorkflowPageComponent() {
                             : tab}
 
                         {tab === "playground" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-auto hover:bg-gray-200 group-hover/my-nav-item:opacity-100 transition-opacity opacity-0"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              if (versions?.[0]) {
-                                setSelectedVersion(versions[0]);
-                                setIsDrawerOpen(true);
-                              }
-                            }}
-                          >
-                            <Share className="h-4 w-4" />
-                          </Button>
+                          <div className="ml-auto flex items-center gap-2">
+                            {publicShareDeployment && (
+                              <Badge
+                                className={cn(
+                                  "!text-2xs w-fit cursor-pointer whitespace-nowrap rounded-md hover:shadow-sm",
+                                  getEnvColor(
+                                    publicShareDeployment.environment,
+                                  ),
+                                )}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setSelectedDeployment(
+                                    publicShareDeployment.id,
+                                  );
+                                }}
+                              >
+                                Shared
+                              </Badge>
+                            )}
+                            {!publicShareDeployment && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="hover:bg-gray-200 group-hover/my-nav-item:opacity-100 transition-opacity opacity-0"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  if (versions?.[0]) {
+                                    setSelectedVersion(versions[0]);
+                                    setIsDrawerOpen(true);
+                                  }
+                                }}
+                              >
+                                <Share className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
                         )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -318,6 +376,22 @@ function WorkflowPageComponent() {
         onSuccess={setSelectedDeployment}
         publicLinkOnly={true}
       />
+      <DeploymentDrawer>
+        <div className="flex justify-end">
+          <Button
+            // size="sm"
+            onClick={() => {
+              if (versions?.[0]) {
+                setSelectedDeployment(null);
+                setSelectedVersion(versions[0]);
+                setIsDrawerOpen(true);
+              }
+            }}
+          >
+            Update
+          </Button>
+        </div>
+      </DeploymentDrawer>
     </div>
   );
 }

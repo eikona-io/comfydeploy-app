@@ -221,6 +221,10 @@ function ComfyUIFlowContent({ workflow, apiFormat }: ComfyUIFlowProps) {
         type: "default",
         style: { strokeWidth: 2, opacity: 1 },
       }}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      elementsSelectable={false}
+      panOnScroll={true}
       className="comfyui-flow"
     >
       <Background color="#555" gap={16} size={1} />
