@@ -21,6 +21,7 @@ const TanStackRouterDevtools =
 import { AppSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { orgPrefixPaths } from "@/orgPrefixPaths";
 import { SignedIn, useClerk } from "@clerk/clerk-react";
 import {
   RedirectToSignIn,
@@ -30,7 +31,6 @@ import {
 } from "@clerk/clerk-react";
 import { Toaster } from "sonner";
 import { Providers, queryClient } from "../lib/providers";
-import { orgPrefixPaths } from "@/orgPrefixPaths";
 
 export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
@@ -38,7 +38,7 @@ export type RootRouteContext = {
 };
 
 const publicRoutes = [
-  "/home",
+  // "/home",
   "/auth/sign-in",
   "/auth/sign-up",
   "/waitlist",
@@ -106,7 +106,12 @@ function RootComponent() {
 
   const { pathname } = useLocation();
   const isSessionPage = pathname.includes("/sessions/");
-  const isAuthPage = pathname.includes("/auth/");
+  const isAuthPage = publicRoutes.some((route) => {
+    if (typeof route === "string") {
+      return pathname === route;
+    }
+    return route.wildcard && pathname.startsWith(route.path);
+  });
 
   return (
     <SidebarProvider>

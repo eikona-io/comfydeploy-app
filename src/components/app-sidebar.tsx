@@ -60,6 +60,7 @@ import {
 } from "@/components/workspace/SessionTimer";
 import {
   useSessionIdInSessionView,
+  useShareSlug,
   useWorkflowIdInSessionView,
   useWorkflowIdInWorkflowPage,
 } from "@/hooks/hook";
@@ -668,11 +669,51 @@ function TimerPopover({
   );
 }
 
+function ShareSidebar() {
+  const router = useRouter();
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex flex-row items-start justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              router.navigate({
+                to: "/",
+              });
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </div>
+      </SidebarHeader>
+      {/* <SidebarContent>
+        <SidebarGroup className="p-1">
+          <SidebarMenu>
+            <SidebarMenuItem className="p-0">
+              <Link
+                href="/"
+                className="flex flex-row items-start justify-between"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent> */}
+    </Sidebar>
+  );
+}
+
 export function AppSidebar() {
   const { pages, flatPages, metaPages } = usePages();
   const { orgId, orgSlug } = useAuth();
   const isFirstRender = useRef(true);
   const sessionId = useSessionIdInSessionView();
+  const shareSlug = useShareSlug();
   const { setOpen } = useSidebar();
 
   const items = flatPages.map((page) => ({
@@ -732,12 +773,17 @@ export function AppSidebar() {
   });
 
   useEffect(() => {
-    setOpen(!sessionId);
-  }, [sessionId]);
+    setOpen(!sessionId && !shareSlug);
+  }, [sessionId, shareSlug]);
 
   // If we're in a session, show the session-specific sidebar
   if (sessionId) {
     return <SessionSidebar />;
+  }
+
+  // If we're in a share page, show the share-specific sidebar
+  if (shareSlug) {
+    return <ShareSidebar />;
   }
 
   return (

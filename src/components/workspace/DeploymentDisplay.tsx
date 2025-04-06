@@ -306,6 +306,7 @@ export interface Deployment {
   };
   dub_link?: string;
   machine_id: string;
+  share_slug?: string;
 }
 
 export function DeploymentDisplay({
@@ -1516,14 +1517,16 @@ export function DeploymentDrawer() {
 function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
   const [copying, setCopying] = useState(false);
 
+  const [slug, workflow_name] = deployment.share_slug?.split("_") ?? [];
+  const shareLink = `${window.location.origin}/share/${slug}/${workflow_name}`;
+
   const handleCopy = async () => {
-    if (!deployment.dub_link) return;
+    if (!deployment.id) return;
     setCopying(true);
-    await navigator.clipboard.writeText(deployment.dub_link);
+    await navigator.clipboard.writeText(shareLink);
     toast.success("Link copied to clipboard!");
     setTimeout(() => setCopying(false), 1000);
   };
-
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
@@ -1534,11 +1537,11 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
           </Badge>
         </div>
       </div>
-      {deployment.dub_link ? (
+      {deployment.id ? (
         <div className="flex gap-2">
           <Input
             readOnly
-            value={deployment.dub_link}
+            value={shareLink}
             className="border-zinc-200 bg-zinc-50 font-mono text-xs"
           />
           <Button

@@ -1,15 +1,15 @@
 "use client";
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation, useMatch, useMatchRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { api } from "../lib/api";
 import { getOrgPathInfo } from "@/utils/org-path";
 import { useAuth } from "@clerk/clerk-react";
 import { useClerk } from "@clerk/clerk-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useLocation, useMatch, useMatchRoute } from "@tanstack/react-router";
 import { useSearch } from "@tanstack/react-router";
 import { parseAsString } from "nuqs";
 import { useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
+import { api } from "../lib/api";
 
 export function useWorkflowIdInSessionView() {
   const match = useMatch({
@@ -37,6 +37,17 @@ export function useSessionIdInSessionView() {
     return sessionId;
   }
   return match?.params.sessionId;
+}
+
+export function useShareSlug() {
+  const match = useMatch({
+    from: "/share/$user/$slug",
+    shouldThrow: false,
+  });
+  if (match) {
+    return match.params.slug;
+  }
+  return null;
 }
 
 export function useWorkflowIdInWorkflowPage() {
