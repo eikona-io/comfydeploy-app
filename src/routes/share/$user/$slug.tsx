@@ -627,7 +627,7 @@ function RouteComponent() {
                 {runButtonLoading ? (
                   <div className="flex animate-pulse items-center gap-2 text-muted-foreground">
                     <span>Starting...</span>
-                    <LoadingIcon />
+                    {/* <LoadingIcon /> */}
                   </div>
                 ) : (
                   <>
