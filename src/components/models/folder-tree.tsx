@@ -13,6 +13,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +26,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
+  ArrowDown,
+  ArrowDownNarrowWide,
+  ArrowUpWideNarrow,
   CheckCircle2,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -31,23 +38,17 @@ import {
   FolderPlus,
   MoreHorizontal,
   PencilIcon,
+  Plus,
   RefreshCcw,
   Search,
   Trash2,
   Upload,
   XCircle,
-  ArrowDownNarrowWide,
-  ArrowUpWideNarrow,
-  ArrowDown,
 } from "lucide-react";
-import type React from "react";
-import { useState, useMemo } from "react";
-import { toast } from "sonner";
 import { useQueryState } from "nuqs";
-import {
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from "@/components/ui/dropdown-menu";
+import type React from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 
 // Format file size to human-readable format (KB, MB, GB)
 function formatFileSize(bytes: number): string {
@@ -1213,6 +1214,15 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
 
           {/* Action buttons */}
           <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              iconPlacement="left"
+              Icon={Plus}
+              onClick={async () => {
+                onAddModel("");
+              }}
+            />
             <Button
               variant="ghost"
               size="icon"
