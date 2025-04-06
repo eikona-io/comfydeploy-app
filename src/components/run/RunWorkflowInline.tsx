@@ -1,3 +1,5 @@
+"use client";
+
 import { SDForm } from "@/components/SDInputs/SDForm";
 import {
   type RGBColor,
@@ -6,17 +8,22 @@ import {
 import { Button } from "@/components/ui/button";
 // import { getFileDownloadUrlV2 } from "@/db/getFileDownloadUrl";
 import { useAuthStore } from "@/lib/auth-store";
-import type {
-  WorkflowInputsType,
-  getInputsFromWorkflow,
+import { callServerPromise } from "@/lib/call-server-promise";
+import {
+  type WorkflowInputsType,
+  type getInputsFromWorkflow,
+  getInputsFromWorkflowJSON,
 } from "@/lib/getInputsFromWorkflow";
+import { cn } from "@/lib/utils";
 import { plainInputsToZod } from "@/lib/workflowVersionInputsToZod";
 // import { HandleFileUpload } from "@/server/uploadFile";
 import { useAuth, useClerk } from "@clerk/clerk-react";
 import { Play } from "lucide-react";
+import { useQueryState } from "nuqs";
 import {
   type FormEvent,
   type ReactNode,
+  use,
   useEffect,
   useMemo,
   useState,
@@ -26,8 +33,6 @@ import { toast } from "sonner";
 import type { z } from "zod";
 import { uploadFile } from "../files-api";
 import { publicRunStore } from "./VersionSelect";
-import { useQueryState } from "nuqs";
-import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE_BYTES = 250_000_000; // 250MB
 
@@ -233,8 +238,6 @@ export function parseInputValues(valuesParsed: Record<string, any>) {
 export function RunWorkflowInline({
   inputs,
   deployment_id,
-  workflow_version_id,
-  machine_id,
   default_values = {},
   hideRunButton = false,
   hideInputs = false,
@@ -244,9 +247,7 @@ export function RunWorkflowInline({
   scrollAreaClassName,
 }: {
   inputs: z.infer<typeof WorkflowInputsType>;
-  deployment_id?: string;
-  workflow_version_id?: string;
-  machine_id?: string;
+  deployment_id: string;
   default_values?: Record<string, any>;
   hideRunButton?: boolean;
   hideInputs?: boolean;
@@ -303,9 +304,7 @@ export function RunWorkflowInline({
       const body = model_id
         ? { model_id: model_id, inputs: val }
         : {
-            // deployment_id: deployment_id,
-            workflow_version_id: workflow_version_id,
-            machine_id: machine_id,
+            deployment_id: deployment_id,
             inputs: val,
             origin: runOrigin,
             batch_number: 1,

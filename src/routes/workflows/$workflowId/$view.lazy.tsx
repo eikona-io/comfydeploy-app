@@ -1,6 +1,10 @@
 import { GalleryView } from "@/components/GalleryView";
 import { PaddingLayout } from "@/components/PaddingLayout";
-import { DeploymentPage } from "@/components/deployment/deployment-page";
+import {
+  DeploymentDialog,
+  DeploymentPage,
+  useSelectedDeploymentStore,
+} from "@/components/deployment/deployment-page";
 import { MachineVersionWrapper } from "@/components/machine/machine-overview";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
@@ -49,11 +53,26 @@ import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Terminal } from "lucide-react";
+import { Share, Terminal } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
+
+interface Version {
+  id: string;
+  comfyui_snapshot: string;
+  version: number;
+  machine_id: string;
+  machine_version_id: string;
+  modal_image_id: string;
+  comment: string;
+  created_at: string;
+  user_id: string;
+  workflow: string;
+  workflow_api: string;
+}
 
 // const pages = [
 //   "workspace",
@@ -73,6 +92,18 @@ export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
 
 function WorkflowPageComponent() {
   const { workflowId, view: currentView } = Route.useParams();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
+  const { setSelectedDeployment } = useSelectedDeploymentStore();
+  const { data: versions } = useQuery<Version[]>({
+    queryKey: ["workflow", workflowId, "versions"],
+    meta: {
+      params: {
+        limit: 1,
+        offset: 0,
+      },
+    },
+  });
 
   const [mountedViews, setMountedViews] = useState<Set<string>>(
     new Set([currentView]),
@@ -197,6 +228,7 @@ function WorkflowPageComponent() {
                           });
                         }}
                         className={cn(
+                          "group/my-nav-item",
                           currentView === tab && "bg-gray-200 text-gray-900",
                           "transition-colors capitalize",
                         )}
@@ -206,6 +238,24 @@ function WorkflowPageComponent() {
                           : tab === "machine"
                             ? "Environment"
                             : tab}
+
+                        {tab === "playground" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="ml-auto hover:bg-gray-200 group-hover/my-nav-item:opacity-100 transition-opacity opacity-0"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (versions?.[0]) {
+                                setSelectedVersion(versions[0]);
+                                setIsDrawerOpen(true);
+                              }
+                            }}
+                          >
+                            <Share className="h-4 w-4" />
+                          </Button>
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
@@ -257,6 +307,17 @@ function WorkflowPageComponent() {
         </div>
       ) : null}
       {view}
+      <DeploymentDialog
+        open={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedVersion(null);
+        }}
+        selectedVersion={selectedVersion}
+        workflowId={workflowId}
+        onSuccess={setSelectedDeployment}
+        publicLinkOnly={true}
+      />
     </div>
   );
 }
