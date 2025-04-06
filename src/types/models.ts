@@ -27,9 +27,7 @@ export interface AddModelRequest {
   civitai?: {
     url: string;
   };
-  link?: {
-    url: string;
-  };
+  downloadLink?: string;
   local?: {
     originalFilename: string;
   };
