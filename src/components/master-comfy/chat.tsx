@@ -2,11 +2,13 @@ import { useState, useRef, useEffect } from "react";
 import {
   Send,
   Image,
-  Globe,
-  Terminal,
+  Sparkles,
   Code,
   HelpCircle,
   Search,
+  Eye,
+  Wrench,
+  Puzzle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,8 +20,11 @@ import { useWorkflowStore } from "../workspace/Workspace";
 import ReactMarkdown from "react-markdown";
 import { sendEventToCD } from "../workspace/sendEventToCD";
 import React from "react";
-import { useWorkflowIdInSessionView } from "@/hooks/hook";
-import { useOrganizationList } from "@clerk/clerk-react";
+import { TextShimmer } from "../motion-ui/text-shimmer";
+import { useSessionIdInSessionView } from "@/hooks/hook";
+import { useSessionAPI } from "@/hooks/use-session-api";
+import { useQuery } from "@tanstack/react-query";
+import { useMachine } from "@/hooks/use-machine";
 
 // Add the suggestion type
 interface Suggestion {
@@ -32,6 +37,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   chunks?: string[]; // Store chunks for animation
+  animationKey?: number; // Add this property
 }
 
 interface MarkdownRendererProps {
@@ -104,11 +110,12 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({
             <h1 className="font-semibold text-lg">{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="font-semibold text-base">{children}</h2>
+            <h2 className="mt-1 font-semibold text-base">{children}</h2>
           ),
           h3: ({ children }) => (
             <h3 className="font-semibold text-sm">{children}</h3>
           ),
+          p: ({ children }) => <p className="my-1">{children}</p>,
           // Use the memoized link component
           a: LinkRenderer,
           code: ({ children }) => (
@@ -117,6 +124,7 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({
           // Add custom styling for list items
           ul: ({ children }) => <ul className="my-2 pl-4">{children}</ul>,
           li: ({ children }) => <li className="my-1 pl-1">{children}</li>,
+          hr: () => <hr className="my-4" />,
         }}
       >
         {processedMarkdown}
@@ -125,32 +133,22 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({
   );
 });
 
-// Define default suggestions
+// Define default suggestions - reduced to 3 as requested
 const suggestions: Suggestion[] = [
   {
-    icon: <Image className="h-4 w-4" />,
-    text: "Image generation",
-    prompt: "How do I generate a portrait image in ComfyUI?",
+    icon: <Wrench className="h-4 w-4" />,
+    text: "Bug fix",
+    prompt: "How do I fix this error? Explain in concise way.",
   },
   {
-    icon: <Globe className="h-4 w-4" />,
-    text: "Search online",
-    prompt: "Can ComfyUI search images from the web?",
-  },
-  {
-    icon: <Terminal className="h-4 w-4" />,
-    text: "Workflow tips",
-    prompt: "Give me tips for creating efficient ComfyUI workflows",
-  },
-  {
-    icon: <Code className="h-4 w-4" />,
+    icon: <Puzzle className="h-4 w-4" />,
     text: "Custom nodes",
-    prompt: "How do I create custom nodes in ComfyUI?",
+    prompt: "How do I add a custom node that can remove backgrounds?",
   },
   {
-    icon: <HelpCircle className="h-4 w-4" />,
-    text: "Help",
-    prompt: "What are the basic concepts I should know about ComfyUI?",
+    icon: <Sparkles className="h-4 w-4" />,
+    text: "Generate images",
+    prompt: "I want to generate Ghibli image. Give me some models.",
   },
 ];
 
@@ -172,11 +170,21 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fetchToken = useAuthStore((state) => state.fetchToken);
 
+  const sessionId = useSessionIdInSessionView();
+  const { data: session } = useQuery<any>({
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
+  });
+  const { data: machine } = useMachine(session?.machine_id);
+
   // Use useRef to keep the same ID across renders
   const chatSessionIdRef = useRef<string>(generateSessionId());
 
   // get workflow
   const { workflow } = useWorkflowStore();
+
+  // Add a new state to track current tool being called
+  const [currentTool, setCurrentTool] = useState<string | null>(null);
 
   // Handle suggestion click
   const handleSuggestionClick = (prompt: string) => {
@@ -208,15 +216,24 @@ export function Chat() {
       // Get auth token
       const token = await fetchToken();
 
+      // Reset current tool
+      setCurrentTool(null);
+
       // Add an empty assistant message that we'll update
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "", chunks: [] },
+        {
+          role: "assistant",
+          content: "",
+          chunks: [],
+          animationKey: Date.now(), // Add a unique animation key
+        },
       ]);
       const assistantMessageIdx = messages.length + 1; // +1 because we just added the user message
 
       // Make a POST request to the API
-      const apiUrl = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/ai`;
+      const apiUrl =
+        "https://comfy-deploy-dev--master-comfy-fastapi-app.modal.run/v1/ai";
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
@@ -228,7 +245,7 @@ export function Chat() {
           // is_testing: true,
           chat_session_id: chatSessionIdRef.current,
           ...(workflow ? { workflow_json: JSON.stringify(workflow) } : {}),
-          // machine_id: "fcde86e9-c37f-4b2b-9aa3-d0084894dfcf",
+          ...(machine ? { machine: machine } : {}),
         }),
       });
 
@@ -257,26 +274,49 @@ export function Chat() {
               try {
                 const data = JSON.parse(event.slice(6)); // Remove "data: " prefix
 
-                if (data.done) {
+                if (data.event_type === "done") {
                   // Just mark as done, don't update the message with empty content
                   break;
                 }
 
-                if (data.text) {
+                if (data.event_type === "text_delta" && data.text) {
                   chunks.push(data.text);
                   assistantResponse += data.text;
                   // Update the assistant message
                   setMessages((prev) => {
                     const newMessages = [...prev];
                     if (assistantMessageIdx < newMessages.length) {
+                      // Only set a new animationKey when this is the first chunk
+                      const animationKey =
+                        chunks.length === 1
+                          ? Date.now()
+                          : newMessages[assistantMessageIdx].animationKey;
                       newMessages[assistantMessageIdx] = {
                         role: "assistant",
                         content: assistantResponse,
-                        chunks: [...chunks], // Store all chunks
+                        chunks: [...chunks],
+                        animationKey, // Only update the key on first chunk
                       };
                     }
                     return newMessages;
                   });
+                }
+
+                // Handle other event types if needed
+                // These can be used for debugging or showing tool usage in the UI
+                if (data.event_type === "tool_call") {
+                  // console.log("Tool called:", data.tool_name, data.args);
+                  setCurrentTool(data.tool_name);
+                }
+
+                if (data.event_type === "tool_result") {
+                  // console.log("Tool result:", data.result);
+                  setCurrentTool(null); // Clear current tool when result is received
+                }
+
+                if (data.event_type === "error") {
+                  // console.error("Error from backend:", data.error);
+                  throw new Error(data.error);
                 }
               } catch (error) {
                 console.error("Error parsing SSE data:", error);
@@ -298,6 +338,7 @@ export function Chat() {
       });
     } finally {
       setIsLoading(false);
+      setCurrentTool(null);
     }
   };
 
@@ -311,8 +352,22 @@ export function Chat() {
       <ScrollArea className="flex-1 p-4">
         {messages.length === 0 ? (
           <div className="flex flex-col gap-6">
-            <div className="my-12 text-center text-muted-foreground text-sm">
-              Ask a question about ComfyUI
+            <div className="my-12 text-left text-muted-foreground text-sm">
+              <div className="mb-3 text-sm">You can ask me about:</div>
+              <ul className="list-none">
+                <li className="flex items-center gap-2 text-xs">
+                  <span className="text-xs">🔧</span> How can I fix this error?
+                  Explain in concise way.
+                </li>
+                <li className="flex items-center gap-2 text-xs">
+                  <span className="text-xs">🧩</span> I want to use a custom
+                  node that can remove background.
+                </li>
+                <li className="flex items-center gap-2 text-xs">
+                  <span className="text-xs">🎨</span> I want to generate Ghibli
+                  image. Give me some models.
+                </li>
+              </ul>
             </div>
           </div>
         ) : (
@@ -341,7 +396,16 @@ export function Chat() {
                       {message.content}
                     </motion.div>
                   ) : (
-                    <motion.div className={cn("rounded-lg px-4 py-2 pl-0")}>
+                    <motion.div
+                      className={cn("rounded-lg px-4 py-2 pl-0")}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{
+                        duration: 0.3,
+                        ease: "easeInOut",
+                      }}
+                      key={`assistant-msg-${i}-${message.animationKey || ""}`}
+                    >
                       <MarkdownRenderer
                         markdown={message.content}
                         className="text-sm"
@@ -362,28 +426,50 @@ export function Chat() {
                 damping: 30,
               }}
             >
-              <motion.img
-                src="/icon-light.svg"
-                alt="comfydeploy thinking"
-                className="h-7 w-7"
-                animate={
-                  isLoading
-                    ? {
-                        opacity: [0.4, 1, 0.4],
-                        scale: [0.97, 1.03, 0.97],
-                      }
-                    : {
-                        opacity: 1,
-                        scale: 1,
-                      }
-                }
-                transition={{
-                  duration: 1.5,
-                  repeat: isLoading ? Number.POSITIVE_INFINITY : 0,
-                  ease: "easeInOut",
-                  repeatType: "loop",
-                }}
-              />
+              <div className="flex flex-row items-center gap-2">
+                <motion.img
+                  src="/icon-light.svg"
+                  alt="comfydeploy thinking"
+                  className="h-7 w-7"
+                  animate={
+                    isLoading
+                      ? {
+                          opacity: [0.4, 1, 0.4],
+                          scale: [0.97, 1.03, 0.97],
+                        }
+                      : {
+                          opacity: 1,
+                          scale: 1,
+                        }
+                  }
+                  transition={{
+                    duration: 1.5,
+                    repeat: isLoading ? Number.POSITIVE_INFINITY : 0,
+                    ease: "easeInOut",
+                    repeatType: "loop",
+                  }}
+                />
+
+                {/* Display current tool being called */}
+                <AnimatePresence>
+                  {currentTool && (
+                    <motion.div
+                      className="flex flex-row items-center gap-1 text-muted-foreground text-xs"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.7 }}
+                      exit={{ opacity: 0 }}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <TextShimmer
+                        className="[--base-color:theme(colors.gray.600)] [--base-gradient-color:theme(colors.gray.200)] dark:[--base-color:theme(colors.sgray.700)] dark:[--base-gradient-color:theme(colors.gray.400)]"
+                        duration={1}
+                      >
+                        {currentTool}
+                      </TextShimmer>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Disclaimer after generation is complete */}
               {messages.length > 0 && !isLoading && (
