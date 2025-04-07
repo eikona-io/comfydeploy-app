@@ -323,6 +323,8 @@ export default function WorkflowImport() {
             docker_command_steps: docker_commands,
           });
 
+          console.log("docker_commands: ", docker_commands);
+
           return true;
         },
       },
