@@ -787,7 +787,7 @@ function ImportOptions({
         importOption: "import",
         importJson: text,
         workflowJson: "",
-        workflowApi: workflowAPIJson, // Clear workflowApi
+        workflowApi: JSON.stringify(workflowAPIJson), // Clear workflowApi
 
         docker_command_steps: environment.docker_command_steps,
         gpuType: environment.gpu,
