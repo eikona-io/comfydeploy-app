@@ -105,6 +105,12 @@ import {
 } from "./workspace/increase-session";
 import { sendWorkflow } from "./workspace/sendEventToCD";
 import { Chat } from "./master-comfy/chat";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 // Add Session type
 interface Session {
@@ -466,6 +472,20 @@ function SessionSidebar() {
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
+          {session?.gpu && (
+            <TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Badge className="!text-[10px] !p-0 !w-full mb-1 flex items-center justify-center">
+                    {session?.gpu.slice(0, 4)}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{session?.gpu}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {!isLegacyMode ? (
             <TimerPopover session={session} onRefetch={refetch} />
           ) : (
