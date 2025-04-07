@@ -273,7 +273,7 @@ export function WorkflowImportSelectedMachine({
   const sub = useCurrentPlan();
   const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
 
-  if (validation.docker_command_steps) {
+  if (validation.hasEnvironment) {
     return (
       <div className="mt-4 flex items-center gap-2 text-muted-foreground text-xs">
         <CheckCircle className="h-3 w-3 text-green-500" />
@@ -705,7 +705,7 @@ export function WorkflowImportCustomNodeSetup({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
-  const skipCustomNodeCheck = validation.docker_command_steps !== undefined;
+  const skipCustomNodeCheck = validation.hasEnvironment;
 
   const [showAll, setShowAll] = useState(false);
 

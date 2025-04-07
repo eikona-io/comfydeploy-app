@@ -50,7 +50,7 @@ export interface StepValidation {
   machineConfig?: any; // only for existing machine
   existingMachineMissingNodes?: NodeData[];
   // Add more fields as needed for future steps
-
+  hasEnvironment?: boolean;
   machineName?: string;
   gpuType?: GpuTypes;
   python_version?: string;
@@ -110,7 +110,7 @@ function getStepNavigation(
   switch (currentStep) {
     case 0: // Create Workflow
       // If docker_command_steps exists, skip to step 3 (Model Check)
-      if (validation.docker_command_steps) {
+      if (validation.hasEnvironment) {
         return {
           next: 3,
           prev: null,
@@ -129,7 +129,7 @@ function getStepNavigation(
 
     case 2: // Select Machine
       // If docker_command_steps exists, skip to step 3 (Model Check)
-      if (validation.docker_command_steps) {
+      if (validation.hasEnvironment) {
         return {
           next: 3,
           prev: 0,
@@ -143,13 +143,13 @@ function getStepNavigation(
     case 3: // Model Checking
       return {
         next: 4,
-        prev: validation.docker_command_steps ? 0 : 2,
+        prev: validation.hasEnvironment ? 0 : 2,
       };
 
     case 4: // Machine Settings
       return {
         next: null,
-        prev: validation.docker_command_steps
+        prev: validation.hasEnvironment
           ? 3
           : validation.importOption === "default"
             ? 2
@@ -748,10 +748,11 @@ function ImportOptions({
           workflowApi: "",
           // Remove docker_command_steps when clearing
           docker_command_steps: undefined,
+          hasEnvironment: false,
           gpuType: "A10G",
           comfyUiHash: comfyui_hash,
           install_custom_node_with_gpu: false,
-          base_docker_image: "",
+          base_docker_image: undefined,
           python_version: "3.11",
         });
         return;
@@ -759,8 +760,27 @@ function ImportOptions({
 
       const json = JSON.parse(text);
 
-      var environment = json.environment || {};
-      var workflowAPIJson = json.workflow_api || "";
+      var environment = json.environment;
+      var workflowAPIJson = json.workflow_api;
+
+      if (!environment) {
+        setValidation({
+          ...validation,
+          importOption: "import",
+          importJson: text,
+          workflowJson: text,
+          hasEnvironment: false,
+          workflowApi: undefined,
+
+          docker_command_steps: undefined,
+          gpuType: "A10G",
+          comfyUiHash: comfyui_hash,
+          install_custom_node_with_gpu: false,
+          base_docker_image: undefined,
+          python_version: "3.11",
+        });
+        return;
+      }
 
       const data = {
         ...validation,
@@ -775,6 +795,7 @@ function ImportOptions({
         install_custom_node_with_gpu: environment.install_custom_node_with_gpu,
         base_docker_image: environment.base_docker_image,
         python_version: environment.python_version,
+        hasEnvironment: true,
       } as StepValidation;
 
       console.log(data);
@@ -851,7 +872,7 @@ function ImportOptions({
               <span className="text-muted-foreground">
                 Click or drag and drop your workflow JSON file here.
               </span>
-              {validation.docker_command_steps && (
+              {validation.hasEnvironment && (
                 <Badge
                   variant="secondary"
                   className="ml-2 bg-green-100 text-green-700 hover:bg-green-100"
