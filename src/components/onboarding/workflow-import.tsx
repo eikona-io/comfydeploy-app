@@ -742,8 +742,8 @@ function ImportOptions({
   const postProcessImport = useCallback(
     (text: string) => {
       if (!text.trim()) {
-        setValidation({
-          ...validation,
+        setValidation((prev) => ({
+          ...prev,
           importOption: "import",
           importJson: "",
           workflowJson: "",
@@ -756,7 +756,7 @@ function ImportOptions({
           install_custom_node_with_gpu: false,
           base_docker_image: undefined,
           python_version: "3.11",
-        });
+        }));
         return;
       }
 
@@ -766,8 +766,8 @@ function ImportOptions({
       var workflowAPIJson = json.workflow_api;
 
       if (!environment) {
-        setValidation({
-          ...validation,
+        setValidation((prev) => ({
+          ...prev,
           importOption: "import",
           importJson: text,
           workflowJson: text,
@@ -780,12 +780,11 @@ function ImportOptions({
           install_custom_node_with_gpu: false,
           base_docker_image: undefined,
           python_version: "3.11",
-        });
+        }));
         return;
       }
 
       const data = {
-        ...validation,
         importOption: "import",
         importJson: text,
         workflowJson: "",
@@ -802,7 +801,10 @@ function ImportOptions({
 
       console.log(data);
 
-      setValidation(data);
+      setValidation((prev) => ({
+        ...prev,
+        ...data,
+      }));
     },
     [validation, setValidation],
   );
