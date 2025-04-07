@@ -21,6 +21,10 @@ import ReactMarkdown from "react-markdown";
 import { sendEventToCD } from "../workspace/sendEventToCD";
 import React from "react";
 import { TextShimmer } from "../motion-ui/text-shimmer";
+import { useSessionIdInSessionView } from "@/hooks/hook";
+import { useSessionAPI } from "@/hooks/use-session-api";
+import { useQuery } from "@tanstack/react-query";
+import { useMachine } from "@/hooks/use-machine";
 
 // Add the suggestion type
 interface Suggestion {
@@ -120,6 +124,7 @@ const MarkdownRenderer = React.memo(function MarkdownRenderer({
           // Add custom styling for list items
           ul: ({ children }) => <ul className="my-2 pl-4">{children}</ul>,
           li: ({ children }) => <li className="my-1 pl-1">{children}</li>,
+          hr: () => <hr className="my-4" />,
         }}
       >
         {processedMarkdown}
@@ -164,6 +169,13 @@ export function Chat() {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fetchToken = useAuthStore((state) => state.fetchToken);
+
+  const sessionId = useSessionIdInSessionView();
+  const { data: session } = useQuery<any>({
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
+  });
+  const { data: machine } = useMachine(session?.machine_id);
 
   // Use useRef to keep the same ID across renders
   const chatSessionIdRef = useRef<string>(generateSessionId());
@@ -221,19 +233,19 @@ export function Chat() {
 
       // Make a POST request to the API
       const apiUrl =
-        "https://comfy-deploy-dev--master-comfy-fastapi-app.modal.run/v1/ai";
+        "https://comfy-deploy-dev--master-comfy-fastapi-app-dev.modal.run/v1/ai";
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: userInput,
           // is_testing: true,
           chat_session_id: chatSessionIdRef.current,
           ...(workflow ? { workflow_json: JSON.stringify(workflow) } : {}),
-          // machine_id: "fcde86e9-c37f-4b2b-9aa3-d0084894dfcf",
+          ...(machine ? { machine: machine } : {}),
         }),
       });
 
