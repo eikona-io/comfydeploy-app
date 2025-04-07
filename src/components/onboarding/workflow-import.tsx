@@ -304,26 +304,27 @@ export default function WorkflowImport() {
           };
         }
 
+        if (validation.docker_command_steps) {
+          return true;
+        }
+
+        const docker_commands = convertToDockerSteps(
+          validation.dependencies?.custom_nodes,
+          validation.selectedConflictingNodes,
+        );
+
+        setValidation((prev) => ({
+          ...prev,
+          docker_command_steps: docker_commands,
+        }));
+
+        console.log("docker_commands: ", docker_commands);
+
         return { isValid: true };
       },
       actions: {
         onNext: async () => {
           // If docker_command_steps is already set, skip the conversion
-          if (validation.docker_command_steps) {
-            return true;
-          }
-
-          const docker_commands = convertToDockerSteps(
-            validation.dependencies?.custom_nodes,
-            validation.selectedConflictingNodes,
-          );
-
-          setValidation({
-            ...validation,
-            docker_command_steps: docker_commands,
-          });
-
-          console.log("docker_commands: ", docker_commands);
 
           return true;
         },
