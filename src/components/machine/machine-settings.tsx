@@ -31,9 +31,10 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { useCachedQuery } from "@/lib/use-cached-query";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useAuth } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { useBlocker, useNavigate } from "@tanstack/react-router";
+import { useBlocker, useMatch, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
 import { isEqual } from "lodash";
 import {
@@ -68,6 +69,20 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import { Badge } from "../ui/badge";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "../ui/hover-card";
 import { Label } from "../ui/label";
 import {
   Select,
@@ -84,20 +99,6 @@ import {
   useUnsavedChangesWarning,
 } from "../unsaved-changes-warning";
 import { ExtraDockerCommands } from "./extra-docker-commands";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../ui/form";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "../ui/hover-card";
 import { VersionChecker } from "./version-checker";
 import { SecretsSelector } from "./secrets-selector";
 
@@ -322,6 +323,18 @@ function ServerlessSettings({
   disableUnsavedChangesWarning?: boolean;
   readonly?: boolean;
 }) {
+  const matchWorkflow = useMatch({
+    from: "/workflows/",
+    shouldThrow: false,
+  });
+
+  const matchMachine = useMatch({
+    from: "/machines/",
+    shouldThrow: false,
+  });
+
+  const isWorkflow = !!matchWorkflow;
+  const isMachine = !!matchMachine;
   const [isFormDirty, setIsFormDirty] = useState(false);
   const isNew = machine.id === "new";
   const { controls } = useUnsavedChangesWarning({
@@ -358,6 +371,7 @@ function ServerlessSettings({
       base_docker_image: machine.base_docker_image,
       python_version: machine.python_version,
       extra_args: machine.extra_args,
+      disable_metadata: machine.disable_metadata,
       prestart_command: machine.prestart_command,
 
       optimized_runner: machine.optimized_runner,
@@ -452,7 +466,7 @@ function ServerlessSettings({
               <div
                 className={cn(
                   "flex flex-col gap-4 md:flex-row",
-                  readonly && "pointer-events-none opacity-70",
+                  readonly && "pointer-events-none opacity-50",
                 )}
               >
                 <FormField
@@ -495,23 +509,26 @@ function ServerlessSettings({
                   )}
                 />
               </div>
-              {machine.type === "comfy-deploy-serverless" && (
-                <div className="mb-4">
-                  <VersionChecker
-                    machineId={machine.id}
-                    variant="inline"
-                    onUpdate={(e) => {
-                      e.preventDefault();
-                      // Navigate to update dialog
-                      navigate({
-                        to: "/machines/$machineId",
-                        params: { machineId: machine.id },
-                        search: { action: "update-custom-nodes" },
-                      });
-                    }}
-                  />
-                </div>
-              )}
+              {machine.type === "comfy-deploy-serverless" &&
+                !isWorkflow &&
+                !isMachine &&
+                !readonly && (
+                  <div className="mb-4">
+                    <VersionChecker
+                      machineId={machine.id}
+                      variant="inline"
+                      onUpdate={(e) => {
+                        e.preventDefault();
+                        // Navigate to update dialog
+                        navigate({
+                          to: "/machines/$machineId",
+                          params: { machineId: machine.id },
+                          search: { action: "update-custom-nodes" },
+                        });
+                      }}
+                    />
+                  </div>
+                )}
               <FormField
                 control={form.control}
                 name="docker_command_steps"
@@ -547,7 +564,12 @@ function ServerlessSettings({
                         </div>
                       </AccordionTrigger>
                       <AccordionContent>
-                        <div className="space-y-4 pt-4 rounded-lg border p-4">
+                        <div
+                          className={cn(
+                            "space-y-4 rounded-lg border p-4 pt-4",
+                            readonly && "pointer-events-none opacity-50",
+                          )}
+                        >
                           <FormField
                             control={form.control}
                             name="python_version"
@@ -641,7 +663,7 @@ function ServerlessSettings({
             <div
               className={cn(
                 "space-y-1 p-2 pt-4",
-                readonly && "pointer-events-none opacity-70",
+                readonly && "pointer-events-none opacity-50",
               )}
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -730,7 +752,7 @@ function ServerlessSettings({
               <Accordion type="single" collapsible className="w-full">
                 {/* Runtime Settings */}
                 <AccordionItem value="runtime" className="border-none">
-                  <AccordionTrigger className="flex items-center gap-2 hover:bg-accent hover:no-underline rounded-md px-4">
+                  <AccordionTrigger className="flex items-center gap-2 rounded-md px-4 hover:bg-accent hover:no-underline">
                     <div className="flex items-center gap-2">
                       <Play className="h-5 w-5 text-muted-foreground" />
                       <h3 className="font-medium text-md">Runtime Settings</h3>
@@ -740,7 +762,12 @@ function ServerlessSettings({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="rounded-lg border p-4 space-y-4">
+                    <div
+                      className={cn(
+                        "space-y-4 rounded-lg border p-4",
+                        readonly && "pointer-events-none opacity-50",
+                      )}
+                    >
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={form.control}
@@ -798,6 +825,26 @@ function ServerlessSettings({
                             </FormItem>
                           )}
                         />
+
+                        <FormField
+                          control={form.control}
+                          name="disable_metadata"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Disable Metadata</FormLabel>
+                              <FormDescription>
+                                Disable metadata in generated output
+                              </FormDescription>
+                              <FormControl>
+                                <Switch
+                                  id="disable_metadata"
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
                       </div>
                     </div>
                   </AccordionContent>
@@ -814,13 +861,18 @@ function ServerlessSettings({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-4 rounded-lg border p-4">
+                    <div
+                      className={cn(
+                        "space-y-4 rounded-lg border p-4",
+                        readonly && "pointer-events-none opacity-50",
+                      )}
+                    >
                       <FormField
                         control={form.control}
                         name="optimized_runner"
                         render={({ field }) => {
                           const [showDialog, setShowDialog] = useState(false);
-                          
+
                           return (
                             <FormItem className="flex flex-row items-center gap-4 space-y-0">
                               <FormControl>
@@ -868,7 +920,12 @@ function ServerlessSettings({
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-4 rounded-lg border p-4">
+                    <div
+                      className={cn(
+                        "space-y-4 rounded-lg border p-4",
+                        readonly && "pointer-events-none opacity-50",
+                      )}
+                    >
                       <FormField
                         control={form.control}
                         name="extra_docker_commands"
@@ -1442,12 +1499,49 @@ function TimeSelect({
   )?.[0];
 
   const formatTime = (option: TimeSelectOption) => {
-    if (option.minutes) return `${option.minutes} min`;
-    if (option.seconds)
-      return option.seconds < 60
-        ? `${option.seconds} sec`
-        : `${Math.floor(option.seconds / 60)} min`;
-    return `${option.value} min`;
+    if (option.minutes) {
+      if (option.minutes >= 60) {
+        const hours = Math.floor(option.minutes / 60);
+        const remainingMinutes = option.minutes % 60;
+        return remainingMinutes > 0
+          ? `${hours} hr ${remainingMinutes} min`
+          : `${hours} hr`;
+      }
+      return `${option.minutes} min`;
+    }
+    if (option.seconds) {
+      if (option.seconds >= 3600) {
+        const hours = Math.floor(option.seconds / 3600);
+        const remainingMinutes = Math.floor((option.seconds % 3600) / 60);
+        const remainingSeconds = option.seconds % 60;
+        if (remainingMinutes > 0) {
+          return `${hours} hr ${remainingMinutes} min`;
+        }
+        if (remainingSeconds > 0) {
+          return `${hours} hr ${remainingSeconds} sec`;
+        }
+        return `${hours} hr`;
+      }
+      if (option.seconds >= 60) {
+        const minutes = Math.floor(option.seconds / 60);
+        const remainingSeconds = option.seconds % 60;
+        return remainingSeconds > 0
+          ? `${minutes} min ${remainingSeconds} sec`
+          : `${minutes} min`;
+      }
+      return `${option.seconds} sec`;
+    }
+    if (option.value) {
+      if (option.value >= 60) {
+        const hours = Math.floor(option.value / 60);
+        const remainingMinutes = option.value % 60;
+        return remainingMinutes > 0
+          ? `${hours} hr ${remainingMinutes} min`
+          : `${hours} hr`;
+      }
+      return `${option.value} min`;
+    }
+    return "0 sec";
   };
 
   return (
@@ -1507,6 +1601,8 @@ export function WorkflowTimeOut({
   value,
   onChange,
 }: { value: number; onChange: (value: number) => void }) {
+  const { orgId } = useAuth();
+
   const options: TimeSelectOption[] = [
     { seconds: 300 },
     { seconds: 420, requiredPlan: "pro" },
@@ -1514,6 +1610,13 @@ export function WorkflowTimeOut({
     { seconds: 1200, requiredPlan: "business" },
     { seconds: 1800, requiredPlan: "business" },
   ];
+
+  if (orgId == "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
+    options.push({
+      seconds: 7 * 60 * 60, // 7 hours
+      requiredPlan: "business",
+    });
+  }
 
   return (
     <TimeSelect
@@ -1724,20 +1827,23 @@ function OptimizedRunnerDialog({
           <DialogDescription>
             This feature requires:
             <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li>ComfyUI version >= 0.3.26</li>
+              <li>ComfyUI version &gt;= 0.3.26</li>
               <li>Latest Comfy Deploy custom nodes</li>
             </ul>
-            Please make sure your environment meets these requirements before enabling.
+            Please make sure your environment meets these requirements before
+            enabling.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={() => {
-            onConfirm();
-            onOpenChange(false);
-          }}>
+          <Button
+            onClick={() => {
+              onConfirm();
+              onOpenChange(false);
+            }}
+          >
             Enable
           </Button>
         </DialogFooter>

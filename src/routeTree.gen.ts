@@ -19,6 +19,7 @@ import { Route as PricingImport } from './routes/pricing'
 import { Route as OrgNotFoundImport } from './routes/org-not-found'
 import { Route as OnboardingCallImport } from './routes/onboarding-call'
 import { Route as ModelsImport } from './routes/models'
+import { Route as CreateOrgImport } from './routes/create-org'
 import { Route as AssetsImport } from './routes/assets'
 import { Route as ApiKeysImport } from './routes/api-keys'
 import { Route as IndexImport } from './routes/index'
@@ -32,6 +33,7 @@ import { Route as SessionsSessionIdIndexImport } from './routes/sessions/$sessio
 import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
 import { Route as MachinesMachineIdIndexImport } from './routes/machines/$machineId/index'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
+import { Route as ShareUserSlugImport } from './routes/share/$user/$slug'
 import { Route as MachinesMachineIdActivityImport } from './routes/machines/$machineId/activity'
 import { Route as MachinesMachineIdMachineVersionIdImport } from './routes/machines/$machineId/$machineVersionId'
 import { Route as MachinesMachineIdHistoryIndexImport } from './routes/machines/$machineId/history/index'
@@ -83,6 +85,12 @@ const OnboardingCallRoute = OnboardingCallImport.update({
 const ModelsRoute = ModelsImport.update({
   id: '/models',
   path: '/models',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const CreateOrgRoute = CreateOrgImport.update({
+  id: '/create-org',
+  path: '/create-org',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -171,6 +179,12 @@ const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
   import('./routes/workflows/$workflowId/$view.lazy').then((d) => d.Route),
 )
 
+const ShareUserSlugRoute = ShareUserSlugImport.update({
+  id: '/share/$user/$slug',
+  path: '/share/$user/$slug',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const MachinesMachineIdActivityRoute = MachinesMachineIdActivityImport.update({
   id: '/machines/$machineId/activity',
   path: '/machines/$machineId/activity',
@@ -214,6 +228,13 @@ declare module '@tanstack/react-router' {
       path: '/assets'
       fullPath: '/assets'
       preLoaderRoute: typeof AssetsImport
+      parentRoute: typeof rootRoute
+    }
+    '/create-org': {
+      id: '/create-org'
+      path: '/create-org'
+      fullPath: '/create-org'
+      preLoaderRoute: typeof CreateOrgImport
       parentRoute: typeof rootRoute
     }
     '/models': {
@@ -328,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MachinesMachineIdActivityImport
       parentRoute: typeof rootRoute
     }
+    '/share/$user/$slug': {
+      id: '/share/$user/$slug'
+      path: '/share/$user/$slug'
+      fullPath: '/share/$user/$slug'
+      preLoaderRoute: typeof ShareUserSlugImport
+      parentRoute: typeof rootRoute
+    }
     '/workflows/$workflowId/$view': {
       id: '/workflows/$workflowId/$view'
       path: '/workflows/$workflowId/$view'
@@ -372,6 +400,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
   '/assets': typeof AssetsRoute
+  '/create-org': typeof CreateOrgRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
@@ -388,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
+  '/share/$user/$slug': typeof ShareUserSlugRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
@@ -399,6 +429,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
   '/assets': typeof AssetsRoute
+  '/create-org': typeof CreateOrgRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
@@ -415,6 +446,7 @@ export interface FileRoutesByTo {
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
+  '/share/$user/$slug': typeof ShareUserSlugRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
@@ -427,6 +459,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
   '/assets': typeof AssetsRoute
+  '/create-org': typeof CreateOrgRoute
   '/models': typeof ModelsRoute
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
@@ -443,6 +476,7 @@ export interface FileRoutesById {
   '/workflows/': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
+  '/share/$user/$slug': typeof ShareUserSlugRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId/': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members/': typeof OrganizationProfileOrganizationMembersIndexRoute
@@ -456,6 +490,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api-keys'
     | '/assets'
+    | '/create-org'
     | '/models'
     | '/onboarding-call'
     | '/org-not-found'
@@ -472,6 +507,7 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
+    | '/share/$user/$slug'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
@@ -482,6 +518,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api-keys'
     | '/assets'
+    | '/create-org'
     | '/models'
     | '/onboarding-call'
     | '/org-not-found'
@@ -498,6 +535,7 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
+    | '/share/$user/$slug'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
@@ -508,6 +546,7 @@ export interface FileRouteTypes {
     | '/'
     | '/api-keys'
     | '/assets'
+    | '/create-org'
     | '/models'
     | '/onboarding-call'
     | '/org-not-found'
@@ -524,6 +563,7 @@ export interface FileRouteTypes {
     | '/workflows/'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
+    | '/share/$user/$slug'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId/'
     | '/organization-profile/organization-members/'
@@ -536,6 +576,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiKeysRoute: typeof ApiKeysRoute
   AssetsRoute: typeof AssetsRoute
+  CreateOrgRoute: typeof CreateOrgRoute
   ModelsRoute: typeof ModelsRoute
   OnboardingCallRoute: typeof OnboardingCallRoute
   OrgNotFoundRoute: typeof OrgNotFoundRoute
@@ -552,6 +593,7 @@ export interface RootRouteChildren {
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   MachinesMachineIdMachineVersionIdRoute: typeof MachinesMachineIdMachineVersionIdRoute
   MachinesMachineIdActivityRoute: typeof MachinesMachineIdActivityRoute
+  ShareUserSlugRoute: typeof ShareUserSlugRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
   MachinesMachineIdIndexRoute: typeof MachinesMachineIdIndexRoute
   OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute
@@ -563,6 +605,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiKeysRoute: ApiKeysRoute,
   AssetsRoute: AssetsRoute,
+  CreateOrgRoute: CreateOrgRoute,
   ModelsRoute: ModelsRoute,
   OnboardingCallRoute: OnboardingCallRoute,
   OrgNotFoundRoute: OrgNotFoundRoute,
@@ -580,6 +623,7 @@ const rootRouteChildren: RootRouteChildren = {
   MachinesMachineIdMachineVersionIdRoute:
     MachinesMachineIdMachineVersionIdRoute,
   MachinesMachineIdActivityRoute: MachinesMachineIdActivityRoute,
+  ShareUserSlugRoute: ShareUserSlugRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
   MachinesMachineIdIndexRoute: MachinesMachineIdIndexRoute,
   OrganizationProfileOrganizationMembersIndexRoute:
@@ -601,6 +645,7 @@ export const routeTree = rootRoute
         "/",
         "/api-keys",
         "/assets",
+        "/create-org",
         "/models",
         "/onboarding-call",
         "/org-not-found",
@@ -617,6 +662,7 @@ export const routeTree = rootRoute
         "/workflows/",
         "/machines/$machineId/$machineVersionId",
         "/machines/$machineId/activity",
+        "/share/$user/$slug",
         "/workflows/$workflowId/$view",
         "/machines/$machineId/",
         "/organization-profile/organization-members/",
@@ -632,6 +678,9 @@ export const routeTree = rootRoute
     },
     "/assets": {
       "filePath": "assets.tsx"
+    },
+    "/create-org": {
+      "filePath": "create-org.tsx"
     },
     "/models": {
       "filePath": "models.tsx"
@@ -680,6 +729,9 @@ export const routeTree = rootRoute
     },
     "/machines/$machineId/activity": {
       "filePath": "machines/$machineId/activity.tsx"
+    },
+    "/share/$user/$slug": {
+      "filePath": "share/$user/$slug.tsx"
     },
     "/workflows/$workflowId/$view": {
       "filePath": "workflows/$workflowId/$view.tsx"

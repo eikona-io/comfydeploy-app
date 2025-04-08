@@ -23,15 +23,18 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { defaultWorkflowTemplates } from "@/utils/default-workflow";
-import { useNavigate } from "@tanstack/react-router";
-import { Circle, CircleCheckBig } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { CheckCircle2, Circle, CircleCheckBig } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { useQueryState } from "nuqs";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // Add these interfaces
@@ -47,9 +50,12 @@ export interface StepValidation {
   machineConfig?: any; // only for existing machine
   existingMachineMissingNodes?: NodeData[];
   // Add more fields as needed for future steps
-
+  hasEnvironment?: boolean;
   machineName?: string;
   gpuType?: GpuTypes;
+  python_version?: string;
+  install_custom_node_with_gpu?: boolean;
+  base_docker_image?: string;
   comfyUiHash?: string;
   selectedComfyOption?: "recommended" | "latest" | "custom";
   firstTimeSelectGPU?: boolean;
@@ -103,6 +109,13 @@ function getStepNavigation(
 ): StepNavigation {
   switch (currentStep) {
     case 0: // Create Workflow
+      // If docker_command_steps exists, skip to step 3 (Model Check)
+      if (validation.hasEnvironment) {
+        return {
+          next: 3,
+          prev: null,
+        };
+      }
       return {
         next: validation.importOption === "default" ? 2 : 1,
         prev: null,
@@ -115,6 +128,13 @@ function getStepNavigation(
       };
 
     case 2: // Select Machine
+      // If docker_command_steps exists, skip to step 3 (Model Check)
+      if (validation.hasEnvironment) {
+        return {
+          next: 3,
+          prev: 0,
+        };
+      }
       return {
         next: validation.importOption === "default" ? 4 : 3,
         prev: validation.importOption === "default" ? 0 : 1,
@@ -123,13 +143,17 @@ function getStepNavigation(
     case 3: // Model Checking
       return {
         next: 4,
-        prev: 2,
+        prev: validation.hasEnvironment ? 0 : 2,
       };
 
     case 4: // Machine Settings
       return {
         next: null,
-        prev: validation.importOption === "default" ? 2 : 3,
+        prev: validation.hasEnvironment
+          ? 3
+          : validation.importOption === "default"
+            ? 2
+            : 3,
       };
 
     default:
@@ -139,6 +163,11 @@ function getStepNavigation(
       };
   }
 }
+
+// Add type for search params
+type SearchParams = {
+  workflow_json?: string;
+};
 
 export default function WorkflowImport() {
   const navigate = useNavigate();
@@ -151,7 +180,7 @@ export default function WorkflowImport() {
     workflowJson: "",
     workflowApi: "",
     selectedMachineId: "",
-    machineOption: "existing",
+    machineOption: "new",
     machineName: "Untitled Machine",
     gpuType: "A10G",
     comfyUiHash: comfyui_hash,
@@ -189,7 +218,7 @@ export default function WorkflowImport() {
       title: "Create Workflow",
       component: Import,
       validate: (validation) => {
-        if (!validation.workflowName.trim()) {
+        if (!validation.workflowName?.trim()) {
           return { isValid: false, error: "Please enter a workflow name" };
         }
         if (validation.importOption === "import") {
@@ -218,6 +247,11 @@ export default function WorkflowImport() {
       title: "Custom Node Setup",
       component: WorkflowImportCustomNodeSetup,
       validate: (validation) => {
+        // If docker_command_steps is already set, skip the conversion
+        if (validation.docker_command_steps) {
+          return { isValid: true };
+        }
+
         // Check if dependencies exist
         if (!validation.dependencies) {
           return { isValid: false, error: "No dependencies found" };
@@ -270,19 +304,27 @@ export default function WorkflowImport() {
           };
         }
 
+        if (validation.docker_command_steps) {
+          return true;
+        }
+
+        const docker_commands = convertToDockerSteps(
+          validation.dependencies?.custom_nodes,
+          validation.selectedConflictingNodes,
+        );
+
+        setValidation((prev) => ({
+          ...prev,
+          docker_command_steps: docker_commands,
+        }));
+
+        console.log("docker_commands: ", docker_commands);
+
         return { isValid: true };
       },
       actions: {
         onNext: async () => {
-          const docker_commands = convertToDockerSteps(
-            validation.dependencies?.custom_nodes,
-            validation.selectedConflictingNodes,
-          );
-
-          setValidation({
-            ...validation,
-            docker_command_steps: docker_commands,
-          });
+          // If docker_command_steps is already set, skip the conversion
 
           return true;
         },
@@ -323,7 +365,7 @@ export default function WorkflowImport() {
     },
     {
       id: 4,
-      title: "Model Checking (Beta)",
+      title: "Model Check",
       component: WorkflowModelCheck,
       validate: (validation) => {
         return { isValid: true };
@@ -425,6 +467,10 @@ export default function WorkflowImport() {
                     comfyui_version: validation.comfyUiHash,
                     gpu: validation.gpuType,
                     docker_command_steps: validation.docker_command_steps,
+                    install_custom_node_with_gpu:
+                      validation.install_custom_node_with_gpu,
+                    base_docker_image: validation.base_docker_image,
+                    python_version: validation.python_version,
                   }),
                 },
               });
@@ -499,7 +545,7 @@ function Import({
 
       <div>
         <div className="mb-2">
-          <span className="font-medium text-sm">Choose an option </span>
+          <span className="font-medium text-sm">Choose an option</span>
           <span className="text-red-500">*</span>
         </div>
 
@@ -673,18 +719,102 @@ function ImportOptions({
 }: StepComponentProps<StepValidation>) {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [workflowJsonUrl, setWorkflowJsonUrl] = useQueryState("workflow_json");
+
+  // Add useEffect to handle URL query parameter
+  useEffect(() => {
+    if (workflowJsonUrl) {
+      // Fetch the JSON from the URL
+      fetch(workflowJsonUrl)
+        .then((response) => response.text())
+        .then((text) => {
+          try {
+            postProcessImport(text);
+          } catch (error) {
+            toast.error("Failed to load workflow from URL");
+          }
+        })
+        .catch((error) => {
+          toast.error("Failed to fetch workflow from URL");
+        });
+    }
+  }, [workflowJsonUrl]);
+
+  const postProcessImport = useCallback(
+    (text: string) => {
+      if (!text.trim()) {
+        setValidation((prev) => ({
+          ...prev,
+          importOption: "import",
+          importJson: "",
+          workflowJson: "",
+          workflowApi: "",
+          // Remove docker_command_steps when clearing
+          docker_command_steps: undefined,
+          hasEnvironment: false,
+          gpuType: "A10G",
+          comfyUiHash: comfyui_hash,
+          install_custom_node_with_gpu: false,
+          base_docker_image: undefined,
+          python_version: "3.11",
+        }));
+        return;
+      }
+
+      const json = JSON.parse(text);
+
+      var environment = json.environment;
+      var workflowAPIJson = json.workflow_api;
+
+      if (!environment) {
+        setValidation((prev) => ({
+          ...prev,
+          importOption: "import",
+          importJson: text,
+          workflowJson: text,
+          hasEnvironment: false,
+          workflowApi: undefined,
+
+          docker_command_steps: undefined,
+          gpuType: "A10G",
+          comfyUiHash: comfyui_hash,
+          install_custom_node_with_gpu: false,
+          base_docker_image: undefined,
+          python_version: "3.11",
+        }));
+        return;
+      }
+
+      const data = {
+        importOption: "import",
+        importJson: text,
+        workflowJson: "",
+        workflowApi: JSON.stringify(workflowAPIJson), // Clear workflowApi
+
+        docker_command_steps: environment.docker_command_steps,
+        gpuType: environment.gpu,
+        comfyUiHash: environment.comfyui_version,
+        install_custom_node_with_gpu: environment.install_custom_node_with_gpu,
+        base_docker_image: environment.base_docker_image,
+        python_version: environment.python_version,
+        hasEnvironment: true,
+      } as StepValidation;
+
+      console.log(data);
+
+      setValidation((prev) => ({
+        ...prev,
+        ...data,
+      }));
+    },
+    [validation, setValidation],
+  );
 
   const handleFileSelect = async (file: File) => {
     if (file && file.type === "application/json") {
       const text = await file.text();
       try {
-        setValidation({
-          ...validation,
-          importOption: "import",
-          importJson: text,
-          workflowJson: "",
-          workflowApi: "", // Clear workflowApi
-        });
+        postProcessImport(text);
       } catch (error) {
         toast.error("Invalid JSON file");
       }
@@ -743,9 +873,20 @@ function ImportOptions({
               "hover:border-gray-300",
             )}
           >
-            <span className="text-muted-foreground">
-              Click or drag and drop your workflow JSON file here.
-            </span>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">
+                Click or drag and drop your workflow JSON file here.
+              </span>
+              {validation.hasEnvironment && (
+                <Badge
+                  variant="secondary"
+                  className="ml-2 bg-green-100 text-green-700 hover:bg-green-100"
+                >
+                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                  Environment Detected
+                </Badge>
+              )}
+            </div>
 
             <div className="mt-2">
               <Textarea
@@ -757,27 +898,9 @@ function ImportOptions({
                 }}
                 onChange={(e) => {
                   const text = e.target.value;
-                  setValidation({
-                    ...validation,
-                    importOption: "import",
-                    importJson: text,
-                    workflowJson: "",
-                    workflowApi: "",
-                  });
-
-                  if (text.trim()) {
-                    try {
-                      setValidation({
-                        ...validation,
-                        importOption: "import",
-                        importJson: text,
-                        workflowJson: "",
-                        workflowApi: "",
-                      });
-                    } catch (error) {
-                      // If invalid JSON, we already set empty objects above
-                    }
-                  }
+                  try {
+                    postProcessImport(text);
+                  } catch (error) {}
                 }}
               />
             </div>

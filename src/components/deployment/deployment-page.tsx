@@ -1,15 +1,35 @@
-import { useNavigate, useParams } from "@tanstack/react-router";
-import type { GpuTypes } from "../onboarding/workflow-machine-import";
-import { VersionList } from "../version-select";
-import { cn } from "@/lib/utils";
-import {
-  getEnvColor,
-  useWorkflowDeployments,
-} from "../workspace/ContainersTable";
-import { useQuery } from "@tanstack/react-query";
-import { Badge } from "../ui/badge";
-import { UserIcon } from "../run/SharePageComponent";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { getRelativeTime } from "@/lib/get-relative-time";
+import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import {
+  ChevronRight,
+  Copy,
+  Loader2,
+  MoreVertical,
+  Rocket,
+  Server,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import { useEffect, useState } from "react";
+import { Area } from "recharts";
+import { XAxis, YAxis } from "recharts";
+import { AreaChart, CartesianGrid } from "recharts";
+import { toast } from "sonner";
+import { create } from "zustand";
+import { MyDrawer } from "../drawer";
+import { ErrorBoundary } from "../error-boundary";
+import type { GpuTypes } from "../onboarding/workflow-machine-import";
+import { UserIcon } from "../run/SharePageComponent";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import { ChartTooltipContent } from "../ui/chart";
+import { ChartTooltip } from "../ui/chart";
+import { type ChartConfig, ChartContainer } from "../ui/chart";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,39 +38,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import {
-  ChevronRight,
-  Copy,
-  Loader2,
-  MoreVertical,
-  Rocket,
-} from "lucide-react";
-import { Button } from "../ui/button";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
-import { useMachine } from "@/hooks/use-machine";
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useEffect, useState } from "react";
-import { create } from "zustand";
-import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { VersionList } from "../version-select";
+import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
 import { FilterDropdown, RunsTableVirtualized } from "../workflows/RunsTable";
 import WorkflowComponent from "../workflows/WorkflowComponent";
-import { RealtimeWorkflowProvider } from "../workflows/RealtimeRunUpdate";
-import { useQueryState } from "nuqs";
-import { Area } from "recharts";
-import { ChartTooltipContent } from "../ui/chart";
-import { ChartTooltip } from "../ui/chart";
-import { XAxis, YAxis } from "recharts";
-import { type ChartConfig, ChartContainer } from "../ui/chart";
-import { AreaChart, CartesianGrid } from "recharts";
-import { ErrorBoundary } from "../error-boundary";
+import {
+  getEnvColor,
+  useWorkflowDeployments,
+} from "../workspace/ContainersTable";
+import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
+import { MachineSelect } from "../workspace/MachineSelect";
 
 export interface Deployment {
   id: string;
@@ -233,6 +237,7 @@ export function DeploymentPage() {
 
 function DeploymentHistory({ deployment }: { deployment: Deployment }) {
   const { setSelectedDeployment } = useSelectedDeploymentStore();
+  const navigate = useNavigate();
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
@@ -246,37 +251,6 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
       <div className="flex items-center gap-3">
         <span className="shrink-0 font-mono text-2xs text-muted-foreground">
           #{deployment.id.slice(0, 8)}
-        </span>
-        <Badge className={cn("!text-2xs", getEnvColor(deployment.environment))}>
-          {deployment.environment}
-        </Badge>
-
-        {deployment.version?.version && (
-          <Badge variant="secondary" className="!text-2xs py-0 font-medium">
-            v{deployment.version.version}
-          </Badge>
-        )}
-      </div>
-
-      {/* Center column - Machine info */}
-      <div className="flex items-center justify-center gap-4 overflow-hidden">
-        <span
-          className="max-w-[150px] truncate text-muted-foreground text-xs"
-          title={deployment.machine.name}
-        >
-          {deployment.machine.name}
-        </span>
-        {deployment.gpu && (
-          <Badge variant="outline" className="!text-2xs font-normal">
-            {deployment.gpu}
-          </Badge>
-        )}
-      </div>
-
-      {/* Right column */}
-      <div className="flex items-center justify-end gap-3">
-        <span className="whitespace-nowrap text-2xs text-muted-foreground">
-          {getRelativeTime(deployment.updated_at)}
         </span>
         <TooltipProvider>
           <Tooltip delayDuration={0}>
@@ -302,6 +276,53 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+        <Badge className={cn("!text-2xs", getEnvColor(deployment.environment))}>
+          {deployment.environment === "public-share"
+            ? "Link Share"
+            : deployment.environment}
+        </Badge>
+
+        {deployment.version?.version && (
+          <Badge variant="secondary" className="!text-2xs py-0 font-medium">
+            v{deployment.version.version}
+          </Badge>
+        )}
+      </div>
+
+      {/* Center column - Machine info */}
+      <div className="flex items-center justify-start overflow-hidden">
+        <Button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.preventDefault();
+            e.nativeEvent.stopPropagation();
+            navigate({
+              to: "/machines/$machineId",
+              params: { machineId: deployment.machine_id },
+            });
+          }}
+          variant="link"
+          size="sm"
+          className="flex h-5 max-w-[150px] items-center gap-1 truncate text-2xs text-muted-foreground"
+          title={deployment.machine.name}
+        >
+          <Server size={13} className="shrink-0" />
+          {deployment.machine.name}
+        </Button>
+        {deployment.gpu && (
+          <Badge variant="outline" className="!text-2xs font-normal">
+            {deployment.gpu}
+          </Badge>
+        )}
+      </div>
+
+      {/* Right column */}
+      <div className="flex items-center justify-end gap-3">
+        <span className="whitespace-nowrap text-2xs text-muted-foreground">
+          {getRelativeTime(deployment.updated_at)}
+        </span>
+
         <span className="flex items-center gap-1 text-2xs text-muted-foreground hover:underline">
           API docs <ChevronRight size={13} />
         </span>
@@ -310,11 +331,187 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
   );
 }
 
-function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
-  const { workflow } = useCurrentWorkflow(workflowId);
+interface DeploymentDialogProps {
+  open: boolean;
+  onClose: () => void;
+  selectedVersion: Version | null;
+  workflowId: string;
+  onSuccess?: (deploymentId: string) => void;
+  publicLinkOnly?: boolean;
+}
+
+export function DeploymentDialog({
+  open,
+  onClose,
+  selectedVersion,
+  workflowId,
+  onSuccess,
+  publicLinkOnly = false,
+}: DeploymentDialogProps) {
+  const [selectedEnvironment, setSelectedEnvironment] = useState<
+    "staging" | "production" | "public-share"
+  >(publicLinkOnly ? "public-share" : "staging");
+  const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
+    null,
+  );
+  const [isPromoting, setIsPromoting] = useState(false);
+  const { workflow, isLoading: isWorkflowLoading } =
+    useCurrentWorkflow(workflowId);
   const { data: machine } = useMachine(workflow?.selected_machine_id);
   const { data: deployments, refetch: refetchDeployments } =
     useWorkflowDeployments(workflowId);
+  const final_machine = useMachine(selectedMachineId ?? machine?.id);
+
+  useEffect(() => {
+    if (publicLinkOnly && machine?.id) {
+      setSelectedMachineId(machine.id);
+      return;
+    }
+
+    if (deployments) {
+      const deployment = deployments.find(
+        (d: Deployment) => d.environment === selectedEnvironment,
+      );
+      if (deployment?.machine_id) {
+        setSelectedMachineId(deployment?.machine_id);
+        return;
+      }
+    }
+    if (machine?.id) {
+      setSelectedMachineId(machine.id);
+    }
+  }, [deployments, selectedEnvironment, machine?.id, publicLinkOnly]);
+
+  const handlePromoteToEnv = async () => {
+    try {
+      setIsPromoting(true);
+      const deployment = await callServerPromise(
+        api({
+          url: "deployment",
+          init: {
+            method: "POST",
+            body: JSON.stringify({
+              workflow_id: workflowId,
+              workflow_version_id: selectedVersion?.id,
+              machine_id: final_machine.data?.id,
+              machine_version_id: final_machine.data?.machine_version_id,
+              environment: selectedEnvironment,
+            }),
+          },
+        }),
+      );
+      refetchDeployments();
+      onSuccess?.(deployment.id);
+      toast.success("Deployment promoted successfully");
+      onClose();
+    } catch (error) {
+      toast.error("Failed to promote deployment");
+    } finally {
+      setIsPromoting(false);
+    }
+  };
+
+  if (!selectedVersion) return null;
+
+  return (
+    <MyDrawer open={open} onClose={onClose}>
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">
+          Deploy Version <Badge>v{selectedVersion.version}</Badge>
+        </h3>
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Environment</h3>
+          <Tabs
+            value={selectedEnvironment}
+            onValueChange={(value) =>
+              setSelectedEnvironment(
+                value as "staging" | "production" | "public-share",
+              )
+            }
+          >
+            <TabsList className="inline-flex items-center rounded-lg bg-white/95 h-fit ring-1 ring-gray-200/50">
+              {!publicLinkOnly && (
+                <>
+                  <TabsTrigger
+                    value="staging"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      selectedEnvironment === "staging"
+                        ? "bg-gradient-to-b from-white to-yellow-100 shadow-sm ring-1 ring-gray-200/50"
+                        : "text-gray-600 hover:bg-gray-100",
+                    )}
+                  >
+                    Staging
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="production"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      selectedEnvironment === "production"
+                        ? "bg-gradient-to-b from-white to-blue-100 shadow-sm ring-1 ring-gray-200/50"
+                        : "text-gray-600 hover:bg-gray-100",
+                    )}
+                  >
+                    Production
+                  </TabsTrigger>
+                </>
+              )}
+              <TabsTrigger
+                value="public-share"
+                className={cn(
+                  "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                  selectedEnvironment === "public-share"
+                    ? "bg-gradient-to-b from-white to-green-100 shadow-sm ring-1 ring-gray-200/50"
+                    : "text-gray-600 hover:bg-gray-100",
+                )}
+              >
+                Link Share
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Machine</h3>
+          <MachineSelect
+            workflow_id={workflowId}
+            leaveEmpty
+            value={selectedMachineId ?? ""}
+            onChange={(value) => setSelectedMachineId(value)}
+            className="rounded-md border bg-background"
+          />
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSelectedEnvironment("staging");
+              setSelectedMachineId(null);
+              onClose();
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            disabled={
+              isPromoting || !selectedMachineId || final_machine.isLoading
+            }
+            onClick={handlePromoteToEnv}
+          >
+            {/* {isPromoting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} */}
+            Deploy
+          </Button>
+        </div>
+      </div>
+    </MyDrawer>
+  );
+}
+
+function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
+  const { workflow } = useCurrentWorkflow(workflowId);
+  const { data: machine } = useMachine(workflow?.selected_machine_id);
+  const { data: deployments } = useWorkflowDeployments(workflowId);
   const { data: versions } = useQuery<Version[]>({
     queryKey: ["workflow", workflowId, "versions"],
     meta: {
@@ -325,124 +522,31 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
     },
   });
   const { setSelectedDeployment } = useSelectedDeploymentStore();
-  const [isPromoting, setIsPromoting] = useState(false);
-
-  const handlePromoteToEnv = async ({
-    environment,
-    workflowVersionId,
-    machineId,
-    machineVersionId,
-  }: {
-    environment: "production" | "staging";
-    workflowVersionId: string;
-    machineId: string;
-    machineVersionId: string;
-  }) => {
-    try {
-      setIsPromoting(true);
-      const deployment = await callServerPromise(
-        api({
-          url: "deployment",
-          init: {
-            method: "POST",
-            body: JSON.stringify({
-              workflow_id: workflowId,
-              workflow_version_id: workflowVersionId,
-              machine_id: machineId,
-              machine_version_id: machineVersionId,
-              environment,
-            }),
-          },
-        }),
-      );
-      refetchDeployments();
-      setSelectedDeployment(deployment.id);
-      toast.success("Deployment promoted successfully");
-    } catch (error) {
-      toast.error("Failed to promote deployment");
-    } finally {
-      setIsPromoting(false);
-    }
-  };
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
 
   return (
     <>
       {versions?.[0] && (
         <div className="-top-1 absolute right-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="default"
-                className="h-[30px] rounded-[8px] text-2xs focus-visible:ring-transparent"
-                size="sm"
-              >
-                Deploy Latest
-                <Badge
-                  variant="outline"
-                  className="!text-[11px] ml-2 h-[18px] bg-gray-400/50 py-0 text-white"
-                >
-                  v{versions?.[0].version}
-                </Badge>
-                <Rocket className="ml-2" size={13} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 overflow-visible">
-              <DropdownMenuItem
-                className="p-0"
-                disabled={isPromoting}
-                onClick={async (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.preventDefault();
-                  e.nativeEvent.stopPropagation();
-                  await handlePromoteToEnv({
-                    environment: "production",
-                    workflowVersionId: versions[0].id,
-                    machineId: machine?.id,
-                    machineVersionId: machine?.machine_version_id,
-                  });
-                }}
-              >
-                <Button
-                  variant={"ghost"}
-                  className="w-full justify-between gap-2 px-2 font-normal"
-                >
-                  <div className="flex flex-row gap-2">
-                    Promote to
-                    <Badge variant="blue">production</Badge>
-                  </div>
-                  {isPromoting && <Loader2 className="h-4 w-4 animate-spin" />}
-                </Button>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="p-0"
-                disabled={isPromoting}
-                onClick={async (e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  e.nativeEvent.preventDefault();
-                  e.nativeEvent.stopPropagation();
-                  await handlePromoteToEnv({
-                    environment: "staging",
-                    workflowVersionId: versions[0].id,
-                    machineId: machine?.id,
-                    machineVersionId: machine?.machine_version_id,
-                  });
-                }}
-              >
-                <Button
-                  variant={"ghost"}
-                  className="w-full justify-between gap-2 px-2 font-normal"
-                >
-                  <div className="flex flex-row gap-2">
-                    Promote to
-                    <Badge variant="yellow">staging</Badge>
-                  </div>
-                  {isPromoting && <Loader2 className="h-4 w-4 animate-spin" />}
-                </Button>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="default"
+            className="h-[30px] rounded-[8px] text-2xs focus-visible:ring-transparent"
+            size="sm"
+            onClick={() => {
+              setSelectedVersion(versions[0]);
+              setIsDrawerOpen(true);
+            }}
+          >
+            Deploy Latest
+            <Badge
+              variant="outline"
+              className="!text-[11px] ml-2 h-[18px] bg-gray-400/50 py-0 text-white"
+            >
+              v{versions?.[0].version}
+            </Badge>
+            <Rocket className="ml-2" size={13} />
+          </Button>
         </div>
       )}
       <VersionList
@@ -500,13 +604,14 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                       .filter(
                         (deployment: Deployment) =>
                           deployment.environment === "production" ||
-                          deployment.environment === "staging",
+                          deployment.environment === "staging" ||
+                          deployment.environment === "public-share",
                       )
                       .map((deployment: Deployment) => (
                         <Badge
                           key={deployment.id}
                           className={cn(
-                            "!text-2xs w-fit cursor-pointer whitespace-nowrap rounded-md hover:shadow-sm",
+                            "capitalize !text-2xs w-fit cursor-pointer whitespace-nowrap rounded-md hover:shadow-sm",
                             getEnvColor(deployment.environment),
                           )}
                           onClick={(e) => {
@@ -518,7 +623,9 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                             setSelectedDeployment(deployment.id);
                           }}
                         >
-                          {deployment.environment}
+                          {deployment.environment === "public-share"
+                            ? "Link Share"
+                            : deployment.environment}
                         </Badge>
                       ))}
                   </div>
@@ -537,71 +644,15 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                   >
                     <MoreVertical size={16} />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 overflow-visible">
-                    <DropdownMenuLabel className="flex flex-row items-center gap-2 py-1 font-medium text-xs">
-                      Deployment
-                      <Badge variant="secondary" className="!text-2xs py-0">
-                        v{item.version}
-                      </Badge>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                  <DropdownMenuContent className="w-[200px]">
                     <DropdownMenuItem
-                      className="p-0"
-                      disabled={isPromoting}
-                      onClick={async (e) => {
-                        e.preventDefault();
+                      onClick={(e) => {
                         e.stopPropagation();
-                        e.nativeEvent.preventDefault();
-                        e.nativeEvent.stopPropagation();
-                        await handlePromoteToEnv({
-                          environment: "production",
-                          workflowVersionId: item.id,
-                          machineId: machine?.id,
-                          machineVersionId: machine?.machine_version_id,
-                        });
+                        setSelectedVersion(item);
+                        setIsDrawerOpen(true);
                       }}
                     >
-                      <Button
-                        variant={"ghost"}
-                        className="w-full justify-between gap-2 px-2 font-normal"
-                      >
-                        <div className="flex flex-row gap-2">
-                          Promote to
-                          <Badge variant="blue">production</Badge>
-                        </div>
-                        {isPromoting && (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        )}
-                      </Button>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="p-0"
-                      disabled={isPromoting}
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.nativeEvent.preventDefault();
-                        e.nativeEvent.stopPropagation();
-                        await handlePromoteToEnv({
-                          environment: "staging",
-                          workflowVersionId: item.id,
-                          machineId: machine?.id,
-                          machineVersionId: machine?.machine_version_id,
-                        });
-                      }}
-                    >
-                      <Button
-                        variant={"ghost"}
-                        className="w-full justify-between gap-2 px-2 font-normal"
-                      >
-                        <div className="flex flex-row gap-2">
-                          Promote to
-                          <Badge variant="yellow">staging</Badge>
-                        </div>
-                        {isPromoting && (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        )}
-                      </Button>
+                      Deploy Version
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -609,6 +660,16 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
             </div>
           );
         }}
+      />
+      <DeploymentDialog
+        open={isDrawerOpen}
+        onClose={() => {
+          setIsDrawerOpen(false);
+          setSelectedVersion(null);
+        }}
+        selectedVersion={selectedVersion}
+        workflowId={workflowId}
+        onSuccess={setSelectedDeployment}
       />
     </>
   );

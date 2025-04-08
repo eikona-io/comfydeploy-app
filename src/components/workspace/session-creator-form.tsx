@@ -27,6 +27,7 @@ import {
 import { useLogStore } from "@/components/workspace/LogContext";
 import { MachineSelect } from "@/components/workspace/MachineSelect";
 import { SessionTimer } from "@/components/workspace/SessionTimer";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import {
   useMachine,
   useMachineVersion,
@@ -49,7 +50,6 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { UserIcon } from "../run/SharePageComponent";
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 
 interface SessionForm {
   machineId: string;
@@ -135,7 +135,9 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
                     try {
                       await deleteSession.mutateAsync({
                         sessionId: session.session_id,
+                        waitForShutdown: true,
                       });
+                      await listSession.refetch();
                       toast.success("Session stopped successfully");
                     } catch (error) {
                       toast.error("Failed to stop session");
@@ -225,6 +227,9 @@ export function SessionCreatorForm({
     }
   }, [selectedMachine, form]);
 
+  if (selectedMachine?.type !== "comfy-deploy-serverless") {
+    return <div>Current machine does not support session</div>;
+  }
   return (
     <div className="flex flex-col gap-6 w-full">
       <div>

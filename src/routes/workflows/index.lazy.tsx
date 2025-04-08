@@ -1,5 +1,6 @@
 import { Fab } from "@/components/fab";
 import WorkflowImport from "@/components/onboarding/workflow-import";
+import { useIsAdminAndMember } from "@/components/permissions";
 import { WorkflowList } from "@/components/workflow-list";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
@@ -14,6 +15,7 @@ function RouteComponent() {
   const navigate = useNavigate({ from: "/workflows" });
   const { view } = Route.useSearch();
   const sub = useCurrentPlan();
+  const isAdminOrMember = useIsAdminAndMember();
 
   useKeyboardShortcut(
     "c",
@@ -40,7 +42,7 @@ function RouteComponent() {
             name: "Create Workflow",
             icon: Plus,
             onClick: () => {
-              if (!sub?.features.workflowLimited) {
+              if (!sub?.features.workflowLimited && isAdminOrMember) {
                 navigate({
                   search: { view: "import" },
                 });
@@ -48,7 +50,7 @@ function RouteComponent() {
             },
           }}
           disabled={{
-            disabled: sub?.features.workflowLimited,
+            disabled: sub?.features.workflowLimited || !isAdminOrMember,
             disabledText: "Workflows Limited Exceeded. ",
           }}
         />

@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, getOptimizedImage } from "@/lib/utils";
@@ -20,7 +21,6 @@ import {
   Expand,
   Ellipsis,
   Search,
-  FolderOpen,
 } from "lucide-react";
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import {
@@ -40,8 +40,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { api } from "@/lib/api";
-import { toast } from "sonner";
 
 // Create a lazy-loaded version of the component
 const LazyModelRenderer = lazy(() =>
@@ -85,6 +83,7 @@ type fileURLRenderProps = {
   lazyLoading?: boolean;
   onLoad?: () => void;
   isMainView?: boolean;
+  canFullScreen?: boolean;
 };
 
 function _FileURLRender({
@@ -100,7 +99,14 @@ function _FileURLRender({
     return <div className="bg-slate-300">Not possible to render</div>;
   }
 
-  if (filename.endsWith(".mp4") || filename.endsWith(".webm")) {
+  // Convert filename to lowercase once for all checks
+  const lowercaseFilename = filename.toLowerCase();
+
+  if (
+    lowercaseFilename.endsWith(".mp4") ||
+    lowercaseFilename.endsWith(".webm") ||
+    lowercaseFilename.endsWith(".mov")
+  ) {
     return (
       <video
         autoPlay
@@ -111,13 +117,17 @@ function _FileURLRender({
       >
         <source src={url} type="video/mp4" />
         <source src={url} type="video/webm" />
+        <source src={url} type="video/quicktime" />
         Your browser does not support the video tag.
       </video>
     );
   }
 
   // For 3D models, use the separate component
-  if (filename.endsWith(".glb") || filename.endsWith(".gltf")) {
+  if (
+    lowercaseFilename.endsWith(".glb") ||
+    lowercaseFilename.endsWith(".gltf")
+  ) {
     return (
       <ModelRenderer
         url={url}
@@ -135,13 +145,18 @@ function _FileURLRender({
     }
   }, [imageError, onLoad]);
 
-  if (
-    filename.endsWith(".png") ||
-    filename.endsWith(".gif") ||
-    filename.endsWith(".jpg") ||
-    filename.endsWith(".webp") ||
-    filename.endsWith(".jpeg")
-  ) {
+  const imageExtensions = [
+    ".png",
+    ".gif",
+    ".jpg",
+    ".jpeg",
+    ".webp",
+    ".avif",
+    ".heic",
+    ".heif",
+  ];
+
+  if (imageExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
     if (imageError) {
       return (
         <div
@@ -172,6 +187,8 @@ function _FileURLRender({
 }
 
 export function FileURLRender(props: fileURLRenderProps) {
+  const [open, setOpen] = useState(false);
+
   return (
     <ErrorBoundary
       fallback={(e) => (
@@ -186,7 +203,33 @@ export function FileURLRender(props: fileURLRenderProps) {
         </div>
       )}
     >
-      <_FileURLRender {...props} />
+      {props.canFullScreen ? (
+        <>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger className="h-full w-full">
+              <_FileURLRender {...props} />
+            </DialogTrigger>
+
+            <DialogContent
+              className="h-screen max-w-full border-none bg-transparent shadow-none"
+              onClick={() => {
+                setOpen(false);
+              }}
+            >
+              <DialogTitle className="hidden" />
+              <div className="flex h-full w-full items-center justify-center">
+                <_FileURLRender
+                  url={props.url}
+                  imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
+                  lazyLoading={props.lazyLoading}
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      ) : (
+        <_FileURLRender {...props} />
+      )}
     </ErrorBoundary>
   );
 }
@@ -385,7 +428,7 @@ function MediaDisplay({
                   <Ellipsis className="h-3.5 w-3.5 text-white/90" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-52">
+              <DropdownMenuContent className="w-52" blocking={true}>
                 {urlImage.filename && (
                   <>
                     <DropdownMenuLabel className="line-clamp-1">

@@ -13,15 +13,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -29,6 +26,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import {
+  ArrowDown,
+  ArrowDownNarrowWide,
+  ArrowUpWideNarrow,
   CheckCircle2,
   ChevronDownIcon,
   ChevronRightIcon,
@@ -38,16 +38,28 @@ import {
   FolderPlus,
   MoreHorizontal,
   PencilIcon,
-  PlusIcon,
+  Plus,
   RefreshCcw,
   Search,
   Trash2,
   Upload,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
 import { useQueryState } from "nuqs";
+import type React from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
+
+// Format file size to human-readable format (KB, MB, GB)
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return "0 B";
+
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const size = (bytes / 1024 ** i).toFixed(1);
+
+  return `${size} ${units[i]}`;
+}
 
 interface FileEntry {
   path: string;
@@ -162,7 +174,7 @@ interface CreateFolderData {
 interface FileOperations {
   createFolder: (data: CreateFolderData) => Promise<void>;
   deleteFile: (path: string) => Promise<string>;
-  moveFile: (src: string, dst: string) => Promise<void>;
+  moveFile: (src: string, dst: string, overwrite?: boolean) => Promise<void>;
 }
 
 function TreeNode({
@@ -188,6 +200,13 @@ function TreeNode({
   const [validationMessage, setValidationMessage] = useState("");
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [moveTarget, setMoveTarget] = useState<string>("");
+  const [moveSource, setMoveSource] = useState<string>("");
+  const [isMoving, setIsMoving] = useState(false);
+  const [overwriteConfirm, setOverwriteConfirm] = useState(false);
 
   // Check if this node or any of its children match
   const nodeMatches = node.name.toLowerCase().includes(search.toLowerCase());
@@ -308,14 +327,114 @@ function TreeNode({
     return count;
   };
 
+  // Determine if folder deletion should be allowed
+  const canDeleteFolder = node.type === 2 && node.isPrivate && !node.isVirtual;
+
+  // Add drag handlers for the node
+  const handleDragStart = (e: React.DragEvent) => {
+    // Only allow dragging private files (not folders)
+    if (!node.isPrivate || node.isVirtual || node.type === 2) {
+      e.preventDefault();
+      return;
+    }
+
+    e.dataTransfer.setData("text/plain", node.path);
+    e.dataTransfer.effectAllowed = "move";
+    setIsDragging(true);
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  // Add drop target handlers for folders
+  const handleDragOver = (e: React.DragEvent) => {
+    // Only folders can be drop targets
+    if (node.type !== 2) {
+      return;
+    }
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    // Only folders can be drop targets
+    if (node.type !== 2) {
+      return;
+    }
+
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const sourcePath = e.dataTransfer.getData("text/plain");
+    if (!sourcePath || sourcePath === node.path) return;
+
+    // Check if trying to move a folder into itself or a subfolder
+    if (
+      sourcePath.split("/").length < node.path.split("/").length &&
+      node.path.startsWith(`${sourcePath}/`)
+    ) {
+      toast.error("Cannot move a folder into its own subfolder");
+      return;
+    }
+
+    const sourceFileName = sourcePath.split("/").pop() || "";
+    const destinationPath = `${node.path}/${sourceFileName}`;
+
+    setMoveSource(sourcePath);
+    setMoveTarget(destinationPath);
+    setShowMoveDialog(true);
+  };
+
+  // Handle the move operation
+  const handleMove = async (overwrite = false) => {
+    if (isMoving || !moveSource || !moveTarget) return;
+
+    try {
+      setIsMoving(true);
+      await operations.moveFile(moveSource, moveTarget, overwrite);
+      toast.success("Item moved successfully");
+      setShowMoveDialog(false);
+    } catch (error: any) {
+      if (error.message?.includes("already exists")) {
+        setOverwriteConfirm(true);
+      } else {
+        toast.error(`Failed to move item: ${error.message || "Unknown error"}`);
+        setShowMoveDialog(false);
+      }
+    } finally {
+      setIsMoving(false);
+    }
+  };
+
   return (
     <div>
-      <div className="group flex items-center gap-2">
+      <div
+        className={cn(
+          "group flex items-center gap-2",
+          isDragging && "opacity-50",
+          isDragOver && "rounded-md bg-blue-50",
+        )}
+        draggable={node.isPrivate && !node.isVirtual}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
         <button
           type="button"
           className={cn(
             "flex items-center gap-2 rounded px-2 py-1 hover:bg-accent",
             node.isVirtual && "text-muted-foreground",
+            node.type === 2 &&
+              "hover:border hover:border-blue-200 hover:border-dashed hover:bg-blue-50",
           )}
           onClick={() => setIsOpen(!isOpen)}
         >
@@ -327,7 +446,11 @@ function TreeNode({
                 <ChevronRightIcon className="h-4 w-4" />
               )}
               <FolderIcon
-                className={cn("h-4 w-4", node.isVirtual && "opacity-50")}
+                className={cn(
+                  "h-4 w-4",
+                  node.isVirtual && "opacity-50",
+                  node.type === 2 && "text-blue-600 group-hover:text-blue-700",
+                )}
               />
             </>
           ) : (
@@ -338,11 +461,28 @@ function TreeNode({
           )}
           <span>{node.name}</span>
           {node.type === 2 && node.children.length > 0 && (
-            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
+            <span className="ml-1.5 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs">
               {getTotalChildrenCount(node)}
             </span>
           )}
+          {node.type === 1 && (
+            <span className="ml-1.5 text-muted-foreground text-xs">
+              {formatFileSize(node.size)}
+            </span>
+          )}
         </button>
+
+        {node.type === 2 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 border border-blue-200 bg-blue-50 text-blue-700 opacity-0 transition-opacity hover:bg-blue-100 hover:text-blue-800 group-hover:opacity-100"
+            onClick={() => onAddModel(node.path)}
+            title={`Upload model to ${node.path}`}
+          >
+            <Upload className="h-3.5 w-3.5" />
+          </Button>
+        )}
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -365,40 +505,60 @@ function TreeNode({
               Copy Path
             </DropdownMenuItem>
 
-            {node.isPrivate &&
-              (node.type === 2 ? (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => setShowNewFolderDialog(true)}
-                  >
-                    <FolderPlus className="mr-2 h-4 w-4" />
-                    New Folder
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onAddModel(node.path)}>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload Model
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setNewName(node.name);
-                      setShowRenameDialog(true);
-                    }}
-                  >
-                    <PencilIcon className="mr-2 h-4 w-4" />
-                    Rename
-                  </DropdownMenuItem>
+            {node.type === 2 ? (
+              <>
+                <DropdownMenuItem onClick={() => setShowNewFolderDialog(true)}>
+                  <FolderPlus className="mr-2 h-4 w-4" />
+                  New Folder
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onAddModel(node.path)}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Model
+                </DropdownMenuItem>
+                {canDeleteFolder && (
                   <DropdownMenuItem
                     className="text-destructive"
                     onClick={() => setShowDeleteDialog(true)}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    Delete Folder
                   </DropdownMenuItem>
-                </>
-              ))}
+                )}
+              </>
+            ) : (
+              <>
+                {node.isPrivate && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setNewName(node.name);
+                        setShowRenameDialog(true);
+                      }}
+                    >
+                      <PencilIcon className="mr-2 h-4 w-4" />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-destructive"
+                      onClick={() => setShowDeleteDialog(true)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {!node.isPrivate && (
+                  <DropdownMenuItem
+                    disabled
+                    className="text-muted-foreground opacity-50"
+                  >
+                    <span className="mr-2 text-xs italic">
+                      Public models cannot be modified
+                    </span>
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -476,7 +636,7 @@ function TreeNode({
                   ) : null}
                 </div>
               </div>
-              <p className="text-sm text-red-500">{validationMessage}</p>
+              <p className="text-red-500 text-sm">{validationMessage}</p>
             </div>
 
             {newName !== node.name && isValidName && (
@@ -525,7 +685,6 @@ function TreeNode({
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
@@ -535,14 +694,18 @@ function TreeNode({
           </DialogHeader>
           <div className="flex flex-col gap-4">
             <div>
-              <p>Are you sure you want to delete this file?</p>
-              <p className="text-sm text-muted-foreground">
+              <p>
+                Are you sure you want to delete this{" "}
+                {node.type === 2 ? "folder" : "file"}?
+              </p>
+              <p className="text-muted-foreground text-sm">
                 <span className="font-medium">{node.path}</span>
               </p>
               <Alert variant="destructive" className="mt-4">
                 <AlertDescription>
-                  This action cannot be undone. The file will be permanently
-                  deleted.
+                  {node.type === 2
+                    ? "This action cannot be undone. The folder and all its contents will be permanently deleted."
+                    : "This action cannot be undone. The file will be permanently deleted."}
                 </AlertDescription>
               </Alert>
             </div>
@@ -565,9 +728,98 @@ function TreeNode({
                     <span>Deleting</span>
                   </div>
                 ) : (
-                  "Delete"
+                  `Delete ${node.type === 2 ? "Folder" : "File"}`
                 )}
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move Item</DialogTitle>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4">
+            <div>
+              <div className="mt-1.5 rounded-md border border-gray-200 bg-white p-3">
+                <div className="flex items-center gap-2">
+                  <FileIcon className="h-4 w-4 text-blue-500" />
+                  <span className="truncate text-sm">{moveSource}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="my-1 flex justify-center">
+              <div className="rounded-full border border-gray-200 bg-gray-50 p-1.5">
+                <ArrowDown className="h-3.5 w-3.5 text-gray-400" />
+              </div>
+            </div>
+
+            <div>
+              {overwriteConfirm ? (
+                <Alert className="mt-1.5 border-yellow-200 bg-yellow-50">
+                  <AlertDescription className="text-sm">
+                    <p className="font-medium text-yellow-800">
+                      A file with this name already exists at the destination.
+                    </p>
+                    <p className="mt-1 text-yellow-700">
+                      Do you want to overwrite the existing file? This action
+                      cannot be undone.
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="mt-1.5 rounded-md border border-gray-200 bg-white p-3">
+                  <div className="flex items-center gap-2">
+                    <FolderIcon className="h-4 w-4 text-amber-500" />
+                    <span className="truncate text-sm">{moveTarget}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Buttons - matching your other dialogs */}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowMoveDialog(false);
+                  setOverwriteConfirm(false);
+                }}
+                disabled={isMoving}
+              >
+                Cancel
+              </Button>
+
+              {overwriteConfirm ? (
+                <>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleMove(true)}
+                    disabled={isMoving}
+                    className="min-w-[100px]"
+                  >
+                    {isMoving ? <span>Moving...</span> : <span>Overwrite</span>}
+                  </Button>
+                  <Button
+                    onClick={() => setOverwriteConfirm(false)}
+                    disabled={isMoving}
+                  >
+                    Choose Different Name
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  onClick={() => handleMove(false)}
+                  disabled={isMoving || !moveTarget}
+                  className="min-w-[100px]"
+                >
+                  {isMoving ? <span>Moving...</span> : <span>Move</span>}
+                </Button>
+              )}
             </div>
           </div>
         </DialogContent>
@@ -652,7 +904,7 @@ function mergeNodes(
 export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useQueryState<ModelFilter>("view", {
+  const [filter, setFilter] = useQueryState<ModelFilter>("model_view", {
     defaultValue: "private",
     parse: (value): ModelFilter => {
       if (value === "private" || value === "public" || value === "all") {
@@ -660,10 +912,13 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
       }
       return "private";
     },
+    shallow: true,
   });
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [frontendFolderPaths, setFrontendFolderPaths] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<"name" | "size">("name");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery<
     FileEntry[]
@@ -759,6 +1014,38 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     filter === "public" || filter === "all",
   );
 
+  // Sort function
+  const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
+    // Create a copy to avoid mutating original
+    return [...nodes]
+      .sort((a, b) => {
+        // Folders always come first
+        if (a.type !== b.type) {
+          return a.type === 2 ? -1 : 1;
+        }
+
+        if (sortBy === "name") {
+          const nameA = a.name.toLowerCase();
+          const nameB = b.name.toLowerCase();
+          return sortDirection === "asc"
+            ? nameA.localeCompare(nameB)
+            : nameB.localeCompare(nameA);
+        }
+        // Sort by size
+        return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
+      })
+      .map((node) => ({
+        ...node,
+        children: sortNodes(node.children),
+      }));
+  };
+
+  // Apply sorting to the merged tree
+  const sortedTree = useMemo(() => {
+    console.log("Sorting by:", sortBy, "Direction:", sortDirection);
+    return sortNodes(mergedTree);
+  }, [mergedTree, sortBy, sortDirection]);
+
   // Helper to check if tree has any visible content based on filter
   const hasVisibleContent = (nodes: TreeNode[]): boolean => {
     return nodes.some((node) => {
@@ -774,7 +1061,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     });
   };
 
-  // Check if we have any folders (even empty ones) when in private view
+  // Check if we have any folders (even empty ones) when in private
   const hasFolders = (nodes: TreeNode[]): boolean => {
     return nodes.some(
       (node) => node.type === 2 || (node.children && hasFolders(node.children)),
@@ -807,12 +1094,20 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   });
 
   const moveFileMutation = useMutation({
-    mutationFn: async ({ src, dst }: { src: string; dst: string }) => {
+    mutationFn: async ({
+      src,
+      dst,
+      overwrite = false,
+    }: { src: string; dst: string; overwrite?: boolean }) => {
       await api({
-        url: "volume/mv",
+        url: "volume/move", // Updated to match backend route
         init: {
           method: "POST",
-          body: JSON.stringify({ src_path: src, dst_path: dst }),
+          body: JSON.stringify({
+            source_path: src,
+            destination_path: dst,
+            overwrite,
+          }),
         },
       });
     },
@@ -833,8 +1128,8 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
       setFrontendFolderPaths((prev) => [...prev, newPath]);
     },
     deleteFile: deleteFileMutation.mutateAsync,
-    moveFile: async (src, dst) => {
-      await moveFileMutation.mutateAsync({ src, dst });
+    moveFile: async (src, dst, overwrite = false) => {
+      await moveFileMutation.mutateAsync({ src, dst, overwrite });
     },
   };
 
@@ -861,111 +1156,146 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
 
   return (
     <div className={cn("flex h-full flex-col gap-4", className)}>
-      {/* <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-lg">Models</h2>
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() =>
-              queryClient.invalidateQueries({ queryKey: ["volume"] })
-            }
-          >
-            <RefreshCcw className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowNewFolderDialog(true)}
-          >
-            <FolderPlus className="h-4 w-4" />
-          </Button>
-        </div>
-      </div> */}
+      <div className="flex flex-col gap-4">
+        <h3 className="font-bold text-2xl">Model Browser</h3>
+        <DownloadingModels />
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-full sm:w-auto sm:flex-1">
+            <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search models..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </div>
 
-      <DownloadingModels />
-
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search models..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-
-        <div className="flex gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            iconPlacement="left"
-            Icon={RefreshCcw}
-            onClick={async () =>
-              await queryClient.invalidateQueries({ queryKey: ["volume"] })
-            }
-          />
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setShowNewFolderDialog(true)}
-          >
-            <FolderPlus className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <Tabs
-          value={filter}
-          onValueChange={(value) => setFilter(value as ModelFilter)}
-        >
-          <motion.div className="inline-flex items-center rounded-lg bg-white/95 py-0.5 ring-1 ring-gray-200/50">
-            <TabsList className="relative flex w-fit gap-1 bg-transparent">
-              <motion.div layout className="relative">
-                <TabsTrigger
-                  value="private"
-                  className={cn(
-                    "font-medium px-4 py-1.5 rounded-md text-sm transition-all",
-                    filter === "private"
-                      ? "bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm"
-                      : "hover:bg-gray-100 text-gray-600",
-                  )}
+          {/* Sorting controls */}
+          <div className="flex items-center gap-2 rounded-md border bg-white/95 p-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex h-8 items-center gap-1">
+                  <span>{sortBy === "name" ? "Name" : "File size"}</span>
+                  <ChevronDownIcon className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuRadioGroup
+                  value={sortBy}
+                  onValueChange={(v) => setSortBy(v as "name" | "size")}
                 >
-                  Private
-                </TabsTrigger>
-              </motion.div>
-              <motion.div layout className="relative">
-                <TabsTrigger
-                  value="public"
-                  className={cn(
-                    "font-medium px-4 py-1.5 rounded-md text-sm transition-all",
-                    filter === "public"
-                      ? "bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm"
-                      : "hover:bg-gray-100 text-gray-600",
-                  )}
-                >
-                  Public
-                </TabsTrigger>
-              </motion.div>
-              <motion.div layout className="relative">
-                <TabsTrigger
-                  value="all"
-                  className={cn(
-                    "font-medium px-4 py-1.5 rounded-md text-sm transition-all",
-                    filter === "all"
-                      ? "bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm"
-                      : "hover:bg-gray-100 text-gray-600",
-                  )}
-                >
-                  All
-                </TabsTrigger>
-              </motion.div>
-            </TabsList>
-          </motion.div>
-        </Tabs>
+                  <DropdownMenuRadioItem value="name">
+                    Name
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="size">
+                    File size
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="h-5 w-[1px] bg-gray-200" />
+
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() =>
+                setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+              }
+            >
+              {sortDirection === "asc" ? (
+                <ArrowUpWideNarrow className="h-4 w-4" />
+              ) : (
+                <ArrowDownNarrowWide className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              iconPlacement="left"
+              Icon={Plus}
+              onClick={async () => {
+                onAddModel("");
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              iconPlacement="left"
+              Icon={RefreshCcw}
+              onClick={async () => {
+                await queryClient.invalidateQueries({ queryKey: ["volume"] });
+                toast.success("Models refreshed");
+              }}
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowNewFolderDialog(true)}
+              title="Create folder"
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Filter tabs */}
+          <Tabs
+            value={filter}
+            onValueChange={(value) => setFilter(value as ModelFilter)}
+          >
+            <motion.div className="inline-flex items-center rounded-lg bg-white/95 py-0.5 ring-1 ring-gray-200/50">
+              <TabsList className="relative flex w-fit gap-1 bg-transparent">
+                <motion.div layout className="relative">
+                  <TabsTrigger
+                    value="private"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      filter === "private"
+                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                        : "text-gray-600 hover:bg-gray-100",
+                    )}
+                  >
+                    Private
+                  </TabsTrigger>
+                </motion.div>
+                <motion.div layout className="relative">
+                  <TabsTrigger
+                    value="public"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      filter === "public"
+                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                        : "text-gray-600 hover:bg-gray-100",
+                    )}
+                  >
+                    Public
+                  </TabsTrigger>
+                </motion.div>
+                <motion.div layout className="relative">
+                  <TabsTrigger
+                    value="all"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      filter === "all"
+                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                        : "text-gray-600 hover:bg-gray-100",
+                    )}
+                  >
+                    All
+                  </TabsTrigger>
+                </motion.div>
+              </TabsList>
+            </motion.div>
+          </Tabs>
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto border border-gray-200 bg-muted/20 rounded-sm">
+      <div className="flex-1 overflow-auto rounded-sm border border-gray-200 bg-muted/20">
         {isLoadingPrivate || isLoadingPublic ? (
           <div className="flex flex-col gap-4 p-4">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -995,28 +1325,37 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
               <FolderIcon className="h-6 w-6 text-gray-400" />
             </div>
             <div className="font-medium text-gray-900">No models found</div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               {filter === "all"
-                ? "No models available. Create a folder and upload your models to get started."
+                ? "No models available. Upload models to your folders or create a new folder."
                 : filter === "private"
-                  ? "No private models found. Create a folder and upload your models to get started."
+                  ? "No private models found. Upload models to your folders or create a new folder."
                   : "No public models available at the moment."}
             </p>
-            {filter !== "public" && (
+            {/* Allow upload even for public filter */}
+            <div className="mt-4 flex gap-3">
               <Button
                 variant="outline"
                 size="sm"
-                className="mt-2"
                 onClick={() => setShowNewFolderDialog(true)}
               >
                 <FolderPlus className="mr-2 h-4 w-4" />
                 Create Folder
               </Button>
-            )}
+              <Button
+                variant="default"
+                size="sm"
+                className="border-blue-700 bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+                onClick={() => onAddModel("")}
+              >
+                <Upload className="mr-2 h-4 w-4" />
+                Upload Model
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col">
-            {mergedTree.map((node) => (
+            {sortedTree.map((node) => (
               <TreeNode
                 key={node.path}
                 node={node}

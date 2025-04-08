@@ -12,19 +12,19 @@ import {
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { useAuth } from "@clerk/clerk-react";
+import { useQuery } from "@tanstack/react-query";
+import { useMatch } from "@tanstack/react-router";
+import { diff } from "json-diff-ts";
+import { Loader2 } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { use, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ScrollArea } from "../ui/scroll-area";
+import { useSelectedVersion } from "../version-select";
 import { useWorkflowVersion } from "../workflow-list";
 import { DiffView, SnapshotDiffView } from "./DiffView";
-import { useSelectedVersion } from "../version-select";
 import { useWorkflowStore } from "./Workspace";
-import { ScrollArea } from "../ui/scroll-area";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
-import { diff } from "json-diff-ts";
-import { useMatch } from "@tanstack/react-router";
 
 type WorkflowCommitVersionProps = {
   setOpen: (b: boolean) => void;
@@ -222,7 +222,7 @@ export function WorkflowCommitVersion({
           const prompt = await getPromptWithTimeout();
           // console.log("prompt", prompt);
 
-          let new_machine_vesion_id: string | undefined;
+          let new_machine_vesion_id: string | undefined = machine_version_id;
           if (snapshotAction === "CREATE_AND_COMMIT" && sessionId) {
             const snapshot_data = await callServerPromise(
               api({
@@ -249,10 +249,8 @@ export function WorkflowCommitVersion({
               workflow_id: workflowId,
               comment: data.comment,
               machine_id: machine_id,
-              machine_version_id: is_fluid_machine
-                ? new_machine_vesion_id
-                : null,
-              comfyui_snapshot: is_fluid_machine ? comfyui_snapshot : null,
+              machine_version_id: new_machine_vesion_id,
+              comfyui_snapshot: comfyui_snapshot,
               workflow_data: {
                 workflow: prompt.workflow,
                 workflow_api: prompt.output,

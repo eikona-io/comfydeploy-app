@@ -1,5 +1,8 @@
+import { ErrorBoundary } from "@/components/error-boundary";
 import { LoadingWrapper } from "@/components/loading-wrapper";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -8,27 +11,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LiveStatus } from "@/components/workflows/LiveStatus";
 import { RunInputs } from "@/components/workflows/RunInputs";
 import { RunOutputs } from "@/components/workflows/RunOutputs";
+import { api } from "@/lib/api";
 import { getRelativeTime } from "@/lib/get-relative-time";
+import { cn } from "@/lib/utils";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { Check, Clock, Settings2Icon, Trash, X } from "lucide-react";
+import { Check, Clock, Globe, Settings2Icon, Trash, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import React, { useEffect, useState } from "react";
 import { create } from "zustand";
-import { ErrorBoundary } from "@/components/error-boundary";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { LiveStatus } from "@/components/workflows/LiveStatus";
-import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { FileURLRender, getTotalUrlCountAndUrls } from "./OutputRender";
-import {
-  getEnvColor,
-  useWorkflowDeployments,
-} from "../workspace/ContainersTable";
 import type { Deployment } from "../deployment/deployment-page";
 import {
   DropdownMenuContent,
@@ -38,12 +40,10 @@ import {
 } from "../ui/dropdown-menu";
 import { DropdownMenu, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  getEnvColor,
+  useWorkflowDeployments,
+} from "../workspace/ContainersTable";
+import { FileURLRender, getTotalUrlCountAndUrls } from "./OutputRender";
 
 interface RunsTableState {
   selectedRun: any | null;
@@ -682,7 +682,9 @@ function DeploymentVersion(props: { deploymentId?: string }) {
 
   if (!deployment) return null;
 
-  if (!["staging", "production"].includes(deployment.environment)) {
+  if (
+    !["staging", "production", "public-share"].includes(deployment.environment)
+  ) {
     return null;
   }
 
@@ -693,7 +695,15 @@ function DeploymentVersion(props: { deploymentId?: string }) {
         getEnvColor(deployment.environment),
       )}
     >
-      {deployment.environment}
+      {deployment.environment === "public-share" ? (
+        <div className="flex items-center gap-1">
+          <Globe className="h-3 w-3" />
+          {/* {deployment.environment} */}
+          link
+        </div>
+      ) : (
+        deployment.environment
+      )}
     </Badge>
   );
 }

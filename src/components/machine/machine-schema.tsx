@@ -148,6 +148,11 @@ export const serverlessFormSchema = z.object({
     .default(false)
     .optional()
     .describe("Optimized runner"),
+  disable_metadata: z
+    .boolean()
+    .default(true)
+    .optional()
+    .describe("Disable metadata"),
 });
 
 interface GPUConfig {

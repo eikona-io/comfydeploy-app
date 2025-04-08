@@ -30,15 +30,17 @@ import {
   Check,
   Copy,
   Droplets,
+  ExternalLink,
   Gauge,
-  Settings,
   Server,
+  Settings,
 } from "lucide-react";
 import { DeploymentRow } from "./DeploymentRow";
 // import { SharePageSettings } from "@/components/SharePageSettings";
 import Steps from "./Steps";
 // import { Docs } from "./Docs";
 
+import { useSelectedDeploymentStore } from "@/components/deployment/deployment-page";
 // import type { ModelListComponent } from "@/components/modelFal/ModelsList";
 import {
   Select,
@@ -47,10 +49,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMachine } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { useSelectedDeploymentStore } from "@/components/deployment/deployment-page";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { Settings as SettingsIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -76,10 +81,6 @@ import { useWorkflowDeployments } from "./ContainersTable";
 // import { useFeatureFlags } from "@/components/FeatureFlagsProvider";
 import { NewStepper } from "./StaticStepper";
 import { VersionDetails } from "./VersionDetails";
-import { useNavigate } from "@tanstack/react-router";
-import { useMachine } from "@/hooks/use-machine";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useQuery } from "@tanstack/react-query";
 
 const curlTemplate = `
 curl --request POST \
@@ -305,6 +306,7 @@ export interface Deployment {
   };
   dub_link?: string;
   machine_id: string;
+  share_slug?: string;
 }
 
 export function DeploymentDisplay({
@@ -1359,61 +1361,90 @@ export function DeploymentSettings({
       {view === "api" && deployment.environment !== "public-share" && (
         <>
           {!is_fluid && (
+            // <div className="mb-4">
+            //   <Alert className="border-gray-200 bg-gray-50">
+            //     <AlertTitle className="flex items-center gap-2">
+            //       <Server className="h-4 w-4" />
+            //       <Link
+            //         to="/machines/$machineId"
+            //         params={{ machineId: deployment.machine_id }}
+            //         className="hover:underline"
+            //       >
+            //         {machine?.name || "Unknown"}
+            //         <ExternalLink className="h-4 w-4" />
+            //       </Link>
+            //     </AlertTitle>
+            //     <AlertDescription className="flex flex-col gap-2">
+            //       <div className="flex gap-2">
+            //         <Button
+            //           variant="outline"
+            //           size="sm"
+            //           className="flex w-fit items-center gap-2"
+            //           onClick={() => {
+            //             navigate({
+            //               to: `/machines/${deployment.machine_id}`,
+            //               search: { view: "settings" },
+            //             });
+            //           }}
+            //         >
+            //           <Settings className="h-4 w-4" />
+            //           Open Machine Settings
+            //         </Button>
+            //         {machine?.type === "comfy-deploy-serverless" && (
+            //           <Button
+            //             variant="outline"
+            //             size="sm"
+            //             className="flex w-fit items-center gap-2"
+            //             onClick={() => {
+            //               navigate({
+            //                 to: `/machines/${deployment.machine_id}`,
+            //                 search: (prev) => ({
+            //                   ...prev,
+            //                   view: "settings",
+            //                   "machine-settings-view": "autoscaling" as any,
+            //                 }),
+            //               });
+            //             }}
+            //           >
+            //             <Gauge className="h-4 w-4" />
+            //             Configure Auto Scaling
+            //           </Button>
+            //         )}
+            //       </div>
+            //     </AlertDescription>
+            //   </Alert>
+            // </div>
             <div className="mb-4">
-              <Alert className="border-gray-200 bg-gray-50">
-                <AlertTitle className="flex items-center gap-2">
-                  <Server className="h-4 w-4" />
-                  Standard Deployment
-                </AlertTitle>
-                <AlertDescription className="flex flex-col gap-2">
-                  <span>
-                    This is a standard deployment using machine{" "}
-                    <span className="font-medium">
-                      {machine?.name || "Unknown"}
-                    </span>
-                    . To configure machine settings, visit the machine settings
-                    page.
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex w-fit items-center gap-2"
-                      onClick={() => {
-                        navigate({
-                          to: `/machines/${deployment.machine_id}`,
-                          search: { view: "settings" },
-                        });
-                      }}
-                    >
-                      <Settings className="h-4 w-4" />
-                      Open Machine Settings
-                    </Button>
-                    {machine?.type === "comfy-deploy-serverless" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex w-fit items-center gap-2"
-                        onClick={() => {
-                          navigate({
-                            to: `/machines/${deployment.machine_id}`,
-                            search: (prev) => ({
-                              ...prev,
-                              view: "settings",
-                              "machine-settings-view": "autoscaling" as any,
-                            }),
-                          });
-                        }}
-                      >
-                        <Gauge className="h-4 w-4" />
-                        Configure Auto Scaling
-                      </Button>
-                    )}
-                  </div>
-                </AlertDescription>
-              </Alert>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex w-fit items-center gap-2"
+                onClick={() => {
+                  navigate({
+                    to: `/machines/${deployment.machine_id}`,
+                    search: (prev) => ({
+                      ...prev,
+                      view: "settings",
+                      "machine-settings-view":
+                        machine?.type === "comfy-deploy-serverless"
+                          ? "autoscaling"
+                          : undefined,
+                    }),
+                  });
+                }}
+              >
+                <Server className="h-4 w-4" />
+                {machine?.name || "Unknown"} Settings{" "}
+                <Badge
+                  variant="secondary"
+                  className="bg-zinc-100 text-zinc-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Badge>
+              </Button>
             </div>
           )}
+
           <APIDocs
             domain={process.env.NEXT_PUBLIC_CD_API_URL ?? ""}
             workflow_id={deployment.workflow_id}
@@ -1426,7 +1457,9 @@ export function DeploymentSettings({
   );
 }
 
-export function DeploymentDrawer() {
+export function DeploymentDrawer(props: {
+  children?: React.ReactNode;
+}) {
   const { selectedDeployment, setSelectedDeployment } =
     useSelectedDeploymentStore();
   const { data: deployment, isLoading } = useQuery<any>({
@@ -1472,11 +1505,14 @@ export function DeploymentDrawer() {
             </div>
           </div>
         ) : deployment ? (
-          <DeploymentSettings
-            key={deployment.id}
-            deployment={deployment}
-            onClose={() => setSelectedDeployment(null)}
-          />
+          <>
+            <DeploymentSettings
+              key={deployment.id}
+              deployment={deployment}
+              onClose={() => setSelectedDeployment(null)}
+            />
+            {props.children}
+          </>
         ) : null}
       </ScrollArea>
     </MyDrawer>
@@ -1486,14 +1522,16 @@ export function DeploymentDrawer() {
 function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
   const [copying, setCopying] = useState(false);
 
+  const [slug, workflow_name] = deployment.share_slug?.split("_") ?? [];
+  const shareLink = `${window.location.origin}/share/${slug}/${workflow_name}`;
+
   const handleCopy = async () => {
-    if (!deployment.dub_link) return;
+    if (!deployment.id) return;
     setCopying(true);
-    await navigator.clipboard.writeText(deployment.dub_link);
+    await navigator.clipboard.writeText(shareLink);
     toast.success("Link copied to clipboard!");
     setTimeout(() => setCopying(false), 1000);
   };
-
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between">
@@ -1504,11 +1542,11 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
           </Badge>
         </div>
       </div>
-      {deployment.dub_link ? (
+      {deployment.id ? (
         <div className="flex gap-2">
           <Input
             readOnly
-            value={deployment.dub_link}
+            value={shareLink}
             className="border-zinc-200 bg-zinc-50 font-mono text-xs"
           />
           <Button

@@ -537,7 +537,7 @@ function GPUPricingTable() {
                             >
                               {activeTab === "per_sec" ? (
                                 <span className="text-xs">
-                                  ${(price as number).toFixed(4)}
+                                  ${price as number}
                                   <span className="ml-1 text-gray-500">
                                     / sec
                                   </span>

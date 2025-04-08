@@ -14,6 +14,7 @@ import {
   LineChart,
   LockKeyhole,
   MessageCircle,
+  MessageSquare,
   Plus,
   Receipt,
   Rss,
@@ -54,9 +55,13 @@ import {
 } from "@/components/ui/sidebar";
 import { VersionList, useSelectedVersion } from "@/components/version-select";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
-import { SessionTimer } from "@/components/workspace/SessionTimer";
+import {
+  SessionTimer,
+  useSessionTimer,
+} from "@/components/workspace/SessionTimer";
 import {
   useSessionIdInSessionView,
+  useShareSlug,
   useWorkflowIdInSessionView,
   useWorkflowIdInWorkflowPage,
 } from "@/hooks/hook";
@@ -66,6 +71,7 @@ import {
 } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { cn } from "@/lib/utils";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { getOrgPathInfo } from "@/utils/org-path";
 import {
@@ -84,7 +90,11 @@ import { parseAsString } from "nuqs";
 import { useQueryState } from "nuqs";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { MyDrawer } from "./drawer";
+import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
 import { Badge } from "./ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
@@ -94,6 +104,14 @@ import {
   SessionIncrementDialog,
   useSessionIncrementStore,
 } from "./workspace/increase-session";
+import { sendWorkflow } from "./workspace/sendEventToCD";
+import { Chat } from "./master-comfy/chat";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 // Add Session type
 interface Session {
@@ -103,6 +121,8 @@ interface Session {
   url?: string;
   tunnel_url?: string;
   gpu?: string;
+  machine_id?: string;
+  machine_version_id?: string;
 }
 
 function UserMenu() {
@@ -301,7 +321,8 @@ function SessionSidebar() {
 
   const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
   const [displayCommit, setDisplayCommit] = useState(false);
-  const { hasChanged } = useWorkflowStore();
+  const { hasChanged, workflow } = useWorkflowStore();
+
   const {
     setOpen: setSessionIncrementOpen,
     setSessionId: setIncrementSessionId,
@@ -334,20 +355,31 @@ function SessionSidebar() {
 
   const [timerDialogOpen, setTimerDialogOpen] = useState(false);
   const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
+  const [activeDrawer, setActiveDrawer] = useState<"model" | "chat" | null>(
+    null,
+  );
+  const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
+
+  useEffect(() => {
+    if (workflow) {
+      setWorkflowUpdateTrigger((prev) => prev + 1);
+    }
+  }, [workflow]);
+
+  const toggleDrawer = (drawer: "model" | "chat") => {
+    setActiveDrawer((prevDrawer) => (prevDrawer === drawer ? null : drawer));
+  };
 
   return (
     <>
-      {!isLegacyMode && (
-        <TimerDialog
-          open={timerDialogOpen}
-          onOpenChange={setTimerDialogOpen}
-          session={session}
-          onRefetch={refetch}
-        />
-      )}
       <SessionIncrementDialog /> {/* This will handle the legacy mode dialog */}
-      {displayCommit && (
-        <WorkflowCommitVersion endpoint={url} setOpen={setDisplayCommit} />
+      {displayCommit && url && (
+        <WorkflowCommitVersion
+          endpoint={url}
+          setOpen={setDisplayCommit}
+          machine_id={session?.machine_id}
+          machine_version_id={session?.machine_version_id}
+        />
       )}
       <Dialog open={isVersionDialogOpen} onOpenChange={setIsVersionDialogOpen}>
         <DialogContent hideOverlay className="sm:max-0-w-[425px]">
@@ -413,39 +445,118 @@ function SessionSidebar() {
                   className="relative mx-auto"
                 >
                   <GitBranch className="h-4 w-4" />
-                  <div className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
+                  <div className="-right-1 -top-1 absolute flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
                     v
                     {useSelectedVersion(workflowId || "").value?.version || "1"}
                   </div>
+                </Button>
+              </SidebarMenuItem>
+              <Separator className="mx-auto my-1 w-7" />
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    activeDrawer === "model" ? "bg-primary/10" : "",
+                  )}
+                  onClick={() => toggleDrawer("model")}
+                >
+                  <Box className="h-4 w-4" />
+                </Button>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="p-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(activeDrawer === "chat" ? "bg-primary/10" : "")}
+                  onClick={() => toggleDrawer("chat")}
+                >
+                  <MessageSquare className="h-4 w-4" />
                 </Button>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
-          {session && (
-            <SessionTimer session={session} onClick={handleTimerClick} />
+          {session?.gpu && (
+            <TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <Badge className="!text-[10px] !p-0 !w-full mb-1 flex items-center justify-center">
+                    {session?.gpu.slice(0, 4)}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{session?.gpu}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {!isLegacyMode ? (
+            <TimerPopover session={session} onRefetch={refetch} />
+          ) : (
+            <>
+              {session && (
+                <SessionTimer session={session} onClick={handleTimerClick} />
+              )}
+            </>
           )}
         </SidebarFooter>
       </Sidebar>
+      {activeDrawer === "model" && (
+        <MyDrawer
+          backgroundInteractive
+          open={activeDrawer === "model"}
+          onClose={() => setActiveDrawer(null)}
+          side="left"
+          offset={14}
+        >
+          <div className="mt-2 space-y-4">
+            <span className="font-medium">Model Check</span>
+            <WorkflowModelCheck
+              workflow={JSON.stringify(workflow)}
+              key={workflowUpdateTrigger}
+              onWorkflowUpdate={sendWorkflow}
+            />
+          </div>
+        </MyDrawer>
+      )}
+      {activeDrawer === "chat" && (
+        <MyDrawer
+          backgroundInteractive
+          open={activeDrawer === "chat"}
+          onClose={() => setActiveDrawer(null)}
+          side="left"
+          offset={14}
+        >
+          <Chat />
+        </MyDrawer>
+      )}
     </>
   );
 }
 
-// Update TimerDialog component
-function TimerDialog({
-  open,
-  onOpenChange,
+function TimerPopover({
   session,
   onRefetch,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   session: Session | undefined;
   onRefetch: () => Promise<unknown>;
 }) {
   const [selectedIncrement, setSelectedIncrement] = useState("5");
   const sessionId = useSessionIdInSessionView();
+  const { countdown } = useSessionTimer(session);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const [hours, minutes, seconds] = countdown.split(":").map(Number);
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+  // Auto-open popover when less than 30 seconds remaining
+  useEffect(() => {
+    if (totalSeconds > 0 && totalSeconds < 30) {
+      setIsOpen(true);
+    }
+  }, [totalSeconds]);
 
   const timeIncrements = [
     { value: "1", label: "1 minute" },
@@ -460,34 +571,58 @@ function TimerDialog({
       return;
     }
 
-    toast.promise(
-      callServerPromise(
-        api({
-          url: `session/${sessionId}/increase-timeout`,
-          init: {
-            method: "POST",
-            body: JSON.stringify({
-              minutes: Number(selectedIncrement),
-            }),
-          },
-        }),
-      ).then(() => onRefetch()),
+    callServerPromise(
+      api({
+        url: `session/${sessionId}/increase-timeout`,
+        init: {
+          method: "POST",
+          body: JSON.stringify({
+            minutes: Number(selectedIncrement),
+          }),
+        },
+      }),
       {
-        loading: "Increasing session time...",
-        success: "Session time increased successfully",
-        error: "Failed to increase session time",
+        loadingText: "Increasing session time...",
+        successMessage: "Session time increased successfully",
       },
-    );
+    ).then(() => {
+      onRefetch();
+      // Only close the popover when time is increased
+      if (totalSeconds >= 30) {
+        setIsOpen(false);
+      }
+    });
+  };
 
-    onOpenChange(false);
+  // Function to determine text color based on the time remaining
+  const getTimeWarningClass = () => {
+    if (totalSeconds < 30) {
+      return "text-yellow-600";
+    }
+    return "text-muted-foreground";
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[400px]">
-        <DialogHeader>
-          <DialogTitle>Increase Session Time</DialogTitle>
-        </DialogHeader>
+    <Popover
+      open={isOpen}
+      onOpenChange={(open) => {
+        // Only allow closing the popover if time is < 30 seconds
+        if (totalSeconds < 30 && !open) {
+          return; // Prevent closing when time is < 30 seconds
+        }
+        setIsOpen(open);
+      }}
+    >
+      <PopoverTrigger>
+        {session && <SessionTimer session={session} />}
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-[340px]"
+        side="right"
+        sideOffset={14}
+        align="end"
+      >
+        <span className="font-medium text-sm">Increase Session Time</span>
         <div className="flex flex-col space-y-4">
           <div className="flex flex-col space-y-3">
             <div className="flex items-center text-muted-foreground text-sm">
@@ -497,24 +632,40 @@ function TimerDialog({
               </span>
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center justify-between rounded-none bg-muted/50 px-2 py-3">
+              <div
+                className={`flex items-center justify-between rounded-none bg-muted/50 px-2 py-3`}
+              >
                 <div className="flex items-center gap-2">
-                  <History className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-sm">Time Remaining</span>
+                  <History className={`h-4 w-4 ${getTimeWarningClass()}`} />
+                  <span
+                    className={`font-medium text-sm ${getTimeWarningClass()}`}
+                  >
+                    Time Remaining
+                  </span>
                 </div>
-                {session && <SessionTimer session={session} size="sm" />}
+                {session && (
+                  <SessionTimer
+                    session={session}
+                    size="sm"
+                    className={getTimeWarningClass()}
+                  />
+                )}
               </div>
               {session?.timeout_end && session?.created_at && (
-                <Progress
-                  value={
-                    ((new Date(session.timeout_end).getTime() -
-                      new Date().getTime()) /
-                      (new Date(session.timeout_end).getTime() -
-                        new Date(session.created_at).getTime())) *
-                    100
-                  }
-                  className="h-2"
-                />
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className={`h-full transition-all ${totalSeconds < 30 ? "bg-yellow-500" : "bg-primary"}`}
+                    style={{
+                      width: `${
+                        ((new Date(session.timeout_end).getTime() -
+                          new Date().getTime()) /
+                          (new Date(session.timeout_end).getTime() -
+                            new Date(session.created_at).getTime())) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -539,8 +690,47 @@ function TimerDialog({
             </Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ShareSidebar() {
+  const router = useRouter();
+
+  return (
+    <Sidebar collapsible="icon">
+      <SidebarHeader>
+        <div className="flex flex-row items-start justify-between">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => {
+              router.navigate({
+                to: "/",
+              });
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </div>
+      </SidebarHeader>
+      {/* <SidebarContent>
+        <SidebarGroup className="p-1">
+          <SidebarMenu>
+            <SidebarMenuItem className="p-0">
+              <Link
+                href="/"
+                className="flex flex-row items-start justify-between"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent> */}
+    </Sidebar>
   );
 }
 
@@ -549,6 +739,7 @@ export function AppSidebar() {
   const { orgId, orgSlug } = useAuth();
   const isFirstRender = useRef(true);
   const sessionId = useSessionIdInSessionView();
+  const shareSlug = useShareSlug();
   const { setOpen } = useSidebar();
 
   const items = flatPages.map((page) => ({
@@ -608,12 +799,17 @@ export function AppSidebar() {
   });
 
   useEffect(() => {
-    setOpen(!sessionId);
-  }, [sessionId]);
+    setOpen(!sessionId && !shareSlug);
+  }, [sessionId, shareSlug]);
 
   // If we're in a session, show the session-specific sidebar
   if (sessionId) {
     return <SessionSidebar />;
+  }
+
+  // If we're in a share page, show the share-specific sidebar
+  if (shareSlug) {
+    return <ShareSidebar />;
   }
 
   return (
