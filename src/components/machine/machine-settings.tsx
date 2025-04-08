@@ -981,7 +981,7 @@ function ServerlessSettings({
       
       {view === "secrets" && (
         <div className="pt-4">
-          <SecretsSelector machine_id={machine.id} />
+          <SecretsSelector machine={machine} />
         </div>
       )}
 

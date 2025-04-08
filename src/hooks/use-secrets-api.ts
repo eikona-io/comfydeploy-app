@@ -20,6 +20,28 @@ export const useGetSecrets = () => {
   return data;
 };
 
+export const useGetLinkedMachineSecrets = ({
+  machine_id,
+}: {
+  machine_id: string;
+}) => {
+  const data = useQuery<SecretGroup[]>({
+    queryKey: ["machine", machine_id, "secrets", "linked"],
+  });
+  return data;
+};
+
+export const useGetUnLinkedMachineSecrets = ({
+  machine_id,
+}: {
+  machine_id: string;
+}) => {
+  const data = useQuery<SecretGroup[]>({
+    queryKey: ["machine", machine_id, "secrets", "unlinked"],
+  });
+  return data;
+};
+
 interface NewSecretProps {
   machine_id: string;
   secret_name: string;
@@ -54,6 +76,24 @@ export async function updateSecret({
     init: {
       method: "PATCH",
       body: JSON.stringify({ secret, secret_id }),
+    },
+  });
+
+  return response;
+}
+
+export async function updateMachineWithSecret({
+  machine_id,
+  secret_id,
+}: {
+  machine_id: string;
+  secret_id: string;
+}) {
+  const response = await api({
+    url: "machine/secret",
+    init: {
+      method: "PATCH",
+      body: JSON.stringify({ machine_id, secret_id }),
     },
   });
 

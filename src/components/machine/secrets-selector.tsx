@@ -10,7 +10,8 @@ import {
   EyeOff,
   Trash2,
   Pencil,
-  ChevronDown,
+  Link,
+  ArrowLeft,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -32,12 +33,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
@@ -46,12 +41,16 @@ import {
   deleteSecret,
   type EnvironmentVariableType,
   type SecretGroup,
+  updateMachineWithSecret,
   updateSecret,
+  useGetLinkedMachineSecrets,
+  useGetUnLinkedMachineSecrets,
   useGetSecrets,
 } from "@/hooks/use-secrets-api";
 import { toast } from "sonner";
+import { RebuildMachineDialog } from "../machines/machine-list";
 
-export function SecretsSelector({ machine_id }: { machine_id: string }) {
+export function SecretsSelector({ machine }: { machine: any }) {
   const [visibleValues, setVisibleValues] = useState<Record<number, boolean>>(
     {},
   );
@@ -67,13 +66,27 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
   const [editValueName, setEditValueName] = useState("");
   const [editSecretValue, setEditSecretValue] = useState("");
   const [addingMode, setAddingMode] = useState<"group" | "value">("group");
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [showDeleteValueConfirm, setShowDeleteValueConfirm] = useState(false);
   const [showDeleteGroupConfirm, setShowDeleteGroupConfirm] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [machineRebuildDialogOpen, setMachineRebuildDialogOpen] =
+    useState(false);
   const [deleteValueIndex, setDeleteValueIndex] = useState<number | null>(null);
   const [deleteGroupId, setDeleteGroupId] = useState<string | null>(null);
 
   const { data: secretGroups, refetch } = useGetSecrets();
+  const { data: linkedMachineSecrets, refetch: refetchLinkedMachineSecrets } =
+    useGetLinkedMachineSecrets({
+      machine_id: machine.id,
+    });
+  const {
+    data: unlinkedMachineSecrets,
+    refetch: refetchUnlinkedMachineSecrets,
+  } = useGetUnLinkedMachineSecrets({
+    machine_id: machine.id,
+  });
+
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
   const selectedGroup = secretGroups?.find(
     (g: SecretGroup) => g.id === selectedGroupId,
@@ -87,7 +100,7 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
       newSecretValue
     ) {
       const newGroup = {
-        machine_id,
+        machine_id: machine.id,
         secret_name: newGroupName,
         secret: [
           {
@@ -100,13 +113,15 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
       try {
         const group = await addNewSecret(newGroup);
         if (group) {
-          setSelectedGroupId(group.id);
           setNewGroupName("");
           setNewValueName("");
           setNewSecretValue("");
           setIsAddingSecret(false);
           setShowNewValue(false);
+          setMachineRebuildDialogOpen(true);
           refetch();
+          refetchLinkedMachineSecrets();
+          setLinkDialogOpen(false);
           toast.success("Created the Secret successfully");
         }
       } catch (error) {
@@ -129,11 +144,14 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
           secret,
         });
         if (updatedSecret) {
+          refetchLinkedMachineSecrets();
+          refetchUnlinkedMachineSecrets();
           refetch();
           setNewValueName("");
           setNewSecretValue("");
           setIsAddingSecret(false);
           setShowNewValue(false);
+          setMachineRebuildDialogOpen(true);
           toast.success("Added the Environment Variable successfully");
         }
       } catch (error) {
@@ -171,6 +189,7 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
           refetch();
           setEditingValueIndex(null);
           setIsEditingSecret(false);
+          setMachineRebuildDialogOpen(true);
           toast.success("Updated the Environment Variable successfully");
         }
       } catch (error) {
@@ -214,6 +233,7 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
             setDeleteValueIndex(null);
             setShowDeleteValueConfirm(false);
             refetch();
+            setMachineRebuildDialogOpen(true);
             toast.success("Deleted the Environment Variable successfully");
             setVisibleValues({});
           }
@@ -231,6 +251,9 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
         setDeleteGroupId(null);
         setShowDeleteGroupConfirm(false);
         refetch();
+        refetchLinkedMachineSecrets();
+        refetchUnlinkedMachineSecrets();
+        setMachineRebuildDialogOpen(true);
         toast.success("Deleted the Secret successfully");
       } catch (error) {
         toast.error("Error Deleting the Secret");
@@ -281,8 +304,28 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
     setShowNewValue(!showNewValue);
   };
 
-  const selectGroup = (groupId: string) => {
+  const selectGroup = async (groupId: string) => {
+    try {
+      setSelectedGroupId(null);
+      const response = await updateMachineWithSecret({
+        machine_id: machine.id,
+        secret_id: groupId,
+      });
+      if (response.status === 200) {
+        toast.success(response.message);
+        setLinkDialogOpen(false);
+        refetchLinkedMachineSecrets();
+        refetchUnlinkedMachineSecrets();
+        setMachineRebuildDialogOpen(true);
+      }
+    } catch (error) {
+      toast.error("Error selecting Secret");
+    }
+  };
+
+  const seeSecret = (groupId: string) => {
     setSelectedGroupId(groupId);
+    setLinkDialogOpen(false);
   };
 
   const backToGroups = () => {
@@ -293,6 +336,11 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
   if (secretGroups?.length === 0) {
     return (
       <div className="py-8 text-center">
+        <RebuildMachineDialog
+          machine={machine}
+          dialogOpen={machineRebuildDialogOpen}
+          setDialogOpen={setMachineRebuildDialogOpen}
+        />
         <div className="flex flex-col items-center justify-center space-y-3 py-4">
           <div className="rounded-full bg-muted p-3">
             <KeyRound className="h-6 w-6 text-muted-foreground" />
@@ -392,76 +440,44 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
   }
 
   // Secret Group Dropdown
-  const SecretGroupDropdown = () => (
+  const SecretGroupDropdown = ({
+    isBack,
+    isLinkSecretGroup,
+  }: {
+    isBack?: boolean;
+    isLinkSecretGroup?: boolean;
+  }) => (
     <div className="mb-4 flex items-center justify-between">
-      <div className="flex items-center">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              {selectedGroupId ? (
-                <span>{selectedGroup?.name}</span>
-              ) : (
-                <span>Select a secret</span>
-              )}
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {secretGroups?.map((group: SecretGroup) => (
-              <DropdownMenuItem
-                key={group.id}
-                onClick={() => selectGroup(group.id)}
-                className={group.id === selectedGroupId ? "bg-muted" : ""}
-              >
-                {group.name}
-              </DropdownMenuItem>
-            ))}
-            {selectedGroupId && (
-              <>
-                <Separator className="my-1" />
-                <DropdownMenuItem onClick={backToGroups}>
-                  View all secrets
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {selectedGroupId && (
+      {isBack ? (
+        <Button variant="ghost" className="mr-2" onClick={backToGroups}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      ) : null}
+      <div className="ml-auto flex items-center gap-x-2">
+        {isLinkSecretGroup ? (
           <Button
-            type="button"
             variant="ghost"
-            size="sm"
-            className="ml-2 h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              openDeleteConfirmation(selectedGroupId);
-            }}
+            type="button"
+            className="border border-gray-400 border-dashed hover:bg-gray-50"
+            onClick={() => setLinkDialogOpen(true)}
           >
-            <Trash2 className="h-4 w-4" />
-            <span className="sr-only">Delete secret group</span>
+            link secret group
           </Button>
-        )}
+        ) : null}
+        <Button
+          onClick={() =>
+            selectedGroupId
+              ? openAddDialog("value", selectedGroupId)
+              : openAddDialog("group")
+          }
+          variant="ghost"
+          size="sm"
+        >
+          <Plus className="mr-1 h-3 w-3" />
+          {selectedGroupId ? "Add Environment Variable" : "Add Secret Group"}
+        </Button>
       </div>
-
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() =>
-          selectedGroupId
-            ? openAddDialog("value", selectedGroupId)
-            : openAddDialog("group")
-        }
-        className="h-7 text-xs"
-      >
-        <Plus className="mr-1 h-3 w-3" />
-        {selectedGroupId ? "Add Environment Variable" : "Add Secret Group"}
-      </Button>
     </div>
   );
 
@@ -471,7 +487,12 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
 
     return (
       <div>
-        <SecretGroupDropdown />
+        <SecretGroupDropdown isBack />
+        <RebuildMachineDialog
+          machine={machine}
+          dialogOpen={machineRebuildDialogOpen}
+          setDialogOpen={setMachineRebuildDialogOpen}
+        />
 
         {filteredValues?.length > 0 ? (
           <div className="space-y-2">
@@ -761,44 +782,58 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
   // Show list of all secret groups
   return (
     <div>
-      <SecretGroupDropdown />
+      <RebuildMachineDialog
+        machine={machine}
+        dialogOpen={machineRebuildDialogOpen}
+        setDialogOpen={setMachineRebuildDialogOpen}
+      />
+
+      <SecretGroupDropdown isLinkSecretGroup />
 
       <div className="space-y-2">
-        {secretGroups?.map((group: SecretGroup) => (
-          <div
+        {linkedMachineSecrets?.map((group: SecretGroup) => (
+          <SecretGroupContainer
             key={group.id}
-            className="cursor-pointer rounded-md border p-3 hover:bg-muted/10"
-            onClick={() => selectGroup(group.id)}
-            onKeyDown={() => {}}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-medium">{group.name}</h4>
-                <p className="mt-1 text-muted-foreground text-xs">
-                  {group.environment_variables.length} environment{" "}
-                  {group.environment_variables.length === 1
-                    ? "variable"
-                    : "variables"}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  openDeleteConfirmation(group.id);
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="sr-only">Delete secret group</span>
-              </Button>
-            </div>
-          </div>
+            group={group}
+            selectGroup={selectGroup}
+            seeGroup={seeSecret}
+            isLinked
+            openDeleteConfirmation={openDeleteConfirmation}
+          />
         ))}
       </div>
+
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Link Secret Group</DialogTitle>
+          </DialogHeader>
+          {!unlinkedMachineSecrets || unlinkedMachineSecrets.length === 0 ? (
+            <h3 className="py-4 text-center text-gray-500">
+              No groups available to link.
+            </h3>
+          ) : (
+            <div className="mt-2 space-y-2">
+              {unlinkedMachineSecrets.length > 0 ? (
+                unlinkedMachineSecrets.map((group: SecretGroup) => (
+                  <SecretGroupContainer
+                    key={group.id}
+                    group={group}
+                    selectGroup={selectGroup}
+                    seeGroup={seeSecret}
+                    isLinked={false}
+                    openDeleteConfirmation={openDeleteConfirmation}
+                  />
+                ))
+              ) : (
+                <div className="py-4 text-center text-gray-500">
+                  No groups available to link.
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Add Secret Group Dialog */}
       <Dialog open={isAddingSecret} onOpenChange={setIsAddingSecret}>
@@ -906,3 +941,81 @@ export function SecretsSelector({ machine_id }: { machine_id: string }) {
     </div>
   );
 }
+
+interface SecretGroupProps {
+  selectGroup: (groupId: string) => Promise<void>;
+  seeGroup: (groupId: string) => void;
+  group: SecretGroup;
+  openDeleteConfirmation: (groupId: string) => void;
+  isLinked: boolean;
+}
+
+const SecretGroupContainer = ({
+  group,
+  selectGroup,
+  seeGroup,
+  openDeleteConfirmation,
+  isLinked,
+}: SecretGroupProps) => {
+  return (
+    <div
+      key={group.id}
+      className={"cursor-pointer rounded-md border p-3 hover:bg-muted/50"}
+      onClick={() => seeGroup(group.id)}
+      onKeyDown={() => {}}
+    >
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="font-medium">{group.name}</h4>
+          <p className="mt-1 text-muted-foreground text-xs">
+            {group.environment_variables.length} environment{" "}
+            {group.environment_variables.length === 1
+              ? "variable"
+              : "variables"}
+          </p>
+        </div>
+        <div className="relative flex items-center gap-x-2">
+          {isLinked ? (
+            <Button
+              variant="ghost"
+              className="flex items-center gap-2 border border-red-400 border-dashed text-red-500 hover:bg-red-50 hover:text-red-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                selectGroup(group.id);
+              }}
+            >
+              unlink group
+              <Link className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute right-8 z-30 flex items-center justify-center border border-gray-400 border-dashed py-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                selectGroup(group.id);
+              }}
+            >
+              Link
+            </Button>
+          )}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              openDeleteConfirmation(group.id);
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+            <span className="sr-only">Delete secret group</span>
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
