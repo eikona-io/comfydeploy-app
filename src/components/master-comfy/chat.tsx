@@ -157,12 +157,12 @@ const generateSessionId = () => crypto.randomUUID();
 
 export function Chat() {
   // ========== for testing ==========
-  const isLocalEnvironment =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "staging.app.comfydeploy.com";
-  if (!isLocalEnvironment) {
-    return null;
-  }
+  // const isLocalEnvironment =
+  //   window.location.hostname === "localhost" ||
+  //   window.location.hostname === "staging.app.comfydeploy.com";
+  // if (!isLocalEnvironment) {
+  //   return null;
+  // }
   // ========== end of testing ==========
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -234,7 +234,7 @@ export function Chat() {
 
       // Make a POST request to the API
       const apiUrl =
-        "https://comfy-deploy-dev--master-comfy-fastapi-app.modal.run/v1/ai";
+        "https://comfy-deploy--master-comfy-fastapi-app.modal.run/v1/ai";
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
