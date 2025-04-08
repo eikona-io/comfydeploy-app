@@ -234,7 +234,7 @@ export function Chat() {
 
       // Make a POST request to the API
       const apiUrl =
-        "https://comfy-deploy--master-comfy-fastapi-app.modal.run/v1/ai/";
+        "https://comfy-deploy--master-comfy-fastapi-app.modal.run/v1/ai";
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
