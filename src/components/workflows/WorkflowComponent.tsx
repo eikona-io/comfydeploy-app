@@ -946,22 +946,27 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
                         >
                           {event.message.status}
                         </Badge>
-                        <ErrorBoundary
-                          fallback={() => {
-                            return (
-                              <Badge
-                                variant="outline"
-                                className="!text-2xs !py-0"
-                              >
-                                -
-                              </Badge>
-                            );
-                          }}
-                        >
-                          <pre className="text-2xs">
-                            {JSON.stringify(event.message.payload, null, 2)}
-                          </pre>
-                        </ErrorBoundary>
+                        {event.message.payload && (
+                          <ErrorBoundary
+                            fallback={() => {
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  className="!text-2xs !py-0"
+                                >
+                                  -
+                                </Badge>
+                              );
+                            }}
+                          >
+                            <Badge
+                              variant="outline"
+                              className="!text-2xs !py-0"
+                            >
+                              {JSON.parse(event.message.payload)?.event_type}
+                            </Badge>
+                          </ErrorBoundary>
+                        )}
                       </div>
                       <div className="flex items-center">
                         <span className="mr-2 font-mono text-2xs text-muted-foreground">
