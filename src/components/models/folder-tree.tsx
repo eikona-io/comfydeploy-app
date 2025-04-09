@@ -1214,7 +1214,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
 
           {/* Action buttons */}
           <div className="flex gap-2">
-            <Button
+            {/* <Button
               variant="ghost"
               size="icon"
               iconPlacement="left"
@@ -1222,7 +1222,7 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
               onClick={async () => {
                 onAddModel("");
               }}
-            />
+            /> */}
             <Button
               variant="ghost"
               size="icon"

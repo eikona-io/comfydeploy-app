@@ -13,13 +13,13 @@ import {
   Key,
   LineChart,
   MessageCircle,
-  MessageSquare,
   Plus,
   Receipt,
   Rss,
   Save,
   Server,
   Settings,
+  Sparkles,
   Workflow,
 } from "lucide-react";
 
@@ -468,7 +468,7 @@ function SessionSidebar() {
                     )}
                     onClick={() => toggleDrawer("chat")}
                   >
-                    <MessageSquare className="h-4 w-4" />
+                    <Sparkles className="h-4 w-4" />
                   </Button>
                   <Badge
                     variant="purple"
