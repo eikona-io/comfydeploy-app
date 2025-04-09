@@ -670,11 +670,20 @@ export function SecretsSelector({ machine }: { machine: any }) {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="edit-value-name">Key</Label>
+                  <Label htmlFor="value-name">Key</Label>
                   <Input
-                    id="edit-value-name"
-                    value={editValueName}
-                    onChange={(e) => setEditValueName(e.target.value)}
+                    id="value-name"
+                    value={newValueName}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      if (newValue.includes(" ")) {
+                        toast.error(
+                          "Please don't use space while adding keys, add underscore instead.",
+                        );
+                      } else {
+                        setNewValueName(newValue);
+                      }
+                    }}
                     placeholder="PRODUCTION"
                   />
                 </div>
