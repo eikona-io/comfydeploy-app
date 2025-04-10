@@ -134,7 +134,10 @@ export function SecretsSelector({ machine }: { machine: any }) {
           toast.success("Created the Secret successfully");
         }
       } catch (error) {
-        toast.error("Error creating the Secret");
+        toast.error("Error creating the Secret", {
+          description:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        });
       }
     } else if (
       addingMode === "value" &&
@@ -163,8 +166,11 @@ export function SecretsSelector({ machine }: { machine: any }) {
           setMachineRebuildDialogOpen(true);
           toast.success("Added the Environment Variable successfully");
         }
-      } catch (error) {
-        toast.error("Error adding the Environment Variable");
+      } catch (error: unknown) {
+        toast.error("Error adding the Environment Variable", {
+          description:
+            error instanceof Error ? error.message : "Unknown error occurred",
+        });
       }
     }
   };
