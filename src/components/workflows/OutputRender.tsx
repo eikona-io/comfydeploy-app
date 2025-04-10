@@ -22,7 +22,15 @@ import {
   Ellipsis,
   Search,
 } from "lucide-react";
-import { useEffect, useState, useCallback, lazy, Suspense } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  lazy,
+  Suspense,
+  memo,
+  useMemo,
+} from "react";
 import {
   Carousel,
   CarouselContent,
@@ -86,153 +94,174 @@ type fileURLRenderProps = {
   canFullScreen?: boolean;
 };
 
-function _FileURLRender({
-  url,
-  imgClasses: mediaClasses,
-  lazyLoading = false,
-  onLoad,
-  isMainView = false,
-}: fileURLRenderProps) {
-  const a = new URL(url);
-  const filename = a.pathname.split("/").pop();
-  if (!filename) {
-    return <div className="bg-slate-300">Not possible to render</div>;
-  }
+// Update the FileURLRender component with memoization
+export const FileURLRender = memo(
+  function FileURLRender(props: fileURLRenderProps) {
+    const [open, setOpen] = useState(false);
 
-  // Convert filename to lowercase once for all checks
-  const lowercaseFilename = filename.toLowerCase();
-
-  if (
-    lowercaseFilename.endsWith(".mp4") ||
-    lowercaseFilename.endsWith(".webm") ||
-    lowercaseFilename.endsWith(".mov")
-  ) {
     return (
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className={cn("w-[500px]", mediaClasses)}
+      <ErrorBoundary
+        fallback={(e) => (
+          <div
+            className={cn(
+              "flex aspect-square h-full w-full max-w-[200px] flex-col items-center justify-center gap-2 px-4 text-gray-600 text-xs",
+              props.imgClasses,
+            )}
+          >
+            <SearchX size={20} strokeWidth={1.5} />
+            <span>Error rendering: {e.message}</span>
+          </div>
+        )}
       >
-        <source src={url} type="video/mp4" />
-        <source src={url} type="video/webm" />
-        <source src={url} type="video/quicktime" />
-        Your browser does not support the video tag.
-      </video>
+        {props.canFullScreen ? (
+          <>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger className="h-full w-full">
+                <_FileURLRender {...props} />
+              </DialogTrigger>
+
+              <DialogContent
+                className="h-screen max-w-full border-none bg-transparent shadow-none"
+                onClick={() => {
+                  setOpen(false);
+                }}
+              >
+                <DialogTitle className="hidden" />
+                <div className="flex h-full w-full items-center justify-center">
+                  <_FileURLRender
+                    url={props.url}
+                    imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
+                    lazyLoading={props.lazyLoading}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          </>
+        ) : (
+          <_FileURLRender {...props} />
+        )}
+      </ErrorBoundary>
     );
-  }
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if the URL changes
+    return prevProps.url === nextProps.url;
+  },
+);
 
-  // For 3D models, use the separate component
-  if (
-    lowercaseFilename.endsWith(".glb") ||
-    lowercaseFilename.endsWith(".gltf")
-  ) {
-    return (
-      <ModelRenderer
-        url={url}
-        mediaClasses={mediaClasses}
-        isMainView={isMainView}
-      />
-    );
-  }
-
-  const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
-    if (imageError) {
-      onLoad?.();
+// Also memoize the inner FileURLRender component
+const _FileURLRender = memo(
+  function _FileURLRender({
+    url,
+    imgClasses: mediaClasses,
+    lazyLoading = false,
+    onLoad,
+    isMainView = false,
+  }: fileURLRenderProps) {
+    const a = new URL(url);
+    const filename = a.pathname.split("/").pop();
+    if (!filename) {
+      return <div className="bg-slate-300">Not possible to render</div>;
     }
-  }, [imageError, onLoad]);
 
-  const imageExtensions = [
-    ".png",
-    ".gif",
-    ".jpg",
-    ".jpeg",
-    ".webp",
-    ".avif",
-    ".heic",
-    ".heif",
-  ];
+    // Convert filename to lowercase once for all checks
+    const lowercaseFilename = filename.toLowerCase();
 
-  if (imageExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
-    if (imageError) {
+    if (
+      lowercaseFilename.endsWith(".mp4") ||
+      lowercaseFilename.endsWith(".webm") ||
+      lowercaseFilename.endsWith(".mov")
+    ) {
       return (
-        <div
-          className={cn(
-            "flex aspect-square h-full w-full max-w-[200px] flex-col items-center justify-center gap-2 text-gray-600",
-            mediaClasses,
-          )}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className={cn("w-[500px]", mediaClasses)}
         >
-          <SearchX size={20} strokeWidth={1.5} />
-          <span>Not found</span>
-        </div>
+          <source src={url} type="video/mp4" />
+          <source src={url} type="video/webm" />
+          <source src={url} type="video/quicktime" />
+          Your browser does not support the video tag.
+        </video>
       );
     }
 
+    // For 3D models, use the separate component
+    if (
+      lowercaseFilename.endsWith(".glb") ||
+      lowercaseFilename.endsWith(".gltf")
+    ) {
+      return (
+        <ModelRenderer
+          url={url}
+          mediaClasses={mediaClasses}
+          isMainView={isMainView}
+        />
+      );
+    }
+
+    const [imageError, setImageError] = useState(false);
+
+    useEffect(() => {
+      if (imageError) {
+        onLoad?.();
+      }
+    }, [imageError, onLoad]);
+
+    const imageExtensions = [
+      ".png",
+      ".gif",
+      ".jpg",
+      ".jpeg",
+      ".webp",
+      ".avif",
+      ".heic",
+      ".heif",
+    ];
+
+    if (imageExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
+      if (imageError) {
+        return (
+          <div
+            className={cn(
+              "flex aspect-square h-full w-full max-w-[200px] flex-col items-center justify-center gap-2 text-gray-600",
+              mediaClasses,
+            )}
+          >
+            <SearchX size={20} strokeWidth={1.5} />
+            <span>Not found</span>
+          </div>
+        );
+      }
+
+      // Add a cache key to prevent refreshing
+      const imageUrl = getOptimizedImage(url);
+      const cacheKey = useMemo(() => imageUrl, [imageUrl]);
+
+      return (
+        <img
+          onLoad={onLoad}
+          className={cn("max-w-[200px]", mediaClasses)}
+          src={cacheKey}
+          alt={filename}
+          loading={lazyLoading ? "lazy" : undefined}
+          onError={() => setImageError(true)}
+        />
+      );
+    }
+
+    return <DownloadButton filename={filename} href={url} />;
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if the URL or mediaClasses change
     return (
-      <img
-        onLoad={onLoad}
-        className={cn("max-w-[200px]", mediaClasses)}
-        src={getOptimizedImage(url)}
-        alt={filename}
-        loading={lazyLoading ? "lazy" : undefined}
-        onError={() => setImageError(true)}
-      />
+      prevProps.url === nextProps.url &&
+      prevProps.imgClasses === nextProps.imgClasses
     );
-  }
-
-  return <DownloadButton filename={filename} href={url} />;
-}
-
-export function FileURLRender(props: fileURLRenderProps) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <ErrorBoundary
-      fallback={(e) => (
-        <div
-          className={cn(
-            "flex aspect-square h-full w-full max-w-[200px] flex-col items-center justify-center gap-2 px-4 text-gray-600 text-xs",
-            props.imgClasses,
-          )}
-        >
-          <SearchX size={20} strokeWidth={1.5} />
-          <span>Error rendering: {e.message}</span>
-        </div>
-      )}
-    >
-      {props.canFullScreen ? (
-        <>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger className="h-full w-full">
-              <_FileURLRender {...props} />
-            </DialogTrigger>
-
-            <DialogContent
-              className="h-screen max-w-full border-none bg-transparent shadow-none"
-              onClick={() => {
-                setOpen(false);
-              }}
-            >
-              <DialogTitle className="hidden" />
-              <div className="flex h-full w-full items-center justify-center">
-                <_FileURLRender
-                  url={props.url}
-                  imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
-                  lazyLoading={props.lazyLoading}
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
-        </>
-      ) : (
-        <_FileURLRender {...props} />
-      )}
-    </ErrorBoundary>
-  );
-}
+  },
+);
 
 function FileURLRenderMulti({
   urls,
