@@ -21,6 +21,7 @@ import {
   Server,
   Settings,
   Sparkles,
+  Users,
   Workflow,
 } from "lucide-react";
 
@@ -845,26 +846,35 @@ export function AppSidebar() {
           </div>
 
           {!(workflow_id && parentPath === "workflows") && (
-            <OrganizationSwitcher
-              organizationProfileUrl="/organization-profile"
-              organizationProfileMode="navigation"
-              afterSelectOrganizationUrl="/org/:slug/workflows"
-              afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
-              appearance={{
-                elements: {
-                  rootBox:
-                    "items-center justify-center mt-1 p-0 w-full bg-gray-100 rounded-[8px]",
-                  organizationSwitcherPopoverRootBox: {
-                    pointerEvents: "initial",
+            <div className="flex items-center gap-1 justify-center mt-1 bg-gray-100 rounded-[8px]">
+              <OrganizationSwitcher
+                organizationProfileUrl="/organization-profile"
+                organizationProfileMode="navigation"
+                afterSelectOrganizationUrl="/org/:slug/workflows"
+                afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
+                appearance={{
+                  elements: {
+                    rootBox: "items-center justify-center p-0 w-full ",
+                    organizationSwitcherPopoverRootBox: {
+                      pointerEvents: "initial",
+                    },
+                    organizationSwitcherTrigger: {
+                      width: "100%",
+                      justifyContent: "space-between",
+                      padding: "12px 12px",
+                    },
                   },
-                  organizationSwitcherTrigger: {
-                    width: "100%",
-                    justifyContent: "space-between",
-                    padding: "12px 12px",
-                  },
-                },
-              }}
-            />
+                }}
+              />
+              {orgId && (
+                <Link
+                  className="transition-colors bg-gray-200/40 hover:bg-gray-200 h-full flex items-center justify-center rounded-r-[8px] px-4"
+                  to="/organization-profile#/organization-members"
+                >
+                  <Users className="h-4 w-4" />
+                </Link>
+              )}
+            </div>
           )}
 
           {workflow_id && parentPath === "workflows" && (
