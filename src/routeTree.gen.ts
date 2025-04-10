@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as WaitlistImport } from './routes/waitlist'
 import { Route as UsageImport } from './routes/usage'
 import { Route as SettingsImport } from './routes/settings'
+import { Route as SecretsImport } from './routes/secrets'
 import { Route as PricingImport } from './routes/pricing'
 import { Route as OrgNotFoundImport } from './routes/org-not-found'
 import { Route as OnboardingCallImport } from './routes/onboarding-call'
@@ -54,6 +55,12 @@ const UsageRoute = UsageImport.update({
 const SettingsRoute = SettingsImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const SecretsRoute = SecretsImport.update({
+  id: '/secrets',
+  path: '/secrets',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -258,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingImport
       parentRoute: typeof rootRoute
     }
+    '/secrets': {
+      id: '/secrets'
+      path: '/secrets'
+      fullPath: '/secrets'
+      preLoaderRoute: typeof SecretsImport
+      parentRoute: typeof rootRoute
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -391,6 +405,7 @@ export interface FileRoutesByFullPath {
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
   '/pricing': typeof PricingRoute
+  '/secrets': typeof SecretsRoute
   '/settings': typeof SettingsRoute
   '/usage': typeof UsageRoute
   '/waitlist': typeof WaitlistRoute
@@ -419,6 +434,7 @@ export interface FileRoutesByTo {
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
   '/pricing': typeof PricingRoute
+  '/secrets': typeof SecretsRoute
   '/settings': typeof SettingsRoute
   '/usage': typeof UsageRoute
   '/waitlist': typeof WaitlistRoute
@@ -448,6 +464,7 @@ export interface FileRoutesById {
   '/onboarding-call': typeof OnboardingCallRoute
   '/org-not-found': typeof OrgNotFoundRoute
   '/pricing': typeof PricingRoute
+  '/secrets': typeof SecretsRoute
   '/settings': typeof SettingsRoute
   '/usage': typeof UsageRoute
   '/waitlist': typeof WaitlistRoute
@@ -478,6 +495,7 @@ export interface FileRouteTypes {
     | '/onboarding-call'
     | '/org-not-found'
     | '/pricing'
+    | '/secrets'
     | '/settings'
     | '/usage'
     | '/waitlist'
@@ -505,6 +523,7 @@ export interface FileRouteTypes {
     | '/onboarding-call'
     | '/org-not-found'
     | '/pricing'
+    | '/secrets'
     | '/settings'
     | '/usage'
     | '/waitlist'
@@ -532,6 +551,7 @@ export interface FileRouteTypes {
     | '/onboarding-call'
     | '/org-not-found'
     | '/pricing'
+    | '/secrets'
     | '/settings'
     | '/usage'
     | '/waitlist'
@@ -561,6 +581,7 @@ export interface RootRouteChildren {
   OnboardingCallRoute: typeof OnboardingCallRoute
   OrgNotFoundRoute: typeof OrgNotFoundRoute
   PricingRoute: typeof PricingRoute
+  SecretsRoute: typeof SecretsRoute
   SettingsRoute: typeof SettingsRoute
   UsageRoute: typeof UsageRoute
   WaitlistRoute: typeof WaitlistRoute
@@ -589,6 +610,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingCallRoute: OnboardingCallRoute,
   OrgNotFoundRoute: OrgNotFoundRoute,
   PricingRoute: PricingRoute,
+  SecretsRoute: SecretsRoute,
   SettingsRoute: SettingsRoute,
   UsageRoute: UsageRoute,
   WaitlistRoute: WaitlistRoute,
@@ -628,6 +650,7 @@ export const routeTree = rootRoute
         "/onboarding-call",
         "/org-not-found",
         "/pricing",
+        "/secrets",
         "/settings",
         "/usage",
         "/waitlist",
@@ -670,6 +693,9 @@ export const routeTree = rootRoute
     },
     "/pricing": {
       "filePath": "pricing.tsx"
+    },
+    "/secrets": {
+      "filePath": "secrets.tsx"
     },
     "/settings": {
       "filePath": "settings.tsx"

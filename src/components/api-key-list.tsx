@@ -3,7 +3,6 @@ import { useAPIKeyList } from "@/hooks/use-user-settings";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import type { ColumnDef, SortingState } from "@tanstack/react-table";
 import {
-  flexRender,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
@@ -23,16 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
-import { ScrollArea } from "./ui/scroll-area";
-import { Skeleton } from "./ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "./ui/table";
+import { ScrollTable } from "./common/scroll-table";
 
 export type APIKey = {
   id: string;
@@ -172,74 +162,7 @@ export function APIKeyList() {
             <ApiKeyAdd onKeyCreated={() => refetch()} />
           </div>
         </div>
-        <ScrollArea
-          className="w-full overflow-x-auto rounded-md border"
-          ref={parentRef}
-        >
-          <Table>
-            <TableHeader>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => {
-                    return (
-                      <TableHead key={header.id}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                      </TableHead>
-                    );
-                  })}
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => {
-                  return (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                    >
-                      {row.getVisibleCells().map((cell) => {
-                        return (
-                          <TableCell key={cell.id}>
-                            {cell.getContext().cell.row.original.id &&
-                            cell.getContext().cell.row.original.id.length >
-                              0 ? (
-                              flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext(),
-                              )
-                            ) : (
-                              <Skeleton
-                                className="my-2 h-4 w-44"
-                                style={{
-                                  width: cell.column.columnDef.size,
-                                }}
-                              />
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={columns.length}
-                    className="h-24 text-center"
-                  >
-                    No results.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+        <ScrollTable ref={parentRef} colSpan={columns.length} table={table} />
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import {
   History,
   Key,
   LineChart,
+  LockKeyhole,
   MessageCircle,
   Plus,
   Receipt,
@@ -243,6 +244,11 @@ function usePages() {
             path: "/api-keys",
             icon: Key,
           },
+          // {
+          //   name: "Secrets",
+          //   path: "/secrets",
+          //   icon: LockKeyhole,
+          // },
         ]
       : []),
 
