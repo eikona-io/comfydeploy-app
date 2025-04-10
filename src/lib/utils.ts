@@ -43,6 +43,15 @@ export function formatTime(seconds: number): string {
   }
 }
 
+export function isCustomBucket(url: string) {
+  return url.includes("X-Amz-Algorithm");
+}
+
 export const getOptimizedImage = (url: string) => {
+  // Skip if the url is from custom bucket
+  if (isCustomBucket(url)) {
+    return url;
+  }
+
   return `https://comfydeploy.com/cdn-cgi/image/quality=75/${url}`;
 };

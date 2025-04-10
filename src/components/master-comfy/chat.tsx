@@ -25,6 +25,7 @@ import { useSessionIdInSessionView } from "@/hooks/hook";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { useQuery } from "@tanstack/react-query";
 import { useMachine } from "@/hooks/use-machine";
+import { Badge } from "../ui/badge";
 
 // Add the suggestion type
 interface Suggestion {
@@ -156,12 +157,12 @@ const generateSessionId = () => crypto.randomUUID();
 
 export function Chat() {
   // ========== for testing ==========
-  const isLocalEnvironment =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "staging.app.comfydeploy.com";
-  if (!isLocalEnvironment) {
-    return null;
-  }
+  // const isLocalEnvironment =
+  //   window.location.hostname === "localhost" ||
+  //   window.location.hostname === "staging.app.comfydeploy.com";
+  // if (!isLocalEnvironment) {
+  //   return null;
+  // }
   // ========== end of testing ==========
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -233,7 +234,7 @@ export function Chat() {
 
       // Make a POST request to the API
       const apiUrl =
-        "https://comfy-deploy-dev--master-comfy-fastapi-app.modal.run/v1/ai";
+        "https://comfy-deploy--master-comfy-fastapi-app.modal.run/v1/ai/";
       const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
@@ -344,8 +345,9 @@ export function Chat() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b p-3">
+      <div className="flex items-center gap-2 border-b p-3">
         <h3 className="font-medium">Master Comfy</h3>
+        <Badge variant="purple">Beta</Badge>
       </div>
 
       {/* Chat messages */}
@@ -525,7 +527,7 @@ export function Chat() {
 
         <form
           onSubmit={handleSubmit}
-          className="flex items-center gap-2 p-3 px-1"
+          className="flex items-center gap-2 p-3 px-1 pt-2"
         >
           <Textarea
             value={input}

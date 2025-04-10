@@ -24,33 +24,33 @@ import { StatusBadge } from "@/components/workflows/StatusBadge";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   AlertCircle,
+  CheckCircle,
+  ChevronDown,
   ExternalLink,
   Info,
+  LinkIcon,
   Loader2,
   Settings2Icon,
-  Zap,
-  CheckCircle,
   XCircle,
-  ChevronDown,
-  LinkIcon,
+  Zap,
 } from "lucide-react";
 import { parseAsString, useQueryState } from "nuqs";
 import { type ReactNode, useMemo } from "react";
 import { useEffect, useState } from "react";
 
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Alert, AlertDescription } from "../ui/alert";
+import { EventSourcePolyfill } from "event-source-polyfill";
 import { MyDrawer } from "../drawer";
+import { Alert, AlertDescription } from "../ui/alert";
+import { CodeBlock } from "../ui/code-blocks";
+import { TooltipTrigger } from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider } from "../ui/tooltip";
 import {
   getEnvColor,
   useWorkflowDeployments,
 } from "../workspace/ContainersTable";
-import { cn } from "@/lib/utils";
-import { EventSourcePolyfill } from "event-source-polyfill";
-import { CodeBlock } from "../ui/code-blocks";
-import { TooltipTrigger } from "../ui/tooltip";
-import { Tooltip, TooltipContent, TooltipProvider } from "../ui/tooltip";
 
 export default function WorkflowComponent() {
   const [runId, setRunId] = useQueryState("run-id");
@@ -946,6 +946,27 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
                         >
                           {event.message.status}
                         </Badge>
+                        {event.message.payload && (
+                          <ErrorBoundary
+                            fallback={() => {
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  className="!text-2xs !py-0"
+                                >
+                                  -
+                                </Badge>
+                              );
+                            }}
+                          >
+                            <Badge
+                              variant="outline"
+                              className="!text-2xs !py-0"
+                            >
+                              {JSON.parse(event.message.payload)?.event_type}
+                            </Badge>
+                          </ErrorBoundary>
+                        )}
                       </div>
                       <div className="flex items-center">
                         <span className="mr-2 font-mono text-2xs text-muted-foreground">

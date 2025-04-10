@@ -14,13 +14,13 @@ import {
   LineChart,
   LockKeyhole,
   MessageCircle,
-  MessageSquare,
   Plus,
   Receipt,
   Rss,
   Save,
   Server,
   Settings,
+  Sparkles,
   Workflow,
 } from "lucide-react";
 
@@ -317,7 +317,7 @@ function SessionSidebar() {
   const router = useRouter();
   const workflowId = useWorkflowIdInSessionView();
   const clerk = useClerk();
-  const personalOrg = clerk.user?.username ?? "personal";
+  const sub = useCurrentPlan();
 
   const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
   const [displayCommit, setDisplayCommit] = useState(false);
@@ -464,16 +464,26 @@ function SessionSidebar() {
                   <Box className="h-4 w-4" />
                 </Button>
               </SidebarMenuItem>
-              <SidebarMenuItem className="p-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(activeDrawer === "chat" ? "bg-primary/10" : "")}
-                  onClick={() => toggleDrawer("chat")}
-                >
-                  <MessageSquare className="h-4 w-4" />
-                </Button>
-              </SidebarMenuItem>
+              {sub?.plans?.plans?.length > 0 && (
+                <SidebarMenuItem className="relative p-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      activeDrawer === "chat" ? "bg-primary/10" : "",
+                    )}
+                    onClick={() => toggleDrawer("chat")}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                  <Badge
+                    variant="purple"
+                    className="-right-1 -top-1 !text-[7px] absolute h-4 px-1"
+                  >
+                    Beta
+                  </Badge>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

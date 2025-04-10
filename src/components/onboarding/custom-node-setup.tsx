@@ -39,6 +39,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   AlertTriangle,
   ChevronRight,
+  Download,
   ExternalLink,
   Minus,
   Pencil,
@@ -109,13 +110,18 @@ const BLACKLIST = [
   "https://github.com/mrhan1993/ComfyUI-Fooocus",
 ];
 
-const POPULAR_NODES = [
-  "https://github.com/WASasquatch/was-node-suite-comfyui",
-  "https://github.com/ltdrdata/ComfyUI-Impact-Pack",
-  "https://github.com/cubiq/ComfyUI_IPAdapter_plus",
-  "https://github.com/cubiq/ComfyUI_essentials",
-  "https://github.com/kijai/ComfyUI-KJNodes",
-];
+function getRepoAuthor(repository: string) {
+  if (!repository) return "";
+
+  try {
+    const repoUrl = new URL(repository);
+    const pathParts = repoUrl.pathname.split("/").filter(Boolean);
+    return pathParts[0] || "";
+  } catch (error) {
+    console.error("Error parsing repository with url:", repository, error);
+    return "";
+  }
+}
 
 function isCustomNodeData(
   step: DockerCommandStep,
@@ -267,20 +273,6 @@ function SearchNodeList({
   setValidation,
   readonly = false,
 }: StepComponentProps<MachineStepValidation> & { readonly?: boolean }) {
-  const { data, isLoading } = useQuery<DefaultCustomNodeData[]>({
-    queryKey: ["custom-node-list"],
-    queryFn: async () => {
-      const response = await fetch(
-        "https://raw.githubusercontent.com/ltdrdata/ComfyUI-Manager/main/custom-node-list.json",
-      );
-      const json = await response.json();
-      return json.custom_nodes;
-    },
-    staleTime: 60 * 60 * 1000,
-    gcTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
   const { data: defaultCustomNodeStats } = useQuery<DefaultCustomNodeStats>({
     queryKey: ["custom-node-stats"],
     queryFn: async () => {
@@ -295,6 +287,13 @@ function SearchNodeList({
     refetchOnWindowFocus: false,
   });
 
+  const { data, isLoading } = useQuery({
+    queryKey: ["custom-node-list"],
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
   const [parentRef, setParentRef] = useState<HTMLDivElement | null>(null);
   const [customGitUrl, setCustomGitUrl] = useState("");
@@ -302,7 +301,12 @@ function SearchNodeList({
   const plan = useCurrentPlan();
 
   const handleAddNode = async (node: DefaultCustomNodeData) => {
-    const nodeRefLower = node.reference.toLowerCase();
+    if (!node.repository || node.repository.trim() === "") {
+      toast.error("This custom node don't have a repository. ");
+      return;
+    }
+
+    const nodeRefLower = node.repository.toLowerCase();
     if (
       validation.docker_command_steps.steps.some(
         (step) =>
@@ -314,23 +318,21 @@ function SearchNodeList({
     }
 
     try {
-      const branchInfo = await getBranchInfo(node.reference);
+      const branchInfo = await getBranchInfo(node.repository);
       const newNode: DockerCommandStep = {
         id: crypto.randomUUID().slice(0, 10),
         type: "custom-node",
         data: {
-          name: node.title,
-          url: node.reference,
-          files: node.files,
+          name: node.name,
+          url: node.repository,
+          files: [node.repository],
           install_type: "git-clone",
-          pip: node.pip,
+          pip: node.latest_version?.dependencies || [],
           hash: branchInfo?.commit.sha,
           meta: {
             message: branchInfo?.commit.commit.message,
             committer: (branchInfo?.commit.commit as any).committer,
             latest_hash: branchInfo?.commit.sha,
-            stargazers_count: branchInfo?.stargazers_count,
-            commit_url: (branchInfo?.commit as any).html_url,
           },
         },
       };
@@ -351,18 +353,14 @@ function SearchNodeList({
     if (!data) return [];
 
     const lowerCaseBlacklist = new Set(BLACKLIST.map((x) => x.toLowerCase()));
-    const lowerCasePopular = new Set(POPULAR_NODES.map((x) => x.toLowerCase()));
 
-    // Filter out blacklisted nodes and sort popular ones to the top
-    return data
-      .filter((node) => !lowerCaseBlacklist.has(node.reference.toLowerCase()))
-      .sort((a, b) => {
-        const aIsPopular = lowerCasePopular.has(a.reference.toLowerCase());
-        const bIsPopular = lowerCasePopular.has(b.reference.toLowerCase());
-        if (aIsPopular && !bIsPopular) return -1;
-        if (!aIsPopular && bIsPopular) return 1;
-        return 0;
-      });
+    // Filter out blacklisted nodes and nodes with empty repositories
+    return data.filter(
+      (node) =>
+        node.repository &&
+        node.repository.trim() !== "" &&
+        !lowerCaseBlacklist.has(node.repository.toLowerCase()),
+    );
   }, [data]); // Only recompute when data changes
 
   const filteredNodes = useMemo(() => {
@@ -375,7 +373,8 @@ function SearchNodeList({
       .filter(Boolean);
 
     return nonBlacklistedNodes.filter((node) => {
-      const nodeText = `${node.title} ${node.author} ${node.reference}`
+      const repoAuthor = getRepoAuthor(node.repository);
+      const nodeText = `${node.name} ${repoAuthor} ${node.repository}`
         .toLowerCase()
         .replace(/[^a-z0-9]/g, " ");
 
@@ -540,11 +539,12 @@ function SearchNodeList({
             >
               {rowVirtualizer.getVirtualItems().map((virtualRow, index) => {
                 const node = filteredNodes[virtualRow.index];
-                const nodeRefLower = node.reference.toLowerCase();
+                const nodeRefLower = node.repository.toLowerCase();
+                const repoAuthor = getRepoAuthor(node.repository);
 
                 return (
                   <div
-                    key={nodeRefLower}
+                    key={node.id}
                     data-index={virtualRow.index}
                     ref={rowVirtualizer.measureElement}
                     className={cn(
@@ -573,19 +573,14 @@ function SearchNodeList({
                       <div className="flex flex-row items-center justify-between">
                         <div className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate font-medium">
-                            {POPULAR_NODES.some(
-                              (p) =>
-                                p.toLowerCase() ===
-                                node.reference.toLowerCase(),
-                            ) && "🔥 "}
-                            {node.title}
+                            {node.name}
                           </span>
                           <div className="flex items-center">
                             <span className="text-2xs text-gray-500 leading-snug">
-                              {node.author}
+                              {repoAuthor}
                             </span>
                             <Link
-                              to={node.reference}
+                              to={node.repository}
                               target="_blank"
                               className="ml-1 inline-flex items-center text-gray-500 hover:text-gray-700"
                             >
@@ -609,6 +604,15 @@ function SearchNodeList({
                                 ]?.stars
                               }
                             </span>
+                            {/* <Download
+                              className="text-gray-500 hover:text-gray-700"
+                              size={12}
+                            />
+                            <span className="mx-1 text-[11px] text-muted-foreground">
+                              {node.downloads > 999
+                                ? `${(node.downloads / 1000).toFixed(1)}k`
+                                : node.downloads}
+                            </span> */}
                           </div>
                         </div>
                         <div className="flex flex-col">
