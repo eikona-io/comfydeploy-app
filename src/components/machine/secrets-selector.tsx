@@ -506,8 +506,8 @@ export function SecretsSelector({ machine }: { machine: any }) {
       {selectedGroup && selectedGroupId && filteredValues && (
         <div>
           <MyDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
-            <div className="flex flex-col h-full">
-              <h2 className="text-lg font-semibold mb-4 flex items-center justify-between">
+            <div className="flex h-full flex-col">
+              <h2 className="mb-4 flex items-center justify-between font-semibold text-lg">
                 {selectedGroup.name}
 
                 <Button
@@ -528,7 +528,7 @@ export function SecretsSelector({ machine }: { machine: any }) {
                         key={env.key + env.value + Math.random()}
                         className="overflow-hidden rounded-md border"
                       >
-                        <div className="flex items-center justify-between bg-muted/10 p-2 relative">
+                        <div className="relative flex items-center justify-between bg-muted/10 p-2">
                           <div className="flex flex-1 items-center">
                             <span className="mr-4 truncate font-medium text-sm">
                               {env.key}
@@ -539,7 +539,7 @@ export function SecretsSelector({ machine }: { machine: any }) {
                                 : "•••••••••••••••"}
                             </div>
                           </div>
-                          <div className="right-0 pr-1 absolute flex items-center gap-1 bg-gray-50 rounded-md">
+                          <div className="absolute right-0 flex items-center gap-1 rounded-md bg-gray-50 pr-1">
                             <Button
                               variant="ghost"
                               size="sm"
@@ -614,229 +614,223 @@ export function SecretsSelector({ machine }: { machine: any }) {
               )}
             </div>
           </MyDrawer>
-
-          {/* Add Environment Variable Dialog */}
-          <Dialog open={isAddingSecret} onOpenChange={setIsAddingSecret}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {addingMode === "group"
-                    ? "Create Secret Group"
-                    : "Add Environment Variable"}
-                </DialogTitle>
-                <DialogDescription>
-                  {addingMode === "group"
-                    ? "Create a new group with an initial environment variable."
-                    : `Add a new environment variable to the "${selectedGroup?.name}" secret group.`}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                {addingMode === "group" && (
-                  <div className="grid gap-2">
-                    <Label htmlFor="group-name">Group Name</Label>
-                    <Input
-                      id="group-name"
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
-                      placeholder="Production API Group"
-                    />
-                  </div>
-                )}
-
-                <Separator className="my-2" />
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="value-name">Key</Label>
-                    <Input
-                      id="value-name"
-                      value={newValueName}
-                      onChange={(e) => setNewValueName(e.target.value)}
-                      placeholder="PRODUCTION"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="secret-value">Value</Label>
-                    <div className="relative">
-                      <Input
-                        id="secret-value"
-                        value={newSecretValue}
-                        onChange={(e) => setNewSecretValue(e.target.value)}
-                        type={showNewValue ? "text" : "password"}
-                        placeholder="Enter secret value"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-0 right-0 h-full px-3 py-2 text-muted-foreground"
-                        onClick={toggleShowNewValue}
-                      >
-                        {showNewValue ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">
-                          {showNewValue ? "Hide" : "Show"} value
-                        </span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddingSecret(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddSecret}
-                  disabled={
-                    !newValueName ||
-                    !newSecretValue ||
-                    (addingMode === "group" && !newGroupName)
-                  }
-                >
-                  {addingMode === "group" ? "Create" : "Add"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Edit Environment Variable Dialog */}
-          <Dialog open={isEditingSecret} onOpenChange={setIsEditingSecret}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit Environment Variable</DialogTitle>
-                <DialogDescription>
-                  Update the name and value for this environment variable.
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="value-name">Key</Label>
-                    <Input
-                      id="value-name"
-                      value={newValueName}
-                      onChange={(e) => {
-                        const newValue = e.target.value;
-                        if (newValue.includes(" ")) {
-                          toast.error(
-                            "Please don't use space while adding keys, add underscore instead.",
-                          );
-                        } else {
-                          setNewValueName(newValue);
-                        }
-                      }}
-                      placeholder="PRODUCTION"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-secret-value">Value</Label>
-                    <div className="relative">
-                      <Input
-                        id="edit-secret-value"
-                        value={editSecretValue}
-                        onChange={(e) => setEditSecretValue(e.target.value)}
-                        type={showNewValue ? "text" : "password"}
-                        placeholder="Enter secret value"
-                      />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-0 right-0 h-full px-3 py-2 text-muted-foreground"
-                        onClick={toggleShowNewValue}
-                      >
-                        {showNewValue ? (
-                          <EyeOff className="h-4 w-4" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                        <span className="sr-only">
-                          {showNewValue ? "Hide" : "Show"} password
-                        </span>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsEditingSecret(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleEditSecret}
-                  disabled={!editValueName || !editSecretValue}
-                >
-                  Save Changes
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-
-          {/* Delete Environment Variable Confirmation */}
-          <AlertDialog
-            open={showDeleteValueConfirm}
-            onOpenChange={setShowDeleteValueConfirm}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Environment Variable</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this environment variable?
-                  This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteValue}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* Delete Secret Group Confirmation */}
-          <AlertDialog
-            open={showDeleteGroupConfirm}
-            onOpenChange={setShowDeleteGroupConfirm}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Secret Group</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete this entire secret group and
-                  all its environment variables? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteGroup}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
         </div>
       )}
+      {/* Add Environment Variable Dialog */}
+      <Dialog open={isAddingSecret} onOpenChange={setIsAddingSecret}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {addingMode === "group"
+                ? "Create Secret Group"
+                : "Add Environment Variable"}
+            </DialogTitle>
+            <DialogDescription>
+              {addingMode === "group"
+                ? "Create a new group with an initial environment variable."
+                : `Add a new environment variable to the "${selectedGroup?.name}" secret group.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {addingMode === "group" && (
+              <div className="grid gap-2">
+                <Label htmlFor="group-name">Group Name</Label>
+                <Input
+                  id="group-name"
+                  value={newGroupName}
+                  onChange={(e) => setNewGroupName(e.target.value)}
+                  placeholder="Production API Group"
+                />
+              </div>
+            )}
+
+            <Separator className="my-2" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="value-name">Key</Label>
+                <Input
+                  id="value-name"
+                  value={newValueName}
+                  onChange={(e) => setNewValueName(e.target.value)}
+                  placeholder="PRODUCTION"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="secret-value">Value</Label>
+                <div className="relative">
+                  <Input
+                    id="secret-value"
+                    value={newSecretValue}
+                    onChange={(e) => setNewSecretValue(e.target.value)}
+                    type={showNewValue ? "text" : "password"}
+                    placeholder="Enter secret value"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 h-full px-3 py-2 text-muted-foreground"
+                    onClick={toggleShowNewValue}
+                  >
+                    {showNewValue ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showNewValue ? "Hide" : "Show"} value
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddingSecret(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddSecret}
+              disabled={
+                !newValueName ||
+                !newSecretValue ||
+                (addingMode === "group" && !newGroupName)
+              }
+            >
+              {addingMode === "group" ? "Create" : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Environment Variable Dialog */}
+      <Dialog open={isEditingSecret} onOpenChange={setIsEditingSecret}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Environment Variable</DialogTitle>
+            <DialogDescription>
+              Update the name and value for this environment variable.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="value-name">Key</Label>
+                <Input
+                  id="value-name"
+                  value={newValueName}
+                  onChange={(e) => {
+                    const newValue = e.target.value;
+                    if (newValue.includes(" ")) {
+                      toast.error(
+                        "Please don't use space while adding keys, add underscore instead.",
+                      );
+                    } else {
+                      setNewValueName(newValue);
+                    }
+                  }}
+                  placeholder="PRODUCTION"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-secret-value">Value</Label>
+                <div className="relative">
+                  <Input
+                    id="edit-secret-value"
+                    value={editSecretValue}
+                    onChange={(e) => setEditSecretValue(e.target.value)}
+                    type={showNewValue ? "text" : "password"}
+                    placeholder="Enter secret value"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute top-0 right-0 h-full px-3 py-2 text-muted-foreground"
+                    onClick={toggleShowNewValue}
+                  >
+                    {showNewValue ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showNewValue ? "Hide" : "Show"} password
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditingSecret(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditSecret}
+              disabled={!editValueName || !editSecretValue}
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Environment Variable Confirmation */}
+      <AlertDialog
+        open={showDeleteValueConfirm}
+        onOpenChange={setShowDeleteValueConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Environment Variable</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this environment variable? This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteValue}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Secret Group Confirmation */}
+      <AlertDialog
+        open={showDeleteGroupConfirm}
+        onOpenChange={setShowDeleteGroupConfirm}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Secret Group</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this entire secret group and all
+              its environment variables? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteGroup}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <RebuildMachineDialog
         machine={machine}
         dialogOpen={machineRebuildDialogOpen}
@@ -948,18 +942,14 @@ const SecretGroupContainer = ({
         <div className="relative flex items-center gap-x-2">
           {isLinked ? (
             <Button
-              // variant="ghost"
               variant="destructive"
-              iconPlacement="right"
-              // className="flex items-center gap-2 border border-red-400 border-dashed text-red-500 hover:bg-red-50 hover:text-red-600"
               onClick={(e) => {
                 e.stopPropagation();
                 selectGroup(group.id);
               }}
-              Icon={Link}
             >
+              <Link className="mr-1 h-4 w-4" />
               Unlink Secret
-              {/* <Link className="h-4 w-4" /> */}
             </Button>
           ) : (
             <Button
