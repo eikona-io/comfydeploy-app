@@ -91,11 +91,18 @@ import { useQueryState } from "nuqs";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MyDrawer } from "./drawer";
+import { Chat } from "./master-comfy/chat";
 import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
 import { Badge } from "./ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "./ui/tooltip";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
 import { WorkflowCommitVersion } from "./workspace/WorkflowCommitVersion";
@@ -105,13 +112,6 @@ import {
   useSessionIncrementStore,
 } from "./workspace/increase-session";
 import { sendWorkflow } from "./workspace/sendEventToCD";
-import { Chat } from "./master-comfy/chat";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
 
 // Add Session type
 interface Session {
@@ -287,7 +287,7 @@ function usePages() {
 
 const links = [
   {
-    title: "Documentation",
+    title: "Docs",
     url: "https://docs.comfydeploy.com",
     icon: Book,
   },
@@ -297,7 +297,7 @@ const links = [
     icon: MessageCircle,
   },
   {
-    title: "NextJS Demo",
+    title: "Demo",
     url: "https://demo2.comfydeploy.com",
     icon: Box,
   },
@@ -844,6 +844,29 @@ export function AppSidebar() {
             </div>
           </div>
 
+          {!(workflow_id && parentPath === "workflows") && (
+            <OrganizationSwitcher
+              organizationProfileUrl="/organization-profile"
+              organizationProfileMode="navigation"
+              afterSelectOrganizationUrl="/org/:slug/workflows"
+              afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
+              appearance={{
+                elements: {
+                  rootBox:
+                    "items-center justify-center mt-1 p-0 w-full bg-gray-100 rounded-[8px]",
+                  organizationSwitcherPopoverRootBox: {
+                    pointerEvents: "initial",
+                  },
+                  organizationSwitcherTrigger: {
+                    width: "100%",
+                    justifyContent: "space-between",
+                    padding: "12px 12px",
+                  },
+                },
+              }}
+            />
+          )}
+
           {workflow_id && parentPath === "workflows" && (
             <>
               <WorkflowsBreadcrumb />
@@ -876,18 +899,14 @@ export function AppSidebar() {
               </div>
             </>
           )}
-
-          {/* <div id="sidebar-header"></div> */}
-          {/* </SidebarMenuItem> */}
-          {/* </SidebarMenu> */}
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="gap-0">
           <div id="sidebar-panel" />
 
           {(!workflow_id || parentPath !== "workflows") && (
             <>
-              <SidebarGroup>
-                <SidebarGroupLabel>Application</SidebarGroupLabel>
+              <SidebarGroup className="pt-0">
+                {/* <SidebarGroupLabel>Application</SidebarGroupLabel> */}
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {items.map((item) => (
@@ -949,48 +968,36 @@ export function AppSidebar() {
                 </SidebarGroupContent>
               </SidebarGroup>
 
-              <SidebarGroup>
+              {/* <SidebarGroup>
                 <SidebarGroupLabel>Links</SidebarGroupLabel>
                 <SidebarGroupContent>
-                  <SidebarMenu>
-                    {links.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild>
-                          <a href={item.url} target="_blank" rel="noreferrer">
-                            <item.icon />
-                            <span className="flex w-full flex-row items-center justify-between gap-2 pr-2">
-                              <span>{item.title}</span>
-                              <ExternalLink size={14} />
-                            </span>
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
+                  <SidebarMenu></SidebarMenu>
                 </SidebarGroupContent>
-              </SidebarGroup>
+              </SidebarGroup> */}
             </>
           )}
         </SidebarContent>
-        <SidebarFooter className="flex w-full flex-col justify-center gap-2">
-          <OrganizationSwitcher
-            organizationProfileUrl="/organization-profile"
-            organizationProfileMode="navigation"
-            afterSelectOrganizationUrl="/org/:slug/workflows"
-            afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
-            appearance={{
-              elements: {
-                rootBox: "items-center justify-center p-2",
-                organizationSwitcherPopoverRootBox: {
-                  pointerEvents: "initial",
-                },
-              },
-            }}
-          />
+        <SidebarFooter className="flex w-full flex-col justify-center gap-2 pb-4">
+          {!(workflow_id && parentPath === "workflows") && (
+            <div className="grid grid-cols-2 gap-2 px-2">
+              {links.map((item) => (
+                // <SidebarMenuItem key={item.title} className="gap-1">
+                // <SidebarMenuButton asChild className="py-0 min-h-0 h-fit">
+                <a href={item.url} target="_blank" rel="noreferrer">
+                  <span className="flex w-full flex-row items-center justify gap-2 pr-2 text-2xs text-muted-foreground">
+                    <item.icon size={16} className="w-3" />
+                    <span>{item.title}</span>
+                  </span>
+                </a>
+                // </SidebarMenuButton>
+                // </SidebarMenuItem>
+              ))}
+            </div>
+          )}
         </SidebarFooter>
       </Sidebar>
 
-      {window.location.hostname === "localhost" && (
+      {/* {window.location.hostname === "localhost" && (
         <div className="fixed top-11 left-2 z-[9999] flex items-center gap-2 opacity-65">
           <Badge className="pointer-events-none bg-orange-300 text-orange-700 shadow-md">
             Localhost
@@ -1001,7 +1008,7 @@ export function AppSidebar() {
             {currentGitBranch?.branch || `Please run "bun githooks"`}
           </Badge>
         </div>
-      )}
+      )} */}
     </>
   );
 }
