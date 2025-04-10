@@ -173,9 +173,15 @@ export function UserSettings() {
           },
           s3_secret_access_key: {
             group: "Storage Settings [Business]",
+            inputProps: {
+              type: "password",
+            },
           },
           s3_access_key_id: {
             group: "Storage Settings [Business]",
+            inputProps: {
+              type: "password",
+            },
           },
           s3_bucket_name: {
             group: "Storage Settings [Business]",
