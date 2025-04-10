@@ -21,6 +21,7 @@ import React, {
   useState,
 } from "react";
 import { useAssetsBrowserStore } from "../workspace/Workspace";
+import { SDAssetInput } from "./sd-asset-input";
 
 type SDImageInputProps = {
   label?: string;
@@ -95,7 +96,7 @@ export function SDImageInput({
   return (
     <div className={className} ref={dropRef}>
       {header}
-      <div className={`${inputClasses} flex gap-2`}>
+      <div className={`${inputClasses} flex gap-1`}>
         {!ImgView && (
           <>
             <Input
@@ -133,16 +134,9 @@ export function SDImageInput({
               }}
               type="file"
             />
-
-            {/* <Button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                useAssetsBrowserStore.getState().setOpen(true);
-              }}
-            >
-              Assets
-            </Button> */}
+            <div className="flex items-center justify-center">
+              <SDAssetInput onChange={onChange} />
+            </div>
           </>
         )}
         {ImgView && (
