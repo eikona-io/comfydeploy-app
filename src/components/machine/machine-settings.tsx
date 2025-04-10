@@ -198,10 +198,12 @@ export function MachineSettingsWrapper({
                   width: "100px",
                   x:
                     view === "advanced"
-                      ? "calc(295%)"
+                      ? "calc(305%)"
                       : view === "autoscaling"
-                        ? "calc(100% + 20px)": view === "secrets"? "calc(203% + 10px)"
-                        : "6px",
+                        ? "calc(100% + 20px)"
+                        : view === "secrets"
+                          ? "calc(203% + 13px)"
+                          : "6px",
                 }}
                 transition={{
                   ease: "easeInOut",
@@ -975,10 +977,9 @@ function ServerlessSettings({
               </Accordion>
             </div>
           )}
-
         </form>
       </Form>
-      
+
       {view === "secrets" && (
         <div className="pt-4">
           <SecretsSelector machine={machine} />
@@ -1611,7 +1612,7 @@ export function WorkflowTimeOut({
     { seconds: 1800, requiredPlan: "business" },
   ];
 
-  if (orgId == "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
+  if (orgId === "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
     options.push({
       seconds: 7 * 60 * 60, // 7 hours
       requiredPlan: "business",
