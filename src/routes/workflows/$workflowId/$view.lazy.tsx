@@ -253,7 +253,7 @@ function WorkflowPageComponent() {
             transition={{ duration: 0.5 }}
           >
             <SidebarGroup>
-              <SidebarGroupLabel>Workspace</SidebarGroupLabel>
+              {/* <SidebarGroupLabel>Workspace</SidebarGroupLabel> */}
               <SidebarGroupContent>
                 <SidebarMenu className="px-1">
                   {tabs.map((tab) => (

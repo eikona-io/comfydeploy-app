@@ -40,6 +40,7 @@ import {
   ArrowRightToLine,
   Droplets,
   Loader2,
+  Rocket,
   RotateCw,
   Search,
   StopCircle,
@@ -233,7 +234,7 @@ export function SessionCreatorForm({
   return (
     <div className="flex flex-col gap-6 w-full">
       <div>
-        <h2 className="font-semibold text-lg">Workspace</h2>
+        <h2 className="font-semibold text-lg">ComfyUI</h2>
         <p className="text-sm text-muted-foreground flex items-center gap-2">
           Start and edit your workflow{" "}
           <Badge variant="outline" className="gap-2">
@@ -270,71 +271,80 @@ export function SessionCreatorForm({
             <FormMessage />
           </FormItem>
 
-          <FormField
-            control={form.control}
-            name="gpu"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>GPU Type</FormLabel>
-                <FormControl>
-                  <GPUSelectBox
-                    className="w-full"
-                    value={field.value}
-                    onChange={field.onChange}
-                  />
-                </FormControl>
-                <FormDescription>
-                  {isFluidVersion
-                    ? "GPU type is pre-configured for this fluid version"
-                    : "Select the GPU type for your session"}
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="timeout"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Session Timeout</FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  value={field.value.toString()}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select timeout">
-                        {field.value} mins
-                      </SelectValue>
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="2">2 mins</SelectItem>
-                    <SelectItem value="15">15 mins</SelectItem>
-                    <SelectItem value="30">30 mins</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Choose how long the session should run before auto-termination
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* <div className="flex flex-row gap-2"></div> */}
 
           <div className="flex justify-end gap-2">
+            <FormField
+              control={form.control}
+              name="gpu"
+              render={({ field }) => (
+                <FormItem>
+                  {/* <FormLabel>GPU Type</FormLabel> */}
+                  <FormControl>
+                    <GPUSelectBox
+                      className="w-full"
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  {/* <FormDescription>
+                    {isFluidVersion
+                      ? "GPU type is pre-configured for this fluid version"
+                      : "Select the GPU type for your session"}
+                  </FormDescription> */}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="timeout"
+              render={({ field }) => (
+                <FormItem>
+                  {/* <FormLabel>Session Timeout</FormLabel> */}
+                  <Select
+                    onValueChange={(value) => field.onChange(Number(value))}
+                    value={field.value.toString()}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select timeout">
+                          {field.value} mins
+                        </SelectValue>
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="2">2 mins</SelectItem>
+                      <SelectItem value="15">15 mins</SelectItem>
+                      <SelectItem value="30">30 mins</SelectItem>
+                      <SelectItem value="60">1 hour</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {/* <FormDescription>
+                    Choose how long the session should run before
+                    auto-termination
+                  </FormDescription> */}
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {showCancelButton && (
               <Button variant="outline" onClick={onCancel}>
                 Cancel
               </Button>
             )}
-            <Button type="submit" disabled={createDynamicSession.isPending}>
-              {createDynamicSession.isPending && (
+            <Button
+              type="submit"
+              className="gap-1"
+              disabled={createDynamicSession.isPending}
+              isLoading={createDynamicSession.isPending}
+              Icon={Rocket}
+              iconPlacement="right"
+            >
+              {/* {createDynamicSession.isPending && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
+              )} */}
               Start ComfyUI
             </Button>
           </div>
