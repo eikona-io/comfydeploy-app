@@ -846,7 +846,7 @@ export function AppSidebar() {
           </div>
 
           {!(workflow_id && parentPath === "workflows") && (
-            <div className="flex items-center gap-1 justify-center mt-1 bg-gray-100 rounded-[8px]">
+            <div className="flex items-center gap-0 justify-center mt-1 bg-gray-100 rounded-[8px]">
               <OrganizationSwitcher
                 organizationProfileUrl="/organization-profile"
                 organizationProfileMode="navigation"
