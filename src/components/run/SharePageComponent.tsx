@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/tooltip";
 import {
   FileURLRender,
-  getTotalUrlCountAndUrls,
   OutputRenderRun,
   PlaygroundOutputRenderRun,
+  getTotalUrlCountAndUrls,
 } from "@/components/workflows/OutputRender";
 import { useRuns } from "@/components/workflows/RunsTable";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { api } from "@/lib/api";
 import { customInputNodes } from "@/lib/customInputNodes";
 import { getDuration, getRelativeTime } from "@/lib/get-relative-time";
 import {
@@ -26,15 +27,17 @@ import {
 } from "@/lib/getInputsFromWorkflow";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import {
+  AlertCircle,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Clock,
   Loader2,
   Play,
-  ChevronLeft,
-  ChevronRight,
-  AlertCircle,
 } from "lucide-react";
 import { parseAsBoolean, useQueryState } from "nuqs";
 import {
@@ -45,18 +48,15 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
-import { Fab } from "../fab";
 import { MyDrawer } from "../drawer";
-import { motion } from "framer-motion";
-import { VirtualizedInfiniteList } from "../virtualized-infinite-list";
-import { LogsTab, RunDetails } from "../workflows/WorkflowComponent";
+import { Fab } from "../fab";
 import { LogsViewer } from "../log/logs-viewer";
+import { AlertDescription } from "../ui/alert";
 import { Progress } from "../ui/progress";
 import { Separator } from "../ui/separator";
-import { AlertDescription } from "../ui/alert";
-import { useSearch } from "@tanstack/react-router";
 import { useSelectedVersion } from "../version-select";
-import { api } from "@/lib/api";
+import { VirtualizedInfiniteList } from "../virtualized-infinite-list";
+import { LogsTab, RunDetails } from "../workflows/WorkflowComponent";
 
 type run = {
   status:
@@ -243,6 +243,13 @@ export function Playground(props: {
           >
             <div className="mb-1 flex items-center justify-between">
               <span className="ml-2 font-semibold text-sm">Edit</span>
+              <a
+                target="_blank"
+                href="https://www.comfydeploy.com/docs/v2/deployments/inputs"
+                className="mr-2 text-2xs text-muted-foreground hover:underline"
+              >
+                Learn about external inputs
+              </a>
             </div>
             <div className="flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white p-3 shadow-sm">
               {isVersionLoading ? (
