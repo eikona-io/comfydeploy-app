@@ -493,9 +493,9 @@ function SearchNodeList({
                   }
 
                   await handleAddNode({
-                    title: repo,
+                    name: repo,
                     author: owner,
-                    reference: customGitUrl,
+                    repository: customGitUrl,
                     files: [customGitUrl],
                     pip: [],
                     install_type: "git-clone",
