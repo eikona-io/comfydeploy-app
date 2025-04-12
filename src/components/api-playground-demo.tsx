@@ -614,12 +614,12 @@ function ApiPlaygroundDemo(props: {
   return (
     <ApiPlayground
       openApiSpec={data}
-      // hideSidebar
+      hideSidebar
       defaultServer={isLocalhost ? "http://localhost:3011/api" : undefined}
       hideDescription
       hideTitle
       preSelectedMethod="POST"
-      defaultApiKey={token}
+      defaultApiKey={() => token}
       preSelectedPath="/run/deployment/queue"
       defaultRequestBody={JSON.stringify(props.defaultInputs, null, 2)}
     />

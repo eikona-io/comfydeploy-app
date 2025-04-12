@@ -14,6 +14,7 @@ async function getHighlighter() {
     { getHighlighterCore },
     { default: ts },
     { default: js },
+    { default: python },
     { default: bash },
     { default: docker },
     { default: json },
@@ -23,6 +24,7 @@ async function getHighlighter() {
     import("shiki/core"),
     import("shiki/langs/typescript.mjs"),
     import("shiki/langs/javascript.mjs"),
+    import("shiki/langs/python.mjs"),
     import("shiki/langs/bash.mjs"),
     import("shiki/langs/dockerfile.mjs"),
     import("shiki/langs/json.mjs"),
@@ -32,7 +34,7 @@ async function getHighlighter() {
 
   const highlighter = await getHighlighterCore({
     themes: [oneDarkPro],
-    langs: [ts, js, bash, docker, json],
+    langs: [ts, js, python, bash, docker, json],
     loadWasm: getWasm,
   });
   return highlighter;

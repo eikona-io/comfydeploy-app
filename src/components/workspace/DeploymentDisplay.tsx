@@ -1419,35 +1419,36 @@ export function DeploymentSettings({
             //     </AlertDescription>
             //   </Alert>
             // </div>
-            <div className="mb-4">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex w-fit items-center gap-2"
-                onClick={() => {
-                  navigate({
-                    to: `/machines/${deployment.machine_id}`,
-                    search: (prev) => ({
-                      ...prev,
-                      view: "settings",
-                      "machine-settings-view":
-                        machine?.type === "comfy-deploy-serverless"
-                          ? "autoscaling"
-                          : undefined,
-                    }),
-                  });
-                }}
-              >
-                <Server className="h-4 w-4" />
-                {machine?.name || "Unknown"} Settings{" "}
-                <Badge
-                  variant="secondary"
-                  className="bg-zinc-100 text-zinc-700"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Badge>
-              </Button>
-            </div>
+            <></>
+            // <div className="mb-4">
+            //   <Button
+            //     variant="outline"
+            //     size="sm"
+            //     className="flex w-fit items-center gap-2"
+            //     onClick={() => {
+            //       navigate({
+            //         to: `/machines/${deployment.machine_id}`,
+            //         search: (prev) => ({
+            //           ...prev,
+            //           view: "settings",
+            //           "machine-settings-view":
+            //             machine?.type === "comfy-deploy-serverless"
+            //               ? "autoscaling"
+            //               : undefined,
+            //         }),
+            //       });
+            //     }}
+            //   >
+            //     <Server className="h-4 w-4" />
+            //     {machine?.name || "Unknown"} Settings{" "}
+            //     <Badge
+            //       variant="secondary"
+            //       className="bg-zinc-100 text-zinc-700"
+            //     >
+            //       <ExternalLink className="h-4 w-4" />
+            //     </Badge>
+            //   </Button>
+            // </div>
           )}
 
           <ApiPlaygroundDemo

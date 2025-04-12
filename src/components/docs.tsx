@@ -1,22 +1,8 @@
 import { Info } from "lucide-react";
 import type React from "react";
 import { useState, useEffect } from "react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "./ui/accordion";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
 import { CodeBlock } from "./ui/code-blocks";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
@@ -27,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Separator } from "./ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Textarea } from "./ui/textarea";
 import {
@@ -64,7 +49,7 @@ interface ApiPlaygroundProps {
   hideSidebar?: boolean;
   preSelectedPath?: string;
   preSelectedMethod?: string;
-  defaultApiKey?: string;
+  defaultApiKey?: string | (() => string);
   defaultServer?: string;
   defaultRequestBody?: string | object;
 }
@@ -98,7 +83,22 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
   );
   const [response, setResponse] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [apiKey, setApiKey] = useState<string>(defaultApiKey);
+  const [apiKey, setApiKey] = useState<string>(() => {
+    if (typeof defaultApiKey === "function") {
+      return defaultApiKey();
+    }
+    return defaultApiKey;
+  });
+  const [paramValues, setParamValues] = useState<Record<string, string>>({});
+
+  // Add effect to update apiKey when defaultApiKey changes
+  useEffect(() => {
+    if (typeof defaultApiKey === "function") {
+      setApiKey(defaultApiKey());
+    } else {
+      setApiKey(defaultApiKey);
+    }
+  }, [defaultApiKey]);
 
   // Effect to handle pre-selected path and method
   useEffect(() => {
@@ -422,9 +422,13 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
         "Content-Type": "application/json",
       };
 
+      // Get the latest API key value if it's a function
+      const currentApiKey =
+        typeof defaultApiKey === "function" ? defaultApiKey() : apiKey;
+
       // Add API key if provided
-      if (apiKey) {
-        headers["Authorization"] = `Bearer ${apiKey}`;
+      if (currentApiKey) {
+        headers["Authorization"] = `Bearer ${currentApiKey}`;
       }
 
       const response = await fetch(url, {
@@ -445,6 +449,112 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
       setIsLoading(false);
     }
   };
+
+  // Add this helper function near the top with other utility functions
+  const generateCodeExamples = (
+    selectedPath: string,
+    selectedMethod: string,
+    selectedEndpoint: any,
+    selectedServer: string,
+    currentRequestBody: string,
+    parameters?: any[],
+  ) => {
+    const url = `${selectedServer}${selectedPath}`;
+    const hasBody = ["POST", "PUT", "PATCH"].includes(
+      selectedMethod.toUpperCase(),
+    );
+
+    // Build URL with parameters if they exist
+    let urlWithParams = url;
+    const queryParams: string[] = [];
+    if (parameters) {
+      parameters.forEach((param) => {
+        if (param.in === "path" && param.value) {
+          urlWithParams = urlWithParams.replace(`{${param.name}}`, param.value);
+        } else if (param.in === "query" && param.value) {
+          queryParams.push(`${param.name}=${encodeURIComponent(param.value)}`);
+        }
+      });
+    }
+    if (queryParams.length > 0) {
+      urlWithParams += `?${queryParams.join("&")}`;
+    }
+
+    // Parse current request body
+    let parsedBody = "{}";
+    try {
+      if (currentRequestBody) {
+        const parsed = JSON.parse(currentRequestBody);
+        parsedBody = JSON.stringify(parsed, null, 2)
+          .split("\n")
+          .map((line, index) => (index === 0 ? line : `    ${line}`)) // 4 spaces for body content
+          .join("\n");
+      }
+    } catch (e) {
+      console.warn("Invalid JSON in request body");
+    }
+
+    // TypeScript example using fetch
+    const tsCode = `const response = await fetch("${urlWithParams}", {
+    method: "${selectedMethod.toUpperCase()}",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer YOUR_API_KEY"
+    }${
+      hasBody
+        ? `,
+    body: JSON.stringify(${parsedBody})`
+        : ""
+    }
+});
+
+const data = await response.json();
+console.log(data);`;
+
+    // Python example using requests (no special indentation needed)
+    const pythonCode = `import requests
+
+url = "${urlWithParams}"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer YOUR_API_KEY"
+}${hasBody ? `\n\npayload = ${currentRequestBody}` : ""}
+
+response = requests.${selectedMethod.toLowerCase()}(
+    url,
+    headers=headers${hasBody ? ",\n    json=payload" : ""}
+)
+
+data = response.json()
+print(data)`;
+
+    // Generate curl example
+    const curlCode = `curl -X ${selectedMethod.toUpperCase()} "${urlWithParams}" \\
+    -H "Content-Type: application/json" \\
+    -H "Authorization: Bearer YOUR_API_KEY"${
+      hasBody
+        ? ` \\
+    -d '${currentRequestBody}'`
+        : ""
+    }`;
+
+    return { tsCode, pythonCode, curlCode };
+  };
+
+  // Update the code where we call generateCodeExamples to include the current request body and parameters
+  const { tsCode, pythonCode, curlCode } = selectedEndpoint
+    ? generateCodeExamples(
+        selectedPath,
+        selectedMethod,
+        selectedEndpoint,
+        selectedServer,
+        requestBody,
+        selectedEndpoint.parameters?.map((param: any) => ({
+          ...param,
+          value: paramValues[param.name] || "",
+        })),
+      )
+    : { tsCode: "", pythonCode: "", curlCode: "" };
 
   return (
     <div className="flex flex-col h-full">
@@ -552,7 +662,7 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
                   <span className="font-mono text-sm truncate">
                     {selectedPath}
                   </span>
-                  <div className="flex-shrink-0">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <Badge
                       variant={
                         selectedMethod === "get"
@@ -569,6 +679,13 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
                     >
                       {selectedMethod.toUpperCase()}
                     </Badge>
+                    <Button
+                      onClick={handleSendRequest}
+                      disabled={isLoading}
+                      className="h-7 text-xs rounded-sm"
+                    >
+                      {isLoading ? "Sending..." : "Send Request"}
+                    </Button>
                   </div>
                 </div>
                 <div className="text-xs text-gray-600">
@@ -594,6 +711,13 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
                               placeholder={param.name}
                               className="flex-1 h-7 text-xs rounded-sm"
                               disabled={isLoading}
+                              value={paramValues[param.name] || ""}
+                              onChange={(e) => {
+                                setParamValues((prev) => ({
+                                  ...prev,
+                                  [param.name]: e.target.value,
+                                }));
+                              }}
                             />
                             <Badge
                               variant="outline"
@@ -718,17 +842,33 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
                     </div>
                   </div>
                 )}
-              </div>
 
-              {/* Sticky Send Request button */}
-              <div className="sticky bottom-0 p-3 bg-white border-t">
-                <Button
-                  onClick={handleSendRequest}
-                  disabled={isLoading}
-                  className="w-full h-8 text-xs rounded-sm"
-                >
-                  {isLoading ? "Sending..." : "Send Request"}
-                </Button>
+                {/* Add the new code examples section */}
+                <div className="mb-3">
+                  <h3 className="text-xs font-medium mb-1">Code Examples</h3>
+                  <Tabs defaultValue="typescript" className="w-full">
+                    <TabsList className="w-full">
+                      <TabsTrigger value="typescript" className="flex-1">
+                        TypeScript
+                      </TabsTrigger>
+                      <TabsTrigger value="python" className="flex-1">
+                        Python
+                      </TabsTrigger>
+                      <TabsTrigger value="curl" className="flex-1">
+                        cURL
+                      </TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="typescript">
+                      <CodeBlock code={tsCode} lang="typescript" />
+                    </TabsContent>
+                    <TabsContent value="python">
+                      <CodeBlock code={pythonCode} lang="python" />
+                    </TabsContent>
+                    <TabsContent value="curl">
+                      <CodeBlock code={curlCode} lang="bash" />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </div>
             </>
           ) : (
