@@ -8,6 +8,7 @@ import {
   EyeOff,
   KeyRound,
   Link,
+  Link2Off,
   Pencil,
   Plus,
   Trash2,
@@ -57,6 +58,7 @@ import {
 } from "@/hooks/use-secrets-api";
 import { toast } from "sonner";
 import { RebuildMachineDialog } from "../machines/machine-list";
+import { Badge } from "../ui/badge";
 
 export function SecretsSelector({ machine }: { machine: any }) {
   const [visibleValues, setVisibleValues] = useState<Record<number, boolean>>(
@@ -394,7 +396,7 @@ export function SecretsSelector({ machine }: { machine: any }) {
                     id="group-name"
                     value={newGroupName}
                     onChange={(e) => setNewGroupName(e.target.value)}
-                    placeholder="Production API Group"
+                    placeholder="Open API Key"
                   />
                 </div>
               )}
@@ -408,7 +410,7 @@ export function SecretsSelector({ machine }: { machine: any }) {
                     id="value-name"
                     value={newValueName}
                     onChange={(e) => setNewValueName(e.target.value)}
-                    placeholder="PRODUCTION"
+                    placeholder="OPENAI_API_KEY"
                   />
                 </div>
                 <div className="grid gap-2">
@@ -646,7 +648,7 @@ export function SecretsSelector({ machine }: { machine: any }) {
                   id="group-name"
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  placeholder="Production API Group"
+                  placeholder="Open API Key"
                 />
               </div>
             )}
@@ -660,7 +662,7 @@ export function SecretsSelector({ machine }: { machine: any }) {
                   id="value-name"
                   value={newValueName}
                   onChange={(e) => setNewValueName(e.target.value)}
-                  placeholder="PRODUCTION"
+                  placeholder="OPENAI_API_KEY"
                 />
               </div>
               <div className="grid gap-2">
@@ -739,7 +741,7 @@ export function SecretsSelector({ machine }: { machine: any }) {
                       setNewValueName(newValue);
                     }
                   }}
-                  placeholder="PRODUCTION"
+                  placeholder="OPENAI_API_KEY"
                 />
               </div>
               <div className="grid gap-2">
@@ -928,7 +930,7 @@ const SecretGroupContainer = ({
   return (
     <div
       key={group.id}
-      className={"cursor-pointer rounded-md border p-3 hover:bg-muted/50"}
+      className={"cursor-pointer rounded-md border px-4 py-2 hover:bg-muted/50"}
       onClick={() => {
         if (isLinking) return;
         seeGroup(group.id);
@@ -936,40 +938,49 @@ const SecretGroupContainer = ({
       onKeyDown={() => {}}
     >
       <div className="flex items-center justify-between">
-        <div>
-          <h4 className="font-medium">{group.name}</h4>
-          <p className="mt-1 text-muted-foreground text-xs">
-            {group.environment_variables.length} environment{" "}
+        <div className="flex flex-col">
+          <div className="font-medium">{group.name}</div>
+        </div>
+        <div className="relative flex items-center gap-x-2">
+          <Badge className="text-muted-foreground text-2xs py-1 px-2">
+            {group.environment_variables.length} env{" "}
             {group.environment_variables.length === 1
               ? "variable"
               : "variables"}
-          </p>
-        </div>
-        <div className="relative flex items-center gap-x-2">
+          </Badge>
+
           {isLinked ? (
             <Button
-              variant="destructive"
+              variant="destructiveHover"
+              className="gap-1"
+              confirm
               onClick={(e) => {
                 e.stopPropagation();
                 selectGroup(group.id);
               }}
+              Icon={Link2Off}
+              iconPlacement="right"
             >
-              <Link className="mr-1 h-4 w-4" />
-              Unlink Secret
+              Unlink
             </Button>
           ) : (
             <Button
               // variant="ghost"
               size="sm"
+              confirm
+              className="gap-1"
               // className="absolute right-8 z-30 flex items-center justify-center border border-gray-400 border-dashed py-1"
               onClick={(e) => {
                 e.stopPropagation();
                 selectGroup(group.id);
               }}
+              Icon={Link}
+              iconPlacement="right"
             >
               Link
             </Button>
           )}
+
           <Button
             type="button"
             variant="ghost"
