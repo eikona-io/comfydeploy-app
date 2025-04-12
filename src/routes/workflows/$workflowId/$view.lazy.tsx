@@ -126,7 +126,8 @@ function WorkflowPageComponent() {
   const { workflowId, view: currentView } = Route.useParams();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
-  const { setSelectedDeployment } = useSelectedDeploymentStore();
+  const { setSelectedDeployment, selectedDeployment } =
+    useSelectedDeploymentStore();
   const { data: versions } = useQuery<Version[]>({
     queryKey: ["workflow", workflowId, "versions"],
     meta: {
@@ -231,9 +232,9 @@ function WorkflowPageComponent() {
   const router = useRouter();
 
   const [sessionId, setSessionId] = useQueryState("sessionId");
-  const sessionSelected = sessions?.find(
-    (session) => session.session_id === sessionId,
-  );
+  // const sessionSelected = sessions?.find(
+  //   (session) => session.session_id === sessionId,
+  // );
 
   // Find public share deployment if it exists
   const publicShareDeployment = deployments?.find(
@@ -380,44 +381,46 @@ function WorkflowPageComponent() {
         publicLinkOnly={true}
       />
       <DeploymentDrawer>
-        <div className="flex justify-end gap-2">
-          <Button
-            // size="sm"
-            variant="secondary"
-            className="transition-all hover:text-white hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600"
-            confirm
-            onClick={async () => {
-              await callServerPromise(
-                api({
-                  init: {
-                    method: "DELETE",
-                  },
-                  url: "deployment/" + publicShareDeployment?.id,
-                }),
-              );
-              setSelectedDeployment(null);
-              setSelectedVersion(null);
-              setIsDrawerOpen(false);
-              await queryClient.invalidateQueries({
-                queryKey: ["workflow", workflowId, "deployments"],
-              });
-            }}
-          >
-            Delete
-          </Button>
-          <Button
-            // size="sm"
-            onClick={() => {
-              if (versions?.[0]) {
+        {selectedDeployment === publicShareDeployment?.id && (
+          <div className="flex justify-end gap-2">
+            <Button
+              // size="sm"
+              variant="secondary"
+              className="transition-all hover:text-white hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600"
+              confirm
+              onClick={async () => {
+                await callServerPromise(
+                  api({
+                    init: {
+                      method: "DELETE",
+                    },
+                    url: "deployment/" + publicShareDeployment?.id,
+                  }),
+                );
                 setSelectedDeployment(null);
-                setSelectedVersion(versions[0]);
-                setIsDrawerOpen(true);
-              }
-            }}
-          >
-            Update
-          </Button>
-        </div>
+                setSelectedVersion(null);
+                setIsDrawerOpen(false);
+                await queryClient.invalidateQueries({
+                  queryKey: ["workflow", workflowId, "deployments"],
+                });
+              }}
+            >
+              Delete
+            </Button>
+            <Button
+              // size="sm"
+              onClick={() => {
+                if (versions?.[0]) {
+                  setSelectedDeployment(null);
+                  setSelectedVersion(versions[0]);
+                  setIsDrawerOpen(true);
+                }
+              }}
+            >
+              Update
+            </Button>
+          </div>
+        )}
       </DeploymentDrawer>
     </div>
   );

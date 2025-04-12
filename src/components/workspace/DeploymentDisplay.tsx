@@ -57,7 +57,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Settings as SettingsIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { MyDrawer } from "../drawer";
 import { useGPUConfig } from "../machine/machine-schema";
@@ -81,6 +81,7 @@ import { useWorkflowDeployments } from "./ContainersTable";
 // import { useFeatureFlags } from "@/components/FeatureFlagsProvider";
 import { NewStepper } from "./StaticStepper";
 import { VersionDetails } from "./VersionDetails";
+import ApiPlaygroundDemo from "../api-playground-demo";
 
 const curlTemplate = `
 curl --request POST \
@@ -1131,6 +1132,10 @@ export function DeploymentSettings({
     }
   };
 
+  const workflowInput = useMemo(() => {
+    return deployment ? getInputsFromWorkflow(deployment.version) : [];
+  }, [deployment]);
+
   return (
     <div className="flex flex-col px-2">
       <div className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-zinc-50 pt-1 pb-4">
@@ -1445,12 +1450,32 @@ export function DeploymentSettings({
             </div>
           )}
 
-          <APIDocs
+          <ApiPlaygroundDemo
+            key={deployment.id}
+            defaultInputs={
+              workflowInput
+                ? Object.fromEntries([
+                    ["deployment_id", deployment.id],
+                    [
+                      "inputs",
+                      Object.fromEntries(
+                        workflowInput.map((input) => [
+                          input.input_id,
+                          input.default_value,
+                        ]),
+                      ),
+                    ],
+                  ])
+                : {}
+            }
+          />
+
+          {/* <APIDocs
             domain={process.env.NEXT_PUBLIC_CD_API_URL ?? ""}
             workflow_id={deployment.workflow_id}
             deployment_id={deployment.id}
             header={null}
-          />
+          /> */}
         </>
       )}
     </div>
@@ -1469,7 +1494,7 @@ export function DeploymentDrawer(props: {
 
   return (
     <MyDrawer
-      desktopClassName="w-[600px]"
+      desktopClassName="w-[1000px]"
       open={!!selectedDeployment}
       onClose={() => {
         setSelectedDeployment(null);

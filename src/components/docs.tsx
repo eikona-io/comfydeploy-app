@@ -1,5 +1,6 @@
 import { Info } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useState, useEffect } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -125,8 +126,7 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
     // Automatically select the first available method if no method is pre-selected
     const availableMethods = Object.keys(openApiSpec.paths[path]);
     if (availableMethods.length > 0) {
-      const methodToSelect =
-        preSelectedMethod?.toLowerCase() || availableMethods[0];
+      const methodToSelect = availableMethods[0];
       setSelectedMethod(methodToSelect);
 
       // Set request body based on priority: defaultRequestBody > schema example > empty
@@ -571,16 +571,16 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
                     </Badge>
                   </div>
                 </div>
-                <p className="text-xs text-gray-600">
-                  {selectedEndpoint.summary}
-                </p>
-                {selectedEndpoint.description && (
+                <div className="text-xs text-gray-600">
+                  {selectedEndpoint?.summary}
+                </div>
+                {selectedEndpoint?.description && (
                   <p className="text-xs mt-1">{selectedEndpoint.description}</p>
                 )}
               </div>
 
               <div className="flex-1 flex flex-col p-3 overflow-y-auto">
-                {selectedEndpoint.parameters &&
+                {selectedEndpoint?.parameters &&
                   selectedEndpoint.parameters.length > 0 && (
                     <div className="mb-3">
                       <h3 className="text-xs font-medium mb-1">Parameters</h3>
@@ -607,20 +607,20 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
                     </div>
                   )}
 
-                {selectedEndpoint.requestBody && (
+                {selectedEndpoint?.requestBody && (
                   <div className="mb-3">
                     <h3 className="text-xs font-medium mb-1">Request Body</h3>
                     <Textarea
                       value={requestBody}
                       onChange={(e) => setRequestBody(e.target.value)}
-                      className="font-mono h-32 text-xs rounded-sm"
+                      className="font-mono h-64 text-xs rounded-sm"
                       disabled={isLoading}
                     />
 
                     {/* Types table */}
                     <div className="mt-2">
                       <h4 className="text-xs font-medium mb-1">Schema Types</h4>
-                      <div className="border rounded-sm">
+                      <div className="border rounded-sm overflow-hidden">
                         <div className="overflow-x-auto">
                           <table className="w-full text-xs font-mono min-w-[800px]">
                             <thead className="bg-gray-50">

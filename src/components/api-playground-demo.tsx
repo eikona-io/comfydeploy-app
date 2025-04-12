@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import React from "react";
+import type React from "react";
 import { ApiPlayground } from "./docs";
 import { LoadingIcon } from "./loading-icon";
+import { useAuthStore } from "@/lib/auth-store";
 
 // Example OpenAPI spec
 const exampleOpenApiSpec = {
@@ -582,8 +583,8 @@ const exampleOpenApiSpec = {
   ],
 };
 
-const ApiPlaygroundDemo: React.FC = () => {
-  const { data } = useQuery({
+export function useOpenAPISpec() {
+  return useQuery({
     queryKey: ["api-playground-demo"],
     queryFn: () => {
       return fetch("https://api.comfydeploy.com/openapi.json").then((res) =>
@@ -591,8 +592,16 @@ const ApiPlaygroundDemo: React.FC = () => {
       );
     },
   });
+}
 
-  if (!data) {
+function ApiPlaygroundDemo(props: {
+  defaultInputs?: Record<string, any>;
+}) {
+  const { data } = useOpenAPISpec();
+
+  const { token } = useAuthStore();
+
+  if (!data || !token) {
     return (
       <div className="flex h-screen items-center justify-center">
         <LoadingIcon />
@@ -600,29 +609,21 @@ const ApiPlaygroundDemo: React.FC = () => {
     );
   }
 
+  const isLocalhost = window.location.hostname === "localhost";
+
   return (
-    <div className="h-screen">
-      <ApiPlayground
-        openApiSpec={data}
-        hideSidebar
-        hideDescription
-        hideTitle
-        preSelectedMethod="POST"
-        preSelectedPath="/run/deployment/queue"
-        defaultRequestBody={JSON.stringify(
-          {
-            deployment_id: "12345678-1234-5678-1234-567812345678",
-            inputs: {
-              prompt: "A beautiful landscape",
-              seed: 42,
-            },
-          },
-          null,
-          2,
-        )}
-      />
-    </div>
+    <ApiPlayground
+      openApiSpec={data}
+      // hideSidebar
+      defaultServer={isLocalhost ? "http://localhost:3011/api" : undefined}
+      hideDescription
+      hideTitle
+      preSelectedMethod="POST"
+      defaultApiKey={token}
+      preSelectedPath="/run/deployment/queue"
+      defaultRequestBody={JSON.stringify(props.defaultInputs, null, 2)}
+    />
   );
-};
+}
 
 export default ApiPlaygroundDemo;

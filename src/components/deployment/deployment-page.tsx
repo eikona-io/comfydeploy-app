@@ -21,7 +21,6 @@ import { XAxis, YAxis } from "recharts";
 import { AreaChart, CartesianGrid } from "recharts";
 import { toast } from "sonner";
 import { create } from "zustand";
-import ApiPlaygroundDemo from "../api-playground-demo";
 import { MyDrawer } from "../drawer";
 import { ErrorBoundary } from "../error-boundary";
 import type { GpuTypes } from "../onboarding/workflow-machine-import";
@@ -231,7 +230,7 @@ export function DeploymentPage() {
           <DeploymentStatusGraph workflowId={workflowId} />
         </ErrorBoundary>
       </div>
-      <ApiPlaygroundDemo />
+      {/* <ApiPlaygroundDemo /> */}
       <DeploymentDrawer />
     </>
   );
