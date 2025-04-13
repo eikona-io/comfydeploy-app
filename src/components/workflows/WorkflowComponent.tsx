@@ -42,6 +42,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { EventSourcePolyfill } from "event-source-polyfill";
+import { ApiPlaygroundDemo2 } from "../api-playground-demo";
 import { MyDrawer } from "../drawer";
 import { Alert, AlertDescription } from "../ui/alert";
 import { CodeBlock } from "../ui/code-blocks";
@@ -127,6 +128,8 @@ export function RunDetails(props: {
       setSelectedTab(null);
     }
   }, [run?.id]);
+
+  const [isApiPlaygroundOpen, setIsApiPlaygroundOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -265,31 +268,42 @@ export function RunDetails(props: {
                 columns={2}
               />
             </ScrollArea>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="link" className="flex items-center gap-2">
-                  View Full Outputs <ExternalLink size={16} />
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="flex h-fit max-h-[calc(100vh-10rem)] max-w-3xl flex-col">
-                <DialogHeader>
-                  <DialogTitle>Run outputs</DialogTitle>
-                  <DialogDescription>
-                    <div className="flex items-center justify-between">
-                      You can view your run&apos;s outputs here
+            <div className="flex flex-row items-center justify-end gap-2">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="link" className="flex items-center gap-2">
+                    View Full Outputs <ExternalLink size={16} />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="flex h-fit max-h-[calc(100vh-10rem)] max-w-3xl flex-col">
+                  <DialogHeader>
+                    <DialogTitle>Run outputs</DialogTitle>
+                    <DialogDescription>
+                      <div className="flex items-center justify-between">
+                        You can view your run&apos;s outputs here
+                      </div>
+                    </DialogDescription>
+                  </DialogHeader>
+                  <ScrollArea className="flex w-full flex-col pr-4">
+                    <div className="w-full rounded-md border border-gray-200 bg-muted/50 p-2">
+                      <RunInputs run={run as any} />
                     </div>
-                  </DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="flex w-full flex-col pr-4">
-                  <div className="w-full rounded-md border border-gray-200 bg-muted/50 p-2">
-                    <RunInputs run={run as any} />
-                  </div>
-                  <div className="mt-4 w-full rounded-md border border-gray-200 bg-muted/50 p-2">
-                    <RunOutputs run={run as any} />
-                  </div>
-                </ScrollArea>
-              </DialogContent>
-            </Dialog>
+                    <div className="mt-4 w-full rounded-md border border-gray-200 bg-muted/50 p-2">
+                      <RunOutputs run={run as any} />
+                    </div>
+                  </ScrollArea>
+                </DialogContent>
+              </Dialog>
+              <Button
+                variant={"ghost"}
+                onClick={() => {
+                  setIsApiPlaygroundOpen(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                View Get Run API
+              </Button>
+            </div>
           </TabsContent>
           <TabsContent value="graph">
             <FilteredWorkflowExecutionGraph run={run as any} />
@@ -306,6 +320,20 @@ export function RunDetails(props: {
             <WebhookTab run={run} webhook={run.webhook} />
           </TabsContent>
         </Tabs>
+
+        <MyDrawer
+          desktopClassName="w-[1100px]"
+          open={isApiPlaygroundOpen}
+          onClose={() => {
+            setIsApiPlaygroundOpen(false);
+          }}
+        >
+          <ApiPlaygroundDemo2
+            defaultPathParams={{
+              run_id: run.id,
+            }}
+          />
+        </MyDrawer>
       </div>
     </>
   );

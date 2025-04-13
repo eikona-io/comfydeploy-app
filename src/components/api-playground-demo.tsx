@@ -596,6 +596,7 @@ export function useOpenAPISpec() {
 
 function ApiPlaygroundDemo(props: {
   defaultInputs?: Record<string, any>;
+  defaultPathParams?: Record<string, string>;
 }) {
   const { data } = useOpenAPISpec();
 
@@ -626,6 +627,45 @@ function ApiPlaygroundDemo(props: {
       }}
       preSelectedPath="/run/deployment/queue"
       defaultRequestBody={JSON.stringify(props.defaultInputs, null, 2)}
+      defaultPathParams={props.defaultPathParams}
+    />
+  );
+}
+
+export function ApiPlaygroundDemo2(props: {
+  defaultInputs?: Record<string, any>;
+  defaultPathParams?: Record<string, string>;
+}) {
+  const { data } = useOpenAPISpec();
+
+  const { token, fetchToken } = useAuthStore();
+
+  if (!data || !token) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <LoadingIcon />
+      </div>
+    );
+  }
+
+  const isLocalhost = window.location.hostname === "localhost";
+
+  return (
+    <ApiPlayground
+      openApiSpec={data}
+      hideSidebar
+      defaultServer={isLocalhost ? "http://localhost:3011/api" : undefined}
+      hideDescription
+      hideTitle
+      preSelectedMethod="GET"
+      defaultApiKey={async () => {
+        const newToken = (await useAuthStore.getState().fetchToken()) ?? "";
+        console.log("newToken", newToken);
+        return newToken;
+      }}
+      preSelectedPath="/run/{run_id}"
+      defaultRequestBody={JSON.stringify(props.defaultInputs, null, 2)}
+      defaultPathParams={props.defaultPathParams}
     />
   );
 }

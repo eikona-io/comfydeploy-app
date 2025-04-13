@@ -52,6 +52,7 @@ interface ApiPlaygroundProps {
   defaultApiKey?: string | (() => string | Promise<string>);
   defaultServer?: string;
   defaultRequestBody?: string | object;
+  defaultPathParams?: Record<string, string>;
 }
 
 export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
@@ -64,6 +65,7 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
   defaultApiKey = "",
   defaultServer,
   defaultRequestBody,
+  defaultPathParams = {},
 }) => {
   const [selectedServer, setSelectedServer] = useState<string>(
     defaultServer || openApiSpec.servers[0]?.url || "",
@@ -84,7 +86,8 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
   const [response, setResponse] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiKey, setApiKey] = useState<string>("");
-  const [paramValues, setParamValues] = useState<Record<string, string>>({});
+  const [paramValues, setParamValues] =
+    useState<Record<string, string>>(defaultPathParams);
 
   // Add effect to update apiKey when defaultApiKey changes
   useEffect(() => {
