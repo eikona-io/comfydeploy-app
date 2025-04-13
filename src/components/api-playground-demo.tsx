@@ -1,8 +1,8 @@
+import { useAuthStore } from "@/lib/auth-store";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { ApiPlayground } from "./docs";
 import { LoadingIcon } from "./loading-icon";
-import { useAuthStore } from "@/lib/auth-store";
 
 // Example OpenAPI spec
 const exampleOpenApiSpec = {
@@ -599,7 +599,7 @@ function ApiPlaygroundDemo(props: {
 }) {
   const { data } = useOpenAPISpec();
 
-  const { token } = useAuthStore();
+  const { token, fetchToken } = useAuthStore();
 
   if (!data || !token) {
     return (
@@ -619,7 +619,11 @@ function ApiPlaygroundDemo(props: {
       hideDescription
       hideTitle
       preSelectedMethod="POST"
-      defaultApiKey={() => token}
+      defaultApiKey={async () => {
+        const newToken = (await useAuthStore.getState().fetchToken()) ?? "";
+        console.log("newToken", newToken);
+        return newToken;
+      }}
       preSelectedPath="/run/deployment/queue"
       defaultRequestBody={JSON.stringify(props.defaultInputs, null, 2)}
     />

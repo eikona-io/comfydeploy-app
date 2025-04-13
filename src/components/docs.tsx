@@ -1,6 +1,6 @@
 import { Info } from "lucide-react";
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { CodeBlock } from "./ui/code-blocks";
@@ -49,7 +49,7 @@ interface ApiPlaygroundProps {
   hideSidebar?: boolean;
   preSelectedPath?: string;
   preSelectedMethod?: string;
-  defaultApiKey?: string | (() => string);
+  defaultApiKey?: string | (() => string | Promise<string>);
   defaultServer?: string;
   defaultRequestBody?: string | object;
 }
@@ -83,21 +83,36 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
   );
   const [response, setResponse] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [apiKey, setApiKey] = useState<string>(() => {
-    if (typeof defaultApiKey === "function") {
-      return defaultApiKey();
-    }
-    return defaultApiKey;
-  });
+  const [apiKey, setApiKey] = useState<string>("");
   const [paramValues, setParamValues] = useState<Record<string, string>>({});
 
   // Add effect to update apiKey when defaultApiKey changes
   useEffect(() => {
-    if (typeof defaultApiKey === "function") {
-      setApiKey(defaultApiKey());
-    } else {
-      setApiKey(defaultApiKey);
-    }
+    const updateApiKey = async () => {
+      if (!defaultApiKey) {
+        setApiKey("");
+        return;
+      }
+
+      if (typeof defaultApiKey === "function") {
+        try {
+          const result = defaultApiKey();
+          if (result instanceof Promise) {
+            const resolvedKey = await result;
+            setApiKey(resolvedKey);
+          } else {
+            setApiKey(result);
+          }
+        } catch (error) {
+          console.error("Failed to resolve API key:", error);
+          setApiKey("");
+        }
+      } else {
+        setApiKey(defaultApiKey);
+      }
+    };
+
+    updateApiKey();
   }, [defaultApiKey]);
 
   // Effect to handle pre-selected path and method
@@ -417,21 +432,55 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
     setResponse("");
 
     try {
-      const url = `${selectedServer}${selectedPath}`;
+      // Build URL with parameters if they exist
+      let urlWithParams = `${selectedServer}${selectedPath}`;
+      const queryParams: string[] = [];
+
+      if (selectedEndpoint?.parameters) {
+        selectedEndpoint.parameters.forEach((param: any) => {
+          if (param.in === "path" && paramValues[param.name]) {
+            urlWithParams = urlWithParams.replace(
+              `{${param.name}}`,
+              paramValues[param.name],
+            );
+          } else if (param.in === "query" && paramValues[param.name]) {
+            queryParams.push(
+              `${param.name}=${encodeURIComponent(paramValues[param.name])}`,
+            );
+          }
+        });
+      }
+
+      if (queryParams.length > 0) {
+        urlWithParams += `?${queryParams.join("&")}`;
+      }
+
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
       };
 
-      // Get the latest API key value if it's a function
-      const currentApiKey =
-        typeof defaultApiKey === "function" ? defaultApiKey() : apiKey;
+      // Get the latest API key value
+      let currentApiKey = apiKey;
+
+      if (typeof defaultApiKey === "function") {
+        try {
+          const result = defaultApiKey();
+          if (result instanceof Promise) {
+            currentApiKey = await result;
+          } else {
+            currentApiKey = result;
+          }
+        } catch (error) {
+          console.error("Failed to resolve API key:", error);
+        }
+      }
 
       // Add API key if provided
       if (currentApiKey) {
         headers["Authorization"] = `Bearer ${currentApiKey}`;
       }
 
-      const response = await fetch(url, {
+      const response = await fetch(urlWithParams, {
         method: selectedMethod.toUpperCase(),
         headers,
         body: ["POST", "PUT", "PATCH"].includes(selectedMethod.toUpperCase())
