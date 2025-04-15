@@ -39,6 +39,7 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   AlertTriangle,
   ChevronRight,
+  CircleHelp,
   Download,
   ExternalLink,
   Minus,
@@ -47,6 +48,7 @@ import {
   Save,
   Search,
   Star,
+  Terminal,
   ToggleLeft,
   ToggleRight,
   X,
@@ -82,6 +84,12 @@ import {
   DialogTrigger,
 } from "../ui/dialog";
 import { Label } from "../ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 
 export type DefaultCustomNodeData = {
   title: string;
@@ -865,7 +873,7 @@ function SelectedNodeList({
       </div>
 
       {showNewCommand && (
-        <div className="flex flex-col gap-2 rounded-[6px] border border-gray-200 bg-gray-50 p-2">
+        <div className="relative flex flex-col gap-2 rounded-[6px] border border-gray-200 bg-gray-50 p-2">
           <div className="flex items-center justify-between">
             <span className="font-medium text-sm">New Custom Command</span>
             <div className="flex">
@@ -902,6 +910,184 @@ function SelectedNodeList({
             placeholder="RUN cd some_folder..."
             className="min-h-[100px] font-mono text-sm"
           />
+
+          <div className="absolute right-4 bottom-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="rounded-[10px]"
+                >
+                  Examples
+                  <Terminal className="ml-1.5" size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="left" align="end" className="w-52">
+                <DropdownMenuLabel>Common Commands</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="flex items-center justify-between"
+                  onSelect={() => {
+                    setCommandText((current) =>
+                      current
+                        ? `${current}\nRUN pip install {package_name}`
+                        : "RUN pip install {package_name}",
+                    );
+                  }}
+                >
+                  pip install...
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger>
+                        <CircleHelp
+                          className="cursor-help text-muted-foreground"
+                          size={16}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="p-3"
+                        sideOffset={12}
+                      >
+                        <h4 className="mb-3 font-semibold text-sm">
+                          Download a Package with pip
+                        </h4>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
+                              Format
+                            </p>
+                            <div className="flex items-center rounded border border-slate-200 bg-slate-100 p-1.5">
+                              <Terminal className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                              <code className="font-mono text-xs">
+                                RUN pip install{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {"{"}package_name{"}"}
+                                </span>
+                              </code>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
+                              Example
+                            </p>
+                            <div className="flex items-center rounded border border-slate-200 bg-slate-100 p-1.5">
+                              <Terminal className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                              <code className="font-mono text-xs">
+                                RUN pip install{" "}
+                                <span className="font-semibold text-slate-700">
+                                  numpy
+                                </span>
+                              </code>
+                            </div>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem
+                  className="flex items-center justify-between"
+                  onSelect={() => {
+                    setCommandText((current) =>
+                      current
+                        ? `${current}\nRUN mkdir -p {model_path}\nRUN wget -O {model_path_with_filename} {model_install_url}`
+                        : "RUN mkdir -p {model_path}\nRUN wget -O {model_path_with_filename} {model_install_url}",
+                    );
+                  }}
+                >
+                  model download...
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger>
+                        <CircleHelp
+                          className="cursor-help text-muted-foreground"
+                          size={16}
+                        />
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="top"
+                        className="max-w-[500px] p-3"
+                        sideOffset={12}
+                      >
+                        <h4 className="mb-3 font-semibold text-sm">
+                          Download a Model and put it in the desired folder
+                        </h4>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
+                              Format
+                            </p>
+                            <div className="flex items-start rounded border border-slate-200 bg-slate-100 p-1.5">
+                              <Terminal className="mt-1 mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                              <code className="font-mono text-xs">
+                                RUN mkdir -p{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {"{"}model_path{"}"}
+                                </span>
+                                <br />
+                                RUN wget -O{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {"{"}model_path_with_filename{"}"}
+                                </span>{" "}
+                                <span className="font-semibold text-slate-700">
+                                  {"{"}model_install_url{"}"}
+                                </span>
+                              </code>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
+                              Example
+                            </p>
+                            <div className="flex items-start rounded border border-slate-200 bg-slate-100 p-1.5">
+                              <Terminal className="mt-1 mr-1.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
+                              <code className="break-all font-mono text-xs">
+                                RUN mkdir -p
+                                <br />
+                                <span className="font-semibold text-slate-700">
+                                  /comfyui/custom_nodes/comfyui_demo_node/model/LLM/
+                                </span>
+                                <br />
+                                RUN wget -O
+                                <br />
+                                <span className="font-semibold text-slate-700">
+                                  /comfyui/custom_nodes/comfyui_demo_node/model/LLM/gemma-3-27b.gguf
+                                </span>
+                                <br />
+                                <span className="font-semibold text-slate-700">
+                                  https://huggingface.co/gemma/gemma-3-27b
+                                </span>
+                              </code>
+                            </div>
+                          </div>
+                          <Separator className="my-2" />
+                          <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 p-2">
+                            <p className="mb-1 font-medium text-slate-600 text-xs">
+                              Note
+                            </p>
+                            <div className="flex items-center text-gray-500 text-xs">
+                              <CircleHelp className="mr-1.5 h-3.5 w-3.5 text-slate-400" />
+                              <span>
+                                Our folder root path is{" "}
+                                <code className="bg-slate-100 px-1 py-0.5 font-mono text-2xs text-slate-700">
+                                  /comfyui/custom_nodes/
+                                </code>
+                                .
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       )}
 
