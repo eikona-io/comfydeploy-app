@@ -1,10 +1,16 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { useMachine } from "@/hooks/use-machine";
 import { getRelativeTime } from "@/lib/get-relative-time";
+import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUpCircle } from "lucide-react";
+import { ArrowUpCircle, Check, Info } from "lucide-react";
 
 interface CustomNodesVersionResponse {
   status: string;
@@ -23,15 +29,17 @@ interface CustomNodesVersionResponse {
 
 interface VersionCheckerProps {
   machineId: string;
-  variant?: "inline" | "bottom";
+  variant?: "inline" | "bottom" | "expanded";
   onUpdate?: () => void;
   hideUpdateButton?: boolean;
+  className?: string;
 }
 
 export function VersionChecker({
   machineId,
   variant = "inline",
   onUpdate,
+  className,
   hideUpdateButton = false,
 }: VersionCheckerProps) {
   const { data: machine } = useMachine(machineId);
@@ -46,44 +54,15 @@ export function VersionChecker({
 
   if (isLoading) {
     return (
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <Alert className="border-muted bg-muted/50 mb-4" variant="default">
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center">
-              <div className="animate-pulse bg-muted h-4 mr-2 rounded w-4" />
-              <div className="animate-pulse bg-muted h-4 rounded w-48" />
-            </div>
-            <div className="space-y-3">
-              <div className="relative">
-                <div className="absolute bg-muted/30 h-full left-8 top-2 w-[1px]" />
-                <table className="min-w-full">
-                  <tbody className="space-y-3">
-                    {[0, 1].map((i) => (
-                      <tr className="group" key={i}>
-                        <td className="font-mono pb-3 pr-2 w-[60px]">
-                          <div className="animate-pulse bg-muted h-3 rounded w-12" />
-                        </td>
-                        <td className="font-mono pb-3 pr-2 w-[80px]">
-                          <div className="animate-pulse bg-muted h-3 rounded w-12" />
-                        </td>
-                        <td className="pb-3 pr-2 w-[120px]">
-                          <div className="animate-pulse bg-muted h-3 rounded w-16" />
-                        </td>
-                        <td className="pb-3 relative">
-                          <div className="absolute bg-muted/30 h-2 left-[-0.75rem] rounded-full top-[0.5rem] w-2" />
-                          <div className="animate-pulse bg-muted h-3 rounded w-48" />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="flex">
-                <div className="animate-pulse bg-muted h-8 rounded w-24" />
-              </div>
-            </div>
-          </div>
-        </Alert>
+      <div className={"animate-in fade-in slide-in-from-bottom-4 duration-300"}>
+        <div className="flex items-center justify-center">
+          <div
+            className={cn(
+              "animate-pulse bg-muted h-6 rounded-full w-32",
+              className,
+            )}
+          />
+        </div>
       </div>
     );
   }
@@ -96,95 +75,158 @@ export function VersionChecker({
       ? getRelativeTime(new Date(data?.latest_commit.date))
       : "Unknown";
 
-    return (
-      <div className="animate-in duration-300 fade-in slide-in-from-bottom-4">
-        <Alert
-          className="shadow-md bg-[#fff9ed] border-amber-500/50 mb-4"
-          variant="default"
+    if (variant === "expanded") {
+      return (
+        <div
+          className={"animate-in duration-300 fade-in slide-in-from-bottom-4"}
         >
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center">
-              <ArrowUpCircle className="h-4 mr-2 text-amber-500 w-4" />
-              <div className="font-semibold text-amber-500 text-sm flex justify-between w-full items-center">
-                Update Available for ComfyDeploy custom node
+          <div className="flex items-center justify-center">
+            <div
+              className={cn(
+                "flex flex-col gap-2 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-600 text-sm w-full",
+                className,
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <ArrowUpCircle className="h-4 w-4" />
+                <span>Update Available</span>
                 {!hideUpdateButton && onUpdate && (
                   <Button
-                    className="h-8 hover:bg-amber-500/20 hover:text-amber-600 text-xs w-fit"
+                    className="h-6 hover:bg-amber-500/20 hover:text-amber-600 text-xs px-2"
                     onClick={onUpdate}
                     size="sm"
-                    variant="outline"
+                    variant="ghost"
                   >
-                    <ArrowUpCircle className="h-3 mr-2 w-3" />
-                    Update Now
+                    Update
                   </Button>
                 )}
               </div>
-            </div>
-
-            <AlertDescription className="space-y-3">
-              <div className="relative">
-                <div className="absolute bg-muted/50 h-full left-8 top-2 w-[1px]" />
-                <table className="min-w-full">
-                  <tbody className="space-y-3">
-                    <tr className="group">
-                      <td className="font-mono pb-3 pr-2 text-amber-500 text-xs w-[60px]">
-                        <Badge className="text-amber-500 text-xs">Latest</Badge>
-                      </td>
-                      <td className="font-mono pb-3 pr-2 text-amber-500 text-xs w-[80px]">
-                        {data?.latest_commit.hash?.slice(0, 5)}
-                      </td>
-                      <td className="pb-3 pr-2 text-muted-foreground text-xs w-[120px]">
-                        {latestDate}
-                      </td>
-                      <td className="pb-3 relative">
-                        <div className="absolute bg-amber-500 h-2 left-[-0.75rem] rounded-full top-[0.5rem] w-2" />
-                        <div className="group/badge relative">
-                          <Badge
-                            className="bg-amber-500/20 block max-w-[280px] overflow-hidden text-amber-600 text-xs truncate whitespace-nowrap"
-                            variant="secondary"
-                          >
-                            {data?.latest_commit?.message || "Unknown"}
-                          </Badge>
-                          <div className="absolute bg-popover border border-border group-hover/badge:block hidden left-0 p-2 rounded-md shadow-md text-xs top-6 z-10">
-                            {data?.latest_commit?.message || "Unknown"}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-
-                    <tr className="group">
-                      <td className="font-mono pr-2 text-muted-foreground text-xs w-[60px]">
-                        <Badge className="text-muted-foreground text-xs">
-                          Current
-                        </Badge>
-                      </td>
-                      <td className="font-mono pr-2 text-muted-foreground text-xs w-[80px]">
-                        {data?.local_commit.hash?.slice(0, 5)}
-                      </td>
-                      <td className="pr-2 text-muted-foreground text-xs w-[120px]">
-                        {localDate}
-                      </td>
-                      <td className="relative">
-                        <div className="absolute bg-muted/50 h-2 left-[-0.75rem] rounded-full top-[0.5rem] w-2" />
-                        <div className="group/badge relative">
-                          <Badge
-                            className="bg-muted/50 block max-w-[280px] overflow-hidden text-xs truncate whitespace-nowrap"
-                            variant="secondary"
-                          >
-                            {data?.local_commit?.message || "Unknown"}
-                          </Badge>
-                          <div className="absolute bg-popover border border-border group-hover/badge:block hidden left-0 p-2 rounded-md shadow-md text-xs top-6 z-10">
-                            {data?.local_commit?.message || "Unknown"}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div className="space-y-2 pl-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-amber-500" />
+                    <div className="text-xs font-medium">Latest Version</div>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-xs bg-amber-500/10"
+                  >
+                    {latestDate}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-mono text-muted-foreground/70">
+                    {data?.latest_commit.hash?.slice(0, 7)}
+                  </div>
+                  <div className="text-xs">{data?.latest_commit?.message}</div>
+                </div>
+                <div className="h-px bg-border/50" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-muted" />
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Current Version
+                    </div>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    {localDate}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-[10px] font-mono text-muted-foreground/70">
+                    {data?.local_commit.hash?.slice(0, 7)}
+                  </div>
+                  <div className="text-xs">{data?.local_commit?.message}</div>
+                </div>
               </div>
-            </AlertDescription>
+            </div>
           </div>
-        </Alert>
+        </div>
+      );
+    }
+
+    return (
+      <div className={"animate-in duration-300 fade-in slide-in-from-bottom-4"}>
+        <div className="flex items-center justify-center">
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <div
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 text-sm cursor-pointer hover:bg-amber-500/20 transition-colors",
+                  className,
+                )}
+              >
+                <ArrowUpCircle className="h-4 w-4" />
+                <span>Update Available</span>
+                {!hideUpdateButton && onUpdate && (
+                  <Button
+                    className="h-6 hover:bg-amber-500/20 hover:text-amber-600 text-xs px-2"
+                    onClick={onUpdate}
+                    size="sm"
+                    variant="ghost"
+                  >
+                    Update
+                  </Button>
+                )}
+              </div>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-80">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold">Version Details</h4>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-amber-500" />
+                        <div className="text-xs font-medium text-amber-600">
+                          Latest Version
+                        </div>
+                      </div>
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-amber-500/10 text-amber-600"
+                      >
+                        {latestDate}
+                      </Badge>
+                    </div>
+                    <div className="pl-4 space-y-1">
+                      <div className="text-[10px] font-mono text-muted-foreground/70">
+                        {data?.latest_commit.hash?.slice(0, 7)}
+                      </div>
+                      <div className="text-xs">
+                        {data?.latest_commit?.message}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="h-px bg-border" />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2 w-2 rounded-full bg-muted" />
+                        <div className="text-xs font-medium text-muted-foreground">
+                          Current Version
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {localDate}
+                      </Badge>
+                    </div>
+                    <div className="pl-4 space-y-1">
+                      <div className="text-[10px] font-mono text-muted-foreground/70">
+                        {data?.local_commit.hash?.slice(0, 7)}
+                      </div>
+                      <div className="text-xs">
+                        {data?.local_commit?.message}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        </div>
       </div>
     );
   }
@@ -192,17 +234,12 @@ export function VersionChecker({
   if (variant === "inline") {
     return (
       <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-        <Alert
-          className="border-green-500/50 bg-green-500/10 mb-4"
-          variant="default"
-        >
-          <div className="flex items-center">
-            <div className="mr-2 text-green-500 w-4">✓</div>
-            <div className="text-green-500 text-sm">
-              Running Latest Version ComfyDeploy custom node
-            </div>
+        <div className="flex items-center justify-center">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 text-sm">
+            <Check className="h-4 w-4" />
+            <span>Latest Plugin Version</span>
           </div>
-        </Alert>
+        </div>
       </div>
     );
   }
