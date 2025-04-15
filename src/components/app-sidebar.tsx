@@ -858,6 +858,9 @@ export function AppSidebar() {
                     organizationSwitcherPopoverRootBox: {
                       pointerEvents: "initial",
                     },
+                    organizationPreviewTextContainer: {
+                      width: "110px",
+                    },
                     organizationSwitcherTrigger: {
                       width: "100%",
                       justifyContent: "space-between",
