@@ -854,12 +854,10 @@ export function AppSidebar() {
                 afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
                 appearance={{
                   elements: {
-                    rootBox: "items-center justify-center p-0 w-full ",
+                    rootBox:
+                      "items-center justify-center p-0 w-full max-w-[221px] md:max-w-[190px]",
                     organizationSwitcherPopoverRootBox: {
                       pointerEvents: "initial",
-                    },
-                    organizationPreviewTextContainer: {
-                      width: "110px",
                     },
                     organizationSwitcherTrigger: {
                       width: "100%",
