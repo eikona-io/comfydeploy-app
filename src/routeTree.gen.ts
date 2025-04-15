@@ -34,6 +34,7 @@ import { Route as OrganizationProfileOrganizationMembersIndexImport } from './ro
 import { Route as MachinesMachineIdIndexImport } from './routes/machines/$machineId/index'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
 import { Route as ShareUserSlugImport } from './routes/share/$user/$slug'
+import { Route as MachinesMachineIdFilesImport } from './routes/machines/$machineId/files'
 import { Route as MachinesMachineIdActivityImport } from './routes/machines/$machineId/activity'
 import { Route as MachinesMachineIdMachineVersionIdImport } from './routes/machines/$machineId/$machineVersionId'
 import { Route as MachinesMachineIdHistoryIndexImport } from './routes/machines/$machineId/history/index'
@@ -182,6 +183,12 @@ const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
 const ShareUserSlugRoute = ShareUserSlugImport.update({
   id: '/share/$user/$slug',
   path: '/share/$user/$slug',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const MachinesMachineIdFilesRoute = MachinesMachineIdFilesImport.update({
+  id: '/machines/$machineId/files',
+  path: '/machines/$machineId/files',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -349,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MachinesMachineIdActivityImport
       parentRoute: typeof rootRoute
     }
+    '/machines/$machineId/files': {
+      id: '/machines/$machineId/files'
+      path: '/machines/$machineId/files'
+      fullPath: '/machines/$machineId/files'
+      preLoaderRoute: typeof MachinesMachineIdFilesImport
+      parentRoute: typeof rootRoute
+    }
     '/share/$user/$slug': {
       id: '/share/$user/$slug'
       path: '/share/$user/$slug'
@@ -417,6 +431,7 @@ export interface FileRoutesByFullPath {
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
+  '/machines/$machineId/files': typeof MachinesMachineIdFilesRoute
   '/share/$user/$slug': typeof ShareUserSlugRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
@@ -446,6 +461,7 @@ export interface FileRoutesByTo {
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
+  '/machines/$machineId/files': typeof MachinesMachineIdFilesRoute
   '/share/$user/$slug': typeof ShareUserSlugRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
@@ -476,6 +492,7 @@ export interface FileRoutesById {
   '/workflows/': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
+  '/machines/$machineId/files': typeof MachinesMachineIdFilesRoute
   '/share/$user/$slug': typeof ShareUserSlugRoute
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId/': typeof MachinesMachineIdIndexRoute
@@ -507,6 +524,7 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
+    | '/machines/$machineId/files'
     | '/share/$user/$slug'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
@@ -535,6 +553,7 @@ export interface FileRouteTypes {
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
+    | '/machines/$machineId/files'
     | '/share/$user/$slug'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
@@ -563,6 +582,7 @@ export interface FileRouteTypes {
     | '/workflows/'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
+    | '/machines/$machineId/files'
     | '/share/$user/$slug'
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId/'
@@ -593,6 +613,7 @@ export interface RootRouteChildren {
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   MachinesMachineIdMachineVersionIdRoute: typeof MachinesMachineIdMachineVersionIdRoute
   MachinesMachineIdActivityRoute: typeof MachinesMachineIdActivityRoute
+  MachinesMachineIdFilesRoute: typeof MachinesMachineIdFilesRoute
   ShareUserSlugRoute: typeof ShareUserSlugRoute
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
   MachinesMachineIdIndexRoute: typeof MachinesMachineIdIndexRoute
@@ -623,6 +644,7 @@ const rootRouteChildren: RootRouteChildren = {
   MachinesMachineIdMachineVersionIdRoute:
     MachinesMachineIdMachineVersionIdRoute,
   MachinesMachineIdActivityRoute: MachinesMachineIdActivityRoute,
+  MachinesMachineIdFilesRoute: MachinesMachineIdFilesRoute,
   ShareUserSlugRoute: ShareUserSlugRoute,
   WorkflowsWorkflowIdViewRoute: WorkflowsWorkflowIdViewRoute,
   MachinesMachineIdIndexRoute: MachinesMachineIdIndexRoute,
@@ -662,6 +684,7 @@ export const routeTree = rootRoute
         "/workflows/",
         "/machines/$machineId/$machineVersionId",
         "/machines/$machineId/activity",
+        "/machines/$machineId/files",
         "/share/$user/$slug",
         "/workflows/$workflowId/$view",
         "/machines/$machineId/",
@@ -729,6 +752,9 @@ export const routeTree = rootRoute
     },
     "/machines/$machineId/activity": {
       "filePath": "machines/$machineId/activity.tsx"
+    },
+    "/machines/$machineId/files": {
+      "filePath": "machines/$machineId/files.tsx"
     },
     "/share/$user/$slug": {
       "filePath": "share/$user/$slug.tsx"
