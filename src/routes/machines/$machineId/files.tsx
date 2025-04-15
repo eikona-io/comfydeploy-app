@@ -81,6 +81,56 @@ function RouteComponent() {
   );
 }
 
+// Extract breadcrumbs to its own component to avoid recreating functions on each render
+function FileBreadcrumbs({
+  currentPath,
+  setCurrentPath,
+  navigate,
+}: {
+  currentPath: string;
+  setCurrentPath: (path: string) => void;
+  navigate: any; // Using proper navigation type from router would be better
+}) {
+  const breadcrumbs = currentPath
+    .split("/")
+    .filter(Boolean)
+    .reduce<{ name: string; path: string }[]>(
+      (acc, part) => {
+        const lastPath = acc[acc.length - 1]?.path || "";
+        acc.push({
+          name: part,
+          path: lastPath === "/" ? `/${part}` : `${lastPath}/${part}`,
+        });
+        return acc;
+      },
+      [{ name: "custom_nodes", path: "/" }],
+    );
+
+  return (
+    <div className="flex shrink-0 items-center justify-between gap-4 p-4 pb-0">
+      <div className="flex items-center gap-2 pl-1 text-gray-500 text-sm">
+        {breadcrumbs.map((crumb, i) => (
+          <div key={crumb.path} className="flex items-center">
+            {i > 0 && <ChevronRight className="mr-2 h-4 w-4" />}
+            <button
+              type="button"
+              onClick={() => {
+                setCurrentPath(crumb.path);
+                navigate({
+                  search: (prev) => ({ ...prev, path: crumb.path }),
+                });
+              }}
+              className="hover:text-gray-900"
+            >
+              {crumb.name}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MachineFileList() {
   const { machineId } = Route.useParams();
   const { path: apiPath } = Route.useSearch();
@@ -112,25 +162,17 @@ function MachineFileList() {
     });
   };
 
-  const breadcrumbs = currentPath
-    .split("/")
-    .filter(Boolean)
-    .reduce<{ name: string; path: string }[]>(
-      (acc, part) => {
-        const lastPath = acc[acc.length - 1]?.path || "";
-        acc.push({
-          name: part,
-          path: lastPath === "/" ? `/${part}` : `${lastPath}/${part}`,
-        });
-        return acc;
-      },
-      [{ name: "custom_nodes", path: "/" }],
-    );
-
   if (isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <Loader2 className="h-4 w-4 animate-spin" />
+      <div className="@container mx-auto mt-2 flex h-full w-full max-w-screen-xl flex-col gap-2 overflow-hidden">
+        <FileBreadcrumbs
+          currentPath={currentPath}
+          setCurrentPath={setCurrentPath}
+          navigate={navigate}
+        />
+        <div className="flex h-full w-full items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </div>
       </div>
     );
   }
@@ -138,35 +180,20 @@ function MachineFileList() {
   if (!data) {
     return (
       <div className="flex h-full w-full items-center justify-center">
-        <p className="text-gray-500">No data available</p>
+        <p className="text-gray-500 text-sm">
+          No data available. Please rebuild your machine to view the files.
+        </p>
       </div>
     );
   }
 
   return (
     <div className="@container mx-auto mt-2 flex h-full w-full max-w-screen-xl flex-col gap-2 overflow-hidden">
-      {/* Header with breadcrumbs and actions */}
-      <div className="flex shrink-0 items-center justify-between gap-4 p-4 pb-0">
-        <div className="flex items-center gap-2 pl-1 text-gray-500 text-sm">
-          {breadcrumbs.map((crumb, i) => (
-            <div key={crumb.path} className="flex items-center">
-              {i > 0 && <ChevronRight className="mr-2 h-4 w-4" />}
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentPath(crumb.path);
-                  navigate({
-                    search: (prev) => ({ ...prev, path: crumb.path }),
-                  });
-                }}
-                className="hover:text-gray-900"
-              >
-                {crumb.name}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      <FileBreadcrumbs
+        currentPath={currentPath}
+        setCurrentPath={setCurrentPath}
+        navigate={navigate}
+      />
 
       {/* Scrollable container */}
       <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto">
