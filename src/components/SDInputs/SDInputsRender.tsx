@@ -1,8 +1,8 @@
+import { SDAudioInput } from "@/components/SDInputs/SDAudioInput";
 import { SDImageInput } from "@/components/SDInputs/SDImageInput";
 import { SDInput } from "@/components/SDInputs/SDInput";
 import { SDTextarea } from "@/components/SDInputs/SDTextarea";
 import { SDVideoInput } from "@/components/SDInputs/SDVideoInput";
-import { SDAudioInput } from "@/components/SDInputs/SDAudioInput";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,9 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import type { customInputNodes } from "@/lib/customInputNodes";
-import { CircleAlert, Dice6, Plus, Trash, HelpCircle } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { CircleAlert, Dice6, HelpCircle, Plus, Trash } from "lucide-react";
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 export type RGBColor = {
   r: number;
@@ -477,13 +477,21 @@ export function SDInputsRender({
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
-                {inputNode.enum_values?.map((x) => {
-                  return (
-                    <SelectItem key={x} value={x}>
-                      {x}
-                    </SelectItem>
-                  );
-                })}
+                {inputNode.options
+                  ? JSON.parse(inputNode.options).map((x: string) => {
+                      return (
+                        <SelectItem key={x} value={x}>
+                          {x}
+                        </SelectItem>
+                      );
+                    })
+                  : inputNode.enum_values?.map((x) => {
+                      return (
+                        <SelectItem key={x} value={x}>
+                          {x}
+                        </SelectItem>
+                      );
+                    })}
               </SelectGroup>
             </SelectContent>
           </Select>
