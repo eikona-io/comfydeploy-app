@@ -40,6 +40,7 @@ type SDInputsRenderProps = {
         display_name?: string;
         description?: string;
         enum_values?: string[];
+        options?: string;
       }
     | undefined;
   updateInput: (
