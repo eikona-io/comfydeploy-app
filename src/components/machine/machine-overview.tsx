@@ -1,4 +1,5 @@
 import { MachineVersionListItem } from "@/components/machine/machine-deployment";
+import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import {
   getLastActiveText,
   isMachineDeprecated,
@@ -7,6 +8,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CardDescription } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -14,20 +16,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useMachineEvents,
   useMachineVersion,
   useMachineVersions,
   useMachineVersionsAll,
 } from "@/hooks/use-machine";
-import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { cn } from "@/lib/utils";
 import {
   useMutation,
-  useSuspenseQuery,
-  useQueryClient,
   useQuery,
+  useQueryClient,
+  useSuspenseQuery,
 } from "@tanstack/react-query";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 // import { machineRoute } from "@/routes/machines/$machineId";
@@ -39,9 +41,7 @@ import {
   Loader2,
   X,
 } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
-import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { VersionChecker } from "./version-checker";
 
@@ -104,7 +104,8 @@ function UpdateCustomNodesDialog({
         <div className="flex flex-col gap-4">
           <VersionChecker
             machineId={machine.id}
-            variant="bottom"
+            variant="expanded"
+            className="w-full"
             hideUpdateButton
           />
 

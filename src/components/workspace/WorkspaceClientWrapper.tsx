@@ -105,9 +105,16 @@ export function WorkspaceClientWrapper({
     queryKey: ["workflow", props.workflow_id, "version", version.toString()],
   });
 
-  const { data: machine, isLoading } = useMachine(
-    workflow?.selected_machine_id,
-  );
+  const { data: machine, isLoading } = useQuery<any>({
+    queryKey: ["machine", workflow?.selected_machine_id],
+    enabled: !!workflow?.selected_machine_id,
+    refetchInterval: (data) => {
+      return data?.state.data?.type === "comfy-deploy-serverless" &&
+        !["ready", "error"].includes(data?.state.data?.status)
+        ? 2000
+        : false;
+    },
+  });
 
   useEffect(() => {
     if (sessionId && selectedSession) {

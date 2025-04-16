@@ -99,8 +99,8 @@ import {
   useUnsavedChangesWarning,
 } from "../unsaved-changes-warning";
 import { ExtraDockerCommands } from "./extra-docker-commands";
-import { VersionChecker } from "./version-checker";
 import { SecretsSelector } from "./secrets-selector";
+import { VersionChecker } from "./version-checker";
 
 export function MachineSettingsWrapper({
   machine,
@@ -515,10 +515,11 @@ function ServerlessSettings({
                 !isWorkflow &&
                 !isMachine &&
                 !readonly && (
-                  <div className="mb-4">
+                  <div className="mb-4 fixed bottom-8 inset-x-0">
                     <VersionChecker
                       machineId={machine.id}
                       variant="inline"
+                      className="shadow-lg"
                       onUpdate={(e) => {
                         e.preventDefault();
                         // Navigate to update dialog
