@@ -113,6 +113,7 @@ import {
   useSessionIncrementStore,
 } from "./workspace/increase-session";
 import { sendWorkflow } from "./workspace/sendEventToCD";
+import { Switch } from "./ui/switch";
 
 // Add Session type
 interface Session {
@@ -349,12 +350,9 @@ function SessionSidebar() {
     if (isLegacyMode) {
       setIncrementSessionId(sessionId);
       setSessionIncrementOpen(true);
-    } else {
-      setTimerDialogOpen(true);
     }
   };
 
-  const [timerDialogOpen, setTimerDialogOpen] = useState(false);
   const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
   const [activeDrawer, setActiveDrawer] = useState<"model" | "chat" | null>(
     null,
@@ -488,14 +486,17 @@ function SessionSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter className="px-0 py-2">
+          {!isLegacyMode && <WorkspaceConfigPopover />}
           {session?.gpu && (
             <TooltipProvider>
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
-                  <Badge className="!text-[10px] !p-0 !w-full mb-1 flex items-center justify-center">
-                    {session?.gpu.slice(0, 4)}
-                  </Badge>
+                  <div className="px-2">
+                    <Badge className="!text-[10px] !p-0 !w-full mb-1 flex items-center justify-center">
+                      {session?.gpu.slice(0, 4)}
+                    </Badge>
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent side="right">
                   <p>{session?.gpu}</p>
@@ -544,6 +545,195 @@ function SessionSidebar() {
         </MyDrawer>
       )}
     </>
+  );
+}
+
+// First, extract the increaseSessionTimeout function
+function increaseSessionTimeout(
+  sessionId: string | null,
+  minutes: number,
+): Promise<any> {
+  if (!sessionId) {
+    return Promise.reject("No session ID provided");
+  }
+
+  return callServerPromise(
+    api({
+      url: `session/${sessionId}/increase-timeout`,
+      init: {
+        method: "POST",
+        body: JSON.stringify({
+          minutes: minutes,
+        }),
+      },
+    }),
+    {
+      loadingText: "Increasing session time...",
+      successMessage: "Session time extended",
+    },
+  );
+}
+
+// Now modify the WorkspaceConfigPopover to include auto-extension functionality
+function WorkspaceConfigPopover() {
+  // Load settings from localStorage with defaults
+  const [settings, setSettings] = useState(() => {
+    const savedSettings = localStorage.getItem("workspaceConfig");
+    return savedSettings
+      ? JSON.parse(savedSettings)
+      : {
+          autoSave: false,
+          autoSaveInterval: "60",
+          autoExpandSession: false,
+        };
+  });
+
+  const sessionId = useSessionIdInSessionView();
+  const { data: session, refetch } = useQuery<Session>({
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId && settings.autoExpandSession,
+  });
+
+  const { countdown } = useSessionTimer(session);
+  const autoExtendInProgressRef = useRef(false);
+  const isLegacyMode = !session?.timeout_end;
+
+  // Update settings and save to localStorage
+  const updateSettings = (key: string, value: any) => {
+    const newSettings = { ...settings, [key]: value };
+    setSettings(newSettings);
+    localStorage.setItem("workspaceConfig", JSON.stringify(newSettings));
+  };
+
+  // Auto-extend functionality
+  useEffect(() => {
+    if (
+      !settings.autoExpandSession ||
+      !sessionId ||
+      !countdown ||
+      autoExtendInProgressRef.current ||
+      isLegacyMode
+    ) {
+      return;
+    }
+
+    const [hours, minutes, seconds] = countdown.split(":").map(Number);
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+    if (totalSeconds > 0 && totalSeconds < 60) {
+      autoExtendInProgressRef.current = true;
+
+      increaseSessionTimeout(sessionId, 5)
+        .then(() => {
+          refetch();
+        })
+        .catch((error) => {
+          toast.error(`Failed to auto-extend session: ${error}`);
+        })
+        .finally(() => {
+          // Add a small delay before allowing another auto-extension
+          setTimeout(() => {
+            autoExtendInProgressRef.current = false;
+          }, 10000); // 10 seconds cooldown
+        });
+    }
+  }, [countdown, settings.autoExpandSession, sessionId, refetch, isLegacyMode]);
+
+  // Format interval text
+  const getIntervalText = () => {
+    if (!settings.autoSave) return "";
+    return settings.autoSaveInterval === "30"
+      ? "30 sec"
+      : settings.autoSaveInterval === "300"
+        ? "5 min"
+        : "1 min";
+  };
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" className="w-full">
+          <Settings className="h-4 w-4" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent
+        side="right"
+        sideOffset={14}
+        align="end"
+        className="w-[300px] p-3"
+      >
+        <h4 className="mb-3 font-medium text-sm">Workspace Configuration</h4>
+
+        <div className="space-y-3">
+          {/* Auto Save Toggle */}
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-xs">Auto Save</span>
+                  {settings.autoSave && (
+                    <Badge
+                      variant="outline"
+                      className="!text-[10px] h-5 px-1.5"
+                    >
+                      {getIntervalText()}
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Auto commit to save progress
+                </p>
+              </div>
+              <Switch
+                checked={settings.autoSave}
+                onCheckedChange={(checked) =>
+                  updateSettings("autoSave", checked)
+                }
+              />
+            </div>
+
+            {settings.autoSave && (
+              <div className="mt-1.5 flex items-center justify-end gap-2">
+                <span className="ml-2 text-xs">Interval: </span>
+                <Select
+                  value={settings.autoSaveInterval}
+                  onValueChange={(value) =>
+                    updateSettings("autoSaveInterval", value)
+                  }
+                >
+                  <SelectTrigger className="w-[150px] border-muted text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="30">30 sec</SelectItem>
+                    <SelectItem value="60">1 min</SelectItem>
+                    <SelectItem value="300">5 min</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          <Separator className="my-1" />
+
+          {/* Auto Expand Session Time Toggle */}
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="font-medium text-xs">Auto Expand Session</span>
+              <p className="text-[10px] text-muted-foreground">
+                Prevent session timeout, until you leave the workspace
+              </p>
+            </div>
+            <Switch
+              checked={settings.autoExpandSession}
+              onCheckedChange={(checked) =>
+                updateSettings("autoExpandSession", checked)
+              }
+            />
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
