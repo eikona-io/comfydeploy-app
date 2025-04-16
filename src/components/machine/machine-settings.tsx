@@ -515,7 +515,7 @@ function ServerlessSettings({
                 !isWorkflow &&
                 !isMachine &&
                 !readonly && (
-                  <div className="mb-4 fixed bottom-8 inset-x-0">
+                  <div className="mb-4 fixed bottom-8 inset-x-0 z-30">
                     <VersionChecker
                       machineId={machine.id}
                       variant="inline"
