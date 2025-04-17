@@ -104,6 +104,7 @@ export function VersionList({
   renderItem,
   hideSearch,
   containerClassName,
+  containerStyle,
 }: {
   workflow_id: string;
   onSelect?: (version: WorkflowType) => void;
@@ -114,6 +115,7 @@ export function VersionList({
   height?: number;
   hideSearch?: boolean;
   containerClassName?: string;
+  containerStyle?: React.CSSProperties;
 }) {
   const [searchValue, setSearchValue] = React.useState("");
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
@@ -182,6 +184,7 @@ export function VersionList({
       <VirtualizedInfiniteList
         queryResult={query}
         className={containerClassName}
+        containerStyle={containerStyle}
         renderItem={(item) =>
           renderItem ? (
             renderItem(item)
@@ -367,6 +370,7 @@ export function VersionSelectV2({
           workflow_id={workflow_id}
           onSelect={onSelect}
           selectedVersion={selectedVersion}
+          containerStyle={{ overflowX: "hidden" }}
         />
       </PopoverContent>
     </Popover>
@@ -457,17 +461,8 @@ function VersionRow({
 
 function LoadingRow() {
   return (
-    <div className="flex items-center space-x-4 p-3 text-sm">
-      <Skeleton className="h-6 w-6 rounded-full" />
-      <div className="flex-grow">
-        <Skeleton className="mb-2 h-4 w-20" />
-        <Skeleton className="mb-2 h-3 w-full" />
-        <div className="flex space-x-2">
-          <Skeleton className="h-7 w-16" />
-          <Skeleton className="h-7 w-16" />
-          <Skeleton className="h-7 w-20" />
-        </div>
-      </div>
+    <div className="flex items-center space-x-4 text-sm">
+      <Skeleton className="h-6 w-full" />
     </div>
   );
 }

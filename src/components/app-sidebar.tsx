@@ -388,6 +388,7 @@ function SessionSidebar() {
           <VersionList
             className="w-full"
             workflow_id={workflowId || ""}
+            containerStyle={{ overflowX: "hidden" }}
             onClose={() => {
               setIsVersionDialogOpen(false);
             }}
