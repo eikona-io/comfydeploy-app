@@ -6,10 +6,10 @@ import {
 } from "@/components/machine/machine-overview";
 import { MachineVersionBadge } from "@/components/machine/machine-version-badge";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
-import { Loader2, Pencil } from "lucide-react";
+import { FolderOpen, Loader2, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,7 @@ export default function MachinePage({
     queryKey: ["machine", params.machine_id],
     refetchInterval: 5000,
   });
+  const navigate = useNavigate();
 
   if (isLoading || !machine) {
     return (
@@ -65,7 +66,21 @@ export default function MachinePage({
               )}
             </Link>
             {machine.type === "comfy-deploy-serverless" && (
-              <MachineRenameButton machine={machine} />
+              <>
+                <MachineRenameButton machine={machine} />
+                <Button
+                  variant="ghost"
+                  size="xs"
+                  onClick={() => {
+                    navigate({
+                      to: "/machines/$machineId/files",
+                      params: { machineId: machine.id },
+                    });
+                  }}
+                >
+                  <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </>
             )}
           </div>
           <div className="flex flex-row gap-2">

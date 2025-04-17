@@ -483,6 +483,12 @@ export function DeploymentDialog({
           />
         </div>
 
+        {!selectedVersion.workflow_api && (
+          <div className="text-center text-muted-foreground text-sm">
+            Please save a new version in ComfyUI to deploy this workflow.
+          </div>
+        )}
+
         <div className="flex justify-end gap-2">
           <Button
             variant="outline"
@@ -496,7 +502,10 @@ export function DeploymentDialog({
           </Button>
           <Button
             disabled={
-              isPromoting || !selectedMachineId || final_machine.isLoading
+              isPromoting ||
+              !selectedMachineId ||
+              final_machine.isLoading ||
+              !selectedVersion.workflow_api
             }
             onClick={handlePromoteToEnv}
           >

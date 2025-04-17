@@ -242,7 +242,6 @@ export function RunWorkflowInline({
   workflow_version_id,
   machine_id,
   hideRunButton = false,
-  hideInputs = false,
   runOrigin = "public-share",
   blocking = true,
   model_id,
@@ -254,7 +253,6 @@ export function RunWorkflowInline({
   deployment_id: string;
   default_values?: Record<string, any>;
   hideRunButton?: boolean;
-  hideInputs?: boolean;
   runOrigin?: any;
   blocking?: boolean;
   model_id?: string;
@@ -353,23 +351,6 @@ export function RunWorkflowInline({
           setImage([{ url: mediaData.video[0].url }]);
         }
       }
-      // } else {
-      // const a = await callServerPromise(
-      //   createRun({
-      //     origin,
-      //     workflow_version_id: workflow_version_id,
-      //     machine_id: machine_id,
-      //     inputs: val,
-      //     runOrigin: runOrigin,
-      //   }),
-      // );
-      // if (a && !("error" in a) && "workflow_run_id" in a) {
-      //   setRunId(a.workflow_run_id as string);
-      // } else {
-      //   setLoading2(false);
-      // }
-      // console.log(a);
-      // }
       setIsLoading(false);
       if (!blocking) {
         setLoading2(false);
@@ -422,10 +403,10 @@ export function RunWorkflowInline({
     <>
       <SDForm
         onSubmit={onSubmit}
-        hideChildren={hideInputs}
         actionArea={
           !hideRunButton && (
             <Button
+              disabled={!inputs}
               type="submit"
               className="w-full"
               isLoading={isLoading || loading}
@@ -438,10 +419,9 @@ export function RunWorkflowInline({
           )
         }
         scrollAreaClassName={cn("h-full", scrollAreaClassName)}
-        // scrollAreaClassName="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(60%-100px)]"
       >
-        {!hideInputs &&
-          inputs?.map((item) => {
+        {inputs ? (
+          inputs.map((item) => {
             if (!item?.input_id) {
               return;
             }
@@ -453,17 +433,13 @@ export function RunWorkflowInline({
                 inputValue={values[item.input_id]}
               />
             );
-          })}
+          })
+        ) : (
+          <div className="py-2 text-center text-muted-foreground text-sm">
+            Please save a new version in ComfyUI to run this workflow.
+          </div>
+        )}
       </SDForm>
-      {/* {!inputs && !hideRunButton && (
-        <Button
-          onClick={runWorkflow}
-          isLoading={isLoading || loading}
-          eventID="workflow_share_button:click"
-        >
-          Confirm
-        </Button>
-      )} */}
     </>
   );
 }

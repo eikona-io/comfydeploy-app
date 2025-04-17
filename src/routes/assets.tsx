@@ -59,7 +59,7 @@ export function AssetsPage() {
               New Folder
             </Button>
             <UploadButton />
-            <UploadProgress className="absolute top-16 right-4" />
+            <UploadProgress className="absolute top-16 right-4 z-10" />
           </div>
         </div>
         <AssetBrowser showNewFolderButton={false} />
