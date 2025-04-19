@@ -1106,7 +1106,7 @@ export function AppSidebar() {
           </div>
 
           {!(workflow_id && parentPath === "workflows") && (
-            <div className="flex items-center gap-0 justify-center mt-1 bg-gray-100 rounded-[8px]">
+            <div className="mt-1 flex items-center justify-center gap-0 rounded-[8px] bg-gray-100">
               <OrganizationSwitcher
                 organizationProfileUrl="/organization-profile"
                 organizationProfileMode="navigation"
@@ -1114,8 +1114,10 @@ export function AppSidebar() {
                 afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
                 appearance={{
                   elements: {
-                    rootBox:
-                      "items-center justify-center p-0 w-full max-w-[221px] md:max-w-[190px]",
+                    rootBox: cn(
+                      "items-center justify-center p-0 w-full",
+                      orgId && "max-w-[221px] md:max-w-[190px]",
+                    ),
                     organizationSwitcherPopoverRootBox: {
                       pointerEvents: "initial",
                     },
@@ -1129,7 +1131,7 @@ export function AppSidebar() {
               />
               {orgId && (
                 <Link
-                  className="transition-colors bg-gray-200/40 hover:bg-gray-200 h-full flex items-center justify-center rounded-r-[8px] px-4"
+                  className="flex h-full items-center justify-center rounded-r-[8px] bg-gray-200/40 px-4 transition-colors hover:bg-gray-200"
                   to="/organization-profile#/organization-members"
                 >
                   <Users className="h-4 w-4" />
