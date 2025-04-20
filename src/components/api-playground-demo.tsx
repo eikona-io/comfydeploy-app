@@ -588,7 +588,7 @@ export function useOpenAPISpec() {
 
 	const url = isLocalhost
 		? "http://localhost:3011"
-		: "https://api.comfydeploy.com/api";
+		: "https://api.comfydeploy.com";
 
 	return useQuery({
 		queryKey: ["api-playground-demo"],
