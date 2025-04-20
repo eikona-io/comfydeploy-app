@@ -217,114 +217,6 @@ export function VersionList({
   );
 }
 
-// export function VersionSelectV2({
-//   workflow_id,
-//   onSelect,
-//   onClose,
-//   selectedVersion,
-//   className,
-//   height,
-//   renderItem,
-//   hideSearch,
-//   containerClassName,
-// }: {
-//   workflow_id: string;
-//   onSelect?: (version: WorkflowType) => void;
-//   onClose?: () => void;
-//   selectedVersion?: WorkflowType;
-//   className?: string;
-//   renderItem?: (item: WorkflowType) => React.ReactNode;
-//   height?: number;
-//   hideSearch?: boolean;
-//   containerClassName?: string;
-// }) {
-//   const [searchValue, setSearchValue] = React.useState("");
-//   const [debouncedSearchValue] = useDebounce(searchValue, 250);
-
-//   const query = useWorkflowVersion(workflow_id, debouncedSearchValue);
-//   const { hasChanged } = useWorkflowStore();
-//   const isAdminAndMember = useIsAdminAndMember();
-
-//   const flatData = React.useMemo(
-//     () => query.data?.pages.flat() ?? [],
-//     [query.data],
-//   );
-
-//   React.useEffect(() => {
-//     query.refetch();
-//   }, [debouncedSearchValue]);
-
-//   const [_version, setVersion] = useQueryState("version", {
-//     defaultValue: selectedVersion?.version ?? flatData[0]?.version ?? 1,
-//     clearOnDefault: false,
-//     ...parseAsInteger,
-//   });
-
-//   // _version = selectedVersion?.version || _version;
-
-//   const version = selectedVersion?.version || _version;
-
-//   const { dialog, setOpen: setOpenDialog } =
-//     useConfirmServerActionDialog<WorkflowType>({
-//       title: "Load to workspace",
-//       description:
-//         "This will load the workflow from the selected version to workspace, which will override the current workflow",
-//       action: async (value) => {
-//         sendWorkflow(value.workflow);
-//         setVersion(value.version);
-//         onClose?.();
-//       },
-//     });
-
-//   return (
-//     <div className={cn("w-[375px] overflow-hidden", className)}>
-//       {dialog}
-//       {!hideSearch && (
-//         <div className="relative p-2">
-//           <Search className="-translate-y-1/2 absolute top-1/2 left-6 h-4 w-4 text-muted-foreground" />
-//           <Input
-//             placeholder="Search versions..."
-//             className="pl-12 text-sm"
-//             value={searchValue}
-//             onChange={(e) => setSearchValue(e.target.value)}
-//           />
-//         </div>
-//       )}
-//       <VirtualizedInfiniteList
-//         queryResult={query}
-//         className={containerClassName}
-//         renderItem={(item) =>
-//           renderItem ? (
-//             renderItem(item)
-//           ) : (
-//             <VersionRow
-//               item={item as WorkflowType}
-//               selected={version}
-//               onSelect={(item) => {
-//                 if (onSelect) {
-//                   onSelect(item);
-//                 } else {
-//                   if (hasChanged) {
-//                     setOpenDialog(item);
-//                   } else {
-//                     setVersion(item.version);
-//                     sendWorkflow(item.workflow);
-//                     onClose?.();
-//                   }
-//                 }
-//               }}
-//               isAdminAndMember={isAdminAndMember}
-//               setOpen={setOpenDialog}
-//             />
-//           )
-//         }
-//         renderLoading={() => <LoadingRow />}
-//         estimateSize={height ?? 100}
-//       />
-//     </div>
-//   );
-// }
-
 export function VersionSelectV2({
   workflow_id,
   onSelect,
@@ -339,7 +231,10 @@ export function VersionSelectV2({
   const [open, setOpen] = React.useState(false);
 
   const flatData = useWorkflowVersion(workflow_id, "").data?.pages.flat() ?? [];
-  const version = selectedVersion?.version || flatData[0]?.version;
+  const [version] = useQueryState("version", {
+    defaultValue: selectedVersion?.version || flatData[0]?.version,
+    ...parseAsInteger,
+  });
 
   const value = React.useMemo<WorkflowType>(() => {
     if (selectedVersion) return selectedVersion;

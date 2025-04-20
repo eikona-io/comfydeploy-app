@@ -45,7 +45,7 @@ import {
   Search,
   StopCircle,
 } from "lucide-react";
-import { useQueryState } from "nuqs";
+import { parseAsInteger, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -171,6 +171,10 @@ export function SessionCreatorForm({
   const { createSession: createDynamicSession } = useSessionAPI();
   const { workflow } = useCurrentWorkflow(workflowId);
   const { data: selectedMachine } = useMachine(workflow?.selected_machine_id);
+  const [currentSelectedVersion] = useQueryState("version", {
+    defaultValue: version,
+    ...parseAsInteger,
+  });
 
   const [_, setSessionId] = useQueryState("sessionId");
 
@@ -211,6 +215,7 @@ export function SessionCreatorForm({
         search: {
           isFirstTime: true,
           workflowId: workflowId,
+          version: currentSelectedVersion,
         },
       });
 
