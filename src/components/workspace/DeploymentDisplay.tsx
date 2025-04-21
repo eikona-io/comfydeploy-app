@@ -1460,10 +1460,31 @@ export function DeploymentSettings({
                     [
                       "inputs",
                       Object.fromEntries(
-                        workflowInput.map((input) => [
-                          input.input_id,
-                          input.default_value,
-                        ]),
+                        workflowInput.map((x) => {
+                          if (!x) return [""];
+                          // Check for specific class types that require a custom URL
+                          if (
+                            [
+                              "ComfyUIDeployExternalImage",
+                              "ComfyUIDeployExternalImageAlpha",
+                            ].includes(x.class_type)
+                          ) {
+                            return [
+                              x.input_id,
+                              "/* put your image url here */",
+                            ];
+                          }
+                          // Special case for batch images
+                          if (
+                            x.class_type === "ComfyUIDeployExternalImageBatch"
+                          ) {
+                            return [
+                              x.input_id,
+                              ["/* put your image url here */"],
+                            ];
+                          }
+                          return [x.input_id, x.default_value ?? ""];
+                        }),
                       ),
                     ],
                   ])
