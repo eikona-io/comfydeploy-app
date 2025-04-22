@@ -628,6 +628,7 @@ function OutputPreview(props: { runId: string }) {
 						url={url.url}
 						imgClasses="h-8 w-8 rounded-[8px] object-cover"
 						lazyLoading={true}
+						isSmallView={true}
 					/>
 				</div>
 			))}
