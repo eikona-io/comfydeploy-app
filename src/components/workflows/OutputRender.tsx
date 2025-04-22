@@ -21,6 +21,7 @@ import {
   Expand,
   Ellipsis,
   Search,
+  FileText,
 } from "lucide-react";
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import {
@@ -40,6 +41,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { CodeBlock } from "../ui/code-blocks";
 
 // Create a lazy-loaded version of the component
 const LazyModelRenderer = lazy(() =>
@@ -84,6 +86,7 @@ type fileURLRenderProps = {
   onLoad?: () => void;
   isMainView?: boolean;
   canFullScreen?: boolean;
+  isSmallView?: boolean;
 };
 
 function _FileURLRender({
@@ -92,6 +95,7 @@ function _FileURLRender({
   lazyLoading = false,
   onLoad,
   isMainView = false,
+  isSmallView = false,
 }: fileURLRenderProps) {
   const a = new URL(url);
   const filename = a.pathname.split("/").pop();
@@ -133,6 +137,22 @@ function _FileURLRender({
         url={url}
         mediaClasses={mediaClasses}
         isMainView={isMainView}
+      />
+    );
+  }
+
+  // For text-based files
+  const textExtensions = [".txt", ".json", ".md"];
+  if (textExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
+    if (isSmallView) {
+      return <FileText className="h-4 w-4 text-muted-foreground" />;
+    }
+
+    return (
+      <TextFileRenderer
+        url={url}
+        filename={filename}
+        mediaClasses={mediaClasses}
       />
     );
   }
@@ -184,6 +204,109 @@ function _FileURLRender({
   }
 
   return <DownloadButton filename={filename} href={url} />;
+}
+
+// New component for text file rendering
+function TextFileRenderer({
+  url,
+  filename,
+  mediaClasses,
+}: {
+  url: string;
+  filename: string;
+  mediaClasses?: string;
+}) {
+  const [content, setContent] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchContent = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch: ${response.status}`);
+        }
+        const text = await response.text();
+        setContent(text);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchContent();
+  }, [url]);
+
+  const fileExtension = filename.split(".").pop()?.toLowerCase();
+
+  if (loading) {
+    return (
+      <div
+        className={cn(
+          "flex h-[200px] w-full max-w-[500px] items-center justify-center rounded-md bg-gray-50 p-4",
+          mediaClasses,
+        )}
+      >
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        className={cn(
+          "w-full max-w-[500px] rounded-md bg-red-50 p-4",
+          mediaClasses,
+        )}
+      >
+        <div className="mb-2 flex items-center gap-2 text-red-500">
+          <CircleX size={16} />
+          <span className="font-medium">Error loading file</span>
+        </div>
+        <p className="text-red-700 text-sm">{error}</p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mt-3"
+          onClick={() => window.open(url, "_blank")}
+        >
+          <Download className="mr-2 h-3.5 w-3.5" />
+          Download Instead
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cn(
+        "max-h-[400px] w-full max-w-[500px] overflow-auto rounded-md border",
+        mediaClasses,
+      )}
+    >
+      <div className="flex items-center justify-between border-b bg-gray-50 px-3 py-2">
+        <span className="max-w-[200px] truncate font-medium text-sm">
+          {filename}
+        </span>
+      </div>
+      {fileExtension === "json" ? (
+        <CodeBlock
+          code={JSON.stringify(JSON.parse(content || "{}"), null, 2)}
+          lang="json"
+          className="max-h-full text-xs"
+          scrollAreaClassName="rounded-none"
+        />
+      ) : (
+        <pre className="whitespace-pre-wrap bg-gray-100 p-4 font-mono text-xs">
+          {content}
+        </pre>
+      )}
+    </div>
+  );
 }
 
 export function FileURLRender(props: fileURLRenderProps) {
