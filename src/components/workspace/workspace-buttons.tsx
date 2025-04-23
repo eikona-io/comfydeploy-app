@@ -254,7 +254,7 @@ export function QueueButtons({ endpoint }: WorkspaceButtonProps) {
   const { data: session, refetch } = useQuery<any>({
     queryKey: ["session", sessionId],
     enabled: !!sessionId,
-    refetchInterval: 1000,
+    refetchInterval: (data) => (data ? 1000 : false),
   });
 
   const [timerDialogOpen, setTimerDialogOpen] = useState(false);

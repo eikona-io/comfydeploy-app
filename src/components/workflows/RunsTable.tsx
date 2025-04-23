@@ -384,6 +384,11 @@ export function RunsTableVirtualized(props: {
 
 	const { data: run } = useQuery({
 		queryKey: ["run", runId],
+		meta: {
+			params: {
+				queue_position: true,
+			},
+		},
 		enabled: !!runId,
 		queryFn: async ({ queryKey, pageParam, meta }) => {
 			if (!runId) return null;
@@ -595,6 +600,11 @@ function RunRow({
 function OutputPreview(props: { runId: string }) {
 	const { data: run, isLoading } = useQuery<any>({
 		queryKey: ["run", props.runId],
+		meta: {
+			params: {
+				queue_position: true,
+			},
+		},
 		queryKeyHashFn: (queryKey) => [...queryKey, "outputs"].toString(),
 		refetchInterval: (query) => {
 			if (
