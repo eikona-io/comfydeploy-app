@@ -10,7 +10,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -28,29 +27,27 @@ import { useLogStore } from "@/components/workspace/LogContext";
 import { MachineSelect } from "@/components/workspace/MachineSelect";
 import { SessionTimer } from "@/components/workspace/SessionTimer";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import {
-  useMachine,
-  useMachineVersion,
-  useMachines,
-} from "@/hooks/use-machine";
+import { useMachine, useMachineVersion } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { api } from "@/lib/api";
 import { useParams, useRouter } from "@tanstack/react-router";
 import {
   ArrowRightToLine,
   Droplets,
-  Loader2,
   Rocket,
   RotateCw,
-  Search,
+  Save,
   StopCircle,
 } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
-import { useDebounce } from "use-debounce";
 import { UserIcon } from "../run/SharePageComponent";
+import { Textarea } from "../ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { z } from "zod";
 
 interface SessionForm {
   machineId: string;
@@ -256,6 +253,11 @@ export function SessionCreatorForm({
         </p>
       </div>
 
+      <DescriptionForm
+        workflowId={workflowId}
+        description={workflow?.description}
+      />
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormItem>
@@ -356,5 +358,128 @@ export function SessionCreatorForm({
         </form>
       </Form>
     </div>
+  );
+}
+
+const descriptionSchema = z.object({
+  description: z
+    .string()
+    .refine((value) => !/^\s*$/.test(value), "Description is required"),
+});
+
+type DescriptionFormValues = z.infer<typeof descriptionSchema>;
+
+function DescriptionForm({
+  description,
+  workflowId,
+}: {
+  description: string;
+  workflowId: string;
+}) {
+  const [isDirty, setIsDirty] = useState(false);
+  const [initialValue, setInitialValue] = useState(description || "");
+
+  useEffect(() => {
+    // Set initial value when component mounts or description prop changes
+    setInitialValue(description || "");
+    descriptionForm.reset({ description: description || "" });
+  }, [description]);
+
+  const descriptionForm = useForm<DescriptionFormValues>({
+    resolver: zodResolver(descriptionSchema),
+    defaultValues: {
+      description: description || "",
+    },
+  });
+
+  const { mutate: saveDescription, isPending } = useMutation({
+    mutationFn: async (data: DescriptionFormValues) => {
+      return api({
+        url: `workflow/${workflowId}`,
+        init: {
+          method: "PATCH",
+          body: JSON.stringify(data),
+        },
+      });
+    },
+    onSuccess: () => {
+      setIsDirty(false);
+      setInitialValue(descriptionForm.getValues().description);
+      toast.success("Description saved successfully");
+    },
+    onError: () => {
+      toast.error("Failed to save description");
+    },
+  });
+
+  // Watch for changes in the description field
+  useEffect(() => {
+    const subscription = descriptionForm.watch((value) => {
+      // Show buttons if there are any changes, even if the new value is empty
+      setIsDirty(value.description !== initialValue);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [descriptionForm, initialValue]);
+
+  const onSubmit = (data: DescriptionFormValues) => {
+    saveDescription(data);
+  };
+
+  const handleDiscard = () => {
+    descriptionForm.reset({ description: initialValue });
+  };
+
+  return (
+    <Form {...descriptionForm}>
+      <form
+        onSubmit={descriptionForm.handleSubmit(onSubmit)}
+        className="flex flex-col gap-3"
+      >
+        <p className="font-medium text-sm">Description</p>
+        <FormField
+          control={descriptionForm.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  className="-m-2 h-28 border-none text-muted-foreground focus-visible:bg-zinc-100/40 focus-visible:text-black focus-visible:ring-transparent"
+                  placeholder="Describe your workflow"
+                  onChange={(e) => {
+                    field.onChange(e);
+                    // This ensures the dirty state updates immediately on change
+                    setIsDirty(e.target.value !== initialValue);
+                  }}
+                />
+              </FormControl>
+              <FormMessage className="text-xs" />
+            </FormItem>
+          )}
+        />
+        {isDirty && (
+          <div className="mt-2 flex flex-row justify-end gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDiscard}
+              type="button"
+            >
+              Discard
+            </Button>
+            <Button
+              size="sm"
+              type="submit"
+              isLoading={isPending}
+              disabled={!descriptionForm.formState.isValid}
+            >
+              Save
+              <Save className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </form>
+    </Form>
   );
 }
