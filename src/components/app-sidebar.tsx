@@ -341,7 +341,7 @@ function SessionSidebar() {
   } = useQuery<Session>({
     enabled: !!sessionId,
     queryKey: ["session", sessionId],
-    refetchInterval: 1000,
+    refetchInterval: (data) => (data ? 1000 : false),
   });
 
   const url = session?.url || session?.tunnel_url;
