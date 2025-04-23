@@ -1251,27 +1251,25 @@ export function AppSidebar() {
           )}
         </SidebarContent>
         <SidebarFooter className="flex w-full flex-col justify-center gap-2 pb-4">
+          <div id="sidebar-panel-footer" />
+
           {!(workflow_id && parentPath === "workflows") && (
             <div className="grid grid-cols-2 gap-2 px-2">
-              {links.map((item) => (
-                // <SidebarMenuItem key={item.title} className="gap-1">
-                // <SidebarMenuButton asChild className="py-0 min-h-0 h-fit">
-                <a href={item.url} target="_blank" rel="noreferrer">
-                  <span className="flex w-full flex-row items-center justify gap-2 pr-2 text-2xs text-muted-foreground">
+              {links.map((item, index) => (
+                <a href={item.url} key={index} target="_blank" rel="noreferrer">
+                  <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
                     <item.icon size={16} className="w-3" />
                     <span>{item.title}</span>
                   </span>
                 </a>
-                // </SidebarMenuButton>
-                // </SidebarMenuItem>
               ))}
             </div>
           )}
         </SidebarFooter>
       </Sidebar>
 
-      {/* {window.location.hostname === "localhost" && (
-        <div className="fixed top-11 left-2 z-[9999] flex items-center gap-2 opacity-65">
+      {window.location.hostname === "localhost" && (
+        <div className="fixed top-2 right-2 z-[9999] flex items-center gap-2 opacity-65">
           <Badge className="pointer-events-none bg-orange-300 text-orange-700 shadow-md">
             Localhost
           </Badge>
@@ -1281,7 +1279,7 @@ export function AppSidebar() {
             {currentGitBranch?.branch || `Please run "bun githooks"`}
           </Badge>
         </div>
-      )} */}
+      )}
     </>
   );
 }

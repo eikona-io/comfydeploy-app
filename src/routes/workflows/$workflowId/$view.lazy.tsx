@@ -42,6 +42,9 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useSidebar } from "@/components/ui/sidebar";
+import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
+import { FileURLRender } from "@/components/workflows/OutputRender";
 import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
@@ -65,7 +68,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Share, Terminal } from "lucide-react";
+import { Share, Terminal, ImageIcon } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 
@@ -357,6 +360,53 @@ function WorkflowPageComponent() {
             )}
           </motion.div>
         </AnimatePresence>
+      </Portal>
+      <Portal targetId="sidebar-panel-footer">
+        {workflow && (
+          <div className="border-gray-200 p-3">
+            {workflow.cover_image ? (
+              <div className="mx-auto mb-2 h-36 w-36 overflow-hidden rounded-md">
+                <FileURLRender
+                  url={workflow.cover_image}
+                  imgClasses="w-full h-full object-cover"
+                />
+              </div>
+            ) : (
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                    <div
+                      className="mx-auto mb-2 flex h-36 w-36 cursor-pointer items-center justify-center rounded-md border-2 border-gray-300 border-dashed hover:border-gray-400"
+                      onClick={() => {
+                        router.navigate({
+                          to: "/workflows/$workflowId/$view",
+                          params: {
+                            workflowId,
+                            view: "gallery",
+                          },
+                          search: {
+                            action: true,
+                          },
+                        });
+                      }}
+                    >
+                      <ImageIcon className="h-6 w-6 text-gray-400" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Add Cover Image</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            {workflow.description && (
+              <p className="line-clamp-3 text-gray-600 text-xs leading-snug">
+                {workflow.description}
+              </p>
+            )}
+          </div>
+        )}
       </Portal>
       {mountedViews.has("workspace") ? (
         <div

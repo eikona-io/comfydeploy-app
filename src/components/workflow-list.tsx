@@ -383,10 +383,9 @@ function WorkflowCard({
       >
         <Card className="group relative flex aspect-square w-full flex-col overflow-hidden rounded-md transition-all duration-300 ease-in-out hover:shadow-lg">
           <div className="h-full w-full">
-            {latest_output?.images?.[0]?.url ? (
+            {workflow.cover_image || latest_output?.images?.[0]?.url ? (
               <FileURLRender
-                url={latest_output.images[0].url}
-                // alt={workflow.name}
+                url={workflow.cover_image ?? latest_output.images[0].url}
                 imgClasses="w-full h-full max-w-full max-h-full rounded-[8px] object-cover transition-all duration-300 ease-in-out group-hover:scale-105"
               />
             ) : (
@@ -399,44 +398,6 @@ function WorkflowCard({
               </div>
             )}
           </div>
-          {/* <div className="absolute right-0 bottom-0 left-0 px-2 py-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
-            <div className="flex items-center justify-center gap-2">
-              <AdminAndMember>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full "
-                  href={`/workflows/${workflow.id}/workspace`}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full "
-                  href={`/workflows/${workflow.id}/requests`}
-                >
-                  <Code className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full "
-                  href={`/workflows/${workflow.id}/playground`}
-                >
-                  <Play className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="w-full "
-                  href={`/workflows/${workflow.id}/gallery`}
-                >
-                  <Image className="h-4 w-4" />
-                </Button>
-              </AdminAndMember>
-            </div>
-          </div> */}
           <div className="absolute top-2 right-2">
             <AdminAndMember>
               <DropdownMenu>

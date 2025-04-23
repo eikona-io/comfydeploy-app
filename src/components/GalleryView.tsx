@@ -27,6 +27,7 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { downloadImage } from "@/utils/download-image";
+import { queryClient } from "@/lib/providers";
 
 type GalleryViewProps = {
   workflowID: string;
@@ -229,6 +230,9 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
         }),
       );
       toast.success("Cover image updated!");
+      queryClient.invalidateQueries({
+        queryKey: ["workflow", workflowID],
+      });
     } finally {
       setLoadingCoverId(null);
       setOpenDropdownId(null);

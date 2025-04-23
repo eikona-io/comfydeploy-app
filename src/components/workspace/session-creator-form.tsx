@@ -48,6 +48,7 @@ import { Textarea } from "../ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
+import { queryClient } from "@/lib/providers";
 
 interface SessionForm {
   machineId: string;
@@ -405,6 +406,9 @@ function DescriptionForm({
     onSuccess: () => {
       setIsDirty(false);
       setInitialValue(descriptionForm.getValues().description);
+      queryClient.invalidateQueries({
+        queryKey: ["workflow", workflowId],
+      });
       toast.success("Description saved successfully");
     },
     onError: () => {
