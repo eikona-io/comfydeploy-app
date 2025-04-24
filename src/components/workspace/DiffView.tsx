@@ -760,17 +760,27 @@ export function getMinimalWorkflowDiff(
     const inputMatch = path.match(/inputs\.([^.]+)$/);
     if (inputMatch) return inputMatch[1];
 
-    // Widget value
-    const widgetMatch = path.match(/widgets_values\.(\d+)$/);
-    if (widgetMatch && nodeId) {
-      const node = nodes.get(nodeId);
-      if (node?.inputs) {
-        const idx = Number.parseInt(widgetMatch[1]);
-        const inputNames = Object.keys(node.inputs);
-        if (inputNames.length > idx) {
-          return inputNames[idx];
+    // Widget value (captures both named and numeric indices)
+    const widgetMatch = path.match(/widgets_values\.([^.]+)$/);
+    if (widgetMatch) {
+      const widgetKey = widgetMatch[1];
+
+      // If it's a numeric index, try to map it to an input name
+      if (/^\d+$/.test(widgetKey) && nodeId) {
+        const node = nodes.get(nodeId);
+        if (node?.inputs) {
+          const idx = Number.parseInt(widgetKey, 10);
+          const inputNames = Object.keys(node.inputs);
+          if (inputNames.length > idx) {
+            return inputNames[idx];
+          }
         }
+        // If we can't map it to an input name, return the index as is
+        return widgetKey;
       }
+
+      // For named widget values, return as is
+      return widgetKey;
     }
 
     return null;
