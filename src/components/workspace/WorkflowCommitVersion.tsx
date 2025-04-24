@@ -187,7 +187,7 @@ function CommentInput({
   const handleGenerateComment = async (workflow_diff: any) => {
     const token = await fetchToken();
     const apiUrl =
-      "https://comfy-deploy--master-comfy-fastapi-app-dev.modal.run/v1/workflow/comment";
+      "https://comfy-deploy--master-comfy-fastapi-app.modal.run/v1/workflow/comment";
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
