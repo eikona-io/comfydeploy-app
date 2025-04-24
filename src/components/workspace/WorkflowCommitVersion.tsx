@@ -9,15 +9,23 @@ import {
   useWorkflowIdInWorkflowPage,
 } from "@/hooks/hook";
 import { useAuth } from "@clerk/clerk-react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { useCallback, useState } from "react";
 import { z } from "zod";
 import { ScrollArea } from "../ui/scroll-area";
 import { useSelectedVersion } from "../version-select";
-import { DiffView, SnapshotDiffView } from "./DiffView";
+import { DiffView, getMinimalWorkflowDiff, SnapshotDiffView } from "./DiffView";
 import { useWorkflowStore } from "./Workspace";
 import { serverAction } from "@/lib/workflow-version-api";
 import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
+import { FormMessage } from "../ui/form";
+import { FormControl } from "../ui/form";
+import { FormItem } from "../ui/form";
+import AutoFormLabel from "../auto-form/common/label";
+import { Input } from "../ui/input";
+import type { AutoFormInputComponentProps } from "../auto-form/types";
+import { Button } from "../ui/button";
+import { useAuthStore } from "@/lib/auth-store";
 
 type WorkflowCommitVersionProps = {
   setOpen: (b: boolean) => void;
@@ -147,6 +155,95 @@ export function WorkflowCommitVersion({
       formSchema={z.object({
         comment: z.string().optional(),
       })}
+      fieldConfig={{
+        comment: {
+          fieldType: CommentInput,
+        },
+      }}
     />
+  );
+}
+
+function CommentInput({
+  label,
+  isRequired,
+  fieldProps,
+  field,
+}: AutoFormInputComponentProps) {
+  const { showLabel: _showLabel } = fieldProps;
+  const showLabel = _showLabel === undefined ? true : _showLabel;
+  const { workflow, workflow_api } = useWorkflowStore((state) => state);
+  const workflowId = useWorkflowIdInWorkflowPage();
+  const { value: selectedVersion } = useSelectedVersion(workflowId ?? "");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const fetchToken = useAuthStore((state) => state.fetchToken);
+
+  const diffResult = getMinimalWorkflowDiff(
+    selectedVersion?.workflow,
+    workflow,
+    workflow_api,
+  );
+
+  const handleGenerateComment = async (workflow_diff: any) => {
+    const token = await fetchToken();
+    const apiUrl =
+      "https://comfy-deploy--master-comfy-fastapi-app-dev.modal.run/v1/workflow/comment";
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        workflow_diff: workflow_diff,
+      }),
+    });
+
+    return await response.json();
+  };
+
+  const handleSparklesClick = async () => {
+    try {
+      setIsGenerating(true);
+      const data = await handleGenerateComment(diffResult);
+
+      if (data?.message) {
+        field.onChange(data.message);
+      }
+    } catch (error) {
+      console.error("Failed to generate comment:", error);
+      // Fallback on error
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-row items-center space-x-2">
+      <FormItem className="flex w-full flex-col justify-start">
+        {showLabel && <AutoFormLabel label={label} isRequired={isRequired} />}
+        <FormControl>
+          <div className="relative">
+            <Input value={field.value || ""} onChange={field.onChange} />
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              className="-translate-y-1/2 absolute top-1/2 right-2"
+              onClick={handleSparklesClick}
+              disabled={isGenerating}
+              hideLoading
+            >
+              {isGenerating ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    </div>
   );
 }

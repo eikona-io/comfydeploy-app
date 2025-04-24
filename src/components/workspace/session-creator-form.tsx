@@ -34,9 +34,11 @@ import { useParams, useRouter } from "@tanstack/react-router";
 import {
   ArrowRightToLine,
   Droplets,
+  Loader2,
   Rocket,
   RotateCw,
   Save,
+  Sparkles,
   StopCircle,
 } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
@@ -44,11 +46,12 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { UserIcon } from "../run/SharePageComponent";
-import { Textarea } from "../ui/textarea";
+import { useAuthStore } from "@/lib/auth-store";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { queryClient } from "@/lib/providers";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
-import { queryClient } from "@/lib/providers";
+import { Textarea } from "../ui/textarea";
 
 interface SessionForm {
   machineId: string;
@@ -257,6 +260,8 @@ export function SessionCreatorForm({
       <DescriptionForm
         workflowId={workflowId}
         description={workflow?.description}
+        workflowJson={workflow?.versions[0].workflow}
+        workflowName={workflow?.name}
       />
 
       <Form {...form}>
@@ -373,12 +378,18 @@ type DescriptionFormValues = z.infer<typeof descriptionSchema>;
 function DescriptionForm({
   description,
   workflowId,
+  workflowJson,
+  workflowName,
 }: {
   description: string;
   workflowId: string;
+  workflowJson: any;
+  workflowName: string;
 }) {
   const [isDirty, setIsDirty] = useState(false);
   const [initialValue, setInitialValue] = useState(description || "");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const fetchToken = useAuthStore((state) => state.fetchToken);
 
   useEffect(() => {
     // Set initial value when component mounts or description prop changes
@@ -447,16 +458,71 @@ function DescriptionForm({
           render={({ field }) => (
             <FormItem>
               <FormControl>
-                <Textarea
-                  {...field}
-                  className="-m-2 h-28 border-none text-muted-foreground focus-visible:bg-zinc-100/40 focus-visible:text-black focus-visible:ring-transparent"
-                  placeholder="Describe your workflow"
-                  onChange={(e) => {
-                    field.onChange(e);
-                    // This ensures the dirty state updates immediately on change
-                    setIsDirty(e.target.value !== initialValue);
-                  }}
-                />
+                <div className="group relative">
+                  <Textarea
+                    {...field}
+                    className="-m-2 h-28 border-none text-muted-foreground focus-visible:bg-zinc-100/40 focus-visible:text-black focus-visible:ring-transparent"
+                    placeholder="Describe your workflow"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      // This ensures the dirty state updates immediately on change
+                      setIsDirty(e.target.value !== initialValue);
+                    }}
+                  />
+                  <Button
+                    variant="gooeyRight"
+                    size="icon"
+                    hideLoading
+                    disabled={isGenerating}
+                    type="button"
+                    className="absolute right-4 bottom-2 opacity-0 transition-opacity group-hover:opacity-80"
+                    onClick={async () => {
+                      const token = await fetchToken();
+
+                      try {
+                        setIsGenerating(true);
+                        const apiUrl =
+                          "https://comfy-deploy--master-comfy-fastapi-app.modal.run/v1/workflow/description";
+                        const response = await fetch(apiUrl, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            workflow: workflowJson,
+                            workflow_name: workflowName,
+                          }),
+                        });
+
+                        const data = await response.json();
+
+                        if (data?.message) {
+                          // Set value and trigger validation in one step
+                          descriptionForm.setValue(
+                            "description",
+                            data.message,
+                            {
+                              shouldValidate: true,
+                            },
+                          );
+                          setIsDirty(true);
+                        }
+                      } catch (error) {
+                        toast.error("Failed to generate description");
+                        console.error(error);
+                      } finally {
+                        setIsGenerating(false);
+                      }
+                    }}
+                  >
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </FormControl>
               <FormMessage className="text-xs" />
             </FormItem>
