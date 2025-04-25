@@ -358,6 +358,7 @@ export function FileURLRender(props: fileURLRenderProps) {
 }
 
 function FileURLRenderMulti({
+  runId,
   urls,
   imgClasses,
   canExpandToView,
@@ -366,6 +367,7 @@ function FileURLRenderMulti({
   columns = 1,
   isMainView = false,
 }: {
+  runId?: string;
   urls: {
     url: string;
     upload_duration?: number;
@@ -390,7 +392,7 @@ function FileURLRenderMulti({
         <div className={cn("grid grid-cols-1 gap-2", `grid-cols-${columns}`)}>
           {urls.map((url, i) => (
             <FileURLRender
-              key={i}
+              key={`${runId || ""}-${url.url}-${i}`}
               url={url.url}
               imgClasses={imgClasses}
               isMainView={isMainView}
@@ -404,7 +406,7 @@ function FileURLRenderMulti({
       <>
         {urls.map((url, i) => (
           <FileURLRender
-            key={i}
+            key={`${runId || ""}-${url.url}-${i}`}
             url={url.url}
             imgClasses={imgClasses}
             isMainView={isMainView}
@@ -438,7 +440,7 @@ function FileURLRenderMulti({
               <CarouselContent>
                 {urls.map((image, index) => (
                   <CarouselItem
-                    key={index}
+                    key={`${runId || ""}-${image.url}-${index}`}
                     className="flex aspect-square max-h-[80vh] max-w-full items-center justify-center"
                   >
                     <FileURLRender
@@ -463,7 +465,7 @@ function FileURLRenderMulti({
           {urls.map((urlImage, i) => {
             return (
               <MediaDisplay
-                key={urlImage.url}
+                key={`${runId || ""}-${urlImage.url}-${i}`}
                 urlImage={urlImage}
                 imgClasses={imgClasses}
                 lazyLoading={lazyLoading}
@@ -479,7 +481,7 @@ function FileURLRenderMulti({
         <>
           {urls.map((urlImage, i) => (
             <MediaDisplay
-              key={urlImage.url}
+              key={`${runId || ""}-${urlImage.url}-${i}`}
               urlImage={urlImage}
               imgClasses={imgClasses}
               lazyLoading={lazyLoading}
@@ -523,7 +525,7 @@ function MediaDisplay({
     <>
       {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
       <div
-        key={urlImage.url}
+        key={`${urlImage.url}-${urlImage.node_meta?.node_id || ""}`}
         className="group relative flex cursor-pointer overflow-clip rounded-[8px]"
         onClick={() => {
           setOpen(true);
@@ -730,6 +732,7 @@ export function OutputRenderRun({
 
   return (
     <FileURLRenderMulti
+      runId={run.id}
       urls={urlsToDisplay}
       imgClasses={imgClasses}
       canExpandToView={canExpandToView}
@@ -837,6 +840,7 @@ export function PlaygroundOutputRenderRun({
       {urlsToDisplay.length > 0 ? (
         <>
           <FileURLRenderMulti
+            runId={run.id}
             urls={urlsToDisplay}
             imgClasses={imgClasses}
             canExpandToView={false}
