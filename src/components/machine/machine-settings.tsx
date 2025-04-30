@@ -347,6 +347,11 @@ function ServerlessSettings({
 
   const navigate = useNavigate();
 
+  const sub = useCurrentPlan();
+  const isBusiness = sub?.plans?.plans?.some((plan) =>
+    plan.includes("business"),
+  );
+
   const form = useForm<FormData>({
     resolver: zodResolver(serverlessFormSchema),
     mode: "onChange",
@@ -849,6 +854,207 @@ function ServerlessSettings({
                           )}
                         />
                       </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* CPU & Memory Section (moved to top-level) */}
+                <AccordionItem value="cpu-mem" className="border-none">
+                  <AccordionTrigger className="flex items-center gap-2 rounded-md px-4 hover:bg-accent hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-5 w-4 text-muted-foreground" />
+                      <h3 className="font-medium text-md">CPU & Memory</h3>
+                      <Badge variant="outline" className="ml-2">
+                        Business
+                      </Badge>
+                      <FormDescription>
+                        Configure CPU and memory resources (Business plan
+                        required)
+                      </FormDescription>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="grid grid-cols-2 gap-4 p-4">
+                      {/* CPU Request */}
+                      <FormField
+                        control={form.control}
+                        name="cpu_request"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center gap-2">
+                              <FormLabel>CPU Request</FormLabel>
+                              <Badge variant="outline">Business</Badge>
+                            </div>
+                            <FormDescription>
+                              Minimum number of CPUs to allocate
+                              {!isBusiness && (
+                                <span className="text-destructive ml-2">
+                                  Business plan required
+                                </span>
+                              )}
+                            </FormDescription>
+                            <FormControl>
+                              <Select
+                                value={field.value ? String(field.value) : ""}
+                                onValueChange={(val) =>
+                                  field.onChange(Number(val))
+                                }
+                                disabled={!isBusiness}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select CPU" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="0.5">0.5 CPU</SelectItem>
+                                  <SelectItem value="1">1 CPU</SelectItem>
+                                  <SelectItem value="2">2 CPU</SelectItem>
+                                  <SelectItem value="4">4 CPU</SelectItem>
+                                  <SelectItem value="8">8 CPU</SelectItem>
+                                  <SelectItem value="16">16 CPU</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {/* CPU Limit */}
+                      <FormField
+                        control={form.control}
+                        name="cpu_limit"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center gap-2">
+                              <FormLabel>CPU Limit</FormLabel>
+                              <Badge variant="outline">Business</Badge>
+                            </div>
+                            <FormDescription>
+                              Maximum number of CPUs to allocate
+                              {!isBusiness && (
+                                <span className="text-destructive ml-2">
+                                  Business plan required
+                                </span>
+                              )}
+                            </FormDescription>
+                            <FormControl>
+                              <Select
+                                value={field.value ? String(field.value) : ""}
+                                onValueChange={(val) =>
+                                  field.onChange(Number(val))
+                                }
+                                disabled={!isBusiness}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select CPU" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="0.5">0.5 CPU</SelectItem>
+                                  <SelectItem value="1">1 CPU</SelectItem>
+                                  <SelectItem value="2">2 CPU</SelectItem>
+                                  <SelectItem value="4">4 CPU</SelectItem>
+                                  <SelectItem value="8">8 CPU</SelectItem>
+                                  <SelectItem value="16">16 CPU</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {/* Memory Request */}
+                      <FormField
+                        control={form.control}
+                        name="memory_request"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center gap-2">
+                              <FormLabel>Memory Request</FormLabel>
+                              <Badge variant="outline">Business</Badge>
+                            </div>
+                            <FormDescription>
+                              Minimum memory to allocate (MB)
+                              {!isBusiness && (
+                                <span className="text-destructive ml-2">
+                                  Business plan required
+                                </span>
+                              )}
+                            </FormDescription>
+                            <FormControl>
+                              <Select
+                                value={field.value ? String(field.value) : ""}
+                                onValueChange={(val) =>
+                                  field.onChange(Number(val))
+                                }
+                                disabled={!isBusiness}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select Memory" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1024">1024 MB</SelectItem>
+                                  <SelectItem value="2048">2048 MB</SelectItem>
+                                  <SelectItem value="4096">4096 MB</SelectItem>
+                                  <SelectItem value="8192">8192 MB</SelectItem>
+                                  <SelectItem value="16384">
+                                    16384 MB
+                                  </SelectItem>
+                                  <SelectItem value="32768">
+                                    32768 MB
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      {/* Memory Limit */}
+                      <FormField
+                        control={form.control}
+                        name="memory_limit"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center gap-2">
+                              <FormLabel>Memory Limit</FormLabel>
+                              <Badge variant="outline">Business</Badge>
+                            </div>
+                            <FormDescription>
+                              Maximum memory to allocate (MB)
+                              {!isBusiness && (
+                                <span className="text-destructive ml-2">
+                                  Business plan required
+                                </span>
+                              )}
+                            </FormDescription>
+                            <FormControl>
+                              <Select
+                                value={field.value ? String(field.value) : ""}
+                                onValueChange={(val) =>
+                                  field.onChange(Number(val))
+                                }
+                                disabled={!isBusiness}
+                              >
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="Select Memory" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="1024">1024 MB</SelectItem>
+                                  <SelectItem value="2048">2048 MB</SelectItem>
+                                  <SelectItem value="4096">4096 MB</SelectItem>
+                                  <SelectItem value="8192">8192 MB</SelectItem>
+                                  <SelectItem value="16384">
+                                    16384 MB
+                                  </SelectItem>
+                                  <SelectItem value="32768">
+                                    32768 MB
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </AccordionContent>
                 </AccordionItem>
