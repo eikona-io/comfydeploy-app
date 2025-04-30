@@ -9,7 +9,6 @@ import { MachineVersionWrapper } from "@/components/machine/machine-overview";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
-import { SessionItem } from "@/components/sessions/SessionItem";
 import { Badge } from "@/components/ui/badge";
 import {
   Breadcrumb,
@@ -26,24 +25,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import { useSidebar } from "@/components/ui/sidebar";
-import { TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Tooltip, TooltipProvider } from "@/components/ui/tooltip";
+import {
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+  Tooltip,
+} from "@/components/ui/tooltip";
 import { FileURLRender } from "@/components/workflows/OutputRender";
 import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
@@ -54,10 +49,8 @@ import {
 } from "@/components/workspace/ContainersTable";
 import { useWorkflowDeployments } from "@/components/workspace/ContainersTable";
 import { DeploymentDrawer } from "@/components/workspace/DeploymentDisplay";
-import { LogDisplay } from "@/components/workspace/LogDisplay";
 import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
-import { WorkspaceStatusBar } from "@/components/workspace/WorkspaceStatusBar";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
@@ -68,7 +61,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Share, Terminal, ImageIcon } from "lucide-react";
+import { ImageIcon, Share } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 
@@ -401,7 +394,7 @@ function WorkflowPageComponent() {
               </TooltipProvider>
             )}
             {workflow.description && (
-              <p className="line-clamp-3 text-gray-600 text-xs leading-snug">
+              <p className="line-clamp-3 text-2xs text-gray-600 leading-snug">
                 {workflow.description}
               </p>
             )}

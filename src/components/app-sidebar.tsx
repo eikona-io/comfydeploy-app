@@ -467,7 +467,7 @@ function SessionSidebar() {
                   <Box className="h-4 w-4" />
                 </Button>
               </SidebarMenuItem>
-              {sub?.plans?.plans?.length > 0 && (
+              {/* {sub?.plans?.plans?.length > 0 && (
                 <SidebarMenuItem className="relative p-0">
                   <Button
                     variant="ghost"
@@ -486,7 +486,7 @@ function SessionSidebar() {
                     Beta
                   </Badge>
                 </SidebarMenuItem>
-              )}
+              )} */}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

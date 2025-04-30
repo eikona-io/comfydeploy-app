@@ -84,7 +84,10 @@ export const serverlessFormSchema = z.object({
               const urlObj = new URL(url);
               if (urlObj.hostname === "github.com") {
                 const [, author, repo] = urlObj.pathname.split("/");
-                const repoKey = `${author}/${repo}`;
+                const cleanRepo = repo.endsWith(".git")
+                  ? repo.slice(0, -4)
+                  : repo;
+                const repoKey = `${author}/${cleanRepo}`;
                 urlCounts.set(repoKey, (urlCounts.get(repoKey) || 0) + 1);
               } else {
                 urlCounts.set(url, (urlCounts.get(url) || 0) + 1);
