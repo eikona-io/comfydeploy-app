@@ -382,6 +382,11 @@ function ServerlessSettings({
       prestart_command: machine.prestart_command,
 
       optimized_runner: machine.optimized_runner,
+
+      cpu_request: machine.cpu_request,
+      cpu_limit: machine.cpu_limit,
+      memory_request: machine.memory_request,
+      memory_limit: machine.memory_limit,
     },
   });
 
