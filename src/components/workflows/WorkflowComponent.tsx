@@ -48,6 +48,8 @@ import { Alert, AlertDescription } from "../ui/alert";
 import { CodeBlock } from "../ui/code-blocks";
 import { TooltipTrigger } from "../ui/tooltip";
 import { Tooltip, TooltipContent, TooltipProvider } from "../ui/tooltip";
+import { Copy } from "lucide-react";
+import { toast } from "sonner";
 import {
 	getEnvColor,
 	useWorkflowDeployments,
@@ -177,7 +179,21 @@ export function RunDetails(props: {
 			<div className="mb-4 flex flex-row items-center justify-between">
 				<div>
 					<h2 className="font-bold text-2xl">Run Details</h2>
-					<p className="text-muted-foreground">#{run.id.slice(0, 8)}</p>
+					<div className="flex items-center gap-2">
+						<p className="text-muted-foreground text-xs font-mono">#{run.id}</p>
+						<Button
+							variant="outline"
+							size="sm"
+							className="h-5 w-5 p-0 min-w-0 flex items-center justify-center border border-gray-200 hover:bg-gray-100"
+							onClick={() => {
+								navigator.clipboard.writeText(run.id);
+								toast.success("Run ID copied to clipboard");
+							}}
+							title="Copy run ID"
+						>
+							<Copy className="h-3 w-3" />
+						</Button>
+					</div>
 					{run.batch_id && (
 						<Link
 							href={`/batch/${run.batch_id}`}
