@@ -1,5 +1,5 @@
 import { ErrorBoundary } from "@/components/error-boundary";
-import { LogsViewer } from "@/components/log/logs-viewer"; // Add this import
+import { LogsViewer } from "@/components/log/logs-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
