@@ -223,7 +223,7 @@ export function SessionCreatorForm({
       setSessionId(response.session_id);
       onSuccess?.();
     } catch (error) {
-      toast.error("Failed to create session");
+      toast.error(`Failed to create session: ${error}`);
     }
   };
 
