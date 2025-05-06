@@ -153,16 +153,38 @@ export function useAssetUpload() {
         
         onProgress?.(10); // URL obtained
         
-        const uploadResponse = await fetch(presignedUrlResponse.url, {
-          method: 'PUT',
-          body: file,
-          headers: {
-            'Content-Type': file.type,
-          },
+        const xhr = new XMLHttpRequest();
+        
+        const uploadPromise = new Promise((resolve, reject) => {
+          xhr.open('PUT', presignedUrlResponse.url, true);
+          xhr.setRequestHeader('Content-Type', file.type);
+          
+          xhr.upload.onprogress = (e) => {
+            if (e.lengthComputable) {
+              const progressPercentage = 10 + (e.loaded / e.total) * 80;
+              onProgress?.(progressPercentage);
+            }
+          };
+          
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve(xhr.response);
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          };
+          
+          xhr.onerror = () => {
+            reject(new Error('Network error during upload'));
+          };
+          
+          xhr.send(file);
         });
         
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload file to storage');
+        try {
+          await uploadPromise;
+        } catch (error: any) {
+          throw new Error('Failed to upload file to storage: ' + (error.message || String(error)));
         }
         
         onProgress?.(90); // Almost done
