@@ -53,61 +53,29 @@ export const Route = createFileRoute("/usage")({
 
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"graph" | "grid">("graph");
+  const { data: invoices, isLoading: invoicesLoading } = useQuery<Invoice[]>({
+    queryKey: ["platform", "invoices"],
+  });
+
   const { data: sub } = useQuery<Subscription>({
     queryKey: ["platform", "plan"],
   });
 
-  // Use invoices from autumn_data
-  const mappedInvoices = useMemo<Invoice[]>(() => {
-    const invoices = sub?.plans?.autumn_data?.invoices ?? [];
-    return invoices.map((inv: any) => {
-      // Use explicit period if available
-      let startMs = inv.current_period_start ?? inv.created_at;
-      let endMs = inv.current_period_end ?? inv.created_at;
-
-      // If not available, infer full month from created_at
-      if (!inv.current_period_start || !inv.current_period_end) {
-        const created = new Date(inv.created_at);
-        const startOfMonth = new Date(
-          created.getFullYear(),
-          created.getMonth(),
-          1,
-        );
-        const endOfMonth = new Date(
-          created.getFullYear(),
-          created.getMonth() + 1,
-          0,
-          23,
-          59,
-          59,
-          999,
-        );
-        startMs = startOfMonth.getTime();
-        endMs = endOfMonth.getTime();
-      }
-
-      return {
-        id: inv.stripe_id,
-        period_start: new Date(startMs).toLocaleDateString(),
-        period_end: new Date(endMs).toLocaleDateString(),
-        subtotal: inv.total,
-        total: inv.total,
-        line_items: [],
-        hosted_invoice_url: inv.hosted_invoice_url,
-        status: inv.status,
-        period_start_timestamp: Math.floor(startMs / 1000),
-        period_end_timestamp: Math.floor(endMs / 1000),
-      };
-    });
-  }, [sub]);
+  // const { data: userSettings } = useQuery<{
+  //   credit?: number;
+  // }>({
+  //   queryKey: ["platform", "user-settings"],
+  // });
 
   const currnetGPUCredit = sub?.plans?.autumn_data?.entitlements?.find(
-    (x: any) => x.feature_id === "gpu-credit",
+    (x) => x.feature_id === "gpu-credit",
   );
 
   const used = currnetGPUCredit?.used ?? 0;
   const balance = currnetGPUCredit?.balance ?? 0;
   const credit = (balance || 0) + (used || 0);
+
+  // console.log(currnetGPUCredit);
 
   // Get current period from the last invoice timestamp in current plan
   const currentPeriod = useMemo(() => {
@@ -126,6 +94,8 @@ function RouteComponent() {
     };
   }, [sub]);
 
+  console.log(sub);
+
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(
     "current",
   );
@@ -134,11 +104,9 @@ function RouteComponent() {
   const selectedInvoice = useMemo<Invoice | CurrentPeriod | null>(() => {
     if (!selectedPeriod) return currentPeriod;
     if (selectedPeriod === "current") return currentPeriod;
-    if (!mappedInvoices?.length) return currentPeriod;
-    return (
-      mappedInvoices.find((inv) => inv.id === selectedPeriod) || currentPeriod
-    );
-  }, [selectedPeriod, mappedInvoices, currentPeriod]);
+    if (!invoices?.length) return currentPeriod;
+    return invoices.find((inv) => inv.id === selectedPeriod) || currentPeriod;
+  }, [selectedPeriod, invoices, currentPeriod]);
 
   // Get usage data for current period
   const { data: usage } = useQuery<Usage>({
@@ -165,28 +133,26 @@ function RouteComponent() {
 
   const handlePeriodChange = (direction: "prev" | "next") => {
     if (!selectedPeriod) return;
-    if (!mappedInvoices?.length) return;
+    if (!invoices?.length) return;
 
     console.log("Current period:", selectedPeriod);
     console.log("Direction:", direction);
-    console.log("Invoices:", mappedInvoices);
+    console.log("Invoices:", invoices);
 
     // When on current period, only allow going back to most recent invoice
     if (selectedPeriod === "current") {
-      if (direction === "prev" && mappedInvoices.length > 0) {
+      if (direction === "prev" && invoices.length > 0) {
         console.log(
           "Moving from current to most recent invoice:",
-          mappedInvoices[0].id,
+          invoices[0].id,
         );
-        setSelectedPeriod(mappedInvoices[0].id);
+        setSelectedPeriod(invoices[0].id);
       }
       return;
     }
 
     // Find current position in invoice list
-    const currentIndex = mappedInvoices.findIndex(
-      (inv) => inv.id === selectedPeriod,
-    );
+    const currentIndex = invoices.findIndex((inv) => inv.id === selectedPeriod);
     console.log("Current index in invoices:", currentIndex);
 
     if (currentIndex === -1) return;
@@ -194,12 +160,9 @@ function RouteComponent() {
     // Handle navigation
     if (direction === "prev") {
       // Go to older invoice if available
-      if (currentIndex < mappedInvoices.length - 1) {
-        console.log(
-          "Moving to older invoice:",
-          mappedInvoices[currentIndex + 1].id,
-        );
-        setSelectedPeriod(mappedInvoices[currentIndex + 1].id);
+      if (currentIndex < invoices.length - 1) {
+        console.log("Moving to older invoice:", invoices[currentIndex + 1].id);
+        setSelectedPeriod(invoices[currentIndex + 1].id);
       }
     } else {
       // Going next (to newer invoices)
@@ -209,11 +172,8 @@ function RouteComponent() {
         setSelectedPeriod("current");
       } else {
         // Go to newer invoice
-        console.log(
-          "Moving to newer invoice:",
-          mappedInvoices[currentIndex - 1].id,
-        );
-        setSelectedPeriod(mappedInvoices[currentIndex - 1].id);
+        console.log("Moving to newer invoice:", invoices[currentIndex - 1].id);
+        setSelectedPeriod(invoices[currentIndex - 1].id);
       }
     }
   };
@@ -299,11 +259,9 @@ function RouteComponent() {
               disabled={
                 !selectedPeriod ||
                 (selectedPeriod !== "current" &&
-                  mappedInvoices &&
-                  mappedInvoices.findIndex(
-                    (inv) => inv.id === selectedPeriod,
-                  ) ===
-                    mappedInvoices.length - 1)
+                  invoices &&
+                  invoices.findIndex((inv) => inv.id === selectedPeriod) ===
+                    invoices.length - 1)
               }
             >
               <ChevronLeft className="h-4 w-4" />
@@ -316,55 +274,63 @@ function RouteComponent() {
                 <SelectValue placeholder="Select billing period" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="current" className="font-medium">
-                  {(() => {
-                    if (!currentPeriod) return null;
-                    const startDate = currentPeriod.period_start_timestamp
-                      ? new Date(currentPeriod.period_start_timestamp * 1000)
-                      : new Date();
-                    const endDate = currentPeriod.period_end_timestamp
-                      ? new Date(currentPeriod.period_end_timestamp * 1000)
-                      : new Date();
-                    // const monthName = startDate.toLocaleString("default", {
-                    //   month: "long",
-                    // });
-                    const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
-                    const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
-                    return (
-                      <>
-                        Current Period
-                        <span className="ml-2 text-muted-foreground">
-                          ({startStr} - {endStr})
-                        </span>
-                      </>
-                    );
-                  })()}
-                </SelectItem>
-                <div className="px-2 py-1.5 text-muted-foreground text-xs">
-                  Past Periods
-                </div>
-                {mappedInvoices.map((invoice) => {
-                  // Format month and date range
-                  const startDate = invoice.period_start_timestamp
-                    ? new Date(invoice.period_start_timestamp * 1000)
-                    : new Date();
-                  const endDate = invoice.period_end_timestamp
-                    ? new Date(invoice.period_end_timestamp * 1000)
-                    : new Date();
-                  const monthName = startDate.toLocaleString("default", {
-                    month: "long",
-                  });
-                  const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
-                  const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
-                  return (
-                    <SelectItem key={invoice.id} value={invoice.id}>
-                      {monthName}
-                      <span className="ml-2 text-muted-foreground">
-                        ({startStr} - {endStr})
-                      </span>
+                {invoicesLoading ? (
+                  <div className="px-4 py-2">
+                    <Skeleton className="h-6 w-full mb-2" />
+                    <Skeleton className="h-6 w-2/3 mb-2" />
+                    <Skeleton className="h-6 w-1/2" />
+                  </div>
+                ) : (
+                  <>
+                    <SelectItem value="current" className="font-medium">
+                      {(() => {
+                        if (!currentPeriod) return null;
+                        const startDate = currentPeriod.period_start_timestamp
+                          ? new Date(
+                              currentPeriod.period_start_timestamp * 1000,
+                            )
+                          : new Date();
+                        const endDate = currentPeriod.period_end_timestamp
+                          ? new Date(currentPeriod.period_end_timestamp * 1000)
+                          : new Date();
+                        const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
+                        const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
+                        return (
+                          <>
+                            Current Period
+                            <span className="ml-2 text-muted-foreground">
+                              ({startStr} - {endStr})
+                            </span>
+                          </>
+                        );
+                      })()}
                     </SelectItem>
-                  );
-                })}
+                    <div className="px-2 py-1.5 text-muted-foreground text-xs">
+                      Past Periods
+                    </div>
+                    {invoices?.map((invoice) => {
+                      const startDate = invoice.period_start_timestamp
+                        ? new Date(invoice.period_start_timestamp * 1000)
+                        : new Date();
+                      const endDate = invoice.period_end_timestamp
+                        ? new Date(invoice.period_end_timestamp * 1000)
+                        : new Date();
+                      const monthName = startDate.toLocaleString("default", {
+                        month: "long",
+                      });
+                      const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
+                      const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
+                      return (
+                        <SelectItem key={invoice.id} value={invoice.id}>
+                          {monthName}
+                          <span className="ml-2 text-muted-foreground">
+                            ({startStr} - {endStr})
+                          </span>
+                        </SelectItem>
+                      );
+                    })}
+                  </>
+                )}
               </SelectContent>
             </Select>
             <Button
