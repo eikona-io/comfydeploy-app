@@ -60,18 +60,45 @@ function RouteComponent() {
   // Use invoices from autumn_data
   const mappedInvoices = useMemo<Invoice[]>(() => {
     const invoices = sub?.plans?.autumn_data?.invoices ?? [];
-    return invoices.map((inv: any) => ({
-      id: inv.stripe_id,
-      period_start: new Date(inv.created_at).toLocaleDateString(),
-      period_end: new Date(inv.created_at).toLocaleDateString(),
-      subtotal: inv.total, // No explicit subtotal, use total
-      total: inv.total,
-      line_items: [], // No line items in new structure
-      hosted_invoice_url: inv.hosted_invoice_url,
-      status: inv.status,
-      period_start_timestamp: Math.floor(inv.created_at / 1000),
-      period_end_timestamp: Math.floor(inv.created_at / 1000),
-    }));
+    return invoices.map((inv: any) => {
+      // Use explicit period if available
+      let startMs = inv.current_period_start ?? inv.created_at;
+      let endMs = inv.current_period_end ?? inv.created_at;
+
+      // If not available, infer full month from created_at
+      if (!inv.current_period_start || !inv.current_period_end) {
+        const created = new Date(inv.created_at);
+        const startOfMonth = new Date(
+          created.getFullYear(),
+          created.getMonth(),
+          1,
+        );
+        const endOfMonth = new Date(
+          created.getFullYear(),
+          created.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
+        startMs = startOfMonth.getTime();
+        endMs = endOfMonth.getTime();
+      }
+
+      return {
+        id: inv.stripe_id,
+        period_start: new Date(startMs).toLocaleDateString(),
+        period_end: new Date(endMs).toLocaleDateString(),
+        subtotal: inv.total,
+        total: inv.total,
+        line_items: [],
+        hosted_invoice_url: inv.hosted_invoice_url,
+        status: inv.status,
+        period_start_timestamp: Math.floor(startMs / 1000),
+        period_end_timestamp: Math.floor(endMs / 1000),
+      };
+    });
   }, [sub]);
 
   const currnetGPUCredit = sub?.plans?.autumn_data?.entitlements?.find(
