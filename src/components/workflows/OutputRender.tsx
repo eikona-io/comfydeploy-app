@@ -113,11 +113,12 @@ function _FileURLRender({
   ) {
     return (
       <video
-        autoPlay
+        autoPlay={!isSmallView}
         loop
         muted
         playsInline
         className={cn("w-[500px]", mediaClasses)}
+        preload={isSmallView ? "metadata" : "auto"}
       >
         <source src={url} type="video/mp4" />
         <source src={url} type="video/webm" />
