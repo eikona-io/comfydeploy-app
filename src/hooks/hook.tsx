@@ -118,26 +118,73 @@ export function useAssetUpload() {
       parent_path?: string;
       onProgress?: (progress: number) => void;
     }) => {
-      const formData = new FormData();
-      formData.append("file", file);
+      if (file.size < 50 * 1024 * 1024) {
+        const formData = new FormData();
+        formData.append("file", file);
 
-      return await api({
-        url: "assets/upload",
-        skipDefaultHeaders: true,
-        init: {
-          method: "POST",
-          body: formData,
-        },
-        params: {
-          parent_path,
-        },
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.lengthComputable && onProgress) {
-            const progress = (progressEvent.loaded / progressEvent.total) * 100;
-            onProgress(progress);
-          }
-        },
-      });
+        return await api({
+          url: "assets/upload",
+          skipDefaultHeaders: true,
+          init: {
+            method: "POST",
+            body: formData,
+          },
+          params: {
+            parent_path,
+          },
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.lengthComputable && onProgress) {
+              const progress = (progressEvent.loaded / progressEvent.total) * 100;
+              onProgress(progress);
+            }
+          },
+        });
+      } else {
+        onProgress?.(5); // Show initial progress
+        const presignedUrlResponse = await api({
+          url: "assets/presigned-url",
+          params: {
+            file_name: file.name,
+            parent_path,
+            size: file.size,
+            type: file.type,
+          },
+        });
+        
+        onProgress?.(10); // URL obtained
+        
+        const uploadResponse = await fetch(presignedUrlResponse.url, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('Failed to upload file to storage');
+        }
+        
+        onProgress?.(90); // Almost done
+        
+        const registeredAsset = await api({
+          url: "assets/register",
+          init: {
+            method: "POST",
+            body: JSON.stringify({
+              file_id: presignedUrlResponse.file_id,
+              file_name: file.name,
+              file_size: file.size,
+              db_path: presignedUrlResponse.db_path,
+              url: presignedUrlResponse.download_url,
+              mime_type: file.type,
+            }),
+          },
+        });
+        
+        onProgress?.(100); // Complete
+        return registeredAsset;
+      }
     },
     onSuccess: (data, variables) => {
       // Update the asset list query data
