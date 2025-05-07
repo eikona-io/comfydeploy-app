@@ -166,22 +166,7 @@ export function LocalUploadForm({
         xhr.send(file);
       });
 
-      await api({
-        url: "volume/model",
-        init: {
-          method: "POST",
-          body: JSON.stringify({
-            source: "link",
-            folderPath: folderPath,
-            filename: filename || file.name,
-            downloadLink: uploadUrl.split('?')[0], // Base URL without query params
-            isTemporaryUpload: true,
-            s3ObjectKey: objectKey
-          }),
-        },
-      });
-
-      // After successful upload, notify parent component
+      // After successful upload to S3, notify parent component to handle the model creation
       onSubmit({
         source: "link", // Changed from "local" to "link" since we're using the link endpoint
         folderPath,
