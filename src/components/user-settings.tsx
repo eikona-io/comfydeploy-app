@@ -94,7 +94,7 @@ export function UserSettings() {
         }}
         dependencies={[
           {
-            type: DependencyType.DISABLES,
+            type: DependencyType.HIDES,
             sourceField: "custom_output_bucket",
             targetField: [
               "s3_access_key_id",
@@ -171,6 +171,13 @@ export function UserSettings() {
                 </div>
               );
             },
+            description: (
+              <p className="italic text-gray-500 text-xs">
+                If your S3 bucket is configured as <strong>private</strong>{" "}
+                only, be sure to set this option to <strong>private</strong> so
+                that your outputs remain accessible.
+              </p>
+            ),
           },
           s3_secret_access_key: {
             group: "Storage Settings [Business]",
