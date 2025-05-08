@@ -7,6 +7,7 @@ import {
   useSelectedDeploymentStore,
 } from "@/components/deployment/deployment-page";
 import { MachineVersionWrapper } from "@/components/machine/machine-overview";
+import { MachineTopStickyBar } from "@/components/machine/machine-page";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
@@ -203,20 +204,19 @@ function WorkflowPageComponent() {
       view = <GalleryView workflowID={workflowId} />;
       break;
     case "machine":
-      view = (
-        <PaddingLayout className="mx-auto mt-8 max-w-screen-lg">
-          {machine && (
-            <>
-              <MachineVersionWrapper machine={machine} />
-              <MachineSettingsWrapper
-                title="Machine Settings"
-                machine={machine}
-                readonly={!isAdminAndMember}
-                className="top-0"
-              />
-            </>
-          )}
-        </PaddingLayout>
+      view = machine && (
+        <>
+          <MachineTopStickyBar machine={machine} />
+          <div className="mx-auto mt-4 w-full max-w-screen-lg">
+            <MachineVersionWrapper machine={machine} />
+            <MachineSettingsWrapper
+              title="Machine Settings"
+              machine={machine}
+              readonly={!isAdminAndMember}
+              className="top-0"
+            />
+          </div>
+        </>
       );
       break;
   }
