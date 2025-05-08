@@ -242,11 +242,19 @@ export function Playground(props: {
             )}
           >
             <div className="mb-1 flex items-center justify-between">
-              <span className="ml-2 font-semibold text-sm">Edit</span>
+              <div className="flex items-center gap-2">
+                <span className="ml-2 font-semibold text-sm">Edit</span>
+                {!isVersionLoading && version && (
+                  <Badge variant="secondary" className="!text-2xs !py-0">
+                    v{version.version}
+                  </Badge>
+                )}
+              </div>
               <a
                 target="_blank"
                 href="https://www.comfydeploy.com/docs/v2/deployments/inputs"
                 className="mr-2 text-2xs text-muted-foreground hover:underline"
+                rel="noreferrer"
               >
                 Learn about external inputs
               </a>
