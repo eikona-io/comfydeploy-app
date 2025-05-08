@@ -36,17 +36,19 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
   });
   const [isOpen, setIsOpen] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
-  
-  const storageKey = organization ? `workflow-user-filter-${organization.id}` : "";
+
+  const storageKey = organization
+    ? `workflow-user-filter-${organization.id}`
+    : "";
   const [selectedUsers, setSelectedUsers] = useLocalStorage<string[]>(
     storageKey,
-    []
+    [],
   );
-  
+
   const selectedMembers = useMemo(() => {
-    return members.filter(member => selectedUsers.includes(member.id));
+    return members.filter((member) => selectedUsers.includes(member.id));
   }, [members, selectedUsers]);
-  
+
   const maxVisibleBadges = 2;
   const visibleBadges = selectedMembers.slice(0, maxVisibleBadges);
   const hiddenCount = selectedMembers.length - maxVisibleBadges;
@@ -63,27 +65,66 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
 
   React.useEffect(() => {
     if (!organization) return;
-    
-    const fetchMembers = async () => {
+
+    const fetchAllMembers = async () => {
       try {
-        const response = await organization.getMemberships();
+        // Initial request with larger page size to minimize API calls
+        const response = await organization.getMemberships({
+          pageSize: 100, // Use a large page size to reduce requests
+        });
+
+        // Get total count if available
+        const totalMembers = response.total_count || 0;
         const membersList = response.data || [];
-        
-        const formattedMembers = membersList.map((membership: any) => ({
+
+        let formattedMembers = membersList.map((membership: any) => ({
           id: membership.publicUserData?.userId || "",
           name: membership.publicUserData?.firstName
             ? `${membership.publicUserData.firstName} ${membership.publicUserData.lastName || ""}`
             : membership.publicUserData?.identifier || "Unknown",
         }));
-        
+
+        // If we didn't get all members in first request, fetch remaining pages
+        if (totalMembers > membersList.length) {
+          const remainingPages = Math.ceil(
+            (totalMembers - membersList.length) / 100,
+          );
+
+          // Use Promise.all to fetch remaining pages in parallel
+          const remainingRequests = Array.from(
+            { length: remainingPages },
+            (_, i) =>
+              organization.getMemberships({
+                initialPage: i + 2, // Start from page 2
+                pageSize: 100,
+              }),
+          );
+
+          const results = await Promise.all(remainingRequests);
+
+          // Process and append all remaining members
+          for (const result of results) {
+            const pageMembers = result.data || [];
+            formattedMembers = [
+              ...formattedMembers,
+              ...pageMembers.map((membership: any) => ({
+                id: membership.publicUserData?.userId || "",
+                name: membership.publicUserData?.firstName
+                  ? `${membership.publicUserData.firstName} ${membership.publicUserData.lastName || ""}`
+                  : membership.publicUserData?.identifier || "Unknown",
+              })),
+            ];
+          }
+        }
+
         setMembers(formattedMembers);
       } catch (error) {
         console.error("Error fetching organization members:", error);
         setMembers([]);
       }
     };
-    
-    fetchMembers();
+
+    fetchAllMembers();
   }, [organization]);
 
   const toggleUser = (userId: string) => {
@@ -104,14 +145,14 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
       {selectedUsers.length > 0 && (
         <div className="flex flex-wrap gap-1 mr-2">
           {visibleBadges.map((member) => (
-            <Badge 
-              key={member.id} 
-              variant="outline" 
+            <Badge
+              key={member.id}
+              variant="outline"
               className="flex items-center gap-1 px-2 py-1"
             >
               <UserIcon user_id={member.id} className="h-3 w-3" />
               <span className="truncate max-w-[100px]">{member.name}</span>
-              <button 
+              <button
                 className="ml-1 rounded-full hover:bg-muted p-0.5"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -129,7 +170,7 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
           )}
         </div>
       )}
-      
+
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
           <Button
@@ -137,12 +178,15 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
             size="sm"
             className={cn(
               "flex items-center gap-2",
-              selectedUsers.length > 0 && "border-primary"
+              selectedUsers.length > 0 && "border-primary",
             )}
           >
             <Users className="h-4 w-4" />
             {selectedUsers.length > 0 ? (
-              <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+              <Badge
+                variant="secondary"
+                className="rounded-sm px-1 font-normal"
+              >
                 {selectedUsers.length}
               </Badge>
             ) : (
