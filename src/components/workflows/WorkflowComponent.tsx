@@ -1298,7 +1298,7 @@ function FinishedRunLogDisplay({
         </div>
       ) : (
         <ScrollArea>
-          <div className="h-[calc(100vh-500px)]">
+          <div className="h-[calc(100vh-520px)]">
             {runLogs.map((entry, index) => {
               return (
                 <div
