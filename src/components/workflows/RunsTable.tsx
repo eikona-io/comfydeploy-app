@@ -462,7 +462,7 @@ export function RunsTableVirtualized(props: {
                 }}
               >
                 {run ? (
-                  <RunRow
+                  <MemoizedRunRow
                     run={run}
                     isSelected={runId === run.id}
                     onSelect={() => {
@@ -486,6 +486,14 @@ export function RunsTableVirtualized(props: {
     </div>
   );
 }
+
+const MemoizedRunRow = React.memo(RunRow, (prevProps, nextProps) => {
+  return (
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.run?.id === nextProps.run?.id &&
+    prevProps.run?.status === nextProps.run?.status
+  );
+});
 
 function LoadingRow() {
   return (
