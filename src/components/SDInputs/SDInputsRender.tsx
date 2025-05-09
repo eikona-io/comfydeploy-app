@@ -147,7 +147,9 @@ export function SDInputsRender({
               onMouseEnter={showDescription}
               onMouseLeave={hideDescription}
             >
-              <div className="p-2 leading-snug">{description}</div>
+              <div className="whitespace-pre-wrap p-2 leading-snug">
+                {description}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -526,17 +528,18 @@ export function SDInputsRender({
         </div>
       );
 
-    case "ComfyUIDeployExternalSeed":
+    case "ComfyUIDeployExternalSeed": {
       const minValue = inputNode.min_value || 0;
       const maxValue = inputNode.max_value || 2147483647;
 
       return (
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <div className="flex-1">
             <SDInput
               key={inputNode.input_id}
               value={inputValue || ""}
-              inputClasses="mt-1 bg-gray-50"
+              inputClasses="mt-1 bg-gray-50 rounded-[8px]"
+              placeholder={`${minValue} - ${maxValue}`}
               header={header(genericProps)}
               {...genericProps}
               type="number"
@@ -550,6 +553,7 @@ export function SDInputsRender({
             <Button
               type="button"
               variant="outline"
+              className="rounded-[10px]"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -565,6 +569,7 @@ export function SDInputsRender({
           </div>
         </div>
       );
+    }
 
     default:
       return (
