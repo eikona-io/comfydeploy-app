@@ -408,7 +408,7 @@ function RunVersionAndDeployment({ run }: { run: any }) {
           )}
           <Badge variant="outline">v{versionData.version}</Badge>
           {versionData.comment && (
-            <span className="text-muted-foreground text-xs">
+            <span className="line-clamp-1 text-muted-foreground text-xs">
               {versionData.comment}
             </span>
           )}
