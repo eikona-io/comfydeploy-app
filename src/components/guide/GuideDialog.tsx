@@ -131,29 +131,29 @@ const getGuideSteps = (guideType: GuideType) => {
   }
 };
 
-const GUIDE_STORAGE_KEY = 'comfy-deploy-guides';
+const GUIDE_STORAGE_KEY = "comfy-deploy-guides";
 
 const getGuideState = () => {
-  if (typeof window === 'undefined') return {};
-  
+  if (typeof window === "undefined") return {};
+
   try {
     const storedValue = window.localStorage.getItem(GUIDE_STORAGE_KEY);
     return storedValue ? JSON.parse(storedValue) : {};
   } catch (error) {
-    console.error('Error reading guide state from localStorage:', error);
+    console.error("Error reading guide state from localStorage:", error);
     return {};
   }
 };
 
 const setGuideState = (guideType: GuideType, seen: boolean) => {
-  if (typeof window === 'undefined') return;
-  
+  if (typeof window === "undefined") return;
+
   try {
     const currentState = getGuideState();
     const newState = { ...currentState, [guideType]: seen };
     window.localStorage.setItem(GUIDE_STORAGE_KEY, JSON.stringify(newState));
   } catch (error) {
-    console.error('Error saving guide state to localStorage:', error);
+    console.error("Error saving guide state to localStorage:", error);
   }
 };
 
@@ -164,11 +164,16 @@ interface GuideDialogProps {
 export function GuideDialog({ guideType }: GuideDialogProps) {
   // Check if this guide has been seen
   const hasSeenGuide = getGuideState()[guideType] === true;
-  
+
   const [isOpen, setIsOpen] = useState(!hasSeenGuide);
   const [currentStep, setCurrentStep] = useState(0);
 
   const guideSteps = getGuideSteps(guideType);
+
+  // Reset currentStep when guideType changes
+  useEffect(() => {
+    setCurrentStep(0);
+  }, [guideType]);
 
   useEffect(() => {
     if (!hasSeenGuide && guideSteps.length > 0) {
