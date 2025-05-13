@@ -41,7 +41,9 @@ export function AssetsPage() {
       setNewFolderName("");
       toast.success("Folder created successfully");
     } catch (e) {
-      toast.error("Error creating folder");
+      toast.error("Error creating folder", {
+        description: e instanceof Error ? e.message : "Unknown error",
+      });
     }
   };
 

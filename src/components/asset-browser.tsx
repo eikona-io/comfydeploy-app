@@ -81,6 +81,18 @@ export function AssetBrowser({
     );
   }
 
+  const sortedAssets = assets
+    ? [...assets].sort((a, b) => {
+        if (a.is_folder && !b.is_folder) {
+          return -1;
+        }
+        if (!a.is_folder && b.is_folder) {
+          return 1;
+        }
+        return 0;
+      })
+    : [];
+
   return (
     <div
       className={cn(
@@ -135,7 +147,7 @@ export function AssetBrowser({
       <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto">
         {viewType === "grid" ? (
           <div className="grid min-h-[200px] w-full @[300px]:grid-cols-2 @[500px]:grid-cols-3 @[700px]:grid-cols-4 @[900px]:grid-cols-5 grid-cols-2 gap-3 p-4">
-            {assets?.map((asset) => (
+            {sortedAssets?.map((asset) => (
               <div
                 key={asset.id}
                 className="group relative flex aspect-square w-full flex-col items-center gap-1.5"
@@ -200,7 +212,7 @@ export function AssetBrowser({
                 </div>
               </div>
             ))}
-            {assets?.length === 0 && (
+            {sortedAssets?.length === 0 && (
               <div className="col-span-full flex h-[200px] items-center justify-center text-gray-500 text-sm">
                 No assets in this folder
               </div>
@@ -228,7 +240,7 @@ export function AssetBrowser({
               <div className="w-8" /> {/* Space for actions */}
             </div>
 
-            {assets?.map((asset) => (
+            {sortedAssets?.map((asset) => (
               <div
                 key={asset.id}
                 className="group flex w-full items-center border-b px-3 py-2 hover:bg-gray-50"
@@ -330,7 +342,7 @@ export function AssetBrowser({
                 </div>
               </div>
             ))}
-            {assets?.length === 0 && (
+            {sortedAssets?.length === 0 && (
               <div className="flex h-[200px] w-full items-center justify-center text-gray-500 text-sm">
                 No assets in this folder
               </div>
