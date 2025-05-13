@@ -267,15 +267,15 @@ function usePages() {
         ]
       : []),
 
-    ...(sub?.plans?.plans
-      ? [
-          {
-            name: "Analytics",
-            path: "/analytics",
-            icon: LineChart,
-          },
-        ]
-      : []),
+    // ...(sub?.plans?.plans
+    //   ? [
+    //       {
+    //         name: "Analytics",
+    //         path: "/analytics",
+    //         icon: LineChart,
+    //       },
+    //     ]
+    //   : []),
     {
       name: "Plan",
       path: "/pricing",
