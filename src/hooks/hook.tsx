@@ -134,7 +134,8 @@ export function useAssetUpload() {
           },
           onUploadProgress: (progressEvent) => {
             if (progressEvent.lengthComputable && onProgress) {
-              const progress = (progressEvent.loaded / progressEvent.total) * 100;
+              const progress =
+                (progressEvent.loaded / progressEvent.total) * 100;
               onProgress(progress);
             }
           },
@@ -150,22 +151,22 @@ export function useAssetUpload() {
             type: file.type,
           },
         });
-        
+
         onProgress?.(10); // URL obtained
-        
+
         const xhr = new XMLHttpRequest();
-        
+
         const uploadPromise = new Promise((resolve, reject) => {
-          xhr.open('PUT', presignedUrlResponse.url, true);
-          xhr.setRequestHeader('Content-Type', file.type);
-          
+          xhr.open("PUT", presignedUrlResponse.url, true);
+          xhr.setRequestHeader("Content-Type", file.type);
+
           xhr.upload.onprogress = (e) => {
             if (e.lengthComputable) {
               const progressPercentage = 10 + (e.loaded / e.total) * 80;
               onProgress?.(progressPercentage);
             }
           };
-          
+
           xhr.onload = () => {
             if (xhr.status >= 200 && xhr.status < 300) {
               resolve(xhr.response);
@@ -173,22 +174,25 @@ export function useAssetUpload() {
               reject(new Error(`Upload failed with status ${xhr.status}`));
             }
           };
-          
+
           xhr.onerror = () => {
-            reject(new Error('Network error during upload'));
+            reject(new Error("Network error during upload"));
           };
-          
+
           xhr.send(file);
         });
-        
+
         try {
           await uploadPromise;
         } catch (error: any) {
-          throw new Error('Failed to upload file to storage: ' + (error.message || String(error)));
+          throw new Error(
+            "Failed to upload file to storage: " +
+              (error.message || String(error)),
+          );
         }
-        
+
         onProgress?.(90); // Almost done
-        
+
         const registeredAsset = await api({
           url: "assets/register",
           init: {
@@ -203,7 +207,7 @@ export function useAssetUpload() {
             }),
           },
         });
-        
+
         onProgress?.(100); // Complete
         return registeredAsset;
       }
@@ -258,6 +262,27 @@ export function useDeleteAsset() {
         url: `assets/${assetId}`,
         init: {
           method: "DELETE",
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+  });
+}
+
+export function useUpdateAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      assetId,
+      path,
+    }: { assetId: string; path: string }) => {
+      return await api({
+        url: `assets/${assetId}`,
+        init: {
+          method: "PATCH",
+          body: JSON.stringify({ path }),
         },
       });
     },
