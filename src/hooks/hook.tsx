@@ -291,3 +291,19 @@ export function useUpdateAsset() {
     },
   });
 }
+
+export function useAddAsset() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ url, path }: { url: string; path: string }) => {
+      return await api({
+        url: "assets/add",
+        init: { method: "POST", body: JSON.stringify({ url, path }) },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assets"] });
+    },
+  });
+}

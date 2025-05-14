@@ -723,6 +723,9 @@ interface MoveAssetDialogProps {
   onConfirm: (path: string) => void;
   isBulkOperation?: boolean;
   selectedCount?: number;
+  dialogTitle?: string;
+  dialogDescription?: string;
+  confirmText?: string;
 }
 
 interface FolderNode {
@@ -734,13 +737,16 @@ interface FolderNode {
   isExpanded: boolean;
 }
 
-function MoveAssetDialog({
+export function MoveAssetDialog({
   asset,
   open,
   onOpenChange,
   onConfirm,
   isBulkOperation = false,
   selectedCount = 1,
+  dialogTitle = isBulkOperation ? `Move ${selectedCount} Assets` : "Move Asset",
+  dialogDescription = "Select the destination folder",
+  confirmText = "Move Here",
 }: MoveAssetDialogProps) {
   const [selectedPath, setSelectedPath] = useState("");
   const [folderTree, setFolderTree] = useState<FolderNode[]>([
@@ -936,10 +942,8 @@ function MoveAssetDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>
-            {isBulkOperation ? `Move ${selectedCount} Assets` : "Move Asset"}
-          </DialogTitle>
-          <DialogDescription>Select the destination folder</DialogDescription>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>{dialogDescription}</DialogDescription>
         </DialogHeader>
 
         {/* Folder tree container */}
@@ -961,7 +965,7 @@ function MoveAssetDialog({
             onClick={handleConfirm}
             disabled={!selectedPath || selectedPath === assetParentPath}
           >
-            Move Here
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

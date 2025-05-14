@@ -22,6 +22,7 @@ import {
   Ellipsis,
   Search,
   FileText,
+  FolderOpen,
 } from "lucide-react";
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import {
@@ -42,6 +43,9 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { CodeBlock } from "../ui/code-blocks";
+import { useAddAsset } from "@/hooks/hook";
+import { toast } from "sonner";
+import { MoveAssetDialog } from "@/components/asset-browser";
 
 // Create a lazy-loaded version of the component
 const LazyModelRenderer = lazy(() =>
@@ -511,6 +515,8 @@ function MediaDisplay({
   onClick: () => void;
   canDownload: boolean;
 }) {
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+
   const expandImage = useCallback(({ url }: { url: string }) => {
     const a = document.createElement("a");
     a.href = url;
@@ -519,6 +525,24 @@ function MediaDisplay({
     a.click();
     document.body.removeChild(a);
   }, []);
+
+  const { mutate: addAsset } = useAddAsset();
+
+  const handleAddAsset = async ({
+    url,
+    path,
+  }: {
+    url: string;
+    path: string;
+  }) => {
+    try {
+      await addAsset({ url, path });
+      toast.success(`${urlImage.filename} added to assets`);
+      setMoveDialogOpen(false);
+    } catch (error) {
+      toast.error(`Failed to add asset: ${error}`);
+    }
+  };
 
   const [open, setOpen] = useState(false);
 
@@ -574,29 +598,16 @@ function MediaDisplay({
                   </div>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {/* <DropdownMenuItem
-                onClick={async (event) => {
-                  event.stopPropagation();
-                  try {
-                    await api({
-                      url: "assets/upload/url",
-                      init: {
-                        method: "POST",
-                      },
-                      params: {
-                        url: urlImage.url,
-                      },
-                    });
-                    toast.success(`${urlImage.filename} uploaded to assets`);
-                  } catch (error) {
-                    toast.error(`Failed to upload: ${error}`);
-                  }
-                }}
-              >
-                <div className="flex w-full items-center justify-between">
-                  Add to assets <FolderOpen className="h-3.5 w-3.5" />
-                </div>
-              </DropdownMenuItem> */}
+                <DropdownMenuItem
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setMoveDialogOpen(true);
+                  }}
+                >
+                  <div className="flex w-full items-center justify-between">
+                    Add to assets <FolderOpen className="h-3.5 w-3.5" />
+                  </div>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async (e) => {
                     e.stopPropagation();
@@ -648,6 +659,25 @@ function MediaDisplay({
           </div>
         </DialogContent>
       </Dialog>
+
+      <MoveAssetDialog
+        asset={{
+          id: "temp",
+          name: urlImage.filename || "New Asset",
+          path: "/",
+          is_folder: false,
+          file_size: 0,
+          mime_type: "",
+          created_at: new Date().toISOString(),
+          user_id: "",
+        }}
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        onConfirm={(path) => handleAddAsset({ url: urlImage.url, path })}
+        dialogTitle="Add to Assets"
+        dialogDescription="Select a destination folder for the asset"
+        confirmText="Add Here"
+      />
     </>
   );
 }
