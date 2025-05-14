@@ -6,13 +6,13 @@ import {
   CreditCard,
   Database,
   ExternalLink,
+  FileClockIcon,
   Folder,
   GitBranch,
   Github,
   History,
   Key,
   LineChart,
-  LockKeyhole,
   MessageCircle,
   Plus,
   Receipt,
@@ -20,20 +20,13 @@ import {
   Save,
   Server,
   Settings,
-  Sparkles,
   Users,
   Workflow,
 } from "lucide-react";
 
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -116,7 +109,7 @@ import { sendWorkflow } from "./workspace/sendEventToCD";
 import { Switch } from "./ui/switch";
 import { serverAction } from "@/lib/workflow-version-api";
 import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
-import type { Timeout } from "node_modules/@tanstack/react-router/dist/esm/utils";
+import { LogDisplay } from "./workspace/LogDisplay";
 
 // Add Session type
 interface Session {
@@ -357,9 +350,9 @@ function SessionSidebar() {
   };
 
   const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
-  const [activeDrawer, setActiveDrawer] = useState<"model" | "chat" | null>(
-    null,
-  );
+  const [activeDrawer, setActiveDrawer] = useState<
+    "model" | "chat" | "log" | null
+  >(null);
   const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
 
   useEffect(() => {
@@ -368,7 +361,7 @@ function SessionSidebar() {
     }
   }, [workflow]);
 
-  const toggleDrawer = (drawer: "model" | "chat") => {
+  const toggleDrawer = (drawer: "model" | "chat" | "log") => {
     setActiveDrawer((prevDrawer) => (prevDrawer === drawer ? null : drawer));
   };
 
@@ -466,6 +459,30 @@ function SessionSidebar() {
                 >
                   <Box className="h-4 w-4" />
                 </Button>
+              </SidebarMenuItem>
+              <SidebarMenuItem className="p-0">
+                <Popover open={activeDrawer === "log"}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        activeDrawer === "log" ? "bg-primary/10" : "",
+                      )}
+                      onClick={() => toggleDrawer("log")}
+                    >
+                      <FileClockIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="right"
+                    align="start"
+                    className="w-[575px]"
+                  >
+                    <div className="p-2 pt-0 font-medium">Log</div>
+                    <LogDisplay />
+                  </PopoverContent>
+                </Popover>
               </SidebarMenuItem>
               {/* {sub?.plans?.plans?.length > 0 && (
                 <SidebarMenuItem className="relative p-0">
