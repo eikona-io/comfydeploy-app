@@ -30,11 +30,18 @@ export function AssetsPage() {
   const { currentPath } = useAssetBrowserStore();
 
   const handleCreateFolder = async () => {
-    if (!newFolderName) return;
+    // Trim whitespace and validate
+    const trimmedFolderName = newFolderName.trim();
+    if (!trimmedFolderName) {
+      toast.error("Invalid folder name", {
+        description: "Folder name cannot be empty or contain only spaces",
+      });
+      return;
+    }
 
     try {
       await createFolder({
-        name: newFolderName,
+        name: trimmedFolderName,
         parent_path: currentPath,
       });
       setShowNewFolderDialog(false);
