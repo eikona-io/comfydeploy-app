@@ -1,5 +1,4 @@
-import React from "react";
-import { useCreateFolder } from "../hooks/hook";
+import { useCreateFolder, useUpdateAsset } from "../hooks/hook";
 import { api } from "../lib/api";
 import { cn } from "../lib/utils";
 import {
@@ -123,7 +122,7 @@ export function MoveAssetDialog({
   const [isLoading, setIsLoading] = useState(false);
 
   const { mutateAsync: createFolder } = useCreateFolder();
-  const { mutateAsync: moveAsset } = useMoveAsset();
+  const { mutateAsync: updateAsset } = useUpdateAsset();
 
   const assetParentPath = getParentPath(asset.path);
 
@@ -266,23 +265,31 @@ export function MoveAssetDialog({
     return null;
   };
 
-  const handleMove = async () => {
+  const handleConfirm = async () => {
     if (assetParentPath === selectedPath) {
       toast.error("Cannot move to the same location");
       return;
     }
 
+    const finalPath = selectedPath === "/" ? "" : selectedPath;
+
+    // If onConfirm is provided, use it (for adding assets case)
+    if (onConfirm) {
+      onConfirm(finalPath);
+      onOpenChange(false);
+      return;
+    }
+
+    // Otherwise, handle moving existing assets
     try {
-      await moveAsset({
+      await updateAsset({
         assetId: asset.id,
-        destinationPath: selectedPath === "/" ? "" : selectedPath,
+        path: finalPath,
       });
 
       onOpenChange(false);
       if (onMoveDone) {
         onMoveDone();
-      } else if (onConfirm) {
-        onConfirm(selectedPath === "/" ? "" : selectedPath);
       }
       toast.success("Asset moved successfully");
     } catch (e) {
@@ -369,7 +376,7 @@ export function MoveAssetDialog({
             )}
           </div>
 
-          <div className="flex justify-between items-center">
+          <div className="flex items-center justify-between">
             <Button
               variant="outline"
               onClick={() => setShowCreateFolderDialog(true)}
@@ -378,8 +385,8 @@ export function MoveAssetDialog({
               New Folder
             </Button>
             <Button
-              onClick={handleMove}
-              disabled={!selectedPath || selectedPath === assetParentPath}
+              onClick={handleConfirm}
+              disabled={selectedPath === assetParentPath}
             >
               {confirmText}
             </Button>
