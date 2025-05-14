@@ -35,6 +35,14 @@ import {
   DialogTitle,
 } from "./ui/dialog";
 import { api } from "@/lib/api";
+import {
+  AlertDialog,
+  AlertDialogTitle,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogDescription,
+  AlertDialogFooter,
+} from "./ui/alert-dialog";
 
 interface AssetBrowserProps {
   className?: string;
@@ -339,11 +347,13 @@ function AssetActions({ asset }: { asset: Asset }) {
   const { mutateAsync: deleteAsset } = useDeleteAsset();
   const { mutateAsync: updateAsset } = useUpdateAsset();
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleDeleteAsset = async (assetId: string) => {
     try {
       await deleteAsset(assetId);
       toast.success("Asset deleted successfully");
+      setDeleteDialogOpen(false);
     } catch (e) {
       toast.error("Error deleting asset", {
         description: e instanceof Error ? e.message : "Unknown error",
@@ -387,7 +397,7 @@ function AssetActions({ asset }: { asset: Asset }) {
           )}
           <DropdownMenuItem
             className="text-red-600"
-            onClick={() => handleDeleteAsset(asset.id)}
+            onClick={() => setDeleteDialogOpen(true)}
           >
             <Trash className="mr-2 h-4 w-4" />
             Delete
@@ -400,6 +410,13 @@ function AssetActions({ asset }: { asset: Asset }) {
         open={moveDialogOpen}
         onOpenChange={setMoveDialogOpen}
         onConfirm={(path) => handleMoveAsset(asset.id, path)}
+      />
+
+      <DeleteAssetDialog
+        asset={asset}
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={() => handleDeleteAsset(asset.id)}
       />
     </>
   );
@@ -649,5 +666,41 @@ function MoveAssetDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+interface DeleteAssetDialogProps {
+  asset: Asset;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onConfirm: () => void;
+}
+
+function DeleteAssetDialog({
+  asset,
+  open,
+  onOpenChange,
+  onConfirm,
+}: DeleteAssetDialogProps) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Asset</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete "{asset.name}"? This action cannot
+            be undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            Delete
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
