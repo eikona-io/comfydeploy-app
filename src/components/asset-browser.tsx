@@ -18,8 +18,9 @@ import {
   MoveIcon,
   FolderUp,
   X,
+  Search,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "./ui/button";
 import {
@@ -49,6 +50,8 @@ import {
 } from "./ui/alert-dialog";
 import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
+import { Input } from "./ui/input";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface AssetBrowserProps {
   className?: string;
@@ -101,7 +104,6 @@ export function AssetBrowser({
   const { mutateAsync: updateAsset } = useUpdateAsset();
 
   const handleNavigate = (path: string) => {
-    console.log(path);
     setCurrentPath(path);
     // Clear selections when navigating
     setSelectedAssets([]);
@@ -300,8 +302,9 @@ export function AssetBrowser({
 
         {/* View and selection controls */}
         <div className="flex items-center gap-1">
+          <SearchAssetsInputBox />
           {isSelectionMode ? (
-            <div className="flex items-center gap-2 mr-2">
+            <div className="mr-2 flex items-center gap-2">
               <span className="text-sm">{selectedAssets.length} selected</span>
               <Button
                 variant="ghost"
@@ -644,6 +647,171 @@ export function AssetBrowser({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function SearchAssetsInputBox() {
+  const { setCurrentPath } = useAssetBrowserStore();
+  const [searchValue, setSearchValue] = useState("");
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [searchResults, setSearchResults] = useState<Asset[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const debouncedValue = useDebounce(searchValue, 300);
+
+  // Reset selected index when search value changes
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchValue]);
+
+  // Automatically trigger search when debounced value changes
+  useEffect(() => {
+    if (debouncedValue) {
+      performSearch();
+    } else {
+      setSearchResults([]);
+    }
+  }, [debouncedValue]);
+
+  const performSearch = async () => {
+    if (!debouncedValue) return;
+
+    setLoading(true);
+    try {
+      const response = await api({
+        url: "assets/search",
+        params: {
+          query: debouncedValue,
+        },
+      });
+      setSearchResults(response || []);
+    } catch (error) {
+      console.error("Error performing search:", error);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // If dropdown is not visible, don't handle navigation keys
+    if (!isFocused || !searchValue || searchResults.length === 0) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < searchResults.length - 1 ? prev + 1 : prev,
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (searchResults[selectedIndex]) {
+          navigateToResult(searchResults[selectedIndex]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        setIsFocused(false);
+        break;
+    }
+  };
+
+  const navigateToResult = (result: Asset) => {
+    // Extract parent path (remove the filename portion)
+    const path = result.path;
+    const parentPath = path.substring(0, path.lastIndexOf("/"));
+
+    // Navigate to the parent folder
+    setCurrentPath(parentPath || "/");
+    setIsFocused(false);
+  };
+
+  const clearSearch = () => {
+    setSearchValue("");
+    setSearchResults([]);
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative mr-2 hidden transition-all duration-200 ease-in-out lg:block",
+        isFocused ? "w-64" : "w-24 text-muted-foreground",
+      )}
+    >
+      <Search className="-translate-y-1/2 absolute top-1/2 left-0 h-3.5 w-3.5 text-muted-foreground" />
+      <Input
+        ref={inputRef}
+        placeholder="Search assets"
+        className="rounded-none border-0 border-b py-1 pr-6 pl-6 focus-visible:border-primary focus-visible:ring-0"
+        value={searchValue}
+        onChange={(e) => setSearchValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => {
+          // Delay blur to allow for item clicks
+          setTimeout(() => setIsFocused(false), 200);
+        }}
+      />
+      {searchValue && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="-translate-y-1/2 absolute top-1/2 right-0 h-6 w-6 p-0"
+          onClick={clearSearch}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
+      {isFocused && searchValue && (
+        <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 absolute top-full z-50 mt-1 max-h-[300px] w-full overflow-y-auto rounded-md border bg-popover bg-white p-1 shadow-md">
+          {loading ? (
+            <div className="flex items-center justify-center p-2 text-muted-foreground text-xs">
+              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+              Searching...
+            </div>
+          ) : searchResults.length > 0 ? (
+            <div className="flex flex-col">
+              {searchResults.map((result, index) => (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                <div
+                  key={result.id}
+                  className={cn(
+                    "flex cursor-pointer items-center gap-2 rounded p-2 text-xs hover:bg-gray-100",
+                    selectedIndex === index && "bg-gray-100",
+                  )}
+                  onClick={() => navigateToResult(result)}
+                >
+                  <div className="h-6 w-6 flex-shrink-0 overflow-hidden rounded border">
+                    {result.url && (
+                      <FileURLRender
+                        url={result.url}
+                        imgClasses="w-full h-full object-cover object-center"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="truncate font-medium">{result.name}</div>
+                    <div className="truncate text-2xs text-muted-foreground">
+                      {result.path}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center p-2 text-muted-foreground text-xs">
+              No results found
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
