@@ -302,7 +302,7 @@ export function AssetBrowser({
 
         {/* View and selection controls */}
         <div className="flex items-center gap-1">
-          <SearchAssetsInputBox />
+          {!isPanel && <SearchAssetsInputBox />}
           {isSelectionMode ? (
             <div className="mr-2 flex items-center gap-2">
               <span className="text-sm">{selectedAssets.length} selected</span>
@@ -340,14 +340,16 @@ export function AssetBrowser({
               )}
             </div>
           ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 rounded-[8px] mr-2"
-              onClick={toggleSelectionMode}
-            >
-              Select
-            </Button>
+            !isPanel && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mr-2 h-8 rounded-[8px]"
+                onClick={toggleSelectionMode}
+              >
+                Select
+              </Button>
+            )
           )}
 
           <Button
