@@ -14,6 +14,8 @@ import {
   Check,
   ChevronDown,
   FolderOpen,
+  MoveIcon,
+  X,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -43,6 +45,8 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
 } from "./ui/alert-dialog";
+import { Checkbox } from "./ui/checkbox";
+import { Progress } from "./ui/progress";
 
 interface AssetBrowserProps {
   className?: string;
@@ -63,6 +67,13 @@ interface Asset {
   user_id: string;
 }
 
+interface BulkOperationProgress {
+  total: number;
+  completed: number;
+  inProgress: boolean;
+  operation: "move" | "delete";
+}
+
 export function AssetBrowser({
   className,
   showNewFolderButton = true,
@@ -72,11 +83,144 @@ export function AssetBrowser({
   const { currentPath, setCurrentPath } = useAssetBrowserStore();
   const { data: assets, isLoading } = useAssetList(currentPath);
   const [viewType, setViewType] = useState<"grid" | "list">("grid");
+  const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [bulkMoveDialogOpen, setBulkMoveDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<BulkOperationProgress>({
+    total: 0,
+    completed: 0,
+    inProgress: false,
+    operation: "delete",
+  });
+
+  const { mutateAsync: deleteAsset } = useDeleteAsset();
+  const { mutateAsync: updateAsset } = useUpdateAsset();
 
   const handleNavigate = (path: string) => {
     console.log(path);
     setCurrentPath(path);
+    // Clear selections when navigating
+    setSelectedAssets([]);
+    setIsSelectionMode(false);
   };
+
+  const toggleAssetSelection = (asset: Asset) => {
+    // Don't select folders for now
+    if (asset.is_folder) return;
+
+    setSelectedAssets((prev) => {
+      const isAlreadySelected = prev.some((a) => a.id === asset.id);
+      if (isAlreadySelected) {
+        return prev.filter((a) => a.id !== asset.id);
+      }
+      return [...prev, asset];
+    });
+  };
+
+  const toggleSelectionMode = () => {
+    setIsSelectionMode((prev) => !prev);
+    if (isSelectionMode) {
+      setSelectedAssets([]);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedAssets.length === 0) return;
+
+    setBulkProgress({
+      total: selectedAssets.length,
+      completed: 0,
+      inProgress: true,
+      operation: "delete",
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < selectedAssets.length; i++) {
+      try {
+        await deleteAsset(selectedAssets[i].id);
+        successCount++;
+      } catch (e) {
+        failCount++;
+      }
+
+      setBulkProgress((prev) => ({
+        ...prev,
+        completed: i + 1,
+      }));
+    }
+
+    setBulkProgress((prev) => ({
+      ...prev,
+      inProgress: false,
+    }));
+
+    setSelectedAssets([]);
+    setBulkDeleteDialogOpen(false);
+
+    if (failCount === 0) {
+      toast.success(`Successfully deleted ${successCount} assets`);
+    } else {
+      toast.error(`Failed to delete ${failCount} assets`, {
+        description: `Successfully deleted ${successCount} assets.`,
+      });
+    }
+  };
+
+  const handleBulkMove = async (path: string) => {
+    if (selectedAssets.length === 0) return;
+
+    setBulkProgress({
+      total: selectedAssets.length,
+      completed: 0,
+      inProgress: true,
+      operation: "move",
+    });
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < selectedAssets.length; i++) {
+      try {
+        await updateAsset({
+          assetId: selectedAssets[i].id,
+          path,
+        });
+        successCount++;
+      } catch (e) {
+        failCount++;
+      }
+
+      setBulkProgress((prev) => ({
+        ...prev,
+        completed: i + 1,
+      }));
+    }
+
+    setBulkProgress((prev) => ({
+      ...prev,
+      inProgress: false,
+    }));
+
+    setSelectedAssets([]);
+    setBulkMoveDialogOpen(false);
+
+    if (failCount === 0) {
+      toast.success(`Successfully moved ${successCount} assets`);
+    } else {
+      toast.error(`Failed to move ${failCount} assets`, {
+        description: `Successfully moved ${successCount} assets.`,
+      });
+    }
+  };
+
+  // Calculate progress percentage
+  const progressPercentage =
+    bulkProgress.total > 0
+      ? Math.round((bulkProgress.completed / bulkProgress.total) * 100)
+      : 0;
 
   const breadcrumbs = currentPath
     .split("/")
@@ -141,8 +285,55 @@ export function AssetBrowser({
           ))}
         </div>
 
-        {/* View toggle buttons */}
+        {/* View and selection controls */}
         <div className="flex items-center gap-1">
+          {isSelectionMode ? (
+            <div className="flex items-center gap-2 mr-2">
+              <span className="text-sm">{selectedAssets.length} selected</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-[8px]"
+                onClick={toggleSelectionMode}
+                aria-label="Cancel selection"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+
+              {selectedAssets.length > 0 && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-[8px] flex items-center gap-1"
+                    onClick={() => setBulkMoveDialogOpen(true)}
+                  >
+                    <MoveIcon className="h-4 w-4" />
+                    Move
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 rounded-[8px] flex items-center gap-1 text-red-600 hover:bg-red-50"
+                    onClick={() => setBulkDeleteDialogOpen(true)}
+                  >
+                    <Trash className="h-4 w-4" />
+                    Delete
+                  </Button>
+                </>
+              )}
+            </div>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 rounded-[8px] mr-2"
+              onClick={toggleSelectionMode}
+            >
+              Select
+            </Button>
+          )}
+
           <Button
             variant={viewType === "grid" ? "secondary" : "ghost"}
             size="icon"
@@ -164,6 +355,20 @@ export function AssetBrowser({
         </div>
       </div>
 
+      {/* Bulk operation progress */}
+      {bulkProgress.inProgress && (
+        <div className="px-4 py-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm">
+              {bulkProgress.operation === "delete" ? "Deleting" : "Moving"}{" "}
+              {bulkProgress.completed} of {bulkProgress.total} files...
+            </span>
+            <span className="text-sm">{progressPercentage}%</span>
+          </div>
+          <Progress value={progressPercentage} className="h-1.5" />
+        </div>
+      )}
+
       {/* Scrollable container */}
       <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto">
         {viewType === "grid" ? (
@@ -173,6 +378,17 @@ export function AssetBrowser({
                 key={asset.id}
                 className="group relative flex aspect-square w-full flex-col items-center gap-1.5"
               >
+                {/* Selection checkboxes for files */}
+                {isSelectionMode && !asset.is_folder && (
+                  <div className="absolute top-2 left-2 z-10">
+                    <Checkbox
+                      checked={selectedAssets.some((a) => a.id === asset.id)}
+                      onCheckedChange={() => toggleAssetSelection(asset)}
+                      className="h-5 w-5 border-2 bg-white/80 drop-shadow-md"
+                    />
+                  </div>
+                )}
+
                 {asset.is_folder ? (
                   <button
                     type="button"
@@ -186,13 +402,15 @@ export function AssetBrowser({
                   <div
                     className="relative flex h-full w-full cursor-pointer items-center justify-center overflow-hidden rounded-[8px] border"
                     onClick={() => {
-                      if (isPanel) {
+                      if (isSelectionMode) {
+                        toggleAssetSelection(asset);
+                      } else if (isPanel) {
                         onItemClick?.(asset);
                       }
                     }}
                   >
                     <FileURLRender
-                      canFullScreen={!isPanel}
+                      canFullScreen={!isPanel && !isSelectionMode}
                       url={asset.url || ""}
                       imgClasses="max-w-[230px] w-full h-[230px] object-cover object-center rounded-[8px] transition-all duration-300 ease-in-out group-hover:scale-105"
                     />
@@ -210,7 +428,10 @@ export function AssetBrowser({
                       </span>
                     )}
                   </div>
-                  <AssetActions asset={asset} />
+                  <AssetActions
+                    asset={asset}
+                    isSelectionMode={isSelectionMode}
+                  />
                 </div>
               </div>
             ))}
@@ -224,6 +445,11 @@ export function AssetBrowser({
           <div className="w-full p-4">
             {/* Column headers for list view */}
             <div className="sticky top-0 z-10 flex w-full items-center border-b bg-white px-3 py-2 font-medium text-gray-500 text-sm">
+              {isSelectionMode && (
+                <div className="flex w-8 items-center justify-center">
+                  {/* Header checkbox could be added here later for select all */}
+                </div>
+              )}
               <div className="flex flex-1 items-center">
                 <div className="w-8" /> {/* Space for icon */}
                 <div className="flex-1 px-2">Name</div>
@@ -247,6 +473,19 @@ export function AssetBrowser({
                 key={asset.id}
                 className="group flex w-full items-center border-b px-3 py-2 hover:bg-gray-50"
               >
+                {/* Selection checkbox for list view */}
+                {isSelectionMode && (
+                  <div className="flex w-8 items-center justify-center">
+                    {!asset.is_folder && (
+                      <Checkbox
+                        checked={selectedAssets.some((a) => a.id === asset.id)}
+                        onCheckedChange={() => toggleAssetSelection(asset)}
+                        className="h-4 w-4"
+                      />
+                    )}
+                  </div>
+                )}
+
                 <div className="flex flex-1 items-center">
                   {/* Icon column */}
                   <div className="flex w-8 justify-center">
@@ -278,10 +517,14 @@ export function AssetBrowser({
                       <div
                         className={cn(
                           "max-w-[300px] truncate text-sm",
-                          isPanel && "cursor-pointer hover:underline",
+                          isPanel &&
+                            !isSelectionMode &&
+                            "cursor-pointer hover:underline",
                         )}
                         onClick={() => {
-                          if (isPanel) {
+                          if (isSelectionMode) {
+                            toggleAssetSelection(asset);
+                          } else if (isPanel) {
                             onItemClick?.(asset);
                           }
                         }}
@@ -321,7 +564,10 @@ export function AssetBrowser({
 
                 {/* Actions column */}
                 <div className="w-8">
-                  <AssetActions asset={asset} />
+                  <AssetActions
+                    asset={asset}
+                    isSelectionMode={isSelectionMode}
+                  />
                 </div>
               </div>
             ))}
@@ -333,6 +579,47 @@ export function AssetBrowser({
           </div>
         )}
       </div>
+
+      {/* Bulk Move Dialog */}
+      {bulkMoveDialogOpen && (
+        <MoveAssetDialog
+          asset={selectedAssets[0]} // Pass first asset for path reference
+          open={bulkMoveDialogOpen}
+          onOpenChange={setBulkMoveDialogOpen}
+          onConfirm={handleBulkMove}
+          isBulkOperation={true}
+          selectedCount={selectedAssets.length}
+        />
+      )}
+
+      {/* Bulk Delete Dialog */}
+      <AlertDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedAssets.length} Assets
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete {selectedAssets.length} assets?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setBulkDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              Delete
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -343,7 +630,10 @@ function getParentPath(path: string): string {
   return parts.length === 0 ? "/" : parts.join("/");
 }
 
-function AssetActions({ asset }: { asset: Asset }) {
+function AssetActions({
+  asset,
+  isSelectionMode,
+}: { asset: Asset; isSelectionMode: boolean }) {
   const { mutateAsync: deleteAsset } = useDeleteAsset();
   const { mutateAsync: updateAsset } = useUpdateAsset();
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
@@ -383,7 +673,11 @@ function AssetActions({ asset }: { asset: Asset }) {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 p-0 opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100 data-[state=open]:opacity-100"
+            className={cn(
+              "h-8 w-8 p-0 opacity-0 transition-all duration-300 ease-in-out group-hover:opacity-100 data-[state=open]:opacity-100",
+              isSelectionMode && "!opacity-0",
+            )}
+            disabled={isSelectionMode}
           >
             <MoreVertical className="h-4 w-4" />
           </Button>
@@ -427,6 +721,8 @@ interface MoveAssetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (path: string) => void;
+  isBulkOperation?: boolean;
+  selectedCount?: number;
 }
 
 interface FolderNode {
@@ -443,6 +739,8 @@ function MoveAssetDialog({
   open,
   onOpenChange,
   onConfirm,
+  isBulkOperation = false,
+  selectedCount = 1,
 }: MoveAssetDialogProps) {
   const [selectedPath, setSelectedPath] = useState("");
   const [folderTree, setFolderTree] = useState<FolderNode[]>([
@@ -638,7 +936,9 @@ function MoveAssetDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>Move Asset</DialogTitle>
+          <DialogTitle>
+            {isBulkOperation ? `Move ${selectedCount} Assets` : "Move Asset"}
+          </DialogTitle>
           <DialogDescription>Select the destination folder</DialogDescription>
         </DialogHeader>
 
