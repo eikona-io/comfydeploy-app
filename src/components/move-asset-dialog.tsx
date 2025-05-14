@@ -48,6 +48,7 @@ interface MoveAssetDialogProps {
   confirmText?: string;
   isBulkOperation?: boolean;
   selectedCount?: number;
+  isAddAsset?: boolean;
 }
 
 interface FolderNode {
@@ -104,6 +105,7 @@ export function MoveAssetDialog({
   confirmText = "Move Here",
   isBulkOperation = false,
   selectedCount = 0,
+  isAddAsset = false,
 }: MoveAssetDialogProps) {
   const [currentPath, setCurrentPath] = useState("/");
   const [selectedPath, setSelectedPath] = useState("");
@@ -273,7 +275,7 @@ export function MoveAssetDialog({
   };
 
   const handleConfirm = async () => {
-    if (assetParentPath === selectedPath) {
+    if (assetParentPath === selectedPath && !isAddAsset) {
       toast.error("Cannot move to the same location");
       return;
     }
@@ -393,7 +395,7 @@ export function MoveAssetDialog({
             </Button>
             <Button
               onClick={handleConfirm}
-              disabled={selectedPath === assetParentPath}
+              disabled={selectedPath === assetParentPath && !isAddAsset}
             >
               {confirmText}
             </Button>

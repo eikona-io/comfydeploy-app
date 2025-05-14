@@ -483,6 +483,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
         dialogTitle="Add to Assets"
         dialogDescription="Select a destination folder for the asset"
         confirmText="Add Here"
+        isAddAsset={true}
       />
     </>
   );
