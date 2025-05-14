@@ -9,6 +9,7 @@ import {
   Loader2,
   Search,
   X,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RunDetails } from "./workflows/WorkflowComponent";
@@ -28,6 +29,8 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { downloadImage } from "@/utils/download-image";
 import { queryClient } from "@/lib/providers";
+import { MoveAssetDialog } from "@/components/asset-browser";
+import { useAddAsset } from "@/hooks/hook";
 
 type GalleryViewProps = {
   workflowID: string;
@@ -171,6 +174,12 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
   const [coverImageNotified, setSetCoverImageNotified] =
     useQueryState("action");
   const [columnCount, setColumnCount] = useState(2);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [selectedOutputUrl, setSelectedOutputUrl] = useState<string | null>(
+    null,
+  );
+  const [selectedFilename, setSelectedFilename] = useState<string | null>(null);
+  const { mutate: addAsset } = useAddAsset();
 
   // Update column count based on screen size
   useEffect(() => {
@@ -236,6 +245,19 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
     } finally {
       setLoadingCoverId(null);
       setOpenDropdownId(null);
+    }
+  };
+
+  const handleAddAsset = async ({
+    url,
+    path,
+  }: { url: string; path: string }) => {
+    try {
+      await addAsset({ url, path });
+      toast.success(`${selectedFilename || "Asset"} added to assets`);
+      setMoveDialogOpen(false);
+    } catch (error) {
+      toast.error(`Failed to add asset: ${error}`);
     }
   };
 
@@ -349,6 +371,22 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
                                 Download <Download className="h-3.5 w-3.5" />
                               </div>
                             </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setSelectedOutputUrl(outputUrl);
+                                setSelectedFilename(
+                                  page.data?.images?.[0]?.filename,
+                                );
+                                setMoveDialogOpen(true);
+                              }}
+                            >
+                              <div className="flex w-full items-center justify-between">
+                                Add to assets{" "}
+                                <FolderOpen className="h-3.5 w-3.5" />
+                              </div>
+                            </DropdownMenuItem>
+
                             <DropdownMenuItem
                               disabled={loadingCoverId === page.output_id}
                               onClick={async (e) => {
@@ -424,6 +462,28 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
           <RunDetails run_id={runId} onClose={handleCloseRun} />
         </MyDrawer>
       )}
+      <MoveAssetDialog
+        asset={{
+          id: "temp",
+          name: selectedFilename || "New Asset",
+          path: "/",
+          is_folder: false,
+          file_size: 0,
+          mime_type: "",
+          created_at: new Date().toISOString(),
+          user_id: "",
+        }}
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        onConfirm={(path) => {
+          if (selectedOutputUrl) {
+            handleAddAsset({ url: selectedOutputUrl, path });
+          }
+        }}
+        dialogTitle="Add to Assets"
+        dialogDescription="Select a destination folder for the asset"
+        confirmText="Add Here"
+      />
     </>
   );
 }
