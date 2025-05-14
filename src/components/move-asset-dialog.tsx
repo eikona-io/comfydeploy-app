@@ -24,6 +24,7 @@ import {
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Badge } from "./ui/badge";
 
 interface Asset {
   id: string;
@@ -63,10 +64,10 @@ export function useMoveAsset() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      assetId, 
-      destinationPath 
-    }: { 
+    mutationFn: async ({
+      assetId,
+      destinationPath,
+    }: {
       assetId: string;
       destinationPath: string;
     }) => {
@@ -74,7 +75,10 @@ export function useMoveAsset() {
         url: "assets/move",
         init: {
           method: "POST",
-          body: JSON.stringify({ asset_id: assetId, destination_path: destinationPath }),
+          body: JSON.stringify({
+            asset_id: assetId,
+            destination_path: destinationPath,
+          }),
         },
       });
     },
@@ -90,17 +94,17 @@ function getParentPath(path: string) {
   return parts.length === 0 ? "/" : parts.join("/");
 }
 
-export function MoveAssetDialog({ 
-  asset, 
-  open, 
-  onOpenChange, 
+export function MoveAssetDialog({
+  asset,
+  open,
+  onOpenChange,
   onMoveDone,
   onConfirm,
   dialogTitle = "Move Asset",
   dialogDescription,
   confirmText = "Move Here",
   isBulkOperation = false,
-  selectedCount = 0
+  selectedCount = 0,
 }: MoveAssetDialogProps) {
   const [currentPath, setCurrentPath] = useState("/");
   const [selectedPath, setSelectedPath] = useState("");
@@ -117,28 +121,28 @@ export function MoveAssetDialog({
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const { mutateAsync: createFolder } = useCreateFolder();
   const { mutateAsync: moveAsset } = useMoveAsset();
-  
+
   const assetParentPath = getParentPath(asset.path);
-  
+
   useEffect(() => {
     if (open) {
       loadFolders("/", "root");
       setSelectedPath("/"); // Default selection is root
     }
   }, [open]);
-  
+
   const loadFolders = async (path: string, parentId: string) => {
     setIsLoading(true);
     try {
       const response = await api({
         url: `assets?path=${encodeURIComponent(path)}`,
       });
-      
+
       const folders = (response || []).filter((item: Asset) => item.is_folder);
-      
+
       setFolderTree((prevTree) => {
         const newTree = [...prevTree];
         updateFolderNode(newTree, parentId, folders);
@@ -151,7 +155,7 @@ export function MoveAssetDialog({
       setIsLoading(false);
     }
   };
-  
+
   const updateFolderNode = (
     tree: FolderNode[],
     nodeId: string,
@@ -159,7 +163,7 @@ export function MoveAssetDialog({
   ) => {
     for (let i = 0; i < tree.length; i++) {
       const node = tree[i];
-      
+
       if (node.id === nodeId) {
         node.children = folders.map((folder) => ({
           id: folder.id,
@@ -172,7 +176,7 @@ export function MoveAssetDialog({
         node.isLoaded = true;
         return true;
       }
-      
+
       if (node.children.length > 0) {
         if (updateFolderNode(node.children, nodeId, folders)) {
           return true;
@@ -181,24 +185,24 @@ export function MoveAssetDialog({
     }
     return false;
   };
-  
+
   const toggleFolder = (nodeId: string, path: string) => {
     setFolderTree((prevTree) => {
       const newTree = [...prevTree];
-      
+
       const toggleNode = (nodes: FolderNode[]) => {
         for (let i = 0; i < nodes.length; i++) {
           const node = nodes[i];
-          
+
           if (node.id === nodeId) {
             if (!node.isLoaded) {
               loadFolders(path, nodeId);
             }
-            
+
             node.isExpanded = !node.isExpanded;
             return true;
           }
-          
+
           if (node.children.length > 0) {
             if (toggleNode(node.children)) {
               return true;
@@ -207,31 +211,31 @@ export function MoveAssetDialog({
         }
         return false;
       };
-      
+
       toggleNode(newTree);
       return newTree;
     });
   };
-  
+
   const handleSelect = (path: string) => {
     setSelectedPath(path);
     setCurrentPath(path);
   };
-  
+
   const handleCreateFolder = async () => {
     if (!newFolderName) return;
-    
+
     try {
       await createFolder({
         name: newFolderName,
         parent_path: currentPath,
       });
-      
+
       const parentNode = findNodeByPath(folderTree, currentPath);
       if (parentNode) {
         loadFolders(currentPath, parentNode.id);
       }
-      
+
       setShowCreateFolderDialog(false);
       setNewFolderName("");
       toast.success("Folder created successfully");
@@ -241,13 +245,16 @@ export function MoveAssetDialog({
       });
     }
   };
-  
-  const findNodeByPath = (nodes: FolderNode[], path: string): FolderNode | null => {
+
+  const findNodeByPath = (
+    nodes: FolderNode[],
+    path: string,
+  ): FolderNode | null => {
     for (const node of nodes) {
       if (node.path === path) {
         return node;
       }
-      
+
       if (node.children.length > 0) {
         const found = findNodeByPath(node.children, path);
         if (found) {
@@ -255,22 +262,22 @@ export function MoveAssetDialog({
         }
       }
     }
-    
+
     return null;
   };
-  
+
   const handleMove = async () => {
     if (assetParentPath === selectedPath) {
       toast.error("Cannot move to the same location");
       return;
     }
-    
+
     try {
       await moveAsset({
         assetId: asset.id,
         destinationPath: selectedPath === "/" ? "" : selectedPath,
       });
-      
+
       onOpenChange(false);
       if (onMoveDone) {
         onMoveDone();
@@ -284,7 +291,7 @@ export function MoveAssetDialog({
       });
     }
   };
-  
+
   const renderFolderTree = (nodes: FolderNode[], depth = 0) => {
     return nodes.map((node) => (
       <div key={node.id} style={{ marginLeft: `${depth * 8}px` }}>
@@ -306,7 +313,7 @@ export function MoveAssetDialog({
               <ChevronRight className="h-4 w-4" />
             )}
           </button>
-          
+
           {/* Folder icon and name */}
           <button
             className="flex flex-1 items-center gap-2 text-left"
@@ -322,13 +329,13 @@ export function MoveAssetDialog({
               {node.name}
             </span>
           </button>
-          
+
           {/* Selection indicator */}
           {selectedPath === node.path && (
             <Check className="h-4 w-4 text-blue-500" />
           )}
         </div>
-        
+
         {/* Render children if expanded */}
         {node.isExpanded && node.children.length > 0 && (
           <div>{renderFolderTree(node.children, depth + 1)}</div>
@@ -336,7 +343,7 @@ export function MoveAssetDialog({
       </div>
     ));
   };
-  
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -344,12 +351,13 @@ export function MoveAssetDialog({
           <DialogHeader>
             <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>
-              {dialogDescription || (isBulkOperation 
-                ? `Select destination folder for ${selectedCount} assets` 
-                : `Select destination folder for "${asset.name}"`)}
+              {dialogDescription ||
+                (isBulkOperation
+                  ? `Select destination folder for ${selectedCount} assets`
+                  : `Select destination folder for "${asset.name}"`)}
             </DialogDescription>
           </DialogHeader>
-          
+
           {/* Folder tree container */}
           <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent h-[350px] overflow-y-auto rounded-md border p-2">
             {isLoading && folderTree[0].children.length === 0 ? (
@@ -360,7 +368,7 @@ export function MoveAssetDialog({
               renderFolderTree(folderTree)
             )}
           </div>
-          
+
           <div className="flex justify-between items-center">
             <Button
               variant="outline"
@@ -369,7 +377,7 @@ export function MoveAssetDialog({
               <FolderPlus className="mr-2 h-4 w-4" />
               New Folder
             </Button>
-            <Button 
+            <Button
               onClick={handleMove}
               disabled={!selectedPath || selectedPath === assetParentPath}
             >
@@ -378,12 +386,20 @@ export function MoveAssetDialog({
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Create folder dialog */}
-      <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
+      <Dialog
+        open={showCreateFolderDialog}
+        onOpenChange={setShowCreateFolderDialog}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Folder</DialogTitle>
+            <DialogTitle>
+              Create New Folder{" "}
+              <Badge>
+                <FolderOpen className="h-4 w-4" /> {currentPath}
+              </Badge>
+            </DialogTitle>
             <DialogDescription>
               Enter a name for your new folder
             </DialogDescription>
