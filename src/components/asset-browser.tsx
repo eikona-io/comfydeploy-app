@@ -162,6 +162,7 @@ export function AssetBrowser({
 
     setSelectedAssets([]);
     setBulkDeleteDialogOpen(false);
+    setIsSelectionMode(false);
 
     if (failCount === 0) {
       toast.success(`Successfully deleted ${successCount} assets`);
@@ -189,7 +190,7 @@ export function AssetBrowser({
       try {
         await updateAsset({
           assetId: selectedAssets[i].id,
-          path,
+          path: path === "/" ? "" : path,
         });
         successCount++;
       } catch (e) {
@@ -595,13 +596,23 @@ export function AssetBrowser({
       {/* Bulk Move Dialog */}
       {bulkMoveDialogOpen && (
         <MoveAssetDialog
-          asset={selectedAssets[0]} // Pass first asset for path reference
+          asset={{
+            id: selectedAssets[0].id,
+            name: `${selectedAssets.length} assets`,
+            path: selectedAssets[0].path,
+            is_folder: false,
+            file_size: 0,
+            mime_type: "",
+            created_at: new Date().toISOString(),
+            user_id: "",
+          }}
           open={bulkMoveDialogOpen}
           onOpenChange={setBulkMoveDialogOpen}
-          onMoveDone={() => {
-            setBulkMoveDialogOpen(false);
-            setSelectedAssets([]);
-          }}
+          onConfirm={handleBulkMove}
+          isBulkOperation={true}
+          selectedCount={selectedAssets.length}
+          dialogTitle={`Move ${selectedAssets.length} Assets`}
+          dialogDescription={`Select destination folder for ${selectedAssets.length} assets`}
         />
       )}
 
@@ -649,7 +660,7 @@ function AssetActions({
 }: { asset: Asset; isSelectionMode: boolean }) {
   const { mutateAsync: deleteAsset } = useDeleteAsset();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  
+
   // Get the setAssetToMove function from the store
   const { setAssetToMove } = useAssetBrowserStore();
 
