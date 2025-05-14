@@ -295,7 +295,7 @@ export function AssetBrowser({
                   {!isPanel && (
                     <div className="hidden w-32 text-center text-muted-foreground text-xs lg:block">
                       {!asset.is_folder && asset.mime_type
-                        ? `${asset.mime_type.split("/")[1].toUpperCase()} • ${formatFileSize(asset.file_size)}`
+                        ? `${asset.mime_type.split("/")[1].toUpperCase().slice(0, 4)} • ${formatFileSize(asset.file_size)}`
                         : "-"}
                     </div>
                   )}
