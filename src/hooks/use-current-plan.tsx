@@ -9,12 +9,24 @@ export const useCurrentPlanQuery = () => {
   });
 };
 
+export const ALLOWED_DEPLOYMENT_PLANS = [
+  "deployment_monthly",
+  "deployment_yearly",
+  "business_monthly",
+  "business_yearly",
+] as const;
+
 export const useCurrentPlan = () => {
   const { isSignedIn } = useUser();
   const { data, isLoading } = useCurrentPlanQuery();
   // console.log(data);
 
   return data;
+};
+
+export const useIsDeploymentAllowed = () => {
+  const plan = useCurrentPlan();
+  return ALLOWED_DEPLOYMENT_PLANS.includes(plan?.plans?.plans?.[0]);
 };
 
 export const useCurrentPlanWithStatus = () => {

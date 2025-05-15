@@ -34,8 +34,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
@@ -55,6 +53,7 @@ import {
 } from "../workspace/ContainersTable";
 import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
 import { MachineSelect } from "../workspace/MachineSelect";
+import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
 
 export interface Deployment {
   id: string;
@@ -114,8 +113,18 @@ export function DeploymentPage() {
   const { data: deployments, isLoading: isDeploymentsLoading } =
     useWorkflowDeployments(workflowId);
 
-  console.log("deploymentId", deploymentId);
-  console.log("status", status);
+  const isDeploymentAllowed = useIsDeploymentAllowed();
+
+  if (!isDeploymentAllowed) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+        Check out our plans to deploy workflows!
+        <Link href="/pricing">
+          <Button variant="secondary">Upgrade</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -405,8 +414,6 @@ export function DeploymentDialog({
       onSuccess?.(deployment.id);
       toast.success("Deployment promoted successfully");
       onClose();
-    } catch (error) {
-      toast.error("Failed to promote deployment");
     } finally {
       setIsPromoting(false);
     }
@@ -519,8 +526,8 @@ export function DeploymentDialog({
 }
 
 function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
-  const { workflow } = useCurrentWorkflow(workflowId);
-  const { data: machine } = useMachine(workflow?.selected_machine_id);
+  const isDeploymentAllowed = useIsDeploymentAllowed();
+
   const { data: deployments } = useWorkflowDeployments(workflowId);
   const { data: versions } = useQuery<Version[]>({
     queryKey: ["workflow", workflowId, "versions"],
@@ -547,6 +554,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
               setSelectedVersion(versions[0]);
               setIsDrawerOpen(true);
             }}
+            disabled={!isDeploymentAllowed}
           >
             Deploy Latest
             <Badge
@@ -650,7 +658,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                   <DropdownMenuTrigger
                     asChild
                     className="h-full w-full cursor-pointer rounded-sm p-2 hover:bg-gray-50"
-                    onClick={(e) => e.stopPropagation()} // Prevent triggering the row click
+                    onClick={(e) => e.stopPropagation()}
                   >
                     <MoreVertical size={16} />
                   </DropdownMenuTrigger>
@@ -661,6 +669,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                         setSelectedVersion(item);
                         setIsDrawerOpen(true);
                       }}
+                      disabled={!isDeploymentAllowed}
                     >
                       Deploy Version
                     </DropdownMenuItem>

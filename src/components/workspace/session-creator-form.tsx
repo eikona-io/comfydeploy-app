@@ -235,7 +235,11 @@ export function SessionCreatorForm({
   }, [selectedMachine, form]);
 
   if (selectedMachine?.type !== "comfy-deploy-serverless") {
-    return <div>Current machine does not support session</div>;
+    return (
+      <div className="flex w-full items-center justify-center text-muted-foreground text-sm">
+        <div>Current machine does not support session. </div>
+      </div>
+    );
   }
   return (
     <div className="flex flex-col gap-6 w-full">

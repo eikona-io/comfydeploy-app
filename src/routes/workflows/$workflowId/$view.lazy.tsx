@@ -68,10 +68,11 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { ImageIcon, Share } from "lucide-react";
+import { ImageIcon, Lock, Share } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
 
 interface Version {
   id: string;
@@ -165,6 +166,7 @@ function WorkflowPageComponent() {
 
   const { value: version } = useSelectedVersion(workflowId);
   const isAdminAndMember = useIsAdminAndMember();
+  const isDeploymentAllowed = useIsDeploymentAllowed();
 
   switch (currentView) {
     case "requests":
@@ -224,12 +226,6 @@ function WorkflowPageComponent() {
   }
 
   const tabs = isAdminAndMember ? workspace : ["playground", "gallery"];
-
-  const { createSession, listSession, deleteSession } = useSessionAPI(
-    workflow?.selected_machine_id,
-  );
-
-  const { data: sessions } = listSession;
 
   const { openMobile: isMobileSidebarOpen, isMobile } = useSidebar();
 
@@ -351,8 +347,32 @@ function WorkflowPageComponent() {
             </SidebarGroup>
 
             {isAdminAndMember && (
-              <SidebarGroup>
-                <SidebarGroupLabel>API</SidebarGroupLabel>
+              <SidebarGroup
+                className={cn(
+                  !isDeploymentAllowed && "bg-zinc-200/50 shadow-inner",
+                )}
+              >
+                <SidebarGroupLabel className="flex justify-between">
+                  API
+                  {!isDeploymentAllowed && (
+                    <Badge
+                      variant="purple"
+                      className="!text-2xs cursor-pointer"
+                      onClick={() => {
+                        router.navigate({
+                          to: "/pricing",
+                          search: {
+                            ready: undefined,
+                            plan: undefined,
+                          },
+                        });
+                      }}
+                    >
+                      <Lock className="h-3 w-3" />
+                      Deployment
+                    </Badge>
+                  )}
+                </SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu className="px-1">
                     {deployment.map((tab) => (
@@ -367,11 +387,18 @@ function WorkflowPageComponent() {
                           className={cn(
                             currentView === tab && "bg-gray-200 text-gray-900",
                             "transition-colors",
+                            !isDeploymentAllowed && "opacity-60",
                           )}
                           asChild
                         >
-                          <button className="w-full capitalize" type="button">
+                          <button
+                            className="flex w-full justify-between capitalize"
+                            type="button"
+                          >
                             {tab}
+                            {!isDeploymentAllowed && (
+                              <Lock className="!h-3.5 !w-3.5" />
+                            )}
                           </button>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -454,7 +481,9 @@ function WorkflowPageComponent() {
             display: currentView === "workspace" ? "block" : "none",
           }}
         >
-          {currentView === "workspace" && <GuideDialog guideType={sessionId ? "session" : "workspace"} />}
+          {currentView === "workspace" && (
+            <GuideDialog guideType={sessionId ? "session" : "workspace"} />
+          )}
           <WorkspaceClientWrapper workflow_id={workflowId} />
         </div>
       ) : null}
@@ -520,6 +549,18 @@ function RequestPage() {
   const { workflowId, view: currentView } = Route.useParams();
   const [deploymentId, setDeploymentId] = useQueryState("filter-deployment-id");
   const [status, setStatus] = useQueryState("filter-status");
+  const isDeploymentAllowed = useIsDeploymentAllowed();
+
+  if (!isDeploymentAllowed) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+        Check out our plans to deploy workflows!
+        <Link href="/pricing">
+          <Button variant="secondary">Upgrade</Button>
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
