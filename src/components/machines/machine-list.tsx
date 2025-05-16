@@ -67,6 +67,8 @@ export function MachineList() {
 
   const sub = useCurrentPlan();
   const hasActiveSub = !sub || !!sub?.sub;
+  const isBusinessPlan = (plan?: string) =>
+    plan === "business_monthly" || plan === "business_yearly";
 
   const query = useMachines(
     debouncedSearchValue ?? undefined,
@@ -393,17 +395,13 @@ export function MachineList() {
             onClick: () => {
               if (
                 !sub?.features.machineLimited &&
-                (sub?.plans?.plans?.[0] === "business_monthly" ||
-                  sub?.plans?.plans?.[0] === "business_yearly")
+                isBusinessPlan(sub?.plans?.plans?.[0])
               ) {
                 setOpenCustomDialog(true);
               }
             },
             disabled: {
-              disabled: !(
-                sub?.plans?.plans?.[0] === "business_monthly" ||
-                sub?.plans?.plans?.[0] === "business_yearly"
-              ),
+              disabled: !isBusinessPlan(sub?.plans?.plans?.[0]),
               disabledText:
                 "Upgrade to Business plan to create self-hosted machines.",
             },
