@@ -206,10 +206,6 @@ export function UpgradeButton(props: PlanButtonProps) {
 
   const [coupon, setCoupon] = useState<string>();
 
-  const search = useSearch({
-    from: "/pricing",
-  });
-
   const ready = true; //search?.ready;
 
   let isCustom = (props.plan as any) === "large_enterprise";
@@ -231,7 +227,7 @@ export function UpgradeButton(props: PlanButtonProps) {
     !label.includes("Switch") &&
     !label.includes("Started") &&
     !label.includes("Reactivate");
-    
+
   const handlePlanChange = async () => {
     setIsLoading(true);
     try {
@@ -270,12 +266,12 @@ export function UpgradeButton(props: PlanButtonProps) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {label === "Upgrade" 
-                ? "Confirm Upgrade" 
-                : label === "Downgrade" 
+              {label === "Upgrade"
+                ? "Confirm Upgrade"
+                : label === "Downgrade"
                   ? "Confirm Downgrade"
-                  : label.startsWith("Switch to") 
-                    ? `Confirm ${label}` 
+                  : label.startsWith("Switch to")
+                    ? `Confirm ${label}`
                     : "Confirm Plan Change"}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -293,7 +289,11 @@ export function UpgradeButton(props: PlanButtonProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handlePlanChange}>
-              {label.startsWith("Switch to") ? "Confirm Switch" : label === "Upgrade" ? "Confirm Upgrade" : "Confirm Downgrade"}
+              {label.startsWith("Switch to")
+                ? "Confirm Switch"
+                : label === "Upgrade"
+                  ? "Confirm Upgrade"
+                  : "Confirm Downgrade"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -366,9 +366,13 @@ export function UpgradeButton(props: PlanButtonProps) {
                 });
                 return;
               }
-              
-              if (label === "Upgrade" || label === "Downgrade" || 
-                  label === "Switch to monthly" || label === "Switch to yearly") {
+
+              if (
+                label === "Upgrade" ||
+                label === "Downgrade" ||
+                label === "Switch to monthly" ||
+                label === "Switch to yearly"
+              ) {
                 setShowConfirmDialog(true);
                 return;
               }

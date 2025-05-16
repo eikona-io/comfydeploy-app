@@ -391,13 +391,21 @@ export function MachineList() {
             name: "Self Hosted Machine",
             icon: Server,
             onClick: () => {
-              if (!sub?.features.machineLimited) {
+              if (
+                !sub?.features.machineLimited &&
+                (sub?.plans?.plans?.[0] === "business_monthly" ||
+                  sub?.plans?.plans?.[0] === "business_yearly")
+              ) {
                 setOpenCustomDialog(true);
               }
             },
             disabled: {
-              disabled: !(sub?.plans?.plans && sub?.plans?.plans.length > 0),
-              disabledText: "Upgrade to create custom machines.",
+              disabled: !(
+                sub?.plans?.plans?.[0] === "business_monthly" ||
+                sub?.plans?.plans?.[0] === "business_yearly"
+              ),
+              disabledText:
+                "Upgrade to Business plan to create self-hosted machines.",
             },
           },
         ]}

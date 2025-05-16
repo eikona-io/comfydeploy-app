@@ -565,6 +565,10 @@ function GPUPricingTable() {
 }
 
 function RouteComponent() {
+  return <PricingPage />;
+}
+
+export function PricingPage() {
   const { data: _sub, isLoading } = useCurrentPlanWithStatus();
   const [isYearly, setIsYearly] = useState(false);
 

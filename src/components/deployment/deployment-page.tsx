@@ -113,19 +113,6 @@ export function DeploymentPage() {
   const { data: deployments, isLoading: isDeploymentsLoading } =
     useWorkflowDeployments(workflowId);
 
-  const isDeploymentAllowed = useIsDeploymentAllowed();
-
-  if (!isDeploymentAllowed) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-        Check out our plans to deploy workflows!
-        <Link href="/pricing">
-          <Button variant="secondary">Upgrade</Button>
-        </Link>
-      </div>
-    );
-  }
-
   return (
     <>
       <div className="mx-auto max-w-screen-lg py-10">

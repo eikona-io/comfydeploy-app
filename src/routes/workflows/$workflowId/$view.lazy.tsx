@@ -73,6 +73,7 @@ import { useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
+import { PricingPage } from "@/routes/pricing";
 
 interface Version {
   id: string;
@@ -172,22 +173,21 @@ function WorkflowPageComponent() {
     case "requests":
       view = (
         <PaddingLayout>
-          <RequestPage />
-        </PaddingLayout>
-      );
-      break;
-    case "containers":
-      view = (
-        <PaddingLayout className="mt-10">
-          <ContainersTable workflow_id={workflowId} />
+          {!isDeploymentAllowed ? <PricingPage /> : <RequestPage />}
         </PaddingLayout>
       );
       break;
     case "deployment":
       view = (
         <PaddingLayout>
-          <GuideDialog guideType="deployment" />
-          <DeploymentPage />
+          {!isDeploymentAllowed ? (
+            <PricingPage />
+          ) : (
+            <>
+              <GuideDialog guideType="deployment" />
+              <DeploymentPage />
+            </>
+          )}
         </PaddingLayout>
       );
       break;
@@ -355,19 +355,7 @@ function WorkflowPageComponent() {
                 <SidebarGroupLabel className="flex justify-between">
                   API
                   {!isDeploymentAllowed && (
-                    <Badge
-                      variant="purple"
-                      className="!text-2xs cursor-pointer"
-                      onClick={() => {
-                        router.navigate({
-                          to: "/pricing",
-                          search: {
-                            ready: undefined,
-                            plan: undefined,
-                          },
-                        });
-                      }}
-                    >
+                    <Badge variant="purple" className="!text-2xs">
                       <Lock className="h-3 w-3" />
                       Deployment
                     </Badge>
@@ -549,18 +537,6 @@ function RequestPage() {
   const { workflowId, view: currentView } = Route.useParams();
   const [deploymentId, setDeploymentId] = useQueryState("filter-deployment-id");
   const [status, setStatus] = useQueryState("filter-status");
-  const isDeploymentAllowed = useIsDeploymentAllowed();
-
-  if (!isDeploymentAllowed) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-2">
-        Check out our plans to deploy workflows!
-        <Link href="/pricing">
-          <Button variant="secondary">Upgrade</Button>
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <>
