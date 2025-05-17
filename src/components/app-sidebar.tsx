@@ -14,6 +14,7 @@ import {
   Key,
   LineChart,
   MessageCircle,
+  MessageSquare,
   Plus,
   Receipt,
   Rss,
@@ -22,6 +23,7 @@ import {
   Settings,
   Users,
   Workflow,
+  Link2,
 } from "lucide-react";
 
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
@@ -79,7 +81,7 @@ import { Link, useLocation, useRouter } from "@tanstack/react-router";
 // import { VersionSelectV2 } from "@/components/VersionSelectV2";
 // import { MachineSelect } from "@/components/MachineSelect";
 // import { useCurrentPlan } from "@/components/useCurrentPlan";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { parseAsString } from "nuqs";
 import { useQueryState } from "nuqs";
 import { useEffect, useRef, useState } from "react";
@@ -110,6 +112,8 @@ import { Switch } from "./ui/switch";
 import { serverAction } from "@/lib/workflow-version-api";
 import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
 import { LogDisplay } from "./workspace/LogDisplay";
+import { CopyButton } from "@/components/ui/copy-button";
+import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
 
 // Add Session type
 interface Session {
@@ -318,7 +322,6 @@ function SessionSidebar() {
   const sub = useCurrentPlan();
 
   const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
-  const [displayCommit, setDisplayCommit] = useState(false);
   const { hasChanged, workflow } = useWorkflowStore();
 
   const {
@@ -338,8 +341,6 @@ function SessionSidebar() {
   });
 
   const url = session?.url || session?.tunnel_url;
-
-  // Only calculate these values if we have timeout_end (non-legacy mode)
   const isLegacyMode = !session?.timeout_end;
 
   const handleTimerClick = () => {
@@ -349,9 +350,8 @@ function SessionSidebar() {
     }
   };
 
-  const [isVersionDialogOpen, setIsVersionDialogOpen] = useState(false);
   const [activeDrawer, setActiveDrawer] = useState<
-    "model" | "chat" | "log" | null
+    "model" | "chat" | "integration" | "commit" | "version" | "log" | null
   >(null);
   const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
 
@@ -361,215 +361,280 @@ function SessionSidebar() {
     }
   }, [workflow]);
 
-  const toggleDrawer = (drawer: "model" | "chat" | "log") => {
+  const toggleDrawer = (
+    drawer: "model" | "chat" | "integration" | "commit" | "version" | "log",
+  ) => {
     setActiveDrawer((prevDrawer) => (prevDrawer === drawer ? null : drawer));
   };
 
   return (
     <>
-      <SessionIncrementDialog /> {/* This will handle the legacy mode dialog */}
-      {displayCommit && url && (
-        <WorkflowCommitVersion
-          endpoint={url}
-          setOpen={setDisplayCommit}
-          machine_id={session?.machine_id}
-          machine_version_id={session?.machine_version_id}
-        />
-      )}
-      <Dialog open={isVersionDialogOpen} onOpenChange={setIsVersionDialogOpen}>
-        <DialogContent hideOverlay className="sm:max-0-w-[425px]">
-          <VersionList
-            className="w-full"
-            workflow_id={workflowId || ""}
-            containerStyle={{ overflowX: "hidden" }}
-            onClose={() => {
-              setIsVersionDialogOpen(false);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <div className="flex flex-row items-start justify-between">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                if (workflowId) {
-                  router.navigate({
-                    to: "/workflows/$workflowId/$view",
-                    params: { workflowId, view: "workspace" },
-                  });
-                } else {
-                  router.navigate({
-                    to: "/",
-                  });
-                }
-                setSessionId(null);
+      <SessionIncrementDialog />
+      <div className="relative z-50">
+        <Sidebar
+          collapsible="none"
+          className={cn(
+            "h-screen w-[50px]",
+            "border-r shadow-[1px_0_3px_0_rgba(0,0,0,0.1)]",
+          )}
+        >
+          <div className="flex h-full w-full">
+            <div className="flex w-[50px] flex-none flex-col">
+              <SidebarContent>
+                <SidebarGroup className="p-1">
+                  <SidebarMenu>
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          if (workflowId) {
+                            router.navigate({
+                              to: "/workflows/$workflowId/$view",
+                              params: { workflowId, view: "workspace" },
+                            });
+                          } else {
+                            router.navigate({
+                              to: "/",
+                            });
+                          }
+                          setSessionId(null);
+                        }}
+                      >
+                        <ArrowLeft className="h-4 w-4" />
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleDrawer("commit")}
+                        disabled={!hasChanged}
+                        className={cn(
+                          "mx-auto transition-colors",
+                          hasChanged && "bg-orange-200 hover:bg-orange-300",
+                        )}
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleDrawer("version")}
+                        className="relative mx-auto"
+                      >
+                        <GitBranch className="h-4 w-4" />
+                        <div className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
+                          v
+                          {useSelectedVersion(workflowId || "").value
+                            ?.version || "1"}
+                        </div>
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          activeDrawer === "model" ? "bg-primary/10" : "",
+                        )}
+                        onClick={() => toggleDrawer("model")}
+                      >
+                        <Box className="h-4 w-4" />
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          activeDrawer === "chat" ? "bg-primary/10" : "",
+                        )}
+                        onClick={() => toggleDrawer("integration")}
+                      >
+                        <Link2 className="h-4 w-4" />
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          activeDrawer === "log" && "bg-primary/10",
+                        )}
+                        onClick={() => toggleDrawer("log")}
+                      >
+                        <FileClockIcon className="h-4 w-4" />
+                      </Button>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroup>
+              </SidebarContent>
+              <SidebarFooter className="px-0 py-2">
+                {!isLegacyMode && (
+                  <WorkspaceConfigPopover
+                    workflowId={workflowId}
+                    setOpen={() => toggleDrawer("commit")}
+                  />
+                )}
+                {session?.gpu && (
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div className="px-2">
+                          <Badge className="!text-[10px] !p-0 !w-full mb-1 flex items-center justify-center">
+                            {session?.gpu.slice(0, 4)}
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent side="right">
+                        <p>{session?.gpu}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+                {!isLegacyMode ? (
+                  <TimerPopover session={session} onRefetch={refetch} />
+                ) : (
+                  <>
+                    {session && (
+                      <SessionTimer
+                        session={session}
+                        onClick={handleTimerClick}
+                      />
+                    )}
+                  </>
+                )}
+              </SidebarFooter>
+            </div>
+          </div>
+        </Sidebar>
+
+        {/* Panel Content - Slides out from behind sidebar */}
+        <AnimatePresence>
+          {activeDrawer && (
+            <motion.div
+              className={cn(
+                "absolute left-0 top-0 h-screen border-r bg-background shadow-lg",
+                "z-[-1]",
+              )}
+              initial={{ x: -575, width: 450, opacity: 1 }}
+              animate={{
+                x: 50,
+                width: activeDrawer === "log" ? 575 : 450,
+                opacity: 1,
+              }}
+              exit={{
+                x: -575,
+                // opacity: 0,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 40,
+              }}
+              style={{
+                pointerEvents: activeDrawer ? "auto" : "none",
               }}
             >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup className="p-1">
-            <SidebarMenu>
-              <SidebarMenuItem className="p-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setDisplayCommit(true);
-                  }}
-                  disabled={!hasChanged}
-                  className={`mx-auto transition-colors ${
-                    hasChanged ? "bg-orange-200 hover:bg-orange-300" : ""
-                  }`}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-              </SidebarMenuItem>
-              <SidebarMenuItem className="p-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setIsVersionDialogOpen(true);
-                  }}
-                  className="relative mx-auto"
-                >
-                  <GitBranch className="h-4 w-4" />
-                  <div className="-right-1 -top-1 absolute flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
-                    v
-                    {useSelectedVersion(workflowId || "").value?.version || "1"}
-                  </div>
-                </Button>
-              </SidebarMenuItem>
-              <Separator className="mx-auto my-1 w-7" />
-              <SidebarMenuItem className="p-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    activeDrawer === "model" ? "bg-primary/10" : "",
+              <div className="flex h-full flex-col">
+                <AnimatePresence mode="wait">
+                  {activeDrawer === "model" && (
+                    <div className="flex h-full flex-col p-4">
+                      <div className="flex items-center gap-2">
+                        <Box className="h-4 w-4" />
+                        <span className="font-medium">Model Check</span>
+                      </div>
+                      <div className="mt-4 flex-1">
+                        <WorkflowModelCheck
+                          workflow={JSON.stringify(workflow)}
+                          key={workflowUpdateTrigger}
+                          onWorkflowUpdate={sendWorkflow}
+                        />
+                      </div>
+                    </div>
                   )}
-                  onClick={() => toggleDrawer("model")}
-                >
-                  <Box className="h-4 w-4" />
-                </Button>
-              </SidebarMenuItem>
-              <SidebarMenuItem className="p-0">
-                <Popover open={activeDrawer === "log"}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={cn(
-                        activeDrawer === "log" ? "bg-primary/10" : "",
-                      )}
-                      onClick={() => toggleDrawer("log")}
-                    >
-                      <FileClockIcon className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent
-                    side="right"
-                    align="start"
-                    className="w-[575px]"
-                  >
-                    <div className="p-2 pt-0 font-medium">Log</div>
-                    <LogDisplay />
-                  </PopoverContent>
-                </Popover>
-              </SidebarMenuItem>
-              {/* {sub?.plans?.plans?.length > 0 && (
-                <SidebarMenuItem className="relative p-0">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={cn(
-                      activeDrawer === "chat" ? "bg-primary/10" : "",
-                    )}
-                    onClick={() => toggleDrawer("chat")}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                  </Button>
-                  <Badge
-                    variant="purple"
-                    className="-right-1 -top-1 !text-[7px] absolute h-4 px-1"
-                  >
-                    Beta
-                  </Badge>
-                </SidebarMenuItem>
-              )} */}
-            </SidebarMenu>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter className="px-0 py-2">
-          {!isLegacyMode && (
-            <WorkspaceConfigPopover
-              setOpen={setDisplayCommit}
-              workflowId={workflowId}
-            />
+                  {activeDrawer === "chat" && (
+                    <div className="flex h-full flex-col p-4">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        <span className="font-medium">Chat</span>
+                      </div>
+                      <div className="mt-4 flex-1">
+                        <Chat />
+                      </div>
+                    </div>
+                  )}
+                  {activeDrawer === "integration" && (
+                    <div className="flex h-full flex-col p-4">
+                      <div className="flex items-center gap-2">
+                        <Link2 className="h-4 w-4" />
+                        <span className="font-medium">Integration</span>
+                      </div>
+                      <div className="mt-4 flex-1">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/50 p-3">
+                            <div className="text-muted-foreground truncate text-sm">
+                              {url}
+                            </div>
+                            <CopyButton
+                              text={url || ""}
+                              variant="outline"
+                              className="shrink-0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {activeDrawer === "version" && (
+                    <div className="flex h-full flex-col p-4">
+                      <div className="flex items-center gap-2">
+                        <GitBranch className="h-4 w-4" />
+                        <span className="font-medium">Version History</span>
+                      </div>
+                      <div className="mt-4 flex-1">
+                        <VersionList
+                          className="w-full"
+                          workflow_id={workflowId || ""}
+                          containerStyle={{ overflowX: "hidden" }}
+                          onClose={() => setActiveDrawer(null)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {activeDrawer === "log" && (
+                    <div className="flex h-full flex-col p-4">
+                      <div className="flex items-center gap-2">
+                        <FileClockIcon className="h-4 w-4" />
+                        <span className="font-medium">Log</span>
+                      </div>
+                      <div className="mt-4 flex-1">
+                        <LogDisplay
+                          className="!w-full"
+                          containerClassName="min-h-[600px]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {activeDrawer === "commit" && url && (
+                    <div className="h-full">
+                      <WorkflowCommitSidePanel
+                        endpoint={url}
+                        machine_id={session?.machine_id}
+                        machine_version_id={session?.machine_version_id}
+                        onClose={() => setActiveDrawer(null)}
+                      />
+                    </div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
           )}
-          {session?.gpu && (
-            <TooltipProvider>
-              <Tooltip delayDuration={0}>
-                <TooltipTrigger asChild>
-                  <div className="px-2">
-                    <Badge className="!text-[10px] !p-0 !w-full mb-1 flex items-center justify-center">
-                      {session?.gpu.slice(0, 4)}
-                    </Badge>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="right">
-                  <p>{session?.gpu}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
-          {!isLegacyMode ? (
-            <TimerPopover session={session} onRefetch={refetch} />
-          ) : (
-            <>
-              {session && (
-                <SessionTimer session={session} onClick={handleTimerClick} />
-              )}
-            </>
-          )}
-        </SidebarFooter>
-      </Sidebar>
-      {activeDrawer === "model" && (
-        <MyDrawer
-          backgroundInteractive
-          open={activeDrawer === "model"}
-          onClose={() => setActiveDrawer(null)}
-          side="left"
-          offset={14}
-        >
-          <div className="mt-2 space-y-4">
-            <span className="font-medium">Model Check</span>
-            <WorkflowModelCheck
-              workflow={JSON.stringify(workflow)}
-              key={workflowUpdateTrigger}
-              onWorkflowUpdate={sendWorkflow}
-            />
-          </div>
-        </MyDrawer>
-      )}
-      {activeDrawer === "chat" && (
-        <MyDrawer
-          backgroundInteractive
-          open={activeDrawer === "chat"}
-          onClose={() => setActiveDrawer(null)}
-          side="left"
-          offset={14}
-        >
-          <Chat />
-        </MyDrawer>
-      )}
+        </AnimatePresence>
+      </div>
     </>
   );
 }
@@ -606,7 +671,7 @@ function WorkspaceConfigPopover({
   setOpen,
 }: {
   workflowId?: string;
-  setOpen: (b: boolean) => void;
+  setOpen: () => void;
 }) {
   // Load settings from localStorage with defaults
   const [settings, setSettings] = useState(() => {
