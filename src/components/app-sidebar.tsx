@@ -433,6 +433,7 @@ function SessionSidebar() {
                         </div>
                       </Button>
                     </SidebarMenuItem>
+                    <Separator className="mx-auto my-1 w-7" />
                     <SidebarMenuItem className="p-0">
                       <Button
                         variant="ghost"
