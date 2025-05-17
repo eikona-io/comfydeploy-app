@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useCurrentPlan, useIsBusinessAllowed } from "@/hooks/use-current-plan";
 import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -67,8 +67,7 @@ export function MachineList() {
 
   const sub = useCurrentPlan();
   const hasActiveSub = !sub || !!sub?.sub;
-  const isBusinessPlan = (plan?: string) =>
-    plan === "business_monthly" || plan === "business_yearly";
+  const isBusinessAllowed = useIsBusinessAllowed();
 
   const query = useMachines(
     debouncedSearchValue ?? undefined,
@@ -393,17 +392,15 @@ export function MachineList() {
             name: "Self Hosted Machine",
             icon: Server,
             onClick: () => {
-              if (
-                !sub?.features.machineLimited &&
-                isBusinessPlan(sub?.plans?.plans?.[0])
-              ) {
+              if (!sub?.features.machineLimited && isBusinessAllowed) {
                 setOpenCustomDialog(true);
               }
             },
             disabled: {
-              disabled: !isBusinessPlan(sub?.plans?.plans?.[0]),
-              disabledText:
-                "Upgrade to Business plan to create self-hosted machines.",
+              disabled: !isBusinessAllowed || sub?.features.machineLimited,
+              disabledText: sub?.features.machineLimited
+                ? `Max ${sub?.features.machineLimit} Self-hosted machines for your account. Upgrade to create more machines.`
+                : "Upgrade to Business plan to create self-hosted machines.",
             },
           },
         ]}
