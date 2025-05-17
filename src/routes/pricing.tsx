@@ -334,7 +334,7 @@ function PricingTier({
           <ul className="mt-4 space-y-1.5 text-xs">
             {/* Include message for higher tiers */}
             {renderIncludesMessage() && (
-              <li className="flex items-start">
+              <li className="flex items-center">
                 <Check className="h-4 w-4 flex-shrink-0 text-green-500" />
                 <span className="ml-2 font-medium text-gray-900">
                   {renderIncludesMessage()}
@@ -344,7 +344,7 @@ function PricingTier({
 
             {/* Show only available features */}
             {tier.name === "Free" ? (
-              <li className="flex items-start">
+              <li className="flex items-center">
                 <Check className="h-4 w-4 flex-shrink-0 text-green-500" />
                 <span className="ml-2 text-gray-600">
                   Run public workflow{" "}
@@ -376,7 +376,7 @@ function PricingTier({
                 .map((feature) => {
                   const value = feature.tiers[tier.name as keyof TierFeature];
                   return (
-                    <li key={feature.name} className="flex items-start">
+                    <li key={feature.name} className="flex items-center">
                       <Check className="h-4 w-4 flex-shrink-0 text-green-500" />
                       <span className="ml-2 text-gray-600">
                         {feature.name}
