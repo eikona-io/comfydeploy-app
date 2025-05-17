@@ -81,46 +81,8 @@ export function WorkflowCommitSidePanel({
       </div>
       <div className="space-y-4 p-4">
         {/* Snapshot Section */}
-        <div className="rounded-md border bg-muted/50 p-3">
-          <ScrollArea className="flex-1">
-            {is_fluid_machine && (
-              <>
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="font-medium text-sm">
-                    Workspace Snapshot
-                  </span>
-                  {comfyui_snapshot_loading && (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  )}
-                </div>
-                {!comfyui_snapshot_loading && (
-                  <SnapshotDiffView
-                    newSnapshot={comfyui_snapshot}
-                    oldSnapshot={selectedVersion?.comfyui_snapshot}
-                    onSnapshotActionChange={handleSnapshotActionChange}
-                  />
-                )}
-              </>
-            )}
-
-            {/* Changes Section */}
-            <div className="mb-3">
-              <span className="font-medium text-sm">Workflow Changes</span>
-            </div>
-            <DiffView
-              className="max-h-[300px]"
-              differences={differences}
-              workflow={workflow}
-              oldWorkflow={selectedVersion?.workflow}
-            />
-          </ScrollArea>
-        </div>
-
         {/* Comment Section */}
         <div className="rounded-md border bg-muted/50 p-3">
-          <div className="mb-3">
-            <span className="font-medium text-sm">Commit Message</span>
-          </div>
           <AutoForm
             formSchema={z.object({
               comment: z.string().optional(),
@@ -166,6 +128,41 @@ export function WorkflowCommitSidePanel({
               </Button>
             </div>
           </AutoForm>
+        </div>
+
+        <div className="rounded-md border bg-muted/50 p-3">
+          <ScrollArea className="flex-1">
+            {is_fluid_machine && (
+              <>
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="font-medium text-sm">
+                    Workspace Snapshot
+                  </span>
+                  {comfyui_snapshot_loading && (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+                {!comfyui_snapshot_loading && (
+                  <SnapshotDiffView
+                    newSnapshot={comfyui_snapshot}
+                    oldSnapshot={selectedVersion?.comfyui_snapshot}
+                    onSnapshotActionChange={handleSnapshotActionChange}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Changes Section */}
+            <div className="mb-3">
+              <span className="font-medium text-sm">Workflow Changes</span>
+            </div>
+            <DiffView
+              className="max-h-[300px]"
+              differences={differences}
+              workflow={workflow}
+              oldWorkflow={selectedVersion?.workflow}
+            />
+          </ScrollArea>
         </div>
       </div>
     </div>
