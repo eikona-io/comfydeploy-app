@@ -471,6 +471,7 @@ export default function WorkflowImport() {
                       validation.install_custom_node_with_gpu,
                     base_docker_image: validation.base_docker_image,
                     python_version: validation.python_version,
+                    concurrency_limit: 1,
                   }),
                 },
               });
