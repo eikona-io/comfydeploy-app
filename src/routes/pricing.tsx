@@ -219,12 +219,16 @@ function PricingTier({
   plans,
   className,
   isYearly,
+  showCreatorTier = true,
+  showDeploymentTier = true,
 }: {
   tier: Tier;
   isLoading: boolean;
   plans: string[];
   className?: string;
   isYearly: boolean;
+  showCreatorTier?: boolean;
+  showDeploymentTier?: boolean;
 }) {
   const getAvailableFeatures = (tierName: string) => {
     return sections[0].features.filter((feature) => {
@@ -237,8 +241,14 @@ function PricingTier({
   const renderIncludesMessage = () => {
     if (tier.name === "Free") return null;
     if (tier.name === "Creator") return "Includes everything in Free";
-    if (tier.name === "Deployment") return "Includes everything in Creator";
-    if (tier.name === "Business") return "Includes everything in Deployment";
+    if (tier.name === "Deployment") {
+      return showCreatorTier ? "Includes everything in Creator" : "Includes everything in Free";
+    }
+    if (tier.name === "Business") {
+      if (showDeploymentTier) return "Includes everything in Deployment";
+      if (showCreatorTier) return "Includes everything in Creator";
+      return "Includes everything in Free";
+    }
     return null;
   };
 
@@ -746,6 +756,8 @@ export function PricingPage() {
                     plans={_sub?.plans?.plans ?? []}
                     className="rounded-t-sm border bg-gradient-to-bl from-gray-50/10 via-gray-50/80 to-gray-100"
                     isYearly={isYearly}
+                    showCreatorTier={filteredTiers.some(tier => tier.id === 'creator')}
+                    showDeploymentTier={filteredTiers.some(tier => tier.id === 'deployment')}
                   />
                 )}
               </div>
@@ -770,6 +782,8 @@ export function PricingPage() {
                         filteredTiers.some(tier => tier.id === 'deployment') ? "lg:border-r" : ""
                       )}
                       isYearly={isYearly}
+                      showCreatorTier={filteredTiers.some(tier => tier.id === 'creator')}
+                      showDeploymentTier={filteredTiers.some(tier => tier.id === 'deployment')}
                     />
                   )}
                   {filteredTiers.find(tier => tier.id === 'deployment') && (
@@ -779,6 +793,8 @@ export function PricingPage() {
                       plans={_sub?.plans?.plans ?? []}
                       className="bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100"
                       isYearly={isYearly}
+                      showCreatorTier={filteredTiers.some(tier => tier.id === 'creator')}
+                      showDeploymentTier={filteredTiers.some(tier => tier.id === 'deployment')}
                     />
                   )}
                 </div>
@@ -793,6 +809,8 @@ export function PricingPage() {
                     plans={_sub?.plans?.plans ?? []}
                     className="border border-t-0 bg-gradient-to-bl from-purple-50/10 via-purple-50/80 to-purple-100"
                     isYearly={isYearly}
+                    showCreatorTier={filteredTiers.some(tier => tier.id === 'creator')}
+                    showDeploymentTier={filteredTiers.some(tier => tier.id === 'deployment')}
                   />
                 )}
               </div>
@@ -806,6 +824,8 @@ export function PricingPage() {
                     plans={_sub?.plans?.plans ?? []}
                     className="overflow-hidden rounded-b-sm border border-t-0 bg-gradient-to-bl from-indigo-50/10 via-indigo-50/80 to-indigo-100"
                     isYearly={isYearly}
+                    showCreatorTier={filteredTiers.some(tier => tier.id === 'creator')}
+                    showDeploymentTier={filteredTiers.some(tier => tier.id === 'deployment')}
                   />
                 )}
               </div>
