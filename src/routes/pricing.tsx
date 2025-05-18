@@ -68,7 +68,7 @@ const tiers: Tier[] = [
     id: "business",
     priceMonthly: "from $998",
     priceYearly: "from $9980",
-    description: "For enterprise scale",
+    description: "For growing businesses",
   },
   {
     name: "Enterprise",
@@ -427,6 +427,19 @@ function PricingTier({
                 <Button
                   asChild
                   className="border-b-0 border-t border-x-0 hover:bg-purple-900 hover:text-white p-6 rounded-none text-gray-900 transition-colors w-full"
+                  variant="outline"
+                >
+                  <Link to="/onboarding-call" target="_blank">
+                    Call with us
+                    <ExternalLink className="h-4 ml-2 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            ) : tier.name === "Enterprise" ? (
+              <div className="grid grid-cols-1 gap-px">
+                <Button
+                  asChild
+                  className="border-b-0 border-t border-x-0 hover:bg-indigo-900 hover:text-white p-6 rounded-none text-gray-900 transition-colors w-full"
                   variant="outline"
                 >
                   <Link to="/onboarding-call" target="_blank">
