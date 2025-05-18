@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { ENTERPRISE_TIER } from "@/components/pricing/tiers";
 import { motion, AnimatePresence } from "framer-motion";
 import type { ReactNode } from "react";
 import { useGPUPricing } from "@/components/pricing/GPUPriceSimulator";
@@ -68,6 +69,13 @@ const tiers: Tier[] = [
     priceMonthly: "from $998",
     priceYearly: "from $9980",
     description: "SSO + custom integration",
+  },
+  {
+    name: "Enterprise",
+    id: "large_enterprise",
+    priceMonthly: "Custom",
+    priceYearly: "Custom",
+    description: "Talk to us",
   },
 ];
 
@@ -583,6 +591,8 @@ export function PricingPage() {
     
     if (tier.id === 'business') return true;
     
+    if (tier.id === 'large_enterprise') return true;
+    
     if (tier.id === 'creator' || tier.id === 'deployment') {
       if (isOnCreatorPlan || isOnDeploymentPlan) return true;
       
@@ -768,7 +778,20 @@ export function PricingPage() {
                     tier={filteredTiers.find(tier => tier.id === 'business')!}
                     isLoading={isLoading}
                     plans={_sub?.plans?.plans ?? []}
-                    className="overflow-hidden rounded-b-sm border border-t-0 bg-gradient-to-bl from-purple-50/10 via-purple-50/80 to-purple-100"
+                    className="border border-t-0 bg-gradient-to-bl from-purple-50/10 via-purple-50/80 to-purple-100"
+                    isYearly={isYearly}
+                  />
+                )}
+              </div>
+
+              {/* Enterprise Tier */}
+              <div>
+                {filteredTiers.find(tier => tier.id === 'large_enterprise') && (
+                  <PricingTier
+                    tier={filteredTiers.find(tier => tier.id === 'large_enterprise')!}
+                    isLoading={isLoading}
+                    plans={_sub?.plans?.plans ?? []}
+                    className="overflow-hidden rounded-b-sm border border-t-0 bg-gradient-to-bl from-indigo-50/10 via-indigo-50/80 to-indigo-100"
                     isYearly={isYearly}
                   />
                 )}
