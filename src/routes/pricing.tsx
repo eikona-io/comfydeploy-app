@@ -231,6 +231,25 @@ function PricingTier({
   showDeploymentTier?: boolean;
 }) {
   const getAvailableFeatures = (tierName: string) => {
+    if (tierName === "Business" && (!showCreatorTier || !showDeploymentTier)) {
+      return sections[0].features.filter((feature) => {
+        const value = feature.tiers[tierName as keyof TierFeature];
+        if ((typeof value === "boolean" && value) || (value !== undefined && value !== null)) {
+          return true;
+        }
+        
+        if (!showCreatorTier && feature.tiers.Creator) {
+          return true;
+        }
+        
+        if (!showDeploymentTier && feature.tiers.Deployment) {
+          return true;
+        }
+        
+        return false;
+      });
+    }
+    
     return sections[0].features.filter((feature) => {
       const value = feature.tiers[tierName as keyof TierFeature];
       if (typeof value === "boolean") return value;
@@ -382,10 +401,28 @@ function PricingTier({
                     tier.name === "Creator"
                       ? feature.tiers.Basic
                       : tier.name === "Deployment"
-                        ? feature.tiers.Creator
+                        ? (showCreatorTier ? feature.tiers.Creator : feature.tiers.Basic)
                         : tier.name === "Business"
-                          ? feature.tiers.Deployment
+                          ? (showDeploymentTier 
+                              ? feature.tiers.Deployment 
+                              : showCreatorTier 
+                                ? feature.tiers.Creator 
+                                : feature.tiers.Basic)
                           : null;
+                  
+                  if (tier.name === "Business") {
+                    if (!showDeploymentTier && feature.tiers.Deployment && 
+                        JSON.stringify(feature.tiers.Deployment) !== JSON.stringify(value) &&
+                        JSON.stringify(feature.tiers.Deployment) !== JSON.stringify(prevTierValue)) {
+                      return true;
+                    }
+                    
+                    if (!showCreatorTier && feature.tiers.Creator && 
+                        JSON.stringify(feature.tiers.Creator) !== JSON.stringify(value) &&
+                        JSON.stringify(feature.tiers.Creator) !== JSON.stringify(prevTierValue)) {
+                      return true;
+                    }
+                  }
 
                   return (
                     JSON.stringify(value) !== JSON.stringify(prevTierValue)
