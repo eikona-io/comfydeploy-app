@@ -273,6 +273,7 @@ function PricingTier({
 
   const getMonthlyPrice = (price: string) => {
     if (price === "Free") return "Free";
+    if (price === "Custom") return "Custom"; // Handle Custom price for Enterprise tier
     if (price.includes("from")) {
       if (!isYearly) return price;
       const amount = Number.parseInt(price.replace(/\D/g, ""));
@@ -285,6 +286,7 @@ function PricingTier({
 
   const getYearlyTotal = (price: string) => {
     if (price === "Free") return "Free";
+    if (price === "Custom") return "Custom"; // Handle Custom price for Enterprise tier
     if (price.includes("from")) {
       const amount = Number.parseInt(price.replace(/\D/g, ""));
       return `from $${amount * 10}`;
