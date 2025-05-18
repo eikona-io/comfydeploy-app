@@ -340,8 +340,7 @@ export function RunDetails(props: {
           </TabsContent>
           <TabsContent value="logs">
             <span className="pl-2 text-2xs text-muted-foreground">
-              *Logs are only available for <b>30 days</b>. Save it yourself if
-              you need backup.
+              *Logs are only available for <b>30 days</b>.
             </span>
             <ErrorBoundary fallback={() => <div>Error loading logs</div>}>
               <FinishedRunLogDisplay
