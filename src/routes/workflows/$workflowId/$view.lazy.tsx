@@ -74,6 +74,8 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
 import { PricingPage } from "@/routes/pricing";
+import { useCurrentPlanQuery } from "@/hooks/use-current-plan";
+import { LoadingIcon } from "@/components/loading-icon";
 
 interface Version {
   id: string;
@@ -167,20 +169,33 @@ function WorkflowPageComponent() {
 
   const { value: version } = useSelectedVersion(workflowId);
   const isAdminAndMember = useIsAdminAndMember();
+  const { isLoading: isPlanLoading } = useCurrentPlanQuery();
   const isDeploymentAllowed = useIsDeploymentAllowed();
 
   switch (currentView) {
     case "requests":
       view = (
         <PaddingLayout>
-          {!isDeploymentAllowed ? <PricingPage /> : <RequestPage />}
+          {isPlanLoading ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <LoadingIcon />
+            </div>
+          ) : !isDeploymentAllowed ? (
+            <PricingPage />
+          ) : (
+            <RequestPage />
+          )}
         </PaddingLayout>
       );
       break;
     case "deployment":
       view = (
         <PaddingLayout>
-          {!isDeploymentAllowed ? (
+          {isPlanLoading ? (
+            <div className="flex h-full w-full items-center justify-center">
+              <LoadingIcon />
+            </div>
+          ) : !isDeploymentAllowed ? (
             <PricingPage />
           ) : (
             <>
@@ -349,12 +364,14 @@ function WorkflowPageComponent() {
             {isAdminAndMember && (
               <SidebarGroup
                 className={cn(
-                  !isDeploymentAllowed && "bg-zinc-200/50 shadow-inner",
+                  !isDeploymentAllowed &&
+                    !isPlanLoading &&
+                    "bg-zinc-200/50 shadow-inner",
                 )}
               >
                 <SidebarGroupLabel className="flex justify-between">
                   API
-                  {!isDeploymentAllowed && (
+                  {!isDeploymentAllowed && !isPlanLoading && (
                     <Badge variant="purple" className="!text-2xs">
                       <Lock className="h-3 w-3" />
                       Deployment
@@ -375,7 +392,9 @@ function WorkflowPageComponent() {
                           className={cn(
                             currentView === tab && "bg-gray-200 text-gray-900",
                             "transition-colors",
-                            !isDeploymentAllowed && "opacity-60",
+                            !isDeploymentAllowed &&
+                              !isPlanLoading &&
+                              "opacity-60",
                           )}
                           asChild
                         >
@@ -384,7 +403,7 @@ function WorkflowPageComponent() {
                             type="button"
                           >
                             {tab}
-                            {!isDeploymentAllowed && (
+                            {!isDeploymentAllowed && !isPlanLoading && (
                               <Lock className="!h-3.5 !w-3.5" />
                             )}
                           </button>

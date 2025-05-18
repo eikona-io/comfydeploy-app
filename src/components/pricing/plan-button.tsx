@@ -191,12 +191,9 @@ export function UpgradeButton(props: PlanButtonProps) {
 
   // Parse the subscription data from props.data
   const subscriptionData = props.subscription;
-  console.log(subscriptionData?.products);
   const hasScheduledChange = subscriptionData?.products?.find(
     (plan: any) => plan.status === "scheduled",
   );
-
-  console.log(subscriptionData);
 
   const label = getButtonLabel(
     props.plans || [],
