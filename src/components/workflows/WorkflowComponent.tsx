@@ -24,6 +24,7 @@ import { StatusBadge } from "@/components/workflows/StatusBadge";
 import { useAuthStore } from "@/lib/auth-store";
 import {
   AlertCircle,
+  Archive,
   CheckCircle,
   ChevronDown,
   ExternalLink,
@@ -342,6 +343,7 @@ export function RunDetails(props: {
               <FinishedRunLogDisplay
                 runId={run.id}
                 modalFnCallId={run.modal_function_call_id}
+                runUpdatedAt={run.updated_at}
               />
             </ErrorBoundary>
           </TabsContent>
@@ -1134,7 +1136,8 @@ type RunLog = {
 function FinishedRunLogDisplay({
   runId,
   modalFnCallId,
-}: { runId: string; modalFnCallId: string }) {
+  runUpdatedAt,
+}: { runId: string; modalFnCallId: string; runUpdatedAt: string }) {
   const { data: runLogs, isLoading } = useQuery<RunLog[]>({
     queryKey: ["clickhouse-run-logs", runId],
     enabled: !!runId,
@@ -1142,10 +1145,37 @@ function FinishedRunLogDisplay({
 
   const [showRawLogs, setShowRawLogs] = useState(false);
 
+  // Add check for logs older than 30 days
+  const isLogsExpired = useMemo(() => {
+    if (!runUpdatedAt) return false;
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    return new Date(runUpdatedAt) < thirtyDaysAgo;
+  }, [runUpdatedAt]);
+
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
         <Loader2 className="h-4 w-4 animate-spin" />
+      </div>
+    );
+  }
+
+  if (isLogsExpired) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="flex max-w-md flex-col items-center rounded-lg border border-muted bg-muted/30 px-6 py-8 text-center shadow-md">
+          <div className="mb-2 rounded-full bg-muted/50 p-3">
+            <Archive className="h-5 w-5 text-muted-foreground" />
+          </div>
+          <h3 className="mb-1 font-medium text-sm">
+            Log Retention Limit Reached
+          </h3>
+          <p className="text-muted-foreground text-xs leading-5">
+            These logs are no longer available as they have exceeded our 30-day
+            retention period.
+          </p>
+        </div>
       </div>
     );
   }
