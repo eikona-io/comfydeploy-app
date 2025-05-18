@@ -68,14 +68,14 @@ const tiers: Tier[] = [
     id: "business",
     priceMonthly: "from $998",
     priceYearly: "from $9980",
-    description: "SSO + custom integration",
+    description: "For enterprise scale",
   },
   {
     name: "Enterprise",
     id: "large_enterprise",
     priceMonthly: "Custom",
     priceYearly: "Custom",
-    description: "Talk to us",
+    description: "SSO + custom integration",
   },
 ];
 
