@@ -67,7 +67,7 @@ const tiers: Tier[] = [
     id: "business",
     priceMonthly: "from $998",
     priceYearly: "from $9980",
-    description: "For enterprise scale",
+    description: "SSO + custom integration",
   },
 ];
 
@@ -260,7 +260,7 @@ function PricingTier({
   const { data: _sub } = useCurrentPlanWithStatus();
 
   // Check if this tier is the user's current plan
-  const isCurrentPlan = _sub?.plans?.plans?.some((plan) =>
+  const isCurrentPlan = _sub?.plans?.plans?.some((plan: string) =>
     plan.startsWith(tier.id),
   );
 
@@ -572,7 +572,27 @@ export function PricingPage() {
   const { data: _sub, isLoading } = useCurrentPlanWithStatus();
   const [isYearly, setIsYearly] = useState(false);
 
-  // console.log(_sub);
+  // Determine user's current plan
+  const userPlans = _sub?.plans?.plans || [];
+  const isOnCreatorPlan = userPlans.some((plan: string) => plan.startsWith('creator'));
+  const isOnDeploymentPlan = userPlans.some((plan: string) => plan.startsWith('deployment'));
+  const isOnBusinessPlan = userPlans.some((plan: string) => plan.startsWith('business'));
+  
+  const filteredTiers = tiers.filter((tier) => {
+    if (tier.id === 'free') return true;
+    
+    if (tier.id === 'business') return true;
+    
+    if (tier.id === 'creator' || tier.id === 'deployment') {
+      if (isOnCreatorPlan || isOnDeploymentPlan) return true;
+      
+      if (userPlans.length === 0 || isOnBusinessPlan) return false;
+      
+      return true;
+    }
+    
+    return true;
+  });
 
   const isCancelled = _sub?.sub?.cancel_at_period_end;
 
@@ -696,42 +716,62 @@ export function PricingPage() {
             {/* Free Tier */}
             <div className="relative z-10">
               <div>
-                <PricingTier
-                  tier={tiers[0]}
-                  isLoading={isLoading}
-                  plans={_sub?.plans?.plans ?? []}
-                  className="rounded-t-sm border bg-gradient-to-bl from-gray-50/10 via-gray-50/80 to-gray-100"
-                  isYearly={isYearly}
-                />
+                {filteredTiers.find(tier => tier.id === 'free') && (
+                  <PricingTier
+                    tier={filteredTiers.find(tier => tier.id === 'free')!}
+                    isLoading={isLoading}
+                    plans={_sub?.plans?.plans ?? []}
+                    className="rounded-t-sm border bg-gradient-to-bl from-gray-50/10 via-gray-50/80 to-gray-100"
+                    isYearly={isYearly}
+                  />
+                )}
               </div>
 
               {/* Creator and Deployment Tiers */}
-              <div className="grid grid-cols-1 border border-gray-200 border-t-0 lg:grid-cols-2">
-                <PricingTier
-                  tier={tiers[1]}
-                  isLoading={isLoading}
-                  plans={_sub?.plans?.plans ?? []}
-                  className="bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100 lg:border-r"
-                  isYearly={isYearly}
-                />
-                <PricingTier
-                  tier={tiers[2]}
-                  isLoading={isLoading}
-                  plans={_sub?.plans?.plans ?? []}
-                  className="bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100"
-                  isYearly={isYearly}
-                />
-              </div>
+              {(filteredTiers.some(tier => tier.id === 'creator') || 
+                filteredTiers.some(tier => tier.id === 'deployment')) && (
+                <div className={cn(
+                  "grid border border-gray-200 border-t-0",
+                  (filteredTiers.some(tier => tier.id === 'creator') && 
+                   filteredTiers.some(tier => tier.id === 'deployment')) 
+                    ? "grid-cols-1 lg:grid-cols-2" 
+                    : "grid-cols-1"
+                )}>
+                  {filteredTiers.find(tier => tier.id === 'creator') && (
+                    <PricingTier
+                      tier={filteredTiers.find(tier => tier.id === 'creator')!}
+                      isLoading={isLoading}
+                      plans={_sub?.plans?.plans ?? []}
+                      className={cn(
+                        "bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100",
+                        filteredTiers.some(tier => tier.id === 'deployment') ? "lg:border-r" : ""
+                      )}
+                      isYearly={isYearly}
+                    />
+                  )}
+                  {filteredTiers.find(tier => tier.id === 'deployment') && (
+                    <PricingTier
+                      tier={filteredTiers.find(tier => tier.id === 'deployment')!}
+                      isLoading={isLoading}
+                      plans={_sub?.plans?.plans ?? []}
+                      className="bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100"
+                      isYearly={isYearly}
+                    />
+                  )}
+                </div>
+              )}
 
               {/* Business Tier */}
               <div>
-                <PricingTier
-                  tier={tiers[3]}
-                  isLoading={isLoading}
-                  plans={_sub?.plans?.plans ?? []}
-                  className="overflow-hidden rounded-b-sm border border-t-0 bg-gradient-to-bl from-purple-50/10 via-purple-50/80 to-purple-100"
-                  isYearly={isYearly}
-                />
+                {filteredTiers.find(tier => tier.id === 'business') && (
+                  <PricingTier
+                    tier={filteredTiers.find(tier => tier.id === 'business')!}
+                    isLoading={isLoading}
+                    plans={_sub?.plans?.plans ?? []}
+                    className="overflow-hidden rounded-b-sm border border-t-0 bg-gradient-to-bl from-purple-50/10 via-purple-50/80 to-purple-100"
+                    isYearly={isYearly}
+                  />
+                )}
               </div>
             </div>
 
