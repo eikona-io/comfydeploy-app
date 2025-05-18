@@ -339,6 +339,10 @@ export function RunDetails(props: {
             <FilteredWorkflowExecutionGraph run={run as any} />
           </TabsContent>
           <TabsContent value="logs">
+            <span className="pl-2 text-2xs text-muted-foreground">
+              *Logs are only available for <b>30 days</b>. Save it yourself if
+              you need backup.
+            </span>
             <ErrorBoundary fallback={() => <div>Error loading logs</div>}>
               <FinishedRunLogDisplay
                 runId={run.id}
@@ -1328,7 +1332,7 @@ function FinishedRunLogDisplay({
         </div>
       ) : (
         <ScrollArea>
-          <div className="h-[calc(100vh-520px)]">
+          <div className="h-[calc(100vh-550px)]">
             {runLogs.map((entry, index) => {
               return (
                 <div
