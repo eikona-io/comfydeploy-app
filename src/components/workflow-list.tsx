@@ -264,19 +264,10 @@ export function WorkflowList() {
                   view={view}
                 />
               ))}
-            {isFetchingNextPage && (
-              <div
-                className={cn(
-                  view === "grid"
-                    ? "mx-auto grid w-full max-w-screen-2xl grid-cols-1 justify-items-center gap-4 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                    : "mx-auto flex w-full max-w-screen-2xl flex-col px-4 pb-4",
-                )}
-              >
-                {Array.from({ length: 8 }, (_, index) => (
-                  <WorkflowCardSkeleton key={index} view={view} />
-                ))}
-              </div>
-            )}
+            {!isFetchingNextPage &&
+              Array.from({ length: 4 }, (_, index) => (
+                <WorkflowCardSkeleton key={index} view={view} />
+              ))}
           </div>
         )}
       </ScrollArea>
