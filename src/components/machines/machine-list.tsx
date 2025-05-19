@@ -80,9 +80,9 @@ export function MachineList() {
   );
 
   return (
-    <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1200px] px-2 py-4 md:px-10">
-      <div className="mb-2 flex items-start justify-between gap-4">
-        <div className="relative w-[300px]">
+    <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="relative w-full max-w-sm">
           <Input
             placeholder="Filter machines..."
             value={searchValue ?? ""}
@@ -142,7 +142,7 @@ export function MachineList() {
       </div>
 
       {query.isLoading ? (
-        <div className="mx-auto w-full max-w-[1200px] overflow-clip rounded-xl border">
+        <div className="mx-auto w-full max-w-screen-2xl overflow-clip rounded-xl border">
           {[...Array(8)].map((_, i) => (
             <div
               key={`loading-${i}`}
@@ -169,7 +169,7 @@ export function MachineList() {
           ))}
         </div>
       ) : query.data?.pages[0].length === 0 ? (
-        <div className="mx-auto w-full max-w-[1200px]">
+        <div className="mx-auto w-full max-w-screen-2xl">
           <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-xl border bg-white/50 p-8 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <Server className="h-6 w-6 text-primary" />
@@ -219,7 +219,7 @@ export function MachineList() {
         </div>
       ) : (
         <VirtualizedInfiniteList
-          className="!h-full fab-machine-list mx-auto w-full max-w-[1200px] rounded-xl border"
+          className="!h-full fab-machine-list mx-auto w-full max-w-screen-2xl rounded-xl border"
           containerClassName="divide-y divide-border"
           queryResult={query}
           renderItem={(machine: Machine, index) => (

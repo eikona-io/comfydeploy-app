@@ -139,7 +139,7 @@ export function WorkflowList() {
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex w-full flex-row items-center gap-2 px-4 py-4">
+      <div className="flex w-full flex-row items-center gap-2 p-4">
         <div className="relative max-w-sm flex-1">
           <Input
             placeholder="Filter workflows..."
@@ -264,7 +264,7 @@ export function WorkflowList() {
                   view={view}
                 />
               ))}
-            {!isFetchingNextPage &&
+            {isFetchingNextPage &&
               Array.from({ length: 4 }, (_, index) => (
                 <WorkflowCardSkeleton key={index} view={view} />
               ))}

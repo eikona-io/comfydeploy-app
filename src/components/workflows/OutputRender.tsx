@@ -45,7 +45,7 @@ import {
 import { CodeBlock } from "../ui/code-blocks";
 import { useAddAsset } from "@/hooks/hook";
 import { toast } from "sonner";
-import { MoveAssetDialog } from "@/components/asset-browser";
+import { MoveAssetDialog } from "../move-asset-dialog";
 
 // Create a lazy-loaded version of the component
 const LazyModelRenderer = lazy(() =>

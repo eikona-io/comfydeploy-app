@@ -264,11 +264,7 @@ export function AssetBrowser({
     : [];
 
   return (
-    <div
-      className={cn(
-        "@container flex h-full w-full flex-col gap-2 overflow-hidden",
-      )}
-    >
+    <div className="@container mx-auto flex h-full w-full max-w-screen-2xl flex-col gap-2 overflow-hidden">
       {/* Move Asset Dialog */}
       {assetToMove && (
         <MoveAssetDialog
@@ -302,7 +298,6 @@ export function AssetBrowser({
 
         {/* View and selection controls */}
         <div className="flex items-center gap-1">
-          {!isPanel && <SearchAssetsInputBox />}
           {isSelectionMode ? (
             <div className="mr-2 flex items-center gap-2">
               <span className="text-sm">{selectedAssets.length} selected</span>
@@ -390,7 +385,7 @@ export function AssetBrowser({
       {/* Scrollable container */}
       <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent flex-1 overflow-y-auto">
         {viewType === "grid" ? (
-          <div className="grid min-h-[200px] w-full @[300px]:grid-cols-2 @[500px]:grid-cols-3 @[700px]:grid-cols-4 @[900px]:grid-cols-5 grid-cols-2 gap-3 p-4">
+          <div className="grid min-h-[200px] w-full @[1100px]:grid-cols-6 @[300px]:grid-cols-2 @[500px]:grid-cols-3 @[700px]:grid-cols-4 @[900px]:grid-cols-5 grid-cols-2 gap-3 p-4">
             {sortedAssets?.map((asset) => (
               <div
                 key={asset.id}
@@ -430,7 +425,7 @@ export function AssetBrowser({
                     <FileURLRender
                       canFullScreen={!isPanel && !isSelectionMode}
                       url={asset.url || ""}
-                      imgClasses="max-w-[230px] w-full h-[230px] object-cover object-center rounded-[8px] transition-all duration-300 ease-in-out group-hover:scale-105"
+                      imgClasses="max-w-[240px] w-full h-[240px] object-cover object-center rounded-[8px] transition-all duration-300 ease-in-out group-hover:scale-105"
                     />
                   </div>
                 )}
@@ -653,7 +648,7 @@ export function AssetBrowser({
   );
 }
 
-function SearchAssetsInputBox() {
+export function SearchAssetsInputBox() {
   const { setCurrentPath } = useAssetBrowserStore();
   const [searchValue, setSearchValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -743,15 +738,15 @@ function SearchAssetsInputBox() {
   return (
     <div
       className={cn(
-        "relative mr-2 hidden transition-all duration-200 ease-in-out lg:block",
-        isFocused ? "w-64" : "w-24 text-muted-foreground",
+        "relative mr-2 hidden w-full max-w-sm transition-all duration-200 ease-in-out lg:block",
+        // isFocused ? "w-64" : "w-24 text-muted-foreground",
       )}
     >
-      <Search className="-translate-y-1/2 absolute top-1/2 left-0 h-3.5 w-3.5 text-muted-foreground" />
+      <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
       <Input
         ref={inputRef}
         placeholder="Search assets"
-        className="rounded-none border-0 border-b py-1 pr-6 pl-6 focus-visible:border-primary focus-visible:ring-0"
+        className="pl-9"
         value={searchValue}
         onChange={(e) => setSearchValue(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -765,7 +760,7 @@ function SearchAssetsInputBox() {
         <Button
           variant="ghost"
           size="icon"
-          className="-translate-y-1/2 absolute top-1/2 right-0 h-6 w-6 p-0"
+          className="-translate-y-1/2 absolute top-1/2 right-3 h-6 w-6 p-0"
           onClick={clearSearch}
         >
           <X className="h-3 w-3" />
@@ -816,12 +811,6 @@ function SearchAssetsInputBox() {
       )}
     </div>
   );
-}
-
-function getParentPath(path: string): string {
-  const parts = path.split("/");
-  parts.pop();
-  return parts.length === 0 ? "/" : parts.join("/");
 }
 
 function AssetActions({
@@ -892,265 +881,6 @@ function AssetActions({
         onConfirm={() => handleDeleteAsset(asset.id)}
       />
     </>
-  );
-}
-
-interface MoveAssetDialogProps {
-  asset: Asset;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: (path: string) => void;
-  isBulkOperation?: boolean;
-  selectedCount?: number;
-  dialogTitle?: string;
-  dialogDescription?: string;
-  confirmText?: string;
-}
-
-interface FolderNode {
-  id: string;
-  name: string;
-  path: string;
-  children: FolderNode[];
-  isLoaded: boolean;
-  isExpanded: boolean;
-}
-
-export { MoveAssetDialog } from "./move-asset-dialog";
-
-function MoveAssetDialogInternal({
-  asset,
-  open,
-  onOpenChange,
-  onConfirm,
-  isBulkOperation = false,
-  selectedCount = 1,
-  dialogTitle = isBulkOperation ? `Move ${selectedCount} Assets` : "Move Asset",
-  dialogDescription = "Select the destination folder",
-  confirmText = "Move Here",
-}: MoveAssetDialogProps) {
-  const [selectedPath, setSelectedPath] = useState("");
-  const [folderTree, setFolderTree] = useState<FolderNode[]>([
-    {
-      id: "root",
-      name: "Assets",
-      path: "/",
-      children: [],
-      isLoaded: false,
-      isExpanded: true,
-    },
-  ]);
-  const [isLoading, setIsLoading] = useState(false);
-
-  // Get the parent path of the asset being moved
-  const assetParentPath = getParentPath(asset.path);
-
-  // Load root folders initially
-  useEffect(() => {
-    if (open) {
-      loadFolders("/", "root");
-      setSelectedPath("/"); // Default selection is root
-    }
-  }, [open]);
-
-  // Function to load folders at a specific path
-  const loadFolders = async (path: string, parentId: string) => {
-    setIsLoading(true);
-    try {
-      // Direct API call to get folders
-      const response = await api({
-        url: `assets?path=${encodeURIComponent(path)}`,
-      });
-
-      // Filter to only include folders
-      const folders = (response || []).filter((item: Asset) => item.is_folder);
-
-      // Update the folder tree
-      setFolderTree((prevTree) => {
-        const newTree = [...prevTree];
-        updateFolderNode(newTree, parentId, folders);
-        return newTree;
-      });
-    } catch (error) {
-      console.error("Error loading folders:", error);
-      toast.error("Failed to load folders");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Helper function to update a node in the folder tree
-  const updateFolderNode = (
-    tree: FolderNode[],
-    nodeId: string,
-    folders: Asset[],
-  ) => {
-    for (let i = 0; i < tree.length; i++) {
-      const node = tree[i];
-
-      if (node.id === nodeId) {
-        // Create child nodes from the fetched folders
-        node.children = folders.map((folder) => ({
-          id: folder.id,
-          name: folder.name,
-          path: folder.path,
-          children: [],
-          isLoaded: false,
-          isExpanded: false,
-        }));
-        node.isLoaded = true;
-        return true;
-      }
-
-      if (node.children.length > 0) {
-        if (updateFolderNode(node.children, nodeId, folders)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  };
-
-  // Toggle folder expansion
-  const toggleFolder = (nodeId: string, path: string) => {
-    setFolderTree((prevTree) => {
-      const newTree = [...prevTree];
-
-      const toggleNode = (nodes: FolderNode[]) => {
-        for (let i = 0; i < nodes.length; i++) {
-          const node = nodes[i];
-
-          if (node.id === nodeId) {
-            // If not loaded, load the folders
-            if (!node.isLoaded) {
-              loadFolders(path, nodeId);
-            }
-
-            // Toggle expansion
-            node.isExpanded = !node.isExpanded;
-            return true;
-          }
-
-          if (node.children.length > 0) {
-            if (toggleNode(node.children)) {
-              return true;
-            }
-          }
-        }
-        return false;
-      };
-
-      toggleNode(newTree);
-      return newTree;
-    });
-  };
-
-  // Handle folder selection
-  const handleSelect = (path: string) => {
-    setSelectedPath(path);
-  };
-
-  // Handle move confirmation
-  const handleConfirm = () => {
-    // Don't allow moving to the same location
-    if (assetParentPath === selectedPath) {
-      toast.error("Cannot move to the same location");
-      return;
-    }
-
-    if (selectedPath === "/") {
-      onConfirm("");
-      return;
-    }
-
-    onConfirm(selectedPath);
-  };
-
-  // Render the folder tree
-  const renderFolderTree = (nodes: FolderNode[], depth = 0) => {
-    return nodes.map((node) => (
-      <div key={node.id} style={{ marginLeft: `${depth * 8}px` }}>
-        <div
-          className={cn(
-            "flex cursor-pointer items-center gap-2 rounded-[8px] py-1 pr-2 pl-2 hover:bg-gray-50",
-            selectedPath === node.path && "bg-blue-50",
-          )}
-        >
-          {/* Expand/collapse button */}
-          <button
-            type="button"
-            className="flex h-5 w-5 items-center justify-center text-gray-500"
-            onClick={() => toggleFolder(node.id, node.path)}
-          >
-            {node.isExpanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-
-          {/* Folder icon and name */}
-          <button
-            className="flex flex-1 items-center gap-2 text-left"
-            onClick={() => handleSelect(node.path)}
-            type="button"
-          >
-            {node.isExpanded ? (
-              <FolderOpen className="h-4 w-4 text-gray-400" />
-            ) : (
-              <Folder className="h-4 w-4 text-gray-400" />
-            )}
-            <span className="max-w-[150px] truncate text-sm" title={node.name}>
-              {node.name}
-            </span>
-          </button>
-
-          {/* Selection indicator */}
-          {selectedPath === node.path && (
-            <Check className="h-4 w-4 text-blue-500" />
-          )}
-        </div>
-
-        {/* Render children if expanded */}
-        {node.isExpanded && node.children.length > 0 && (
-          <div>{renderFolderTree(node.children, depth + 1)}</div>
-        )}
-      </div>
-    ));
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px]">
-        <DialogHeader>
-          <DialogTitle>{dialogTitle}</DialogTitle>
-          <DialogDescription>{dialogDescription}</DialogDescription>
-        </DialogHeader>
-
-        {/* Folder tree container */}
-        <div className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent h-[350px] overflow-y-auto rounded-md border p-2">
-          {isLoading && folderTree[0].children.length === 0 ? (
-            <div className="flex h-full w-full items-center justify-center">
-              <Loader2 className="h-6 w-6 animate-spin" />
-            </div>
-          ) : (
-            renderFolderTree(folderTree)
-          )}
-        </div>
-
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirm}
-            disabled={!selectedPath || selectedPath === assetParentPath}
-          >
-            {confirmText}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
   );
 }
 

@@ -62,7 +62,7 @@ export function DownloadingModels() {
     <Collapsible
       open={isExpanded}
       onOpenChange={setIsExpanded}
-      className="mb-4 rounded-md border bg-card"
+      className="rounded-md border bg-card"
     >
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-2">

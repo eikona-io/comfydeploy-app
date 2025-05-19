@@ -1157,145 +1157,149 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
   return (
     <div className={cn("flex h-full flex-col gap-4", className)}>
       <div className="flex flex-col gap-4">
-        <h3 className="font-bold text-2xl">Model Browser</h3>
-        <DownloadingModels />
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-full sm:w-auto sm:flex-1">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="relative w-full max-w-sm sm:w-auto sm:flex-1">
             <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search models..."
+              placeholder="Search models"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
           </div>
 
-          {/* Sorting controls */}
-          <div className="flex items-center gap-2 rounded-md border bg-white/95 p-1">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex h-8 items-center gap-1">
-                  <span>{sortBy === "name" ? "Name" : "File size"}</span>
-                  <ChevronDownIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup
-                  value={sortBy}
-                  onValueChange={(v) => setSortBy(v as "name" | "size")}
-                >
-                  <DropdownMenuRadioItem value="name">
-                    Name
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="size">
-                    File size
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="flex items-center gap-2">
+            {/* Sorting controls */}
+            <div className="flex items-center gap-2 rounded-md border bg-white/95 p-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex h-8 items-center gap-1"
+                  >
+                    <span>{sortBy === "name" ? "Name" : "File size"}</span>
+                    <ChevronDownIcon className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuRadioGroup
+                    value={sortBy}
+                    onValueChange={(v) => setSortBy(v as "name" | "size")}
+                  >
+                    <DropdownMenuRadioItem value="name">
+                      Name
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="size">
+                      File size
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            <div className="h-5 w-[1px] bg-gray-200" />
+              <div className="h-5 w-[1px] bg-gray-200" />
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() =>
-                setSortDirection(sortDirection === "asc" ? "desc" : "asc")
-              }
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() =>
+                  setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+                }
+              >
+                {sortDirection === "asc" ? (
+                  <ArrowUpWideNarrow className="h-4 w-4" />
+                ) : (
+                  <ArrowDownNarrowWide className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                iconPlacement="left"
+                Icon={Upload}
+                onClick={async () => {
+                  onAddModel("");
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                iconPlacement="left"
+                Icon={RefreshCcw}
+                onClick={async () => {
+                  await queryClient.invalidateQueries({ queryKey: ["volume"] });
+                  toast.success("Models refreshed");
+                }}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowNewFolderDialog(true)}
+                title="Create folder"
+              >
+                <FolderPlus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Filter tabs */}
+            <Tabs
+              value={filter}
+              onValueChange={(value) => setFilter(value as ModelFilter)}
             >
-              {sortDirection === "asc" ? (
-                <ArrowUpWideNarrow className="h-4 w-4" />
-              ) : (
-                <ArrowDownNarrowWide className="h-4 w-4" />
-              )}
-            </Button>
+              <motion.div className="inline-flex items-center rounded-lg bg-white/95 py-0.5 ring-1 ring-gray-200/50">
+                <TabsList className="relative flex w-fit gap-1 bg-transparent">
+                  <motion.div layout className="relative">
+                    <TabsTrigger
+                      value="private"
+                      className={cn(
+                        "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                        filter === "private"
+                          ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                          : "text-gray-600 hover:bg-gray-100",
+                      )}
+                    >
+                      Private
+                    </TabsTrigger>
+                  </motion.div>
+                  <motion.div layout className="relative">
+                    <TabsTrigger
+                      value="public"
+                      className={cn(
+                        "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                        filter === "public"
+                          ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                          : "text-gray-600 hover:bg-gray-100",
+                      )}
+                    >
+                      Public
+                    </TabsTrigger>
+                  </motion.div>
+                  <motion.div layout className="relative">
+                    <TabsTrigger
+                      value="all"
+                      className={cn(
+                        "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                        filter === "all"
+                          ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
+                          : "text-gray-600 hover:bg-gray-100",
+                      )}
+                    >
+                      All
+                    </TabsTrigger>
+                  </motion.div>
+                </TabsList>
+              </motion.div>
+            </Tabs>
           </div>
-
-          {/* Action buttons */}
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              iconPlacement="left"
-              Icon={Upload}
-              onClick={async () => {
-                onAddModel("");
-              }}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              iconPlacement="left"
-              Icon={RefreshCcw}
-              onClick={async () => {
-                await queryClient.invalidateQueries({ queryKey: ["volume"] });
-                toast.success("Models refreshed");
-              }}
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowNewFolderDialog(true)}
-              title="Create folder"
-            >
-              <FolderPlus className="h-4 w-4" />
-            </Button>
-          </div>
-
-          {/* Filter tabs */}
-          <Tabs
-            value={filter}
-            onValueChange={(value) => setFilter(value as ModelFilter)}
-          >
-            <motion.div className="inline-flex items-center rounded-lg bg-white/95 py-0.5 ring-1 ring-gray-200/50">
-              <TabsList className="relative flex w-fit gap-1 bg-transparent">
-                <motion.div layout className="relative">
-                  <TabsTrigger
-                    value="private"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      filter === "private"
-                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
-                        : "text-gray-600 hover:bg-gray-100",
-                    )}
-                  >
-                    Private
-                  </TabsTrigger>
-                </motion.div>
-                <motion.div layout className="relative">
-                  <TabsTrigger
-                    value="public"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      filter === "public"
-                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
-                        : "text-gray-600 hover:bg-gray-100",
-                    )}
-                  >
-                    Public
-                  </TabsTrigger>
-                </motion.div>
-                <motion.div layout className="relative">
-                  <TabsTrigger
-                    value="all"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      filter === "all"
-                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50"
-                        : "text-gray-600 hover:bg-gray-100",
-                    )}
-                  >
-                    All
-                  </TabsTrigger>
-                </motion.div>
-              </TabsList>
-            </motion.div>
-          </Tabs>
         </div>
+        <DownloadingModels />
       </div>
 
-      <div className="flex-1 overflow-auto rounded-sm border border-gray-200 bg-muted/20">
+      <div className="mx-auto w-full max-w-screen-2xl flex-1 overflow-auto rounded-sm border border-gray-200 bg-muted/20">
         {isLoadingPrivate || isLoadingPublic ? (
           <div className="flex flex-col gap-4 p-4">
             {Array.from({ length: 3 }).map((_, i) => (

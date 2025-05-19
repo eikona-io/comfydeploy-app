@@ -1,4 +1,4 @@
-import { AssetBrowser } from "@/components/asset-browser";
+import { AssetBrowser, SearchAssetsInputBox } from "@/components/asset-browser";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,10 +55,10 @@ export function AssetsPage() {
   };
 
   return (
-    <UploadZone className="h-full w-full max-w-[1200px]">
+    <UploadZone className="h-full w-full">
       <div className="mx-auto flex h-full w-full flex-col pt-2">
         <div className="flex items-center justify-between px-4 py-2">
-          <h1 className="font-semibold text-lg">Assets</h1>
+          <SearchAssetsInputBox />
           <div className="flex items-center gap-2">
             <Button
               variant="outline"

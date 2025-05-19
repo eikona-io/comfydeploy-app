@@ -29,7 +29,7 @@ import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { downloadImage } from "@/utils/download-image";
 import { queryClient } from "@/lib/providers";
-import { MoveAssetDialog } from "@/components/asset-browser";
+import { MoveAssetDialog } from "./move-asset-dialog";
 import { useAddAsset } from "@/hooks/hook";
 
 type GalleryViewProps = {
