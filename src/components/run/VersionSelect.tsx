@@ -164,10 +164,12 @@ export async function getWorkflowJSON(
 export function CopyWorkflowVersion({
   workflow_id,
   version,
+  machine_version_id,
   className,
 }: {
   workflow_id: string;
   version: number;
+  machine_version_id?: string;
   className?: string;
 }) {
   const { workflow } = useCurrentWorkflow(workflow_id);
@@ -268,6 +270,7 @@ export function CopyWorkflowVersion({
               toast.dismiss(id);
             }
           }}
+          disabled={!machine_version_id}
         >
           Copy Export Format
         </DropdownMenuItem>

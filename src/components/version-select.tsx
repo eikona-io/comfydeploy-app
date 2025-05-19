@@ -332,6 +332,7 @@ function VersionRow({
               <CopyWorkflowVersion
                 workflow_id={item.workflow_id}
                 version={item.version}
+                machine_version_id={item.machine_version_id}
                 className="h-6 text-[10px] w-fit"
               />
             </div>
