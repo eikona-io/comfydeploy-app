@@ -8,6 +8,7 @@ import * as THREE from "three";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { Environment } from "@react-three/drei";
 
 function Model({ url }: { url: string }) {
   const fileExtension = url.split(".").pop()?.toLowerCase();
@@ -131,10 +132,20 @@ function ModelRendererComponent({
         }}
         performance={{ min: 0.5 }}
       >
-        {/* Lighting setup with dynamic intensity */}
+        {/* Modify lighting setup */}
         <ambientLight intensity={lightIntensity} />
-        <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-        <directionalLight position={[-5, 5, -5]} intensity={0.5} />
+        <directionalLight
+          position={[5, 5, 5]}
+          intensity={lightIntensity * 0.25}
+          castShadow
+        />
+        <directionalLight
+          position={[-5, 5, -5]}
+          intensity={lightIntensity * 0.125}
+        />
+
+        {/* Add environment lighting */}
+        <Environment preset="sunset" />
 
         <Suspense fallback={<ModelLoader />}>
           <Model url={url} />

@@ -135,7 +135,8 @@ function _FileURLRender({
   // For 3D models, use the separate component
   if (
     lowercaseFilename.endsWith(".glb") ||
-    lowercaseFilename.endsWith(".gltf")
+    lowercaseFilename.endsWith(".gltf") ||
+    lowercaseFilename.endsWith(".obj")
   ) {
     return (
       <ModelRenderer
