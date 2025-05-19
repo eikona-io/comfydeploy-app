@@ -36,5 +36,18 @@ export default defineConfig(({ command, mode }) => {
       },
     },
     define: processEnvDefinitions,
+    build: {
+      assetsDir: "assets",
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            // Improve chunking strategy for dynamic imports
+            if (id.includes("workflow-preview")) {
+              return "comfyui-flow";
+            }
+          },
+        },
+      },
+    },
   };
 });
