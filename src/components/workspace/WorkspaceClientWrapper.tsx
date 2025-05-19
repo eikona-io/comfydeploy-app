@@ -21,6 +21,8 @@ import { SessionCreator } from "./SessionView";
 import { WorkspaceLoading, WorkspaceMachineLoading } from "./WorkspaceLoading";
 import { SessionCreationDialog } from "./session-creator-dialog";
 import { SessionCreatorForm } from "./session-creator-form";
+import { ErrorBoundary } from "../error-boundary";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 const ComfyUIFlow = lazy(() =>
   import("../workflow-preview/comfyui-flow").then((mod) => ({
@@ -278,10 +280,35 @@ export function WorkspaceClientWrapper({
                     <ChevronRight size={20} />
                   </Button>
                 )}
-                <ComfyUIFlow
-                  workflow={versionData.workflow}
-                  apiFormat={versionData.workflow_api}
-                />
+                <ErrorBoundary
+                  fallback={(error) => (
+                    <div className="flex h-full w-full flex-col items-center justify-center rounded-lg border border-gray-200 bg-gray-50/50 p-4 text-center">
+                      <div className="mb-4 text-destructive">
+                        <AlertTriangle className="mx-auto h-10 w-10" />
+                      </div>
+                      <h3 className="mb-2 font-medium text-lg">
+                        Something went wrong
+                      </h3>
+                      <p className="mb-4 text-muted-foreground text-sm">
+                        There was an error loading the workflow preview:{" "}
+                        {error.message}
+                      </p>
+                      <Button
+                        onClick={() => window.location.reload()}
+                        variant="default"
+                        className="gap-2"
+                      >
+                        <RefreshCw size={16} />
+                        Refresh page
+                      </Button>
+                    </div>
+                  )}
+                >
+                  <ComfyUIFlow
+                    workflow={versionData.workflow}
+                    apiFormat={versionData.workflow_api}
+                  />
+                </ErrorBoundary>
               </motion.div>
             )}
           </div>
