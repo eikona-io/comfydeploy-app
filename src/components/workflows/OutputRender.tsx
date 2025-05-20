@@ -91,6 +91,7 @@ type fileURLRenderProps = {
   isMainView?: boolean;
   canFullScreen?: boolean;
   isSmallView?: boolean;
+  canDownload?: boolean;
 };
 
 function _FileURLRender({
@@ -357,7 +358,27 @@ export function FileURLRender(props: fileURLRenderProps) {
           </Dialog>
         </>
       ) : (
-        <_FileURLRender {...props} />
+        <div className={cn("group !shadow-none relative", props.imgClasses)}>
+          <_FileURLRender {...props} />
+          {props.canDownload && (
+            <div className="absolute top-2 right-2">
+              <Button
+                size="icon"
+                className="opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100"
+                hideLoading
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  await downloadImage({
+                    url: props.url,
+                    fileName: props.url.split("/").pop(),
+                  });
+                }}
+              >
+                <Download className="h-4 w-4 " />
+              </Button>
+            </div>
+          )}
+        </div>
       )}
     </ErrorBoundary>
   );
@@ -390,8 +411,6 @@ function FileURLRenderMulti({
   columns?: number;
   isMainView?: boolean;
 }) {
-  const [openOnIndex, setOpenOnIndex] = useState<number | null>(null);
-
   if (!canExpandToView) {
     if (columns > 1 && urls.length > 1) {
       return (
@@ -402,6 +421,7 @@ function FileURLRenderMulti({
               url={url.url}
               imgClasses={imgClasses}
               isMainView={isMainView}
+              canDownload={canDownload}
             />
           ))}
         </div>
@@ -416,6 +436,7 @@ function FileURLRenderMulti({
             url={url.url}
             imgClasses={imgClasses}
             isMainView={isMainView}
+            canDownload={canDownload}
           />
         ))}
       </>
@@ -425,47 +446,6 @@ function FileURLRenderMulti({
   // Render the image list directly instead of using a nested component
   return (
     <>
-      <Dialog
-        open={openOnIndex !== null}
-        onOpenChange={() => setOpenOnIndex(null)}
-      >
-        <DialogContent className="max-h-fit max-w-fit">
-          <DialogHeader>
-            <DialogTitle />
-          </DialogHeader>
-          {urls.length === 1 && (
-            <FileURLRender
-              url={urls[0].url}
-              imgClasses="max-w-full rounded-[8px] max-h-[80vh]"
-              lazyLoading={lazyLoading}
-              isMainView={isMainView}
-            />
-          )}
-          {urls.length > 1 && (
-            <Carousel className=" mx-9" opts={{ startIndex: openOnIndex || 0 }}>
-              <CarouselContent>
-                {urls.map((image, index) => (
-                  <CarouselItem
-                    key={`${runId || ""}-${image.url}-${index}`}
-                    className="flex aspect-square max-h-[80vh] max-w-full items-center justify-center"
-                  >
-                    <FileURLRender
-                      url={image.url}
-                      imgClasses="max-w-full rounded-[8px] max-h-[80vh]"
-                      lazyLoading={lazyLoading}
-                    />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <>
-                <CarouselPrevious />
-                <CarouselNext />
-              </>
-            </Carousel>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {columns > 1 ? (
         <div className={cn("grid grid-cols-1 gap-2", `grid-cols-${columns}`)}>
           {urls.map((urlImage, i) => {
@@ -475,9 +455,6 @@ function FileURLRenderMulti({
                 urlImage={urlImage}
                 imgClasses={imgClasses}
                 lazyLoading={lazyLoading}
-                onClick={() => {
-                  setOpenOnIndex(i);
-                }}
                 canDownload={canDownload}
               />
             );
@@ -491,9 +468,6 @@ function FileURLRenderMulti({
               urlImage={urlImage}
               imgClasses={imgClasses}
               lazyLoading={lazyLoading}
-              onClick={() => {
-                setOpenOnIndex(i);
-              }}
               canDownload={canDownload}
             />
           ))}
@@ -507,13 +481,11 @@ function MediaDisplay({
   urlImage,
   imgClasses,
   lazyLoading,
-  onClick,
-  canDownload,
+  canDownload = false,
 }: {
   urlImage: any;
   imgClasses: string;
   lazyLoading: boolean;
-  onClick: () => void;
   canDownload: boolean;
 }) {
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
@@ -617,7 +589,6 @@ function MediaDisplay({
                       fileName: urlImage.filename,
                     });
                   }}
-                  disabled={!canDownload}
                 >
                   <div className="flex w-full items-center justify-between">
                     Download <Download className="h-3.5 w-3.5" />

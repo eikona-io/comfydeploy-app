@@ -603,6 +603,7 @@ function RunDisplay({ runId }: { runId?: string }) {
                       imgClasses="max-h-[60vh] object-contain shadow-md max-w-full"
                       lazyLoading={false}
                       isMainView={true}
+                      canDownload={true}
                     />
                   </div>
                 ) : (
@@ -620,6 +621,7 @@ function RunDisplay({ runId }: { runId?: string }) {
                       columns={totalUrlCount > 4 ? 3 : 2}
                       displayCount={totalUrlCount > 9 ? 9 : totalUrlCount}
                       isMainView={totalUrlCount === 1}
+                      canDownload={true}
                     />
                   </div>
                 );

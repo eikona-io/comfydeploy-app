@@ -294,7 +294,6 @@ export function RunDetails(props: {
                 run={run as any}
                 imgClasses="max-w-[230px] w-full h-[230px] object-cover object-center rounded-[8px]"
                 canExpandToView={true}
-                canDownload={true}
                 columns={2}
               />
             </ScrollArea>
