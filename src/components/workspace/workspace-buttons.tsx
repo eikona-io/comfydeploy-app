@@ -45,7 +45,6 @@ import {
 } from "../ui/select";
 import { Progress } from "../ui/progress";
 import { toast } from "sonner";
-import { defaultWorkflowTemplates } from "@/utils/default-workflow";
 import { sendEventToCD, sendWorkflow } from "./sendEventToCD";
 import { Label } from "../ui/label";
 import Cookies from "js-cookie";
