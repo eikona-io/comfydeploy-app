@@ -190,7 +190,7 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
                 {selectedUsers.length}
               </Badge>
             ) : (
-              "Filter by user"
+              "Filter"
             )}
           </Button>
         </DropdownMenuTrigger>
