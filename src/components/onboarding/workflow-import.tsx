@@ -693,7 +693,7 @@ function DefaultOption({
             Select a workflow as your starting point.{" "}
           </span>
 
-          <div className="mt-4 grid grid-cols-3 gap-4">
+          <div className="mt-4 grid grid-cols-3 gap-1 md:gap-4">
             {defaultWorkflowTemplates.map((template, index) => (
               <button
                 key={template.workflowId}
