@@ -1,14 +1,14 @@
 if (!window.Cal) {
-  (function (C, A, L) {
-    let p = function (a, ar) {
+  ((C, A, L) => {
+    const p n (a, ar=> ) {
       a.q.push(ar);
     };
-    let d = C.document;
+    const d = C.document;
     C.Cal =
       C.Cal ||
-      function () {
-        let cal = C.Cal;
-        let ar = arguments;
+      (() => {
+        const cal = C.Cal;
+        const ar = arguments;
         if (!cal.loaded) {
           cal.ns = {};
           cal.q = cal.q || [];
@@ -16,7 +16,7 @@ if (!window.Cal) {
           cal.loaded = true;
         }
         if (ar[0] === L) {
-          const api = function () {
+          const api = () => {
             p(api, arguments);
           };
           const namespace = ar[1];
@@ -29,7 +29,7 @@ if (!window.Cal) {
           return;
         }
         p(cal, ar);
-      };
+      });
   })(window, "https://app.cal.com/embed/embed.js", "init");
-  Cal("init", "request-demo", { origin: "https://cal.com" });
+  Cal("init", "demo", { origin: "https://cal.com" });
 }
