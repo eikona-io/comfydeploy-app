@@ -1,6 +1,6 @@
 if (!window.Cal) {
   ((C, A, L) => {
-    const p n (a, ar=> ) {
+    const p = (a, ar) => {
       a.q.push(ar);
     };
     const d = C.document;
