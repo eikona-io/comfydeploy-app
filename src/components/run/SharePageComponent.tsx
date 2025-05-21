@@ -66,7 +66,8 @@ type run = {
     | "queued"
     | "success"
     | "cancelled"
-    | "failed";
+    | "failed"
+    | "timeout";
   live_status?: string;
   progress?: number;
   outputs?: any[];
@@ -513,7 +514,7 @@ function RunDisplay({ runId }: { runId?: string }) {
   const containerClass =
     "flex min-h-[calc(100%-20px)] w-full items-center justify-center";
   const messageClass =
-    "animate-[pulse_4s_ease-in-out_infinite] text-muted-foreground text-sm";
+    "animate-[pulse_4s_ease-in-out_infinite] text-muted-foreground text-sm text-center";
 
   // Handle loading and empty states
   if (isLoading || !run) {
@@ -538,6 +539,9 @@ function RunDisplay({ runId }: { runId?: string }) {
           {/* Different content based on status */}
           {(() => {
             switch (run.status) {
+              case "timeout":
+                return <p className={messageClass}>Run timeout.</p>;
+
               case "cancelled":
                 return <p className={messageClass}>Run cancelled.</p>;
 
@@ -764,9 +768,11 @@ function RunGallery({ runId }: { runId: string }) {
                     ? "border-green-200 bg-green-50 text-green-600"
                     : run.status === "failed"
                       ? "border-red-200 bg-red-50 text-red-600"
-                      : run.status === "running"
-                        ? "border-blue-200 bg-blue-50 text-blue-600"
-                        : "border-gray-200 bg-gray-50 text-gray-600",
+                      : run.status === "timeout"
+                        ? "border-amber-200 bg-amber-50 text-amber-600"
+                        : run.status === "running"
+                          ? "border-blue-200 bg-blue-50 text-blue-600"
+                          : "border-gray-200 bg-gray-50 text-gray-600",
                 )}
               >
                 {run.status}

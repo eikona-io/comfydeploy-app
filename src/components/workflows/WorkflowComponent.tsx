@@ -606,7 +606,12 @@ function RunTimeline({ run }: { run: any }) {
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                       <div
-                        className="absolute h-5 cursor-pointer rounded-[2px] bg-blue-200/70 shadow-sm backdrop-blur-sm"
+                        className={cn(
+                          "absolute h-5 cursor-pointer rounded-[2px] shadow-sm backdrop-blur-sm",
+                          run.status === "timeout"
+                            ? "bg-amber-200/70"
+                            : "bg-blue-200/70",
+                        )}
                         style={{
                           width: `${runWidth}%`,
                           left: `${visualExecStartPos}%`,
@@ -627,7 +632,12 @@ function RunTimeline({ run }: { run: any }) {
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
                     <div
-                      className="absolute h-5 cursor-pointer rounded-[2px] bg-blue-200/70 shadow-sm backdrop-blur-sm"
+                      className={cn(
+                        "absolute h-5 cursor-pointer rounded-[2px] shadow-sm backdrop-blur-sm",
+                        run.status === "timeout"
+                          ? "bg-amber-200/70"
+                          : "bg-blue-200/70",
+                      )}
                       style={{
                         width: "100%",
                         left: 0,
@@ -723,9 +733,15 @@ function RunTimeline({ run }: { run: any }) {
               </div>
             )}
 
-            <div className="absolute right-0 flex translate-x-0 transform flex-col items-end whitespace-normal border-green-500 border-r-2 pr-1 font-medium text-[10px] text-green-700">
+            <div
+              className={`absolute right-0 flex translate-x-0 transform flex-col items-end whitespace-normal border-r-2 pr-1 font-medium text-[10px] ${
+                run.status === "timeout"
+                  ? "border-amber-500 text-amber-500"
+                  : "border-green-500 text-green-700"
+              }`}
+            >
               <span>Execution</span>
-              <span>Finished</span>
+              <span>{run.status === "timeout" ? "Timeout" : "Finished"}</span>
             </div>
           </div>
         </div>
