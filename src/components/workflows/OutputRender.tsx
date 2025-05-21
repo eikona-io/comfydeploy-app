@@ -23,6 +23,7 @@ import {
   Search,
   FileText,
   FolderOpen,
+  Clock,
 } from "lucide-react";
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
 import {
@@ -770,6 +771,11 @@ function RunStatusIndicator({ status }: { status: string }) {
     case "cancelled":
       StatusIcon = Minus;
       iconClassName = "text-gray-200";
+      extraClassName = "";
+      break;
+    case "timeout":
+      StatusIcon = Clock;
+      iconClassName = "text-amber-500";
       extraClassName = "";
       break;
     case "running":
