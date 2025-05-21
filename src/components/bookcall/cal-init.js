@@ -1,14 +1,14 @@
 if (!window.Cal) {
-  ((C, A, L) => {
-    const p = (a, ar) => {
+  (function (C, A, L) {
+    let p = function (a, ar) {
       a.q.push(ar);
     };
-    const d = C.document;
+    let d = C.document;
     C.Cal =
       C.Cal ||
-      (() => {
-        const cal = C.Cal;
-        const ar = arguments;
+      function () {
+        let cal = C.Cal;
+        let ar = arguments;
         if (!cal.loaded) {
           cal.ns = {};
           cal.q = cal.q || [];
@@ -16,7 +16,7 @@ if (!window.Cal) {
           cal.loaded = true;
         }
         if (ar[0] === L) {
-          const api = () => {
+          const api = function () {
             p(api, arguments);
           };
           const namespace = ar[1];
@@ -29,7 +29,7 @@ if (!window.Cal) {
           return;
         }
         p(cal, ar);
-      });
+      };
   })(window, "https://app.cal.com/embed/embed.js", "init");
   Cal("init", "demo", { origin: "https://cal.com" });
 }
