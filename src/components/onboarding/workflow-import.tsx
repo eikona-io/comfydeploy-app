@@ -693,7 +693,7 @@ function DefaultOption({
             Select a workflow as your starting point.{" "}
           </span>
 
-          <div className="mt-4 flex flex-row gap-4">
+          <div className="mt-4 grid grid-cols-3 gap-4">
             {defaultWorkflowTemplates.map((template, index) => (
               <button
                 key={template.workflowId}
@@ -701,15 +701,15 @@ function DefaultOption({
                 className={cn(
                   "group relative h-[350px] w-full overflow-hidden rounded-lg border text-left transition-all duration-500 ease-in-out",
                   workflowSelected === template.workflowId
-                    ? "w-1/2 opacity-100 shadow-lg"
-                    : "w-1/4 opacity-70 grayscale hover:grayscale-0",
+                    ? "opacity-100 shadow-lg"
+                    : "opacity-70 grayscale hover:grayscale-0",
                 )}
                 onClick={() => setWorkflowSelected(template.workflowId)}
                 aria-pressed={workflowSelected === template.workflowId}
               >
                 <FileURLRender
                   url={template.workflowImageUrl}
-                  imgClasses="h-[350px] max-w-full w-full object-cover absolute inset-0 group-hover:scale-105 transition-all duration-500 pointer-events-none"
+                  imgClasses="h-full max-w-full w-full object-cover absolute inset-0 group-hover:scale-105 transition-all duration-500 pointer-events-none"
                 />
                 <div className="absolute right-0 bottom-0 left-0 flex flex-col gap-2 bg-gradient-to-t from-background/95 via-background/80 to-transparent p-4">
                   <div className="flex flex-row items-center justify-between">
