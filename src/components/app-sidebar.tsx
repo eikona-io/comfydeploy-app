@@ -24,6 +24,7 @@ import {
   Users,
   Workflow,
   Link2,
+  BookText,
 } from "lucide-react";
 
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
@@ -114,6 +115,7 @@ import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data
 import { LogDisplay } from "./workspace/LogDisplay";
 import { CopyButton } from "@/components/ui/copy-button";
 import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
+import { ExternalNodeDocs } from "./workspace/external-node-docs";
 
 // Add Session type
 interface Session {
@@ -350,9 +352,16 @@ function SessionSidebar() {
     }
   };
 
-  const [activeDrawer, setActiveDrawer] = useState<
-    "model" | "chat" | "integration" | "commit" | "version" | "log" | null
-  >(null);
+  type Drawer =
+    | "model"
+    | "chat"
+    | "integration"
+    | "commit"
+    | "version"
+    | "log"
+    | "external-node";
+
+  const [activeDrawer, setActiveDrawer] = useState<Drawer | null>(null);
   const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
 
   useEffect(() => {
@@ -361,9 +370,7 @@ function SessionSidebar() {
     }
   }, [workflow]);
 
-  const toggleDrawer = (
-    drawer: "model" | "chat" | "integration" | "commit" | "version" | "log",
-  ) => {
+  const toggleDrawer = (drawer: Drawer) => {
     setActiveDrawer((prevDrawer) => (prevDrawer === drawer ? null : drawer));
   };
 
@@ -426,7 +433,7 @@ function SessionSidebar() {
                         className="relative mx-auto"
                       >
                         <GitBranch className="h-4 w-4" />
-                        <div className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
+                        <div className="-right-1 -top-1 absolute flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary/10 font-medium text-[10px]">
                           v
                           {useSelectedVersion(workflowId || "").value
                             ?.version || "1"}
@@ -434,6 +441,18 @@ function SessionSidebar() {
                       </Button>
                     </SidebarMenuItem>
                     <Separator className="mx-auto my-1 w-7" />
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          activeDrawer === "external-node" && "bg-primary/10",
+                        )}
+                        onClick={() => toggleDrawer("external-node")}
+                      >
+                        <BookText className="h-4 w-4" />
+                      </Button>
+                    </SidebarMenuItem>
                     <SidebarMenuItem className="p-0">
                       <Button
                         variant="ghost"
@@ -518,7 +537,7 @@ function SessionSidebar() {
           {activeDrawer && (
             <motion.div
               className={cn(
-                "absolute left-0 top-0 h-screen border-r bg-background shadow-lg",
+                "absolute top-0 left-0 h-screen border-r bg-background shadow-lg",
                 "z-[-1]",
               )}
               initial={{ x: -575, width: 450, opacity: 1 }}
@@ -628,6 +647,19 @@ function SessionSidebar() {
                         machine_version_id={session?.machine_version_id}
                         onClose={() => setActiveDrawer(null)}
                       />
+                    </div>
+                  )}
+                  {activeDrawer === "external-node" && (
+                    <div className="flex h-full flex-col gap-2 p-4">
+                      <div className="flex items-center gap-2">
+                        <BookText className="h-4 w-4" />
+                        <span className="font-medium">External API Nodes</span>
+                      </div>
+                      <span className="text-muted-foreground text-xs leading-snug">
+                        External API Nodes are a way to connect to external APIs
+                        from within the workflow.
+                      </span>
+                      <ExternalNodeDocs />
                     </div>
                   )}
                 </AnimatePresence>
@@ -1401,183 +1433,5 @@ function PlanBadge() {
     >
       {displayPlan}
     </Badge>
-  );
-}
-
-function V3Dialog() {
-  const [isHovered, setIsHovered] = useState(false);
-  const [isOverflowVisible, setIsOverflowVisible] = useState(false);
-  const [imagesLoaded, setImagesLoaded] = useState(false);
-  const loadedImages = useRef(new Set());
-
-  const handleImageLoad = (imageSrc: string) => {
-    loadedImages.current.add(imageSrc);
-    if (loadedImages.current.size === 3) {
-      // We have 3 images total
-      setImagesLoaded(true);
-    }
-  };
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    if (isHovered) {
-      timeoutId = setTimeout(() => {
-        setIsOverflowVisible(true);
-      }, 100);
-    } else {
-      setIsOverflowVisible(false);
-    }
-    return () => clearTimeout(timeoutId);
-  }, [isHovered]);
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{
-        opacity: imagesLoaded ? 1 : 0,
-        y: imagesLoaded ? 0 : 10,
-      }}
-      transition={{ duration: 0.3, delay: 0.5 }}
-      className="group rounded-[8px] border bg-white p-3"
-    >
-      <Link
-        // @ts-ignore
-        to="https://comfydeploy.link/beta"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <div className="flex flex-col gap-1 text-xs">
-          <div className="font-medium">
-            {(() => {
-              const targetDate = new Date("2025-03-05"); // 3 days from Feb 27, 2025
-              const today = new Date();
-              const diffTime = Math.ceil(
-                (targetDate.getTime() - today.getTime()) /
-                  (1000 * 60 * 60 * 24),
-              );
-              return `v3 Beta is coming in ${diffTime} days`;
-            })()}
-          </div>
-          <div className="text-muted-foreground leading-5">
-            New Experience. New Platform. Same ComfyUI.
-          </div>
-
-          <motion.div
-            className="relative mt-2 rounded-[6px]"
-            animate={{
-              height: isHovered ? "150px" : "75px",
-            }}
-            style={{
-              overflow: isOverflowVisible ? "visible" : "hidden",
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-              duration: 0.3,
-            }}
-          >
-            <div className="relative h-[75px]">
-              <motion.div
-                className="absolute w-full"
-                animate={{
-                  rotateZ: isHovered ? -5 : 0,
-                  x: isHovered ? -20 : 0,
-                  y: isHovered ? -10 : 0,
-                  scale: isHovered ? 0.95 : 1,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                }}
-              >
-                <img
-                  src="https://cd-misc.s3.us-east-2.amazonaws.com/sidebar/third.webp"
-                  alt="Platform Preview 3"
-                  className="w-full rounded-[6px] border border-gray-200 object-cover shadow-lg"
-                  loading="lazy"
-                  onLoad={() => handleImageLoad("third.webp")}
-                />
-              </motion.div>
-
-              <motion.div
-                className="absolute w-full"
-                animate={{
-                  rotateZ: isHovered ? 0 : 0,
-                  x: isHovered ? 0 : 0,
-                  y: isHovered ? -5 : 0,
-                  scale: isHovered ? 0.97 : 1,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                }}
-              >
-                <img
-                  src="https://cd-misc.s3.us-east-2.amazonaws.com/sidebar/second.webp"
-                  alt="Platform Preview 2"
-                  className="w-full rounded-[6px] border border-gray-200 object-cover shadow-lg"
-                  loading="lazy"
-                  onLoad={() => handleImageLoad("second.webp")}
-                />
-              </motion.div>
-
-              <motion.div
-                className="absolute w-full"
-                animate={{
-                  rotateZ: isHovered ? 5 : 0,
-                  x: isHovered ? 20 : 0,
-                  y: isHovered ? 0 : 0,
-                  scale: isHovered ? 1 : 1,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                }}
-              >
-                <img
-                  src="https://cd-misc.s3.us-east-2.amazonaws.com/sidebar/first.webp"
-                  alt="Platform Preview 1"
-                  className="w-full rounded-[6px] border border-gray-200 object-cover shadow-lg"
-                  loading="lazy"
-                  onLoad={() => handleImageLoad("first.webp")}
-                />
-              </motion.div>
-            </div>
-
-            <motion.div
-              className="absolute right-0 bottom-0 left-0 h-10 bg-gradient-to-b from-transparent to-white"
-              animate={{ opacity: isHovered ? 0 : 1 }}
-              transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                duration: 0.3,
-              }}
-            />
-          </motion.div>
-          <motion.div
-            className="flex justify-end text-2xs text-muted-foreground underline"
-            animate={{
-              opacity: isHovered ? 1 : 0,
-              height: isHovered ? "auto" : "0px",
-            }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-              duration: 0.3,
-            }}
-          >
-            <span className="flex flex-row items-center gap-1">
-              Try it out <ExternalLink size={12} />
-            </span>
-          </motion.div>
-        </div>
-      </Link>
-    </motion.div>
   );
 }
