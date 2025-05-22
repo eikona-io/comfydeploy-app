@@ -1824,6 +1824,17 @@ export function WorkflowTimeOut({
     { seconds: 1800, requiredPlan: "business" },
   ];
 
+  if (orgId === "org_2lf4NJmSyPtKMmbz6Xvz9nqUc2R") {
+    options.push({
+      seconds: 1 * 60 * 60, // 1 hours
+      requiredPlan: "business",
+    });
+    options.push({
+      seconds: 2 * 60 * 60, // 2 hours
+      requiredPlan: "business",
+    });
+  }
+
   if (orgId === "org_2v89WmHMDa6I8uHHoE4GesjvIDY") {
     options.push({
       seconds: 7 * 60 * 60, // 7 hours
