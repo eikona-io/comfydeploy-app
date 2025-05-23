@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { plainInputsToZod } from "@/lib/workflowVersionInputsToZod";
 // import { HandleFileUpload } from "@/server/uploadFile";
 import { useAuth, useClerk } from "@clerk/clerk-react";
-import { Play } from "lucide-react";
+import { Edit, Play, Save, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import {
   type FormEvent,
@@ -28,6 +28,8 @@ import {
   useMemo,
   useState,
 } from "react";
+import { Sortable, SortableItem, SortableDragHandle } from "@/components/custom/sortable";
+import { UniqueIdentifier } from "@dnd-kit/core";
 import { useHotkeys } from "react-hotkeys-hook";
 import { toast } from "sonner";
 import type { z } from "zod";
@@ -267,6 +269,25 @@ export function RunWorkflowInline({
     >(default_values);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRunId, setCurrentRunId] = useQueryState("run-id");
+  
+  type SortableInputItem = { id: string; input: (typeof inputs)[number] };
+  
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [reorderedInputs, setReorderedInputs] = useState<typeof inputs>([]);
+  
+  useEffect(() => {
+    if (isEditMode && inputs) {
+      setReorderedInputs([...inputs]);
+    }
+  }, [isEditMode, inputs]);
+  
+  const sortableItems = useMemo(() => {
+    if (!inputs) return [];
+    return inputs.map(input => ({
+      id: input.input_id || '',
+      input
+    }));
+  }, [inputs]);
 
   const user = useAuth();
   const clerk = useClerk();
@@ -398,15 +419,112 @@ export function RunWorkflowInline({
   useEffect(() => {
     setValues(default_values);
   }, [default_values]);
+  
+  const saveReordering = async () => {
+    if (!workflow_version_id || !reorderedInputs) return;
+    
+    try {
+      setIsLoading(true);
+      const auth = await fetchToken();
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow_version_id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${auth}`,
+          },
+        }
+      );
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch workflow data");
+      }
+      
+      const workflowData = await response.json();
+      const workflowApi = JSON.parse(workflowData.workflow_api);
+      
+      reorderedInputs.forEach((input, index) => {
+        const nodeId = input.nodeId as string | undefined;
+        if (nodeId && workflowApi[nodeId]) {
+          workflowApi[nodeId]._meta = {
+            ...(workflowApi[nodeId]._meta || {}),
+            'comfydeploy-order': index
+          };
+        }
+      });
+      
+      await callServerPromise(
+        fetch(`${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflowData.workflow_id}/version`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${auth}`,
+          },
+          body: JSON.stringify({
+            workflow: workflowData.workflow,
+            workflow_api: JSON.stringify(workflowApi),
+            comment: "Reordered inputs"
+          }),
+        }),
+        {
+          loadingText: "Saving input order...",
+        }
+      );
+      
+      toast.success("Input order saved successfully");
+      setIsEditMode(false);
+      setIsLoading(false);
+    } catch (error) {
+      setIsLoading(false);
+      toast.error(`Failed to save input order: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  };
+  
 
   return (
-    <>
+    <div className="relative">
+      {/* Edit button */}
+      <div className="absolute top-2 right-2 z-10 flex gap-2">
+        {isEditMode ? (
+          <>
+            <Button
+              onClick={() => setIsEditMode(false)}
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+            >
+              <X size={16} className="mr-1" />
+              Cancel
+            </Button>
+            <Button
+              onClick={saveReordering}
+              variant="default"
+              size="sm"
+              className="h-8 px-2"
+              isLoading={isLoading}
+            >
+              <Save size={16} className="mr-1" />
+              Save Order
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={() => setIsEditMode(true)}
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+          >
+            <Edit size={16} className="mr-1" />
+            Reorder
+          </Button>
+        )}
+      </div>
+      
       <SDForm
         onSubmit={onSubmit}
         actionArea={
           !hideRunButton && (
             <Button
-              disabled={!inputs}
+              disabled={!inputs || isEditMode}
               type="submit"
               className="w-full"
               isLoading={isLoading || loading}
@@ -421,25 +539,86 @@ export function RunWorkflowInline({
         scrollAreaClassName={cn("h-full", scrollAreaClassName)}
       >
         {inputs ? (
-          inputs.map((item) => {
-            if (!item?.input_id) {
-              return;
-            }
-            return (
-              <SDInputsRender
-                key={item.input_id}
-                inputNode={item}
-                updateInput={updateInput}
-                inputValue={values[item.input_id]}
-              />
-            );
-          })
+          isEditMode ? (
+            <div className="space-y-2">
+              {reorderedInputs.map((item, index) => (
+                <div key={item.input_id || index} className="flex items-center border rounded-md p-2 bg-card">
+                  <button
+                    type="button"
+                    className="mr-2 cursor-grab p-1 hover:bg-muted rounded"
+                    onMouseDown={(e) => {
+                      const target = e.currentTarget.parentElement;
+                      if (!target) return;
+                      
+                      const container = target.parentElement;
+                      if (!container) return;
+                      
+                      const initialY = e.clientY;
+                      const initialIndex = index;
+                      
+                      const handleMouseMove = (moveEvent: MouseEvent) => {
+                        const deltaY = moveEvent.clientY - initialY;
+                        const newIndex = Math.max(0, Math.min(
+                          reorderedInputs.length - 1,
+                          initialIndex + Math.round(deltaY / 40)
+                        ));
+                        
+                        if (newIndex !== index) {
+                          const newInputs = [...reorderedInputs];
+                          const [movedItem] = newInputs.splice(index, 1);
+                          newInputs.splice(newIndex, 0, movedItem);
+                          setReorderedInputs(newInputs);
+                        }
+                      };
+                      
+                      const handleMouseUp = () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                      };
+                      
+                      document.addEventListener('mousemove', handleMouseMove);
+                      document.addEventListener('mouseup', handleMouseUp);
+                    }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4 6.5C4.82843 6.5 5.5 5.82843 5.5 5C5.5 4.17157 4.82843 3.5 4 3.5C3.17157 3.5 2.5 4.17157 2.5 5C2.5 5.82843 3.17157 6.5 4 6.5Z" fill="currentColor"/>
+                      <path d="M4 12.5C4.82843 12.5 5.5 11.8284 5.5 11C5.5 10.1716 4.82843 9.5 4 9.5C3.17157 9.5 2.5 10.1716 2.5 11C2.5 11.8284 3.17157 12.5 4 12.5Z" fill="currentColor"/>
+                      <path d="M11 6.5C11.8284 6.5 12.5 5.82843 12.5 5C12.5 4.17157 11.8284 3.5 11 3.5C10.1716 3.5 9.5 4.17157 9.5 5C9.5 5.82843 10.1716 6.5 11 6.5Z" fill="currentColor"/>
+                      <path d="M11 12.5C11.8284 12.5 12.5 11.8284 12.5 11C12.5 10.1716 11.8284 9.5 11 9.5C10.1716 9.5 9.5 10.1716 9.5 11C9.5 11.8284 10.1716 12.5 11 12.5Z" fill="currentColor"/>
+                    </svg>
+                  </button>
+                  <div className="flex-1">
+                    <SDInputsRender
+                      key={item.input_id}
+                      inputNode={item}
+                      updateInput={updateInput}
+                      inputValue={values[item.input_id || '']}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            inputs.map((item) => {
+              if (!item?.input_id) {
+                return;
+              }
+              return (
+                <SDInputsRender
+                  key={item.input_id}
+                  inputNode={item}
+                  updateInput={updateInput}
+                  inputValue={values[item.input_id]}
+                />
+              );
+            })
+          )
         ) : (
           <div className="py-2 text-center text-muted-foreground text-sm">
             Please save a new version in ComfyUI to run this workflow.
           </div>
         )}
       </SDForm>
-    </>
+    </div>
   );
 }
