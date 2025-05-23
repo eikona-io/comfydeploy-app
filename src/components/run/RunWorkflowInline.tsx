@@ -490,6 +490,13 @@ export function RunWorkflowInline({
 
   return (
     <div className="relative h-full">
+      <style jsx>{`
+        :global(.sortable-item-transition) {
+          transition-property: transform, opacity;
+          transition-duration: 0.2s;
+          transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+        }
+      `}</style>
       {/* Edit button */}
       {canEditOrder && (
         <div className="absolute top-2 right-2 z-10 flex gap-2">
@@ -551,89 +558,96 @@ export function RunWorkflowInline({
         {inputs ? (
           isEditMode ? (
             <div className="space-y-2">
-              {reorderedInputs.map((item, index) => (
-                <div
-                  key={item.input_id || index}
-                  className="flex items-center border rounded-md p-2 bg-card"
-                >
-                  <button
-                    type="button"
-                    className="mr-2 cursor-grab p-1 hover:bg-muted rounded"
-                    onMouseDown={(e) => {
-                      const target = e.currentTarget.parentElement;
-                      if (!target) return;
-
-                      const container = target.parentElement;
-                      if (!container) return;
-
-                      const initialY = e.clientY;
-                      const initialIndex = index;
-
-                      const handleMouseMove = (moveEvent: MouseEvent) => {
-                        const deltaY = moveEvent.clientY - initialY;
-                        const newIndex = Math.max(
-                          0,
-                          Math.min(
-                            reorderedInputs.length - 1,
-                            initialIndex + Math.round(deltaY / 40),
-                          ),
-                        );
-
-                        if (newIndex !== index) {
-                          const newInputs = [...reorderedInputs];
-                          const [movedItem] = newInputs.splice(index, 1);
-                          newInputs.splice(newIndex, 0, movedItem);
-                          setReorderedInputs(newInputs);
-                        }
-                      };
-
-                      const handleMouseUp = () => {
-                        document.removeEventListener(
-                          "mousemove",
-                          handleMouseMove,
-                        );
-                        document.removeEventListener("mouseup", handleMouseUp);
-                      };
-
-                      document.addEventListener("mousemove", handleMouseMove);
-                      document.addEventListener("mouseup", handleMouseUp);
-                    }}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 16 16"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M4 6.5C4.82843 6.5 5.5 5.82843 5.5 5C5.5 4.17157 4.82843 3.5 4 3.5C3.17157 3.5 2.5 4.17157 2.5 5C2.5 5.82843 3.17157 6.5 4 6.5Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M4 12.5C4.82843 12.5 5.5 11.8284 5.5 11C5.5 10.1716 4.82843 9.5 4 9.5C3.17157 9.5 2.5 10.1716 2.5 11C2.5 11.8284 3.17157 12.5 4 12.5Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M11 6.5C11.8284 6.5 12.5 5.82843 12.5 5C12.5 4.17157 11.8284 3.5 11 3.5C10.1716 3.5 9.5 4.17157 9.5 5C9.5 5.82843 10.1716 6.5 11 6.5Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M11 12.5C11.8284 12.5 12.5 11.8284 12.5 11C12.5 10.1716 11.8284 9.5 11 9.5C10.1716 9.5 9.5 10.1716 9.5 11C9.5 11.8284 10.1716 12.5 11 12.5Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </button>
-                  <div className="flex-1">
-                    <SDInputsRender
-                      key={item.input_id}
-                      inputNode={item}
-                      updateInput={updateInput}
-                      inputValue={values[item.input_id || ""]}
-                    />
+              <Sortable
+                value={reorderedInputs.map((item, index) => ({
+                  id: item.input_id || `item-${index}`,
+                  ...item,
+                }))}
+                onValueChange={(items) => {
+                  setReorderedInputs(items);
+                }}
+                orientation="vertical"
+                overlay={
+                  <div className="flex items-center border rounded-md p-2 bg-card/90 backdrop-blur-sm shadow-lg">
+                    <div className="p-1 mr-2">
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M4 6.5C4.82843 6.5 5.5 5.82843 5.5 5C5.5 4.17157 4.82843 3.5 4 3.5C3.17157 3.5 2.5 4.17157 2.5 5C2.5 5.82843 3.17157 6.5 4 6.5Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M4 12.5C4.82843 12.5 5.5 11.8284 5.5 11C5.5 10.1716 4.82843 9.5 4 9.5C3.17157 9.5 2.5 10.1716 2.5 11C2.5 11.8284 3.17157 12.5 4 12.5Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M11 6.5C11.8284 6.5 12.5 5.82843 12.5 5C12.5 4.17157 11.8284 3.5 11 3.5C10.1716 3.5 9.5 4.17157 9.5 5C9.5 5.82843 10.1716 6.5 11 6.5Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M11 12.5C11.8284 12.5 12.5 11.8284 12.5 11C12.5 10.1716 11.8284 9.5 11 9.5C10.1716 9.5 9.5 10.1716 9.5 11C9.5 11.8284 10.1716 12.5 11 12.5Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </div>
+                    <div className="flex-1 opacity-70">Dragging input...</div>
                   </div>
-                </div>
-              ))}
+                }
+              >
+                {reorderedInputs.map((item) => (
+                  <SortableItem
+                    key={item.input_id || `item-${Math.random()}`}
+                    value={item.input_id || `item-${Math.random()}`}
+                    className="flex items-center border rounded-md p-2 bg-card mb-2 sortable-item-transition"
+                  >
+                    <div className="flex items-center w-full">
+                      <SortableDragHandle
+                        variant="ghost"
+                        className="mr-2 p-1 hover:bg-muted rounded"
+                        size="sm"
+                      >
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 16 16"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 6.5C4.82843 6.5 5.5 5.82843 5.5 5C5.5 4.17157 4.82843 3.5 4 3.5C3.17157 3.5 2.5 4.17157 2.5 5C2.5 5.82843 3.17157 6.5 4 6.5Z"
+                            fill="currentColor"
+                          />
+                          <path
+                            d="M4 12.5C4.82843 12.5 5.5 11.8284 5.5 11C5.5 10.1716 4.82843 9.5 4 9.5C3.17157 9.5 2.5 10.1716 2.5 11C2.5 11.8284 3.17157 12.5 4 12.5Z"
+                            fill="currentColor"
+                          />
+                          <path
+                            d="M11 6.5C11.8284 6.5 12.5 5.82843 12.5 5C12.5 4.17157 11.8284 3.5 11 3.5C10.1716 3.5 9.5 4.17157 9.5 5C9.5 5.82843 10.1716 6.5 11 6.5Z"
+                            fill="currentColor"
+                          />
+                          <path
+                            d="M11 12.5C11.8284 12.5 12.5 11.8284 12.5 11C12.5 10.1716 11.8284 9.5 11 9.5C10.1716 9.5 9.5 10.1716 9.5 11C9.5 11.8284 10.1716 12.5 11 12.5Z"
+                            fill="currentColor"
+                          />
+                        </svg>
+                      </SortableDragHandle>
+                      <div className="flex-1">
+                        <SDInputsRender
+                          key={item.input_id}
+                          inputNode={item}
+                          updateInput={updateInput}
+                          inputValue={values[item.input_id || ""]}
+                        />
+                      </div>
+                    </div>
+                  </SortableItem>
+                ))}
+              </Sortable>
             </div>
           ) : (
             inputs.map((item) => {
