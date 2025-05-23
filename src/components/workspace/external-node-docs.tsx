@@ -50,6 +50,8 @@ const inputs = {
       nodes: [
         {
           title: "External Image",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_image.jpg",
           description:
             "The External Image node allows you to expose image inputs in your workflow. It supports loading images from URLs and base64 encoded data.",
           type: "ComfyUIDeployExternalImage",
@@ -95,6 +97,8 @@ const inputs = {
         },
         {
           title: "External Image Batch",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_image_batch.jpg",
           description:
             "The External Image Batch node allows you to send multiple images as an input. It supports loading images from URLs (including ZIP files containing images) and base64 encoded data.",
           type: "ComfyUIDeployExternalImageBatch",
@@ -147,6 +151,8 @@ const inputs = {
         },
         {
           title: "External Image Alpha",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_image_alpha.jpg",
           description:
             "The External Image Alpha node is an alternative image input node that allows you to expose image inputs to use the Alpha channel. It supports loading images from URLs and base64 encoded data, with improved alpha channel handling.",
           type: "ComfyUIDeployExternalImageAlpha",
@@ -183,6 +189,8 @@ const inputs = {
         },
         {
           title: "Image Output",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/output_image.jpg",
           description:
             'The Image Output node allows you to save images, just like default "Save Image" node.',
           type: "ComfyDeployOutputImage",
@@ -225,6 +233,8 @@ const inputs = {
       nodes: [
         {
           title: "External Text",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_text.jpg",
           description:
             "The External Text Input node allows accepting text input.",
           type: "ComfyUIDeployExternalText",
@@ -260,6 +270,8 @@ const inputs = {
         },
         {
           title: "Text Output",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/output_text.jpg",
           description:
             "The Text Output node allows you to display and save text.",
           type: "ComfyDeployOutputText",
@@ -302,6 +314,8 @@ const inputs = {
       nodes: [
         {
           title: "External Number",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_number.jpg",
           description:
             "The External Number node allows you to input numeric values.",
           type: "ComfyUIDeployExternalNumber",
@@ -337,6 +351,8 @@ const inputs = {
         },
         {
           title: "External Number Slider",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_number_slider.jpg",
           description:
             "The External Number Slider node allows you to input numeric values with a slider (with min and max values).",
           type: "ComfyUIDeployExternalNumberSlider",
@@ -387,6 +403,8 @@ const inputs = {
         },
         {
           title: "External Number (Integer)",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_number_int.jpg",
           description:
             "The External Number Int node allows you to input integer values.",
           type: "ComfyUIDeployExternalNumberInt",
@@ -430,6 +448,8 @@ const inputs = {
       nodes: [
         {
           title: "External Audio",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_audio.jpg",
           description:
             "The External Audio node allows you to accept audio files as input.",
           type: "ComfyUIDeployExternalAudio",
@@ -470,6 +490,8 @@ const inputs = {
         },
         {
           title: "External Video",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_video.jpg",
           description:
             "The External Video Input node allows accepting video files through the API or playground. It supports common video formats like MP4, WebM, MKV and GIF.",
           type: "ComfyUIDeployExternalVideo",
@@ -522,6 +544,8 @@ const inputs = {
       nodes: [
         {
           title: "External Seed",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_seed.jpg",
           description:
             "The External Seed node allows you to input seed values.",
           type: "ComfyUIDeployExternalSeed",
@@ -573,6 +597,8 @@ const inputs = {
         },
         {
           title: "External Lora",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_lora.jpg",
           description:
             "The External Lora node allows you to dynamically load LoRA models into your workflow.",
           type: "ComfyUIDeployExternalLora",
@@ -625,6 +651,8 @@ const inputs = {
         },
         {
           title: "External Checkpoint",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_checkpoint.jpg",
           description: "Allows you to change the checkpoint model.",
           type: "ComfyUIDeployExternalCheckpoint",
           badges: [
@@ -666,6 +694,8 @@ const inputs = {
       nodes: [
         {
           title: "External Boolean",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_boolean.jpg",
           description: "Let's you expose a boolean input to your workflow.",
           type: "ComfyUIDeployExternalBoolean",
           badges: [
@@ -700,6 +730,8 @@ const inputs = {
         },
         {
           title: "External Enum",
+          imageUrl:
+            "https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_enum.jpg",
           description: "Let's you expose an enum input to your workflow.",
           type: "ComfyUIDeployExternalEnum",
           badges: [
@@ -843,7 +875,7 @@ export function ExternalNodeDocs() {
                           text: badge.text,
                           variant: badge.variant,
                         }))}
-                        imageUrl="https://cd-misc.s3.us-east-2.amazonaws.com/external+nodes/external_image.jpg"
+                        imageUrl={node.imageUrl}
                         inputFields={node.inputFields}
                         alertTitle={node.alert?.title}
                         alertDescription={node.alert?.description}
@@ -907,7 +939,9 @@ function NodeDocsTooltip({
         <TooltipTrigger>
           <div className="flex cursor-auto items-center justify-between rounded-[8px] p-2 transition-colors hover:bg-gray-100">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-xs">{title}</span>
+              <span className="whitespace-nowrap font-medium text-xs">
+                {title}
+              </span>
               <div className="flex items-center gap-1">
                 {badges.map((badge, index) => {
                   const BadgeIcon = badge.icon;
