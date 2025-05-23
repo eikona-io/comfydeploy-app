@@ -273,6 +273,8 @@ export function Playground(props: {
                   runOrigin={props.runOrigin}
                   workflow_version_id={version?.id}
                   machine_id={props.workflow?.selected_machine_id}
+                  workflow_api={version?.workflow_api}
+                  canEditOrder={true}
                 />
               ) : (
                 <div className="flex h-full flex-col items-center justify-center gap-2">
