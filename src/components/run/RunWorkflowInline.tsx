@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 import { plainInputsToZod } from "@/lib/workflowVersionInputsToZod";
 // import { HandleFileUpload } from "@/server/uploadFile";
 import { useAuth, useClerk } from "@clerk/clerk-react";
-import { Edit, Play, Save, X } from "lucide-react";
+import { Edit, GripVertical, Play, Save, X } from "lucide-react";
 import { useQueryState } from "nuqs";
 import {
   type FormEvent,
@@ -573,40 +573,17 @@ export function RunWorkflowInline({
                   );
                   
                   return (
-                    <div className="border rounded-md p-2 bg-card/95 backdrop-blur-sm shadow-lg transform scale-105 sortable-item-transition">
+                    <div className="border rounded-md p-2 bg-card/95 backdrop-blur-sm shadow-xl transform scale-105 translate-y-[-4px] sortable-item-transition">
                       <div className="flex items-center w-full">
                         <div className="p-1 mr-2">
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M4 6.5C4.82843 6.5 5.5 5.82843 5.5 5C5.5 4.17157 4.82843 3.5 4 3.5C3.17157 3.5 2.5 4.17157 2.5 5C2.5 5.82843 3.17157 6.5 4 6.5Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M4 12.5C4.82843 12.5 5.5 11.8284 5.5 11C5.5 10.1716 4.82843 9.5 4 9.5C3.17157 9.5 2.5 10.1716 2.5 11C2.5 11.8284 3.17157 12.5 4 12.5Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M11 6.5C11.8284 6.5 12.5 5.82843 12.5 5C12.5 4.17157 11.8284 3.5 11 3.5C10.1716 3.5 9.5 4.17157 9.5 5C9.5 5.82843 10.1716 6.5 11 6.5Z"
-                              fill="currentColor"
-                            />
-                            <path
-                              d="M11 12.5C11.8284 12.5 12.5 11.8284 12.5 11C12.5 10.1716 11.8284 9.5 11 9.5C10.1716 9.5 9.5 10.1716 9.5 11C9.5 11.8284 10.1716 12.5 11 12.5Z"
-                              fill="currentColor"
-                            />
-                          </svg>
+                          <GripVertical size={16} />
                         </div>
                         <div className="flex-1">
                           {activeInput && (
                             <SDInputsRender
                               key={activeInput.input_id}
                               inputNode={activeInput}
-                              updateInput={updateInput}
+                              updateInput={() => {}}
                               inputValue={values[activeInput.input_id || ""]}
                             />
                           )}
@@ -628,36 +605,13 @@ export function RunWorkflowInline({
                         className="mr-2 p-1 hover:bg-muted rounded"
                         size="sm"
                       >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M4 6.5C4.82843 6.5 5.5 5.82843 5.5 5C5.5 4.17157 4.82843 3.5 4 3.5C3.17157 3.5 2.5 4.17157 2.5 5C2.5 5.82843 3.17157 6.5 4 6.5Z"
-                            fill="currentColor"
-                          />
-                          <path
-                            d="M4 12.5C4.82843 12.5 5.5 11.8284 5.5 11C5.5 10.1716 4.82843 9.5 4 9.5C3.17157 9.5 2.5 10.1716 2.5 11C2.5 11.8284 3.17157 12.5 4 12.5Z"
-                            fill="currentColor"
-                          />
-                          <path
-                            d="M11 6.5C11.8284 6.5 12.5 5.82843 12.5 5C12.5 4.17157 11.8284 3.5 11 3.5C10.1716 3.5 9.5 4.17157 9.5 5C9.5 5.82843 10.1716 6.5 11 6.5Z"
-                            fill="currentColor"
-                          />
-                          <path
-                            d="M11 12.5C11.8284 12.5 12.5 11.8284 12.5 11C12.5 10.1716 11.8284 9.5 11 9.5C10.1716 9.5 9.5 10.1716 9.5 11C9.5 11.8284 10.1716 12.5 11 12.5Z"
-                            fill="currentColor"
-                          />
-                        </svg>
+                        <GripVertical size={16} />
                       </SortableDragHandle>
                       <div className="flex-1">
                         <SDInputsRender
                           key={item.input_id}
                           inputNode={item}
-                          updateInput={updateInput}
+                          updateInput={isEditMode ? () => {} : updateInput}
                           inputValue={values[item.input_id || ""]}
                         />
                       </div>
