@@ -657,7 +657,7 @@ function SessionSidebar() {
                       </div>
                       <span className="text-muted-foreground text-xs leading-snug">
                         External API Nodes are a way to connect to external APIs
-                        from within the workflow.
+                        from within the workflow. Hover to see more details.
                       </span>
                       <ExternalNodeDocs />
                     </div>
