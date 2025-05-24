@@ -282,8 +282,6 @@ export function RunWorkflowInline({
   const [isLoading, setIsLoading] = useState(false);
   const [currentRunId, setCurrentRunId] = useQueryState("run-id");
 
-  type SortableInputItem = { id: string; input: (typeof inputs)[number] };
-
   const [isEditMode, setIsEditMode] = useState(false);
   const [reorderedInputs, setReorderedInputs] = useState<typeof inputs>([]);
 
@@ -295,14 +293,6 @@ export function RunWorkflowInline({
       setReorderedInputs([...inputs]);
     }
   }, [isEditMode, inputs]);
-
-  const sortableItems = useMemo(() => {
-    if (!inputs) return [];
-    return inputs.map((input) => ({
-      id: input.input_id || "",
-      input,
-    }));
-  }, [inputs]);
 
   const user = useAuth();
   const clerk = useClerk();
@@ -569,9 +559,9 @@ export function RunWorkflowInline({
                 orientation="vertical"
                 overlay={(active) => {
                   const activeInput = reorderedInputs.find(
-                    (input) => input.input_id === active?.id
+                    (input) => input.input_id === active?.id,
                   );
-                  
+
                   return (
                     <div className="border rounded-md p-2 bg-card/95 backdrop-blur-sm shadow-xl transform scale-105 translate-y-[-4px] sortable-item-transition">
                       <div className="flex items-center w-full">
