@@ -489,14 +489,14 @@ export function RunWorkflowInline({
       `}</style>
       {/* Edit button */}
       {canEditOrder && (
-        <div className="absolute top-2 right-2 z-10 flex gap-2">
+        <div className="absolute top-0 right-1 z-10 flex gap-2">
           {isEditMode ? (
             <>
               <Button
                 onClick={() => setIsEditMode(false)}
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 bg-background/80 backdrop-blur-sm shadow-sm border"
+                variant="outline"
+                size="xs"
+                className="shadow-sm backdrop-blur-sm"
               >
                 <X size={16} className="mr-1" />
                 Cancel
@@ -504,20 +504,20 @@ export function RunWorkflowInline({
               <Button
                 onClick={saveReordering}
                 variant="default"
-                size="sm"
-                className="h-8 px-2 shadow-md"
+                size="xs"
+                className="shadow-sm backdrop-blur-sm"
                 isLoading={isLoading}
               >
                 <Save size={16} className="mr-1" />
-                Save Order
+                Save
               </Button>
             </>
           ) : (
             <Button
               onClick={() => setIsEditMode(true)}
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2 bg-background/80 backdrop-blur-sm shadow-sm border hover:bg-background/90"
+              variant="default"
+              size="xs"
+              className="shadow-sm backdrop-blur-sm"
             >
               <Edit size={16} className="mr-1" />
               Reorder
