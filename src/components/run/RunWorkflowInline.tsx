@@ -442,7 +442,7 @@ export function RunWorkflowInline({
         if (nodeId && workflowApi[nodeId]) {
           workflowApi[nodeId]._meta = {
             ...(workflowApi[nodeId]._meta || {}),
-            "comfydeploy-order": index,
+            cd_input_order: index,
           };
         }
       });

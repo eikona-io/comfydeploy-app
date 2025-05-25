@@ -29,8 +29,8 @@ export function getInputsFromWorkflow(workflow_version: any) {
 
 export function getInputsFromWorkflowAPI(workflow_api?: any) {
   if (!workflow_api) return null;
-  
-  let inputs = Object.entries(workflow_api)
+
+  const inputs = Object.entries(workflow_api)
     .map(([id, value]: [string, any]) => {
       if (!value.class_type) return undefined;
       const nodeType = (customInputNodes as any)[value.class_type];
@@ -52,15 +52,17 @@ export function getInputsFromWorkflowAPI(workflow_api?: any) {
       return undefined;
     })
     .filter((item) => item !== undefined) as z.infer<typeof WorkflowInputsType>;
-  
+
   return inputs.sort((a, b) => {
     const nodeIdA = a.nodeId as string | undefined;
     const nodeIdB = b.nodeId as string | undefined;
-    
+
     if (!nodeIdA || !nodeIdB) return 0;
-    
-    const orderA = workflow_api[nodeIdA]?._meta?.['comfydeploy-order'] ?? Number.MAX_SAFE_INTEGER;
-    const orderB = workflow_api[nodeIdB]?._meta?.['comfydeploy-order'] ?? Number.MAX_SAFE_INTEGER;
+
+    const orderA =
+      workflow_api[nodeIdA]?._meta?.cd_input_order ?? Number.MAX_SAFE_INTEGER;
+    const orderB =
+      workflow_api[nodeIdB]?._meta?.cd_input_order ?? Number.MAX_SAFE_INTEGER;
     return orderA - orderB;
   });
 }
