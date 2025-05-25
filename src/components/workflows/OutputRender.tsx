@@ -221,11 +221,11 @@ function _FileURLRender({
     }
 
     return (
-      <div className="relative">
+      <div className="relative h-full w-full">
         {isLoading && (
           <div
             className={cn(
-              "absolute inset-0 flex items-center justify-center bg-gray-100/50",
+              "absolute inset-0 flex h-full w-full items-center justify-center bg-gray-100/50",
               mediaClasses,
             )}
           >
