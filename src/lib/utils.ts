@@ -66,7 +66,7 @@ export const getOptimizedImage = (
   const quality = isSmallView ? 30 : 75;
   const transformations = `q_${quality},f_webp`;
   const optimizedUrl = getOptimizedImageUrl(s3Key, transformations);
-  const urlWithToken = `${optimizedUrl}?cd_token=${authToken}`;
+  const urlWithToken = `${optimizedUrl}`;
   // console.log("urlWithToken", urlWithToken);
   return urlWithToken;
 };
