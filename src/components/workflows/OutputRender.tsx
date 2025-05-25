@@ -26,13 +26,6 @@ import {
   Clock,
 } from "lucide-react";
 import { useEffect, useState, useCallback, lazy, Suspense } from "react";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "../ui/carousel";
 import { ShineBorder } from "../magicui/shine-border";
 import { downloadImage } from "@/utils/download-image";
 import {
@@ -108,19 +101,25 @@ function _FileURLRender({
   const a = new URL(url);
   const filename = a.pathname.split("/").pop();
   const [imageError, setImageError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (token) {
-      // console.log("token", token);
       setImageError(false);
+      setIsLoading(true);
     }
   }, [token]);
 
-  // useEffect(() => {
-  //   if (!imageError) {
-  //     onLoad?.();
-  //   }
-  // }, [imageError, onLoad]);
+  useEffect(() => {
+    if (!imageError && !isLoading) {
+      onLoad?.();
+    }
+  }, [imageError, isLoading, onLoad]);
+
+  const handleLoad = () => {
+    setIsLoading(false);
+    onLoad?.();
+  };
 
   if (!filename) {
     return <div className="bg-slate-300">Not possible to render</div>;
@@ -135,19 +134,32 @@ function _FileURLRender({
     lowercaseFilename.endsWith(".mov")
   ) {
     return (
-      <video
-        autoPlay={!isSmallView}
-        loop
-        muted
-        playsInline
-        className={cn("w-[500px]", mediaClasses)}
-        preload={isSmallView ? "metadata" : "auto"}
-      >
-        <source src={url} type="video/mp4" />
-        <source src={url} type="video/webm" />
-        <source src={url} type="video/quicktime" />
-        Your browser does not support the video tag.
-      </video>
+      <div className="relative">
+        {isLoading && (
+          <div
+            className={cn(
+              "absolute inset-0 flex items-center justify-center bg-gray-100/50",
+              mediaClasses,
+            )}
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        )}
+        <video
+          autoPlay={!isSmallView}
+          loop
+          muted
+          playsInline
+          className={cn("w-[500px]", mediaClasses)}
+          preload={isSmallView ? "metadata" : "auto"}
+          onLoadedData={handleLoad}
+        >
+          <source src={url} type="video/mp4" />
+          <source src={url} type="video/webm" />
+          <source src={url} type="video/quicktime" />
+          Your browser does not support the video tag.
+        </video>
+      </div>
     );
   }
 
@@ -203,20 +215,39 @@ function _FileURLRender({
           )}
         >
           <SearchX size={20} strokeWidth={1.5} />
-          <span className="@xs:inline hidden">Not found</span>
+          <span className="@4xs:inline hidden">Not found</span>
         </div>
       );
     }
 
     return (
-      <img
-        onLoad={onLoad}
-        className={cn("max-w-[200px]", mediaClasses)}
-        src={getOptimizedImage(url, isSmallView, token)}
-        alt={filename}
-        loading={lazyLoading ? "lazy" : undefined}
-        onError={() => setImageError(true)}
-      />
+      <div className="relative">
+        {isLoading && (
+          <div
+            className={cn(
+              "absolute inset-0 flex items-center justify-center bg-gray-100/50",
+              mediaClasses,
+            )}
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        )}
+        <img
+          onLoad={handleLoad}
+          className={cn(
+            "max-w-[200px]",
+            mediaClasses,
+            isLoading ? "opacity-0" : "opacity-100",
+          )}
+          src={getOptimizedImage(url, isSmallView, token)}
+          alt={filename}
+          loading={lazyLoading ? "lazy" : undefined}
+          onError={() => {
+            setImageError(true);
+            setIsLoading(false);
+          }}
+        />
+      </div>
     );
   }
 

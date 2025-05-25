@@ -23,6 +23,7 @@ import { useEffect } from "react";
 import { orgPrefixPaths } from "./orgPrefixPaths";
 // Set up a Router instance
 import { type RootRouteContext, Route } from "./routes/__root";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 // Add this function before creating the orgRoute
 function updateRoutePaths(route: RouteType) {
@@ -237,20 +238,11 @@ function InnerApp() {
   publicClerk = clerk;
 
   if (!auth.isLoaded) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background animate-in fade-in duration-300">
-        <div className="flex flex-col items-center gap-4">
-          <LoadingIcon className="h-8 w-8 animate-spin" />
-          <p className="text-sm text-muted-foreground animate-pulse">
-            Loading your account...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
-    <div className="fade-in animate-in duration-300">
+    <div className="animate-in" style={{ animationDuration: "300ms" }}>
       <RouterProvider router={router} context={{ auth, clerk }} />
     </div>
   );
