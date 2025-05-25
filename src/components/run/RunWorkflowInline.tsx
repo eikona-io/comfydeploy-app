@@ -453,7 +453,7 @@ export function RunWorkflowInline({
           init: {
             method: "POST",
             body: JSON.stringify({
-              workflow: workflow,
+              workflow: workflow.versions[0].workflow,
               workflow_api: workflowApi,
               comment: "Reordered inputs",
             }),
