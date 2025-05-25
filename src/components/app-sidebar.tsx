@@ -1222,28 +1222,30 @@ export function AppSidebar() {
 
           {!(workflow_id && parentPath === "workflows") && (
             <div className="mt-1 flex items-center justify-center gap-0 rounded-[8px] bg-gray-100">
-              <OrganizationSwitcher
-                organizationProfileUrl="/organization-profile"
-                organizationProfileMode="navigation"
-                afterSelectOrganizationUrl="/org/:slug/workflows"
-                afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
-                appearance={{
-                  elements: {
-                    rootBox: cn(
-                      "items-center justify-center p-0 w-full",
-                      orgId && "max-w-[221px] md:max-w-[190px]",
-                    ),
-                    organizationSwitcherPopoverRootBox: {
-                      pointerEvents: "initial",
+              <div className="flex min-h-[44px] w-full items-center justify-center">
+                <OrganizationSwitcher
+                  organizationProfileUrl="/organization-profile"
+                  organizationProfileMode="navigation"
+                  afterSelectOrganizationUrl="/org/:slug/workflows"
+                  afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
+                  appearance={{
+                    elements: {
+                      rootBox: cn(
+                        "items-center justify-center p-0 w-full",
+                        orgId && "max-w-[221px] md:max-w-[190px]",
+                      ),
+                      organizationSwitcherPopoverRootBox: {
+                        pointerEvents: "initial",
+                      },
+                      organizationSwitcherTrigger: {
+                        width: "100%",
+                        justifyContent: "space-between",
+                        padding: "12px 12px",
+                      },
                     },
-                    organizationSwitcherTrigger: {
-                      width: "100%",
-                      justifyContent: "space-between",
-                      padding: "12px 12px",
-                    },
-                  },
-                }}
-              />
+                  }}
+                />
+              </div>
               {orgId && (
                 <Link
                   className="flex h-full items-center justify-center rounded-r-[8px] bg-gray-200/40 px-4 transition-colors hover:bg-gray-200"

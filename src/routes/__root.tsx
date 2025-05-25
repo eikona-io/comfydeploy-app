@@ -82,9 +82,6 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
 function RootComponent() {
   const auth = useAuth();
   const clerk = useClerk();
-  const { userMemberships, isLoaded } = useOrganizationList({
-    userMemberships: true,
-  });
 
   const router = useRouter();
   const isFirstRender = useRef(true);
@@ -127,14 +124,14 @@ function RootComponent() {
           </SignedIn>
         )}
         {/* Mobile navbar */}
-        <div className="fixed h-[40px] top-0 z-50 w-full gap-2 flex flex-row items-center border-gray-200 border-b bg-secondary bg-white p-1 md:hidden">
-          <SidebarTrigger className="h-8 w-8 rounded-none p-2 border-r border-gray-200" />
+        <div className="fixed top-0 z-50 flex h-[40px] w-full flex-row items-center gap-2 border-gray-200 border-b bg-secondary bg-white p-1 md:hidden">
+          <SidebarTrigger className="h-8 w-8 rounded-none border-gray-200 border-r p-2" />
           {/* Logo */}
           <Link href="/" className="flex flex-row items-center justify-center">
             <Icon />
           </Link>
         </div>
-        <div className="flex mt-[40px] md:mt-0 max-h-[calc(100dvh-40px)] md:max-h-[100dvh] w-full flex-col items-center justify-start overflow-x-auto">
+        <div className="mt-[40px] flex max-h-[calc(100dvh-40px)] w-full flex-col items-center justify-start overflow-x-auto md:mt-0 md:max-h-[100dvh]">
           <div className="fixed z-[-1] h-full w-full bg-white">
             <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
           </div>
