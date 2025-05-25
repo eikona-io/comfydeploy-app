@@ -3,6 +3,26 @@
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "staging.app.comfydeploy.com"
+        }
+      ],
+      "destination": "https://staging.api.comfydeploy.com/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.comfydeploy.com"
+        }
+      ],
+      "destination": "https://api.comfydeploy.com/api/:path*"
     }
   ]
 }
