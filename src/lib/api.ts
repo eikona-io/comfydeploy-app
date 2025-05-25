@@ -43,9 +43,13 @@ export async function api({
 
   // Use relative URL in production/staging, full URL in local development
   const isLocal = process.env.NODE_ENV === "development";
+  const isStaging =
+    process.env.NEXT_PUBLIC_CD_API_URL?.includes("staging") ||
+    window.location.hostname.includes("staging");
+  const apiPrefix = isStaging ? "/staging/api" : "/api";
   const finalUrl = isLocal
     ? `${process.env.NEXT_PUBLIC_CD_API_URL}/api/${url}${queryString}`
-    : `/api/${url}${queryString}`;
+    : `${apiPrefix}/${url}${queryString}`;
 
   // Use XMLHttpRequest for upload progress
   if (onUploadProgress) {
