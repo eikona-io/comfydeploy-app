@@ -401,11 +401,13 @@ function TreeNode({
       await operations.moveFile(moveSource, moveTarget, overwrite);
       toast.success("Item moved successfully");
       setShowMoveDialog(false);
-    } catch (error: any) {
-      if (error.message?.includes("already exists")) {
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      if (errorMessage.includes("already exists")) {
         setOverwriteConfirm(true);
       } else {
-        toast.error(`Failed to move item: ${error.message || "Unknown error"}`);
+        toast.error(`Failed to move item: ${errorMessage}`);
         setShowMoveDialog(false);
       }
     } finally {
@@ -434,7 +436,7 @@ function TreeNode({
             "flex items-center gap-2 rounded px-2 py-1 hover:bg-accent",
             node.isVirtual && "text-muted-foreground",
             node.type === 2 &&
-              "hover:border hover:border-blue-200 hover:border-dashed hover:bg-blue-50",
+              "border border-transparent hover:border hover:border-blue-200 hover:border-dashed hover:bg-blue-50",
           )}
           onClick={() => setIsOpen(!isOpen)}
         >
@@ -476,7 +478,7 @@ function TreeNode({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 border border-blue-200 bg-blue-50 text-blue-700 invisible hover:bg-blue-100 hover:text-blue-800 group-hover:visible"
+            className="h-7 w-7 border border-transparent bg-transparent text-transparent hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 group-hover:border-blue-200 group-hover:bg-blue-50 group-hover:text-blue-700"
             onClick={() => onAddModel(node.path)}
             title={`Upload model to ${node.path}`}
           >
@@ -489,7 +491,7 @@ function TreeNode({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 invisible group-hover:visible"
+              className="h-8 w-8 text-transparent group-hover:text-foreground"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -1014,35 +1016,36 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
     filter === "public" || filter === "all",
   );
 
-  // Sort function
-  const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
-    // Create a copy to avoid mutating original
-    return [...nodes]
-      .sort((a, b) => {
-        // Folders always come first
-        if (a.type !== b.type) {
-          return a.type === 2 ? -1 : 1;
-        }
-
-        if (sortBy === "name") {
-          const nameA = a.name.toLowerCase();
-          const nameB = b.name.toLowerCase();
-          return sortDirection === "asc"
-            ? nameA.localeCompare(nameB)
-            : nameB.localeCompare(nameA);
-        }
-        // Sort by size
-        return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
-      })
-      .map((node) => ({
-        ...node,
-        children: sortNodes(node.children),
-      }));
-  };
-
   // Apply sorting to the merged tree
   const sortedTree = useMemo(() => {
     console.log("Sorting by:", sortBy, "Direction:", sortDirection);
+
+    // Sort function
+    const sortNodes = (nodes: TreeNode[]): TreeNode[] => {
+      // Create a copy to avoid mutating original
+      return [...nodes]
+        .sort((a, b) => {
+          // Folders always come first
+          if (a.type !== b.type) {
+            return a.type === 2 ? -1 : 1;
+          }
+
+          if (sortBy === "name") {
+            const nameA = a.name.toLowerCase();
+            const nameB = b.name.toLowerCase();
+            return sortDirection === "asc"
+              ? nameA.localeCompare(nameB)
+              : nameB.localeCompare(nameA);
+          }
+          // Sort by size
+          return sortDirection === "asc" ? a.size - b.size : b.size - a.size;
+        })
+        .map((node) => ({
+          ...node,
+          children: sortNodes(node.children),
+        }));
+    };
+
     return sortNodes(mergedTree);
   }, [mergedTree, sortBy, sortDirection]);
 
@@ -1302,16 +1305,16 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
       <div className="mx-auto w-full max-w-screen-2xl flex-1 overflow-auto rounded-sm border border-gray-200 bg-muted/20">
         {isLoadingPrivate || isLoadingPublic ? (
           <div className="flex flex-col gap-4 p-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={`loading-${i}`} className="flex flex-col gap-2">
+            {Array.from({ length: 3 }, (_, i) => (
+              <div key={`loading-folder-${i}`} className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-32 animate-pulse rounded bg-gray-200" />
                   <div className="h-4 w-16 animate-pulse rounded bg-gray-200" />
                 </div>
                 <div className="flex flex-col divide-y divide-gray-100">
-                  {Array.from({ length: 2 }).map((_, j) => (
+                  {Array.from({ length: 2 }, (_, j) => (
                     <div
-                      key={`loading-item-${j}`}
+                      key={`loading-file-${i}-${j}`}
                       className="flex items-center gap-2 p-2"
                     >
                       <div className="h-4 w-4 animate-pulse rounded bg-gray-200" />
@@ -1358,46 +1361,26 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col">
+          <div className="flex flex-col p-4">
             {/* Common Models Section */}
-            <div className="mb-4 mt-2">
-              <h3 className="font-medium text-gray-900 mb-3 text-sm">Common Models</h3>
+            <div className="mb-2 mt-1">
+              <h3 className="mb-2 text-sm font-medium text-gray-900">
+                Common Models
+              </h3>
             </div>
-            
-            {/* Common model categories as TreeNodes */}
-            <div className="flex flex-col">
-              {[
-                { name: "Checkpoints", path: "checkpoints" },
-                { name: "LoRAs", path: "loras" },
-                { name: "ControlNet", path: "controlnet" }
-              ].map((category) => (
-                <TreeNode
-                  key={category.path}
-                  node={{
-                    name: category.name,
-                    path: category.path,
-                    type: 2, // Folder type
-                    children: sortedTree.filter(node => 
-                      node.path.startsWith(category.path + "/") || 
-                      node.path === category.path
-                    ),
-                    mtime: Date.now(),
-                    size: 0,
-                    isPrivate: true
-                  }}
-                  search={search}
-                  operations={operations}
-                  onAddModel={onAddModel}
-                />
-              ))}
-              
-              {/* All Models Section */}
-              <div className="mb-4 mt-6">
-                <h3 className="font-medium text-gray-900 mb-3 text-sm">All Models</h3>
-              </div>
-              
-              {/* All other models */}
-              {sortedTree.map((node) => (
+
+            {/* Display common model folders directly */}
+            {sortedTree
+              .filter(
+                (node) =>
+                  node.path === "checkpoints" ||
+                  node.path === "loras" ||
+                  node.path === "controlnet" ||
+                  node.path.startsWith("checkpoints/") ||
+                  node.path.startsWith("loras/") ||
+                  node.path.startsWith("controlnet/"),
+              )
+              .map((node) => (
                 <TreeNode
                   key={node.path}
                   node={node}
@@ -1406,7 +1389,36 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                   onAddModel={onAddModel}
                 />
               ))}
+
+            {/* All Models Section */}
+            <div className="mb-2 mt-3">
+              <h3 className="mb-2 text-sm font-medium text-gray-900">
+                All Models
+              </h3>
             </div>
+
+            {/* Display all models except common ones */}
+            {sortedTree
+              .filter(
+                (node) =>
+                  !(
+                    node.path === "checkpoints" ||
+                    node.path === "loras" ||
+                    node.path === "controlnet" ||
+                    node.path.startsWith("checkpoints/") ||
+                    node.path.startsWith("loras/") ||
+                    node.path.startsWith("controlnet/")
+                  ),
+              )
+              .map((node) => (
+                <TreeNode
+                  key={node.path}
+                  node={node}
+                  search={search}
+                  operations={operations}
+                  onAddModel={onAddModel}
+                />
+              ))}
           </div>
         )}
       </div>
