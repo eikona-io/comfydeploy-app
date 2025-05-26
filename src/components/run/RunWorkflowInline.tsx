@@ -280,7 +280,10 @@ export function RunWorkflowInline({
       >
     >(default_values);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [currentRunId, setCurrentRunId] = useQueryState("run-id");
+  const [currentWorkflowVersion, setCurrentWorkflowVersion] =
+    useQueryState("version");
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [reorderedInputs, setReorderedInputs] = useState<typeof inputs>([]);
@@ -429,7 +432,7 @@ export function RunWorkflowInline({
     if (!workflow_version_id || !reorderedInputs) return;
 
     try {
-      setIsLoading(true);
+      setIsSavingOrder(true);
       if (!workflow_api) {
         toast.error("No workflow API found");
         return;
@@ -447,7 +450,7 @@ export function RunWorkflowInline({
         }
       });
 
-      await callServerPromise(
+      const data = await callServerPromise(
         api({
           url: `workflow/${workflowId}/version`,
           init: {
@@ -468,10 +471,11 @@ export function RunWorkflowInline({
       queryClient.invalidateQueries({
         queryKey: ["workflow", workflowId, "versions"],
       });
+      setCurrentWorkflowVersion(data.version);
       setIsEditMode(false);
-      setIsLoading(false);
+      setIsSavingOrder(false);
     } catch (error) {
-      setIsLoading(false);
+      setIsSavingOrder(false);
       toast.error(
         `Failed to save input order: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -497,6 +501,7 @@ export function RunWorkflowInline({
                 variant="outline"
                 size="xs"
                 className="shadow-sm backdrop-blur-sm"
+                type="button"
               >
                 <X size={16} className="mr-1" />
                 Cancel
@@ -506,7 +511,8 @@ export function RunWorkflowInline({
                 variant="default"
                 size="xs"
                 className="shadow-sm backdrop-blur-sm"
-                isLoading={isLoading}
+                isLoading={isSavingOrder}
+                type="button"
               >
                 <Save size={16} className="mr-1" />
                 Save
@@ -518,6 +524,7 @@ export function RunWorkflowInline({
               variant="default"
               size="xs"
               className="shadow-sm backdrop-blur-sm"
+              type="button"
             >
               <Edit size={16} className="mr-1" />
               Reorder
