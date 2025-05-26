@@ -1362,24 +1362,31 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
             {/* Common Models Section */}
             <div className="mb-6">
               <h3 className="font-medium text-gray-900 mb-3 text-sm">Common Models</h3>
-              <div className="flex flex-col gap-1">
-                {/* Hardcoded common model categories */}
+              <div className="flex flex-col">
+                {/* Hardcoded common model categories as TreeNodes */}
                 {[
-                  { name: "Checkpoints", path: "checkpoints", icon: "📋" },
-                  { name: "LoRAs", path: "loras", icon: "🎛️" },
-                  { name: "ControlNet", path: "controlnet", icon: "🎮" }
+                  { name: "Checkpoints", path: "checkpoints" },
+                  { name: "LoRAs", path: "loras" },
+                  { name: "ControlNet", path: "controlnet" }
                 ].map((category) => (
-                  <button
+                  <TreeNode
                     key={category.path}
-                    type="button"
-                    className="flex items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent transition-colors"
-                    onClick={() => {
-                      setSearch(category.path);
+                    node={{
+                      name: category.name,
+                      path: category.path,
+                      type: 2, // Folder type
+                      children: sortedTree.filter(node => 
+                        node.path.startsWith(category.path + "/") || 
+                        node.path === category.path
+                      ),
+                      mtime: Date.now(),
+                      size: 0,
+                      isPrivate: true
                     }}
-                  >
-                    <FolderIcon className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm">{category.name}</span>
-                  </button>
+                    search={search}
+                    operations={operations}
+                    onAddModel={onAddModel}
+                  />
                 ))}
               </div>
             </div>
