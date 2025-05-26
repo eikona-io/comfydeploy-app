@@ -1359,52 +1359,44 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           </div>
         ) : (
           <div className="flex flex-col">
-            {/* Common Models Section */}
-            <div className="mb-6">
-              <h3 className="font-medium text-gray-900 mb-3 text-sm">Common Models</h3>
-              <div className="flex flex-col">
-                {/* Hardcoded common model categories as TreeNodes */}
-                {[
-                  { name: "Checkpoints", path: "checkpoints" },
-                  { name: "LoRAs", path: "loras" },
-                  { name: "ControlNet", path: "controlnet" }
-                ].map((category) => (
-                  <TreeNode
-                    key={category.path}
-                    node={{
-                      name: category.name,
-                      path: category.path,
-                      type: 2, // Folder type
-                      children: sortedTree.filter(node => 
-                        node.path.startsWith(category.path + "/") || 
-                        node.path === category.path
-                      ),
-                      mtime: Date.now(),
-                      size: 0,
-                      isPrivate: true
-                    }}
-                    search={search}
-                    operations={operations}
-                    onAddModel={onAddModel}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            {/* All Models Section */}
-            <div>
-              <h3 className="font-medium text-gray-900 mb-3 text-sm">All Models</h3>
-              <div className="flex flex-col">
-                {sortedTree.map((node) => (
-                  <TreeNode
-                    key={node.path}
-                    node={node}
-                    search={search}
-                    operations={operations}
-                    onAddModel={onAddModel}
-                  />
-                ))}
-              </div>
+            {/* Common model categories and all models in a single tree */}
+            <div className="flex flex-col">
+              {/* Hardcoded common model categories as TreeNodes */}
+              {[
+                { name: "Checkpoints", path: "checkpoints" },
+                { name: "LoRAs", path: "loras" },
+                { name: "ControlNet", path: "controlnet" }
+              ].map((category) => (
+                <TreeNode
+                  key={category.path}
+                  node={{
+                    name: category.name,
+                    path: category.path,
+                    type: 2, // Folder type
+                    children: sortedTree.filter(node => 
+                      node.path.startsWith(category.path + "/") || 
+                      node.path === category.path
+                    ),
+                    mtime: Date.now(),
+                    size: 0,
+                    isPrivate: true
+                  }}
+                  search={search}
+                  operations={operations}
+                  onAddModel={onAddModel}
+                />
+              ))}
+              
+              {/* All other models */}
+              {sortedTree.map((node) => (
+                <TreeNode
+                  key={node.path}
+                  node={node}
+                  search={search}
+                  operations={operations}
+                  onAddModel={onAddModel}
+                />
+              ))}
             </div>
           </div>
         )}
