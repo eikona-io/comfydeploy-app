@@ -281,6 +281,8 @@ export function RunWorkflowInline({
     >(default_values);
   const [isLoading, setIsLoading] = useState(false);
   const [currentRunId, setCurrentRunId] = useQueryState("run-id");
+  const [currentWorkflowVersion, setCurrentWorkflowVersion] =
+    useQueryState("version");
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [reorderedInputs, setReorderedInputs] = useState<typeof inputs>([]);
@@ -447,7 +449,7 @@ export function RunWorkflowInline({
         }
       });
 
-      await callServerPromise(
+      const data = await callServerPromise(
         api({
           url: `workflow/${workflowId}/version`,
           init: {
@@ -468,6 +470,7 @@ export function RunWorkflowInline({
       queryClient.invalidateQueries({
         queryKey: ["workflow", workflowId, "versions"],
       });
+      setCurrentWorkflowVersion(data.version);
       setIsEditMode(false);
       setIsLoading(false);
     } catch (error) {
