@@ -87,6 +87,9 @@ type fileURLRenderProps = {
   canFullScreen?: boolean;
   isSmallView?: boolean;
   canDownload?: boolean;
+
+  // temp fix
+  isAssetBrowser?: boolean;
 };
 
 function _FileURLRender({
@@ -96,6 +99,7 @@ function _FileURLRender({
   onLoad,
   isMainView = false,
   isSmallView = false,
+  isAssetBrowser = false,
 }: fileURLRenderProps) {
   const { token } = useAuthStore();
   const a = new URL(url);
@@ -221,7 +225,7 @@ function _FileURLRender({
     }
 
     return (
-      <div className="relative h-full w-full">
+      <div className={cn("relative", !isAssetBrowser && "h-full w-full")}>
         {isLoading && (
           <div
             className={cn(
@@ -390,6 +394,7 @@ export function FileURLRender(props: fileURLRenderProps) {
               <DialogTitle className="hidden" />
               <div className="flex h-full w-full items-center justify-center">
                 <_FileURLRender
+                  isAssetBrowser={props.isAssetBrowser}
                   url={props.url}
                   imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
                   lazyLoading={props.lazyLoading}
