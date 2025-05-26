@@ -280,6 +280,7 @@ export function RunWorkflowInline({
       >
     >(default_values);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
   const [currentRunId, setCurrentRunId] = useQueryState("run-id");
   const [currentWorkflowVersion, setCurrentWorkflowVersion] =
     useQueryState("version");
@@ -431,7 +432,7 @@ export function RunWorkflowInline({
     if (!workflow_version_id || !reorderedInputs) return;
 
     try {
-      setIsLoading(true);
+      setIsSavingOrder(true);
       if (!workflow_api) {
         toast.error("No workflow API found");
         return;
@@ -472,9 +473,9 @@ export function RunWorkflowInline({
       });
       setCurrentWorkflowVersion(data.version);
       setIsEditMode(false);
-      setIsLoading(false);
+      setIsSavingOrder(false);
     } catch (error) {
-      setIsLoading(false);
+      setIsSavingOrder(false);
       toast.error(
         `Failed to save input order: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -510,7 +511,7 @@ export function RunWorkflowInline({
                 variant="default"
                 size="xs"
                 className="shadow-sm backdrop-blur-sm"
-                isLoading={isLoading}
+                isLoading={isSavingOrder}
                 type="button"
               >
                 <Save size={16} className="mr-1" />
