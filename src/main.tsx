@@ -24,6 +24,10 @@ import { orgPrefixPaths } from "./orgPrefixPaths";
 // Set up a Router instance
 import { type RootRouteContext, Route } from "./routes/__root";
 import { LoadingScreen } from "@/components/ui/loading-screen";
+import { SidebarProvider } from "./components/ui/sidebar";
+import { Providers } from "./lib/providers";
+import { SidebarGhost } from "./components/ui/sidebar-ghost";
+import { LoadingProgress } from "./components/ui/loading-progress";
 
 // Add this function before creating the orgRoute
 function updateRoutePaths(route: RouteType) {
@@ -237,13 +241,20 @@ function InnerApp() {
   const clerk = useClerk();
   publicClerk = clerk;
 
-  if (!auth.isLoaded) {
-    return <LoadingScreen />;
-  }
-
   return (
     <div className="animate-in" style={{ animationDuration: "300ms" }}>
-      <RouterProvider router={router} context={{ auth, clerk }} />
+      <div className="fixed z-[-1] h-full w-full bg-white">
+        <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+      </div>
+      <div className="fixed inset-0 flex flex-row">
+        <SidebarGhost />
+        {!auth.isLoaded && <LoadingProgress />}
+      </div>
+      <SidebarProvider>
+        <Providers>
+          <RouterProvider router={router} context={{ auth, clerk }} />
+        </Providers>
+      </SidebarProvider>
     </div>
   );
 }
