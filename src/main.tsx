@@ -28,6 +28,7 @@ import { SidebarProvider } from "./components/ui/sidebar";
 import { Providers } from "./lib/providers";
 import { SidebarGhost } from "./components/ui/sidebar-ghost";
 import { LoadingProgress } from "./components/ui/loading-progress";
+import { AnimatePresence } from "framer-motion";
 
 // Add this function before creating the orgRoute
 function updateRoutePaths(route: RouteType) {
@@ -248,7 +249,9 @@ function InnerApp() {
       </div>
       <div className="fixed inset-0 flex flex-row">
         <SidebarGhost />
-        {!auth.isLoaded && <LoadingProgress />}
+        <AnimatePresence mode="wait">
+          {!auth.isSignedIn && <LoadingProgress key="loading" />}
+        </AnimatePresence>
       </div>
       <SidebarProvider>
         <Providers>

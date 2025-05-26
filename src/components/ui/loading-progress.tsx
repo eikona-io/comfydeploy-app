@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 interface LoadingProgressProps {
   className?: string;
@@ -13,6 +14,7 @@ export function LoadingProgress({
 }: LoadingProgressProps) {
   const [dots, setDots] = useState("");
   const [progress, setProgress] = useState(0);
+  const [isExiting, setIsExiting] = useState(false);
 
   // Animate progress
   useEffect(() => {
@@ -39,23 +41,43 @@ export function LoadingProgress({
   //   }, []);
 
   return (
-    <div
+    <motion.div
       className={cn(
         "flex h-screen w-full flex-1 items-center justify-center bg-transparent inset-0 z-50",
         className,
       )}
+      initial={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      transition={{ duration: 0.1, ease: [0.25, 0.46, 0.45, 0.94], delay: 0.7 }}
     >
       <div className="flex flex-col items-center gap-4">
-        <div className="flex items-center gap-3">
+        {/* Text fades out first */}
+        <motion.div
+          className="flex items-center gap-3"
+          exit={{ opacity: 0, y: 10 }}
+          transition={{
+            duration: 0.2,
+            ease: [0.25, 0.46, 0.45, 0.94],
+            delay: 0.2,
+          }}
+        >
           {/* <Loader2 className="h-5 w-5 animate-spin text-primary" /> */}
           <p className="text-muted-foreground">
             {message}
             <span className="inline-block text-left w-6">{dots}</span>
           </p>
-        </div>
+        </motion.div>
 
-        {/* Progress bar with diagonal pattern */}
-        <div className="w-80 max-w-sm">
+        {/* Progress bar fades out second */}
+        <motion.div
+          className="w-80 max-w-sm"
+          exit={{ opacity: 0, y: 15 }}
+          transition={{
+            duration: 0.2,
+            ease: [0.25, 0.46, 0.45, 0.94],
+            delay: 0.3,
+          }}
+        >
           <div
             className="relative h-3 w-full overflow-hidden bg-gray-100"
             style={{
@@ -82,8 +104,8 @@ export function LoadingProgress({
               }}
             />
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
