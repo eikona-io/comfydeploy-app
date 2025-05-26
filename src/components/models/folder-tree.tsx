@@ -476,7 +476,7 @@ function TreeNode({
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 border border-blue-200 bg-blue-50 text-blue-700 opacity-0 transition-opacity hover:bg-blue-100 hover:text-blue-800 group-hover:opacity-100"
+            className="h-7 w-7 border border-blue-200 bg-blue-50 text-blue-700 invisible hover:bg-blue-100 hover:text-blue-800 group-hover:visible"
             onClick={() => onAddModel(node.path)}
             title={`Upload model to ${node.path}`}
           >
@@ -489,7 +489,7 @@ function TreeNode({
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 opacity-0 group-hover:opacity-100"
+              className="h-8 w-8 invisible group-hover:visible"
             >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
@@ -1359,9 +1359,13 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           </div>
         ) : (
           <div className="flex flex-col">
-            {/* Common model categories and all models in a single tree */}
+            {/* Common Models Section */}
+            <div className="mb-4 mt-2">
+              <h3 className="font-medium text-gray-900 mb-3 text-sm">Common Models</h3>
+            </div>
+            
+            {/* Common model categories as TreeNodes */}
             <div className="flex flex-col">
-              {/* Hardcoded common model categories as TreeNodes */}
               {[
                 { name: "Checkpoints", path: "checkpoints" },
                 { name: "LoRAs", path: "loras" },
@@ -1386,6 +1390,11 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                   onAddModel={onAddModel}
                 />
               ))}
+              
+              {/* All Models Section */}
+              <div className="mb-4 mt-6">
+                <h3 className="font-medium text-gray-900 mb-3 text-sm">All Models</h3>
+              </div>
               
               {/* All other models */}
               {sortedTree.map((node) => (
