@@ -61,6 +61,11 @@ export function UserSettings() {
             .describe("S3 Bucket Name")
             .nullable(),
           s3_region: z.string().optional().describe("S3 Region").nullable(),
+          assumed_role_arn: z
+            .string()
+            .optional()
+            .describe("AWS Role to Assume (ARN)")
+            .nullable(),
           // spend_limit: z.coerce
           //   .number()
           //   .default(5.0)
@@ -101,6 +106,7 @@ export function UserSettings() {
               "s3_bucket_name",
               "s3_region",
               "s3_secret_access_key",
+              "assumed_role_arn",
             ],
             when(sourceFieldValue, targetFieldValue) {
               return !sourceFieldValue;
@@ -122,6 +128,18 @@ export function UserSettings() {
                 </div>
               );
             },
+          },
+          assumed_role_arn: {
+            group: "Storage Settings [Business]",
+            description: (
+              <>
+                <p>
+                  {
+                    "The ARN of the role that will be used to access the S3 bucket. Contact us for more information."
+                  }
+                </p>
+              </>
+            ),
           },
           // spend_limit: {
           //   fieldType: "number",
