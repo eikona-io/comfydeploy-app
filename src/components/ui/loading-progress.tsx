@@ -64,7 +64,7 @@ export function LoadingProgress({
           {/* <Loader2 className="h-5 w-5 animate-spin text-primary" /> */}
           <p className="text-muted-foreground">
             {message}
-            <span className="inline-block text-left w-6">{dots}</span>
+            {/* <span className="inline-block text-left w-6">{dots}</span> */}
           </p>
         </motion.div>
 
