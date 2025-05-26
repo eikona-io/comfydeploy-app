@@ -500,6 +500,7 @@ export function RunWorkflowInline({
                 variant="outline"
                 size="xs"
                 className="shadow-sm backdrop-blur-sm"
+                type="button"
               >
                 <X size={16} className="mr-1" />
                 Cancel
@@ -510,6 +511,7 @@ export function RunWorkflowInline({
                 size="xs"
                 className="shadow-sm backdrop-blur-sm"
                 isLoading={isLoading}
+                type="button"
               >
                 <Save size={16} className="mr-1" />
                 Save
@@ -521,6 +523,7 @@ export function RunWorkflowInline({
               variant="default"
               size="xs"
               className="shadow-sm backdrop-blur-sm"
+              type="button"
             >
               <Edit size={16} className="mr-1" />
               Reorder
