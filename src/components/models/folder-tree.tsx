@@ -1359,15 +1359,46 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
           </div>
         ) : (
           <div className="flex flex-col">
-            {sortedTree.map((node) => (
-              <TreeNode
-                key={node.path}
-                node={node}
-                search={search}
-                operations={operations}
-                onAddModel={onAddModel}
-              />
-            ))}
+            {/* Common Models Section */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-900 mb-3 text-sm">Common Models</h3>
+              <div className="flex flex-col gap-1">
+                {/* Hardcoded common model categories */}
+                {[
+                  { name: "Checkpoints", path: "checkpoints", icon: "📋" },
+                  { name: "LoRAs", path: "loras", icon: "🎛️" },
+                  { name: "ControlNet", path: "controlnet", icon: "🎮" }
+                ].map((category) => (
+                  <button
+                    key={category.path}
+                    type="button"
+                    className="flex items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-accent transition-colors"
+                    onClick={() => {
+                      setSearch(category.path);
+                    }}
+                  >
+                    <FolderIcon className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm">{category.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* All Models Section */}
+            <div>
+              <h3 className="font-medium text-gray-900 mb-3 text-sm">All Models</h3>
+              <div className="flex flex-col">
+                {sortedTree.map((node) => (
+                  <TreeNode
+                    key={node.path}
+                    node={node}
+                    search={search}
+                    operations={operations}
+                    onAddModel={onAddModel}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
