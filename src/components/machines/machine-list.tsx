@@ -26,9 +26,16 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { useNavigate } from "@tanstack/react-router";
-import { Cloud, CloudCog, EllipsisVertical, Plus, RefreshCcw, Server } from "lucide-react";
+import {
+  Cloud,
+  CloudCog,
+  EllipsisVertical,
+  Plus,
+  RefreshCcw,
+  Server,
+} from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
@@ -44,7 +51,9 @@ interface Machine {
 }
 
 export function MachineList() {
-  const [selectedMachines, setSelectedMachines] = useState<Set<string>>(new Set());
+  const [selectedMachines, setSelectedMachines] = useState<Set<string>>(
+    new Set(),
+  );
   const [bulkUpgradeDialogOpen, setBulkUpgradeDialogOpen] = useState(false);
   const [searchValue, setSearchValue] = useQueryState("search");
   const [openCustomDialog, setOpenCustomDialog] = useState(false);
@@ -84,6 +93,11 @@ export function MachineList() {
     selectedTab === "docker",
   );
 
+  // Memoize the flattened machine data to prevent unnecessary re-renders
+  const machineData = useMemo(() => {
+    return query.data?.pages.flat() || [];
+  }, [query.data]);
+
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
       <div className="mb-4 flex items-start justify-between gap-4">
@@ -99,19 +113,19 @@ export function MachineList() {
               <span className="text-xs">⌘</span>K
             </kbd>
           </div>
-          
+
           {query.data?.pages[0].length > 0 && (
             <div className="flex items-center gap-2">
-              <Checkbox 
+              <Checkbox
                 id="select-all"
                 checked={
-                  query.data?.pages[0].length > 0 && 
+                  query.data?.pages[0].length > 0 &&
                   selectedMachines.size === query.data?.pages[0].length
                 }
                 onCheckedChange={(checked) => {
                   if (checked) {
                     const allMachineIds = new Set<string>();
-                    query.data?.pages.forEach(page => {
+                    query.data?.pages.forEach((page) => {
                       page.forEach((machine: Machine) => {
                         allMachineIds.add(machine.id);
                       });
@@ -122,8 +136,8 @@ export function MachineList() {
                   }
                 }}
               />
-              <label 
-                htmlFor="select-all" 
+              <label
+                htmlFor="select-all"
                 className="text-sm font-medium cursor-pointer select-none"
               >
                 Select All
@@ -270,7 +284,7 @@ export function MachineList() {
               selectedTab={selectedTab}
               isSelected={selectedMachines.has(machine.id)}
               onSelectionChange={(machineId, selected) => {
-                setSelectedMachines(prev => {
+                setSelectedMachines((prev) => {
                   const newSet = new Set(prev);
                   if (selected) {
                     newSet.add(machineId);
@@ -415,7 +429,8 @@ export function MachineList() {
         <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
           <div className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 shadow-lg">
             <span className="text-primary-foreground">
-              {selectedMachines.size} machine{selectedMachines.size > 1 ? 's' : ''} selected
+              {selectedMachines.size} machine
+              {selectedMachines.size > 1 ? "s" : ""} selected
             </span>
             <Button
               variant="secondary"
@@ -440,7 +455,7 @@ export function MachineList() {
       {/* Bulk update dialog */}
       <BulkUpdateDialog
         selectedMachines={Array.from(selectedMachines)}
-        machineData={query.data?.pages.flatMap(page => page) || []}
+        machineData={machineData}
         open={bulkUpgradeDialogOpen}
         onOpenChange={setBulkUpgradeDialogOpen}
         onSuccess={() => {
