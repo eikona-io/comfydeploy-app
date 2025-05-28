@@ -129,9 +129,9 @@ export const extractS3Key = (url: string): string => {
  * Check if URL is already optimized by our service
  */
 export const isOptimizedUrl = (url: string): boolean => {
-  const baseUrl = process.env.NEXT_PUBLIC_CD_API_URL || "";
   // const baseUrl = process.env.NEXT_PUBLIC_CD_API_URL || "";
-  return url.includes(`/api/optimize/`);
+  return url.includes("/api/optimize/");
+};
 
 /**
  * Legacy compatibility - migrate from existing getOptimizedImage function
