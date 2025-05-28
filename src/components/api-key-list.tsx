@@ -58,7 +58,7 @@ function APIKeyRow({ item, onDelete }: { item: APIKey; onDelete: () => void }) {
           {/* Name and Key */}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <h3 className="truncate font-medium text-foreground">
+              <h3 className="truncate font-medium text-foreground text-sm">
                 {item.name}
               </h3>
               {item.revoked && (
@@ -67,24 +67,22 @@ function APIKeyRow({ item, onDelete }: { item: APIKey; onDelete: () => void }) {
                 </Badge>
               )}
             </div>
-            <div className="mt-1">
-              <code className="rounded bg-muted px-2 py-1 font-mono text-2xs text-muted-foreground">
-                {item.key}
-              </code>
-            </div>
+            <code className="rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+              {item.key}
+            </code>
           </div>
 
           {/* User */}
-          <div className="line-clamp-1 flex w-20 items-center justify-start">
+          <div className="flex w-20 items-center justify-start">
             <UserIcon user_id={item.user_id} displayName className="h-5 w-5" />
           </div>
 
           {/* Date */}
           <div className="hidden w-24 text-right sm:block">
-            <div className="text-muted-foreground text-xs">
+            <div className="line-clamp-1 text-muted-foreground text-xs">
               {getRelativeTime(item.created_at)}
             </div>
-            <div className="text-[11px] text-muted-foreground">Created</div>
+            <div className="text-[10px] text-muted-foreground">Created</div>
           </div>
         </div>
 
@@ -171,8 +169,8 @@ function EmptyState() {
 
 function LoadingState() {
   return (
-    <div className="space-y-4 p-6">
-      {Array.from({ length: 3 }).map((_, index) => (
+    <div className="mx-auto max-w-screen-2xl space-y-4 p-6">
+      {Array.from({ length: 4 }).map((_, index) => (
         <div
           key={`loading-${index}`}
           className="flex animate-pulse items-center gap-4"
@@ -237,25 +235,22 @@ export function APIKeyList() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden pb-4">
         {isLoading ? (
           <LoadingState />
         ) : isEmpty ? (
           <EmptyState />
         ) : (
-          <div className="h-full">
-            <VirtualizedInfiniteList
-              queryResult={data}
-              estimateSize={70}
-              header={<TableHeader />}
-              className="h-full"
-              containerStyle={{ minHeight: "100%" }}
-              renderItem={(item: APIKey) => (
-                <APIKeyRow item={item} onDelete={refetch} />
-              )}
-              renderLoading={() => <LoadingState />}
-            />
-          </div>
+          <VirtualizedInfiniteList
+            queryResult={data}
+            estimateSize={64}
+            header={<TableHeader />}
+            className="!h-full"
+            renderItem={(item: APIKey) => (
+              <APIKeyRow item={item} onDelete={refetch} />
+            )}
+            renderLoading={() => <LoadingState />}
+          />
         )}
       </div>
     </div>

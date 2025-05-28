@@ -894,7 +894,7 @@ export function UserIcon({
               </AvatarFallback>
             </Avatar>
             {displayName && (
-              <span className="text-muted-foreground text-xs">
+              <span className="line-clamp-1 text-muted-foreground text-xs">
                 {userData?.username ||
                   `${userData?.first_name} ${userData?.last_name}`}
               </span>
