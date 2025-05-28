@@ -6,7 +6,7 @@ import {
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
 import { MachineListItem } from "@/components/machines/machine-list-item";
-import { BulkUpgradeDialog } from "@/components/machines/bulk-upgrade-dialog";
+import { BulkUpdateDialog } from "@/components/machines/bulk-upgrade-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -437,8 +437,8 @@ export function MachineList() {
         </div>
       )}
 
-      {/* Bulk upgrade dialog */}
-      <BulkUpgradeDialog
+      {/* Bulk update dialog */}
+      <BulkUpdateDialog
         selectedMachines={Array.from(selectedMachines)}
         machineData={query.data?.pages.flatMap(page => page) || []}
         open={bulkUpgradeDialogOpen}

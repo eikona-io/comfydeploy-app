@@ -16,13 +16,29 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useState } from "react";
-import { AlertCircleIcon, Info, RefreshCcw } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircleIcon, Info, Loader2, RefreshCcw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-interface BulkUpgradeDialogProps {
+interface CustomNodesVersionResponse {
+  status: string;
+  local_commit: {
+    hash: string;
+    message: string;
+    date: string;
+  };
+  latest_commit: {
+    hash: string;
+    message: string;
+    date: string;
+  };
+  is_up_to_date: boolean;
+}
+
+interface BulkUpdateDialogProps {
   selectedMachines: string[];
   machineData: any[];
   open: boolean;
@@ -30,43 +46,76 @@ interface BulkUpgradeDialogProps {
   onSuccess: () => void;
 }
 
-interface UpgradeStatus {
+interface UpdateStatus {
   machineId: string;
   status: "pending" | "processing" | "success" | "error";
   message?: string;
 }
 
-export function BulkUpgradeDialog({
+export function BulkUpdateDialog({
   selectedMachines,
   machineData,
   open,
   onOpenChange,
   onSuccess,
-}: BulkUpgradeDialogProps) {
-  const [upgradeStatuses, setUpgradeStatuses] = useState<UpgradeStatus[]>([]);
+}: BulkUpdateDialogProps) {
+  const queryClient = useQueryClient();
+  const [upgradeStatuses, setUpgradeStatuses] = useState<UpdateStatus[]>([]);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [currentMachineIndex, setCurrentMachineIndex] = useState(0);
   const [overallProgress, setOverallProgress] = useState(0);
+  const [customNodesData, setCustomNodesData] = useState<Record<string, CustomNodesVersionResponse>>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   const machinesToUpgrade = machineData.filter(
-    (machine) =>
-      machine.machine_builder_version &&
-      Number(machine.machine_builder_version) < 4 &&
+    (machine: any) =>
       machine.type === "comfy-deploy-serverless" &&
       machine.status === "ready" &&
-      selectedMachines.includes(machine.id)
+      selectedMachines.includes(machine.id) &&
+      customNodesData[machine.id] && 
+      !customNodesData[machine.id].is_up_to_date
   );
+
+  useEffect(() => {
+    if (open && selectedMachines.length > 0) {
+      setIsLoading(true);
+      const fetchCustomNodesStatus = async () => {
+        const statusData: Record<string, CustomNodesVersionResponse> = {};
+        
+        for (const machineId of selectedMachines) {
+          try {
+            const machine = machineData.find((m: any) => m.id === machineId);
+            if (machine?.type === "comfy-deploy-serverless" && machine?.status === "ready") {
+              const response = await api({
+                url: `machine/${machineId}/check-custom-nodes`,
+              });
+              
+              const data = await response.json();
+              statusData[machineId] = data;
+            }
+          } catch (error) {
+            console.error(`Error fetching custom nodes status for machine ${machineId}:`, error);
+          }
+        }
+        
+        setCustomNodesData(statusData);
+        setIsLoading(false);
+      };
+      
+      fetchCustomNodesStatus();
+    }
+  }, [open, selectedMachines, machineData]);
 
   const handleUpgrade = async () => {
     if (machinesToUpgrade.length === 0) {
-      toast.error("No machines selected that require upgrade");
+      toast.error("No machines selected that require custom nodes update");
       onOpenChange(false);
       return;
     }
 
     setIsUpgrading(true);
     
-    const initialStatuses = machinesToUpgrade.map((machine) => ({
+    const initialStatuses = machinesToUpgrade.map((machine: any) => ({
       machineId: machine.id,
       status: "pending" as const,
     }));
@@ -88,38 +137,24 @@ export function BulkUpgradeDialog({
       );
 
       try {
-        const updatedMachine = {
-          ...machine,
-          machine_builder_version: "4",
-          docker_command_steps: {
-            ...machine.docker_command_steps,
-            steps: machine.docker_command_steps.steps.filter(
-              (step: any) =>
-                step?.type !== "custom-node" ||
-                !step?.data?.url
-                  ?.toLowerCase()
-                  ?.includes("github.com/bennykok/comfyui-deploy")
-            ),
-          },
-        };
-
         await callServerPromise(
           api({
-            url: `machine/serverless/${machine.id}`,
+            url: `machine/${machine.id}/update-custom-nodes`,
             init: {
-              method: "PATCH",
-              body: JSON.stringify({
-                machine_builder_version: "4",
-                docker_command_steps: updatedMachine.docker_command_steps,
-                is_trigger_rebuild: true,
-              }),
+              method: "POST",
             },
           }),
           {
-            loadingText: `Upgrading machine ${i + 1}/${machinesToUpgrade.length}...`,
+            loadingText: `Updating custom nodes ${i + 1}/${machinesToUpgrade.length}...`,
           }
         );
 
+        queryClient.invalidateQueries({
+          predicate: (query) =>
+            query.queryKey.includes("machine") &&
+            query.queryKey.includes(machine.id),
+        });
+        
         setUpgradeStatuses((prev) =>
           prev.map((status) =>
             status.machineId === machine.id
@@ -129,7 +164,7 @@ export function BulkUpgradeDialog({
         );
         successCount++;
       } catch (error) {
-        console.error(`Error upgrading machine ${machine.id}:`, error);
+        console.error(`Error updating custom nodes for machine ${machine.id}:`, error);
         
         setUpgradeStatuses((prev) =>
           prev.map((status) =>
@@ -150,12 +185,12 @@ export function BulkUpgradeDialog({
     }
 
     if (errorCount === 0) {
-      toast.success(`Successfully upgraded ${successCount} machines`);
+      toast.success(`Successfully updated custom nodes for ${successCount} machines`);
     } else if (successCount === 0) {
-      toast.error(`Failed to upgrade all ${errorCount} machines`);
+      toast.error(`Failed to update custom nodes for all ${errorCount} machines`);
     } else {
       toast.info(
-        `Upgraded ${successCount} machines, failed to upgrade ${errorCount} machines`
+        `Updated custom nodes for ${successCount} machines, failed to update ${errorCount} machines`
       );
     }
 
@@ -168,6 +203,8 @@ export function BulkUpgradeDialog({
     setIsUpgrading(false);
     setCurrentMachineIndex(0);
     setOverallProgress(0);
+    setCustomNodesData({});
+    setIsLoading(true);
   };
 
   const handleClose = () => {
@@ -182,32 +219,40 @@ export function BulkUpgradeDialog({
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
           <AlertDialogTitle>
-            Bulk Upgrade Machines to v4
+            Bulk Update Custom Nodes
           </AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">
-            {machinesToUpgrade.length > 0 ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-sm text-muted-foreground">Checking custom nodes status...</span>
+              </div>
+            ) : machinesToUpgrade.length > 0 ? (
               <>
                 <p>
-                  You are about to upgrade {machinesToUpgrade.length} machines to v4.
+                  You are about to update custom nodes for {machinesToUpgrade.length} machines.
                   This process:
                 </p>
                 <ul className="list-disc pl-4 text-sm">
-                  <li>Upgrades comfy deploy node to latest version</li>
-                  <li>Preserves custom nodes</li>
+                  <li>Updates ComfyUI-Deploy custom nodes to latest version</li>
+                  <li>Preserves your workflow configurations</li>
                   <li>Rebuilds each machine</li>
                 </ul>
 
                 <div className="mt-4 space-y-2">
                   <p className="font-medium text-sm">Selected machines:</p>
                   <div className="max-h-32 overflow-y-auto rounded border p-2">
-                    {machinesToUpgrade.map((machine) => (
-                      <div key={machine.id} className="flex items-center justify-between py-1">
-                        <span className="text-sm">{machine.name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          v{machine.machine_builder_version}
-                        </Badge>
-                      </div>
-                    ))}
+                    {machinesToUpgrade.map((machine: any) => {
+                      const customNodesInfo = customNodesData[machine.id];
+                      return (
+                        <div key={machine.id} className="flex items-center justify-between py-1">
+                          <span className="text-sm">{machine.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {customNodesInfo?.local_commit?.hash?.slice(0, 7) || "Unknown"}
+                          </Badge>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -229,8 +274,8 @@ export function BulkUpgradeDialog({
                 <AlertCircleIcon className="h-4 w-4" />
                 <AlertTitle>No Eligible Machines</AlertTitle>
                 <AlertDescription>
-                  None of the selected machines require an upgrade to v4.
-                  Please select machines with version lower than 4.
+                  None of the selected machines require custom nodes updates.
+                  Please select machines that have outdated custom nodes.
                 </AlertDescription>
               </Alert>
             )}
@@ -249,7 +294,7 @@ export function BulkUpgradeDialog({
                   <p className="text-sm font-medium">Machine Status:</p>
                   <div className="max-h-40 overflow-y-auto space-y-2">
                     {upgradeStatuses.map((status) => {
-                      const machine = machineData.find(m => m.id === status.machineId);
+                      const machine = machineData.find((m: any) => m.id === status.machineId);
                       return (
                         <div 
                           key={status.machineId} 
@@ -295,11 +340,11 @@ export function BulkUpgradeDialog({
             )}
           >
             {isUpgrading ? (
-              "Upgrading..."
+              "Updating..."
             ) : (
               <>
                 <RefreshCcw className="h-4 w-4" />
-                Upgrade Machines
+                Update Custom Nodes
               </>
             )}
           </AlertDialogAction>
