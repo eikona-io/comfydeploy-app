@@ -1,4 +1,6 @@
 import { AssetBrowser } from "../asset-browser";
+import { UploadZone } from "../upload/upload-zone";
+import { UploadProgress } from "../upload/upload-progress";
 import { sendEventToCD } from "./sendEventToCD";
 import { useAssetsBrowserStore } from "./Workspace";
 import type { AssetType } from "../SDInputs/sd-asset-input";
@@ -28,9 +30,21 @@ export function AssetBrowserSidebar({ onItemClick }: AssetBrowserSidebarProps) {
   };
 
   return (
-    <AssetBrowser
-      onItemClick={handleAssetClick}
-      isPanel={true}
-    />
+    <UploadZone className="h-full">
+      <div className="relative h-full flex flex-col">
+        <div className="px-4 py-2 text-center border-b border-white/20">
+          <p className="text-xs text-muted-foreground">
+            Drag & drop files here to upload
+          </p>
+        </div>
+        <div className="flex-1">
+          <AssetBrowser
+            onItemClick={handleAssetClick}
+            isPanel={true}
+          />
+        </div>
+        <UploadProgress className="absolute top-12 right-4 z-10" />
+      </div>
+    </UploadZone>
   );
 }
