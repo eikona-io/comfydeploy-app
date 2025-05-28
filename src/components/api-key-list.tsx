@@ -152,40 +152,46 @@ function TableHeader() {
 
 function EmptyState() {
   return (
-    <div className="flex h-64 flex-col items-center justify-center text-center">
-      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-        <Key className="h-8 w-8 text-muted-foreground" />
+    <>
+      <TableHeader />
+      <div className="flex h-64 flex-col items-center justify-center text-center">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+          <Key className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <h3 className="mt-4 font-semibold text-lg">No API keys found</h3>
+        <p className="mt-2 text-muted-foreground text-sm">
+          Get started by creating your first API key.
+        </p>
+        <div className="mt-4">
+          <ApiKeyAdd onKeyCreated={() => {}} />
+        </div>
       </div>
-      <h3 className="mt-4 font-semibold text-lg">No API keys found</h3>
-      <p className="mt-2 text-muted-foreground text-sm">
-        Get started by creating your first API key.
-      </p>
-      <div className="mt-4">
-        <ApiKeyAdd onKeyCreated={() => {}} />
-      </div>
-    </div>
+    </>
   );
 }
 
 function LoadingState() {
   return (
-    <div className="mx-auto max-w-screen-2xl space-y-4 p-6">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div
-          key={`loading-${index}`}
-          className="flex animate-pulse items-center gap-4"
-        >
-          <div className="h-10 w-10 rounded-lg bg-muted" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-32 rounded bg-muted" />
-            <div className="h-3 w-48 rounded bg-muted" />
+    <>
+      <TableHeader />
+      <div className="mx-auto max-w-screen-2xl space-y-4 p-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={`loading-${index}`}
+            className="flex animate-pulse items-center gap-4"
+          >
+            <div className="h-10 w-10 rounded-lg bg-muted" />
+            <div className="flex-1 space-y-2">
+              <div className="h-4 w-32 rounded bg-muted" />
+              <div className="h-3 w-48 rounded bg-muted" />
+            </div>
+            <div className="h-6 w-6 rounded-full bg-muted" />
+            <div className="h-4 w-16 rounded bg-muted" />
+            <div className="h-8 w-8 rounded bg-muted" />
           </div>
-          <div className="h-6 w-6 rounded-full bg-muted" />
-          <div className="h-4 w-16 rounded bg-muted" />
-          <div className="h-8 w-8 rounded bg-muted" />
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </>
   );
 }
 
