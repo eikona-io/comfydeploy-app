@@ -137,7 +137,7 @@ export function SidebarGhost({ className }: SidebarGhostProps) {
           data-sidebar="footer"
           className="flex flex-col gap-2 justify-center p-2 pb-4 w-full"
         >
-          <div id="sidebar-panel-footer" />
+          {/* <div id="sidebar-panel-footer" /> */}
 
           {/* Footer links skeleton */}
           <div className="grid grid-cols-2 gap-2 px-2">
