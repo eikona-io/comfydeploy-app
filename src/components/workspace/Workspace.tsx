@@ -67,7 +67,10 @@ import { WorkspaceControls } from "./workspace-control";
 import { useSearch } from "@tanstack/react-router";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { useWorkflowIdInSessionView, useSessionIdInSessionView } from "@/hooks/hook";
+import {
+  useWorkflowIdInSessionView,
+  useSessionIdInSessionView,
+} from "@/hooks/hook";
 
 interface WorkflowState {
   workflow: any;
@@ -258,6 +261,7 @@ export default function Workspace({
     sendWorkflow(workflowJson);
   };
 
+  const sessionId = useSessionIdInSessionView();
   // Temporary disabled
   // useEffect(() => {
   //   if (!workflowSendAttempts || isWorkflowLoaded) return;
@@ -385,7 +389,6 @@ export default function Workspace({
         if (data.type === "assets") {
           // console.log(data.data);
           // toast.success("Open Assets");
-          const sessionId = useSessionIdInSessionView();
           if (sessionId) {
             useAssetsBrowserStore.getState().setSidebarMode(true);
           } else {
@@ -470,7 +473,7 @@ export default function Workspace({
         capture: true,
       });
     };
-  }, [volumeName, machineId, endpoint]);
+  }, [volumeName, machineId, endpoint, sessionId]);
 
   useEffect(() => {
     if (!iframeLoaded) return;
@@ -513,7 +516,7 @@ export default function Workspace({
 
   return (
     <>
-      <AssetsBrowserPopup 
+      <AssetsBrowserPopup
         handleAsset={(asset) => {
           const { targetNodeData } = useAssetsBrowserStore.getState();
           if (targetNodeData?.node) {
