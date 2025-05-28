@@ -67,7 +67,7 @@ import { WorkspaceControls } from "./workspace-control";
 import { useSearch } from "@tanstack/react-router";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { useWorkflowIdInSessionView } from "@/hooks/hook";
+import { useWorkflowIdInSessionView, useSessionIdInSessionView } from "@/hooks/hook";
 
 interface WorkflowState {
   workflow: any;
@@ -385,7 +385,12 @@ export default function Workspace({
         if (data.type === "assets") {
           // console.log(data.data);
           // toast.success("Open Assets");
-          useAssetsBrowserStore.getState().setOpen(true);
+          const sessionId = useSessionIdInSessionView();
+          if (sessionId) {
+            useAssetsBrowserStore.getState().setSidebarMode(true);
+          } else {
+            useAssetsBrowserStore.getState().setOpen(true);
+          }
           useAssetsBrowserStore.getState().setTargetNodeData(data.data);
         }
 
@@ -508,7 +513,25 @@ export default function Workspace({
 
   return (
     <>
-      <AssetsBrowserPopup />
+      <AssetsBrowserPopup 
+        handleAsset={(asset) => {
+          const { targetNodeData } = useAssetsBrowserStore.getState();
+          if (targetNodeData?.node) {
+            sendEventToCD("update_widget", {
+              nodeId: targetNodeData.node,
+              widgetName: targetNodeData.inputName,
+              value: asset.url,
+            });
+            useAssetsBrowserStore.getState().setTargetNodeData(null);
+          } else {
+            sendEventToCD("add_node", {
+              type: "ComfyUIDeployExternalImage",
+              widgets_values: ["input_image", "", "", asset.url],
+            });
+          }
+          useAssetsBrowserStore.getState().setOpen(false);
+        }}
+      />
 
       <WorkspaceControls
         endpoint={endpoint}
@@ -624,6 +647,8 @@ interface AssetsBrowserState {
   setOpen: (open: boolean) => void;
   targetNodeData: any;
   setTargetNodeData: (targetNodeData: any) => void;
+  sidebarMode: boolean;
+  setSidebarMode: (mode: boolean) => void;
 }
 
 export const useAssetsBrowserStore = create<AssetsBrowserState>((set) => ({
@@ -631,4 +656,6 @@ export const useAssetsBrowserStore = create<AssetsBrowserState>((set) => ({
   setOpen: (open) => set({ open }),
   targetNodeData: null,
   setTargetNodeData: (targetNodeData) => set({ targetNodeData }),
+  sidebarMode: false,
+  setSidebarMode: (sidebarMode) => set({ sidebarMode }),
 }));

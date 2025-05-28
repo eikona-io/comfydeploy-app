@@ -116,6 +116,8 @@ import { LogDisplay } from "./workspace/LogDisplay";
 import { CopyButton } from "@/components/ui/copy-button";
 import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
 import { ExternalNodeDocs } from "./workspace/external-node-docs";
+import { AssetBrowserSidebar } from "./workspace/assets-browser-sidebar";
+import { AssetType } from "./SDInputs/sd-asset-input";
 
 // Add Session type
 interface Session {
@@ -359,7 +361,8 @@ function SessionSidebar() {
     | "commit"
     | "version"
     | "log"
-    | "external-node";
+    | "external-node"
+    | "assets";
 
   const [activeDrawer, setActiveDrawer] = useState<Drawer | null>(null);
   const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
@@ -487,6 +490,18 @@ function SessionSidebar() {
                         onClick={() => toggleDrawer("log")}
                       >
                         <FileClockIcon className="h-4 w-4" />
+                      </Button>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem className="p-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          activeDrawer === "assets" && "bg-primary/10",
+                        )}
+                        onClick={() => toggleDrawer("assets")}
+                      >
+                        <Folder className="h-4 w-4" />
                       </Button>
                     </SidebarMenuItem>
                   </SidebarMenu>
@@ -621,6 +636,21 @@ function SessionSidebar() {
                           workflow_id={workflowId || ""}
                           containerStyle={{ overflowX: "hidden" }}
                           onClose={() => setActiveDrawer(null)}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {activeDrawer === "assets" && (
+                    <div className="flex h-full flex-col p-4">
+                      <div className="flex items-center gap-2">
+                        <Folder className="h-4 w-4" />
+                        <span className="font-medium">Assets</span>
+                      </div>
+                      <div className="mt-4 flex-1">
+                        <AssetBrowserSidebar 
+                          onItemClick={(asset) => {
+                            setActiveDrawer(null);
+                          }}
                         />
                       </div>
                     </div>
