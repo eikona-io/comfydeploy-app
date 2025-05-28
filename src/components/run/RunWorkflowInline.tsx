@@ -492,7 +492,7 @@ export function RunWorkflowInline({
         }
       `}</style>
       {/* Edit button */}
-      {canEditOrder && (
+      {canEditOrder && inputs && inputs.length > 0 && (
         <div className="absolute top-0 right-1 z-10 flex gap-2">
           {isEditMode ? (
             <>
