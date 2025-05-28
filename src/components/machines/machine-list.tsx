@@ -6,8 +6,10 @@ import {
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
 import { MachineListItem } from "@/components/machines/machine-list-item";
+import { BulkUpgradeDialog } from "@/components/machines/bulk-upgrade-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -24,9 +26,9 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { useNavigate } from "@tanstack/react-router";
-import { Cloud, CloudCog, EllipsisVertical, Plus, Server } from "lucide-react";
+import { Cloud, CloudCog, EllipsisVertical, Plus, RefreshCcw, Server } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
@@ -37,10 +39,13 @@ interface Machine {
   name: string;
   type: string;
   status: string;
+  machine_builder_version?: string | number;
   // Add other machine properties as needed
 }
 
 export function MachineList() {
+  const [selectedMachines, setSelectedMachines] = useState<Set<string>>(new Set());
+  const [bulkUpgradeDialogOpen, setBulkUpgradeDialogOpen] = useState(false);
   const [searchValue, setSearchValue] = useQueryState("search");
   const [openCustomDialog, setOpenCustomDialog] = useState(false);
   const [openServerlessDialog, setOpenServerlessDialog] = useState(false);
@@ -82,16 +87,49 @@ export function MachineList() {
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
       <div className="mb-4 flex items-start justify-between gap-4">
-        <div className="relative w-full max-w-sm">
-          <Input
-            placeholder="Filter machines..."
-            value={searchValue ?? ""}
-            onChange={(event) => setSearchValue(event.target.value)}
-            className="pr-12"
-          />
-          <kbd className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
-            <span className="text-xs">⌘</span>K
-          </kbd>
+        <div className="flex items-center gap-4">
+          <div className="relative w-full max-w-sm">
+            <Input
+              placeholder="Filter machines..."
+              value={searchValue ?? ""}
+              onChange={(event) => setSearchValue(event.target.value)}
+              className="pr-12"
+            />
+            <kbd className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-3 inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-medium font-mono text-[10px] text-muted-foreground opacity-100">
+              <span className="text-xs">⌘</span>K
+            </kbd>
+          </div>
+          
+          {query.data?.pages[0].length > 0 && (
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                id="select-all"
+                checked={
+                  query.data?.pages[0].length > 0 && 
+                  selectedMachines.size === query.data?.pages[0].length
+                }
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    const allMachineIds = new Set<string>();
+                    query.data?.pages.forEach(page => {
+                      page.forEach((machine: Machine) => {
+                        allMachineIds.add(machine.id);
+                      });
+                    });
+                    setSelectedMachines(allMachineIds);
+                  } else {
+                    setSelectedMachines(new Set());
+                  }
+                }}
+              />
+              <label 
+                htmlFor="select-all" 
+                className="text-sm font-medium cursor-pointer select-none"
+              >
+                Select All
+              </label>
+            </div>
+          )}
         </div>
 
         <Tabs value={selectedTab} onValueChange={handleTabChange}>
@@ -230,6 +268,18 @@ export function MachineList() {
               machineId={machine.id}
               refetchQuery={query.refetch}
               selectedTab={selectedTab}
+              isSelected={selectedMachines.has(machine.id)}
+              onSelectionChange={(machineId, selected) => {
+                setSelectedMachines(prev => {
+                  const newSet = new Set(prev);
+                  if (selected) {
+                    newSet.add(machineId);
+                  } else {
+                    newSet.delete(machineId);
+                  }
+                  return newSet;
+                });
+              }}
             />
           )}
           renderLoading={() => {
@@ -357,6 +407,45 @@ export function MachineList() {
           idle_timeout: 60,
           ws_timeout: 2,
           python_version: "3.11",
+        }}
+      />
+
+      {/* Floating action bar for bulk operations */}
+      {selectedMachines.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 transform">
+          <div className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 shadow-lg">
+            <span className="text-primary-foreground">
+              {selectedMachines.size} machine{selectedMachines.size > 1 ? 's' : ''} selected
+            </span>
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex items-center gap-1"
+              onClick={() => setBulkUpgradeDialogOpen(true)}
+            >
+              <RefreshCcw className="h-4 w-4" />
+              Bulk Upgrade
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setSelectedMachines(new Set())}
+            >
+              Clear Selection
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk upgrade dialog */}
+      <BulkUpgradeDialog
+        selectedMachines={Array.from(selectedMachines)}
+        machineData={query.data?.pages.flatMap(page => page) || []}
+        open={bulkUpgradeDialogOpen}
+        onOpenChange={setBulkUpgradeDialogOpen}
+        onSuccess={() => {
+          setSelectedMachines(new Set());
+          query.refetch();
         }}
       />
 
