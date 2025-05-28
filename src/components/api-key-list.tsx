@@ -73,7 +73,7 @@ function APIKeyRow({ item, onDelete }: { item: APIKey; onDelete: () => void }) {
           </div>
 
           {/* User */}
-          <div className="flex w-24 items-center justify-start">
+          <div className="flex w-28 items-center justify-start">
             <UserIcon user_id={item.user_id} displayName className="h-5 w-5" />
           </div>
 
@@ -135,7 +135,7 @@ function TableHeader() {
               API Key
             </h3>
           </div>
-          <div className="w-24">
+          <div className="w-28">
             <h3 className="font-medium text-muted-foreground text-sm">User</h3>
           </div>
           <div className="hidden w-24 text-right sm:block">
