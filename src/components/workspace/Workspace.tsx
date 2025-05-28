@@ -1,8 +1,18 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useDrawerStore } from "@/stores/drawer-store";
 import { useAuth } from "@clerk/clerk-react";
 import { motion } from "framer-motion";
 import { AnimatePresence } from "framer-motion";
 import { diff } from "json-diff-ts";
+import { Download, Import, Link, Workflow } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -11,15 +21,6 @@ import {
   sendInetrnalEventToCD,
   sendWorkflow,
 } from "./sendEventToCD";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Link, Download, Import, Workflow } from "lucide-react";
 
 export const useCDStore = create<{
   cdSetup: boolean;
@@ -55,22 +56,22 @@ export function useSelectedVersion(workflow_id: string | null) {
   };
 }
 
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInSessionView,
+} from "@/hooks/hook";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { useAuthStore } from "@/lib/auth-store";
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@tanstack/react-router";
 // import { usePathname, useRouter } from "next/navigation";
 import { parseAsBoolean, parseAsInteger, useQueryState } from "nuqs";
 import { create } from "zustand";
-import { AssetsBrowserPopup } from "./assets-browser-drawer";
-import { WorkspaceControls } from "./workspace-control";
-import { useSearch } from "@tanstack/react-router";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import {
-  useWorkflowIdInSessionView,
-  useSessionIdInSessionView,
-} from "@/hooks/hook";
+import { AssetsBrowserPopup } from "./assets-browser-drawer";
+import { WorkspaceControls } from "./workspace-control";
 
 interface WorkflowState {
   workflow: any;
@@ -318,6 +319,7 @@ export default function Workspace({
   ]);
 
   const { fetchToken } = useAuthStore();
+  const { activeDrawer } = useDrawerStore();
 
   const getAPIInfo = () => {
     return {
@@ -387,13 +389,8 @@ export default function Workspace({
         const data = JSON.parse(event.data);
 
         if (data.type === "assets") {
-          // console.log(data.data);
-          // toast.success("Open Assets");
-          // if (sessionId) {
-          useAssetsBrowserStore.getState().setSidebarMode(true);
-          // } else {
-          //   useAssetsBrowserStore.getState().setOpen(true);
-          // }
+          console.log(data.data);
+          useDrawerStore.getState().setActiveDrawer("assets");
           useAssetsBrowserStore.getState().setTargetNodeData(data.data);
         }
 
@@ -629,8 +626,9 @@ export default function Workspace({
             userSelect: "none",
           }}
           className={cn(
-            "inset-0 h-full w-full border-none z-[20]",
+            "border-none h-full inset-0 w-full z-[20]",
             !cdSetup && "pointer-events-none",
+            activeDrawer === "assets" && "blur-sm pointer-events-none",
           )}
           title="iframeContent"
           allow="autoplay; encrypted-media; fullscreen; display-capture; camera; microphone"

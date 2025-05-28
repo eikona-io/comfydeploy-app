@@ -118,6 +118,7 @@ import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
 import { ExternalNodeDocs } from "./workspace/external-node-docs";
 import { AssetBrowserSidebar } from "./workspace/assets-browser-sidebar";
 import { AssetType } from "./SDInputs/sd-asset-input";
+import { useDrawerStore } from "@/stores/drawer-store";
 
 // Add Session type
 interface Session {
@@ -354,17 +355,8 @@ function SessionSidebar() {
     }
   };
 
-  type Drawer =
-    | "model"
-    | "chat"
-    | "integration"
-    | "commit"
-    | "version"
-    | "log"
-    | "external-node"
-    | "assets";
-
-  const [activeDrawer, setActiveDrawer] = useState<Drawer | null>(null);
+  const { activeDrawer, toggleDrawer, setActiveDrawer, closeDrawer } =
+    useDrawerStore();
   const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
 
   useEffect(() => {
@@ -373,9 +365,7 @@ function SessionSidebar() {
     }
   }, [workflow]);
 
-  const toggleDrawer = (drawer: Drawer) => {
-    setActiveDrawer((prevDrawer) => (prevDrawer === drawer ? null : drawer));
-  };
+  console.log(activeDrawer);
 
   return (
     <>
@@ -635,7 +625,7 @@ function SessionSidebar() {
                           className="w-full"
                           workflow_id={workflowId || ""}
                           containerStyle={{ overflowX: "hidden" }}
-                          onClose={() => setActiveDrawer(null)}
+                          onClose={() => closeDrawer()}
                         />
                       </div>
                     </div>
@@ -647,9 +637,9 @@ function SessionSidebar() {
                         <span className="font-medium">Assets</span>
                       </div>
                       <div className="mt-4 flex-1">
-                        <AssetBrowserSidebar 
+                        <AssetBrowserSidebar
                           onItemClick={(asset) => {
-                            setActiveDrawer(null);
+                            closeDrawer();
                           }}
                         />
                       </div>
@@ -675,7 +665,7 @@ function SessionSidebar() {
                         endpoint={url}
                         machine_id={session?.machine_id}
                         machine_version_id={session?.machine_version_id}
-                        onClose={() => setActiveDrawer(null)}
+                        onClose={() => closeDrawer()}
                       />
                     </div>
                   )}
