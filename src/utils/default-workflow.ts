@@ -3092,7 +3092,7 @@ export const defaultWorkflowTemplates: defaultWorkflowTemplateType[] = [
       "Text to image with Flux model, most popular and stunning model.",
     workflowJson: JSON.stringify(workflow_json_flux),
     workflowImageUrl:
-      "https://cd-misc.s3.us-east-2.amazonaws.com/templates/1zsngynnMzX8g1FWs61ti.png",
+      "https://comfy-deploy-output.s3.amazonaws.com/outputs/runs/3ee76358-51c6-4c61-ba4d-49de5d1b8b82/ComfyUI_00002_.webp",
     hasEnvironment: true,
   },
   {
