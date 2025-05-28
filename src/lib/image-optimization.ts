@@ -87,7 +87,7 @@ export const extractS3Key = (url: string): string => {
     ) {
       // Format: bucket.s3.region.amazonaws.com/key
       const key = pathWithoutQuery.substring(1); // Remove leading slash
-      return decodeURIComponent(key);
+      return key;
     }
 
     if (
@@ -98,13 +98,13 @@ export const extractS3Key = (url: string): string => {
       const pathParts = pathWithoutQuery.substring(1).split("/"); // Remove leading slash and split
       if (pathParts.length > 1) {
         const key = pathParts.slice(1).join("/"); // Skip bucket name, join the rest
-        return decodeURIComponent(key);
+        return key;
       }
     }
 
     // Fallback: use the path without leading slash
     const key = pathWithoutQuery.substring(1);
-    return decodeURIComponent(key);
+    return key;
   } catch (error) {
     // If URL parsing fails, try regex patterns as fallback
     const s3Patterns = [
@@ -116,7 +116,7 @@ export const extractS3Key = (url: string): string => {
     for (const pattern of s3Patterns) {
       const match = url.match(pattern);
       if (match) {
-        return decodeURIComponent(match[1]);
+        return match[1];
       }
     }
 
@@ -130,8 +130,8 @@ export const extractS3Key = (url: string): string => {
  */
 export const isOptimizedUrl = (url: string): boolean => {
   const baseUrl = process.env.NEXT_PUBLIC_CD_API_URL || "";
-  return url.includes(`${baseUrl}/api/optimize/`);
-};
+  // const baseUrl = process.env.NEXT_PUBLIC_CD_API_URL || "";
+  return url.includes(`/api/optimize/`);
 
 /**
  * Legacy compatibility - migrate from existing getOptimizedImage function
