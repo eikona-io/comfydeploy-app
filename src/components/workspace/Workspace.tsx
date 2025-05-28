@@ -261,7 +261,7 @@ export default function Workspace({
     sendWorkflow(workflowJson);
   };
 
-  const sessionId = useSessionIdInSessionView();
+  // const sessionId = useSessionIdInSessionView();
   // Temporary disabled
   // useEffect(() => {
   //   if (!workflowSendAttempts || isWorkflowLoaded) return;
@@ -389,11 +389,11 @@ export default function Workspace({
         if (data.type === "assets") {
           // console.log(data.data);
           // toast.success("Open Assets");
-          if (sessionId) {
-            useAssetsBrowserStore.getState().setSidebarMode(true);
-          } else {
-            useAssetsBrowserStore.getState().setOpen(true);
-          }
+          // if (sessionId) {
+          useAssetsBrowserStore.getState().setSidebarMode(true);
+          // } else {
+          //   useAssetsBrowserStore.getState().setOpen(true);
+          // }
           useAssetsBrowserStore.getState().setTargetNodeData(data.data);
         }
 
@@ -473,7 +473,7 @@ export default function Workspace({
         capture: true,
       });
     };
-  }, [volumeName, machineId, endpoint, sessionId]);
+  }, [volumeName, machineId, endpoint]);
 
   useEffect(() => {
     if (!iframeLoaded) return;
