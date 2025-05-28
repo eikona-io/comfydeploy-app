@@ -190,19 +190,10 @@ function LoadingState() {
 }
 
 export function APIKeyList() {
-  const [sorting, setSorting] = useState<SortingState>([]);
   const [searchValue, setSearchValue] = useState<string | null>(null);
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
 
   const data = useAPIKeyList(debouncedSearchValue ?? "");
-
-  const refetch = useCallback(() => {
-    data.refetch();
-  }, [data]);
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
 
   const flatData = data.data?.pages.flat() ?? [];
   const isLoading = data.isLoading;
@@ -230,7 +221,7 @@ export function APIKeyList() {
             />
           </div>
 
-          <ApiKeyAdd onKeyCreated={refetch} />
+          <ApiKeyAdd onKeyCreated={() => data.refetch()} />
         </div>
       </div>
 
@@ -247,7 +238,7 @@ export function APIKeyList() {
             header={<TableHeader />}
             className="!h-full"
             renderItem={(item: APIKey) => (
-              <APIKeyRow item={item} onDelete={refetch} />
+              <APIKeyRow item={item} onDelete={() => data.refetch()} />
             )}
             renderLoading={() => <LoadingState />}
           />
