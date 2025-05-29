@@ -30,6 +30,14 @@ let sharedRenderer: THREE.WebGLRenderer | null = null;
 let sharedScene: THREE.Scene | null = null;
 let sharedCamera: THREE.PerspectiveCamera | null = null;
 
+// Queue system to prevent simultaneous thumbnail generation
+let isGenerating = false;
+const generationQueue: Array<{
+  url: string;
+  resolve: (dataUrl: string) => void;
+  reject: (error: unknown) => void;
+}> = [];
+
 function initSharedRenderer() {
   if (!sharedRenderer) {
     const canvas = document.createElement("canvas");
@@ -95,6 +103,26 @@ function initSharedRenderer() {
   }
 }
 
+async function processQueue() {
+  if (isGenerating || generationQueue.length === 0) {
+    return;
+  }
+
+  isGenerating = true;
+  const { url, resolve, reject } = generationQueue.shift()!;
+
+  try {
+    const result = await generateThumbnailInternal(url);
+    resolve(result);
+  } catch (error) {
+    reject(error);
+  } finally {
+    isGenerating = false;
+    // Process next item in queue
+    setTimeout(processQueue, 50); // Small delay to ensure cleanup
+  }
+}
+
 async function generateThumbnail(url: string): Promise<string> {
   // Check cache first
   const cached = thumbnailCache.get(url);
@@ -103,6 +131,13 @@ async function generateThumbnail(url: string): Promise<string> {
   }
 
   return new Promise((resolve, reject) => {
+    generationQueue.push({ url, resolve, reject });
+    processQueue();
+  });
+}
+
+async function generateThumbnailInternal(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
     try {
       initSharedRenderer();
 
@@ -110,10 +145,30 @@ async function generateThumbnail(url: string): Promise<string> {
         throw new Error("Failed to initialize shared renderer");
       }
 
-      // Clear previous model from scene
-      const existingModel = sharedScene.getObjectByName("thumbnail-model");
-      if (existingModel) {
-        sharedScene.remove(existingModel);
+      // Clear the entire scene (except lights) completely
+      const children = [...sharedScene.children]; // Create a copy to avoid mutation during iteration
+      for (const child of children) {
+        if (
+          !(child instanceof THREE.Light) &&
+          child.type !== "AmbientLight" &&
+          child.type !== "DirectionalLight"
+        ) {
+          sharedScene.remove(child);
+
+          // Dispose recursively
+          child.traverse((obj) => {
+            if (obj instanceof THREE.Mesh) {
+              obj.geometry?.dispose();
+              if (Array.isArray(obj.material)) {
+                for (const mat of obj.material) {
+                  mat?.dispose();
+                }
+              } else {
+                obj.material?.dispose();
+              }
+            }
+          });
+        }
       }
 
       const fileExtension = url.split(".").pop()?.toLowerCase();
