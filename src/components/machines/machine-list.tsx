@@ -181,7 +181,7 @@ export function MachineList() {
                             setSelectedMachines(new Set());
                           }
                         }}
-                        className="border-primary bg-primary data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary"
+                        className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary"
                       />
                       <label
                         htmlFor="select-all"
