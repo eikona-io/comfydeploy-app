@@ -219,10 +219,8 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
 
   // Handle user filter changes from UserFilterSelect
   const handleUserFilterChange = (userIds: string) => {
-    // For now, use the first user ID since backend expects single user_id
-    // TODO: Update backend to support multiple user IDs like workflows endpoint
-    const firstUserId = userIds.split(",")[0] || null;
-    setUserFilter(firstUserId);
+    // In single select mode, userIds will be a single user ID or empty string
+    setUserFilter(userIds || null);
   };
 
   // Update column count based on screen size
@@ -414,7 +412,10 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
               </SelectContent>
             </Select>
           </div>
-          <UserFilterSelect onFilterChange={handleUserFilterChange} />
+          <UserFilterSelect
+            onFilterChange={handleUserFilterChange}
+            singleSelect={true}
+          />
         </div>
 
         {/* Gallery layout */}

@@ -5,6 +5,7 @@ import { useOrganization } from "@clerk/clerk-react";
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +24,7 @@ import { useLocalStorage } from "@/hooks/use-local-storage";
 
 interface UserFilterSelectProps {
   onFilterChange: (userIds: string) => void;
+  singleSelect?: boolean;
 }
 
 interface Member {
@@ -30,7 +32,10 @@ interface Member {
   name: string;
 }
 
-export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
+export function UserFilterSelect({
+  onFilterChange,
+  singleSelect = false,
+}: UserFilterSelectProps) {
   const { organization, isLoaded } = useOrganization({
     memberships: true,
   });
@@ -38,7 +43,7 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
   const [members, setMembers] = useState<Member[]>([]);
 
   const storageKey = organization
-    ? `workflow-user-filter-${organization.id}`
+    ? `workflow-user-filter-${organization.id}${singleSelect ? "-single" : ""}`
     : "";
   const [selectedUsers, setSelectedUsers] = useLocalStorage<string[]>(
     storageKey,
@@ -129,9 +134,15 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
 
   const toggleUser = (userId: string) => {
     setSelectedUsers((prev) => {
-      return prev.includes(userId)
-        ? prev.filter((id) => id !== userId)
-        : [...prev, userId];
+      if (singleSelect) {
+        // In single select mode, replace selection or clear if same user clicked
+        return prev.includes(userId) ? [] : [userId];
+      } else {
+        // Multi-select mode (original behavior)
+        return prev.includes(userId)
+          ? prev.filter((id) => id !== userId)
+          : [...prev, userId];
+      }
     });
   };
 
@@ -141,9 +152,9 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
 
   return (
     <div className="flex items-center gap-2">
-      {/* Display badges for selected users */}
-      {selectedUsers.length > 0 && (
-        <div className="flex flex-wrap gap-1 mr-2">
+      {/* Display badges for selected users - only in multi-select mode */}
+      {!singleSelect && selectedUsers.length > 0 && (
+        <div className="mr-2 flex flex-wrap gap-1">
           {visibleBadges.map((member) => (
             <Badge
               key={member.id}
@@ -151,9 +162,10 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
               className="flex items-center gap-1 px-2 py-1"
             >
               <UserIcon user_id={member.id} className="h-3 w-3" />
-              <span className="truncate max-w-[100px]">{member.name}</span>
+              <span className="max-w-[100px] truncate">{member.name}</span>
               <button
-                className="ml-1 rounded-full hover:bg-muted p-0.5"
+                type="button"
+                className="ml-1 rounded-full p-0.5 hover:bg-muted"
                 onClick={(e) => {
                   e.stopPropagation();
                   toggleUser(member.id);
@@ -183,42 +195,81 @@ export function UserFilterSelect({ onFilterChange }: UserFilterSelectProps) {
           >
             <Users className="h-4 w-4" />
             {selectedUsers.length > 0 ? (
-              <Badge
-                variant="secondary"
-                className="rounded-sm px-1 font-normal"
-              >
-                {selectedUsers.length}
-              </Badge>
+              singleSelect ? (
+                <span className="truncate max-w-[100px]">
+                  {selectedMembers[0]?.name || "User"}
+                </span>
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className="rounded-sm px-1 font-normal"
+                >
+                  {selectedUsers.length}
+                </Badge>
+              )
+            ) : singleSelect ? (
+              "Select User"
             ) : (
               "Filter"
             )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>Filter by user</DropdownMenuLabel>
+          <DropdownMenuLabel>
+            {singleSelect ? "Select user" : "Filter by user"}
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <ScrollArea className="h-60">
             <DropdownMenuGroup>
-              {members.map((member) => (
-                <DropdownMenuItem
-                  key={member.id}
-                  className="flex items-center gap-2 px-2"
-                  onSelect={(event: Event) => {
-                    event.preventDefault();
-                    toggleUser(member.id);
-                  }}
+              {singleSelect ? (
+                <RadioGroup
+                  value={selectedUsers[0] || ""}
+                  onValueChange={(value) => toggleUser(value)}
                 >
-                  <Checkbox
-                    id={`user-${member.id}`}
-                    checked={selectedUsers.includes(member.id)}
-                    onCheckedChange={() => toggleUser(member.id)}
-                  />
-                  <div className="flex items-center gap-2 truncate">
-                    <UserIcon user_id={member.id} className="h-4 w-4" />
-                    <span className="truncate">{member.name}</span>
-                  </div>
-                </DropdownMenuItem>
-              ))}
+                  {members.map((member) => (
+                    <DropdownMenuItem
+                      key={member.id}
+                      className="flex items-center gap-2 px-2"
+                      onSelect={(event: Event) => {
+                        event.preventDefault();
+                        toggleUser(member.id);
+                      }}
+                    >
+                      <RadioGroupItem
+                        value={member.id}
+                        id={`user-${member.id}`}
+                      />
+                      <div className="flex items-center gap-2 truncate">
+                        <UserIcon user_id={member.id} className="h-4 w-4" />
+                        <span className="truncate">{member.name}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </RadioGroup>
+              ) : (
+                <>
+                  {members.map((member) => (
+                    <DropdownMenuItem
+                      key={member.id}
+                      className="flex items-center gap-2 px-2"
+                      onSelect={(event: Event) => {
+                        event.preventDefault();
+                        toggleUser(member.id);
+                      }}
+                    >
+                      <Checkbox
+                        id={`user-${member.id}`}
+                        checked={selectedUsers.includes(member.id)}
+                        onCheckedChange={() => toggleUser(member.id)}
+                      />
+                      <div className="flex items-center gap-2 truncate">
+                        <UserIcon user_id={member.id} className="h-4 w-4" />
+                        <span className="truncate">{member.name}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </>
+              )}
             </DropdownMenuGroup>
           </ScrollArea>
           {selectedUsers.length > 0 && (
