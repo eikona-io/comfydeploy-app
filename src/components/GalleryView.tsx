@@ -10,6 +10,9 @@ import {
   Search,
   X,
   FolderOpen,
+  Image,
+  Film,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { RunDetails } from "./workflows/WorkflowComponent";
@@ -23,6 +26,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { ToggleGroup, ToggleGroupItem } from "./ui/toggle-group";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { toast } from "sonner";
@@ -57,13 +68,21 @@ interface GalleryItem {
 
 const BATCH_SIZE = 20;
 
-export function useGalleryData(workflow_id: string) {
+export function useGalleryData(
+  workflow_id: string,
+  originFilter?: string,
+  userFilter?: string,
+  fileTypeFilter?: string
+) {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   return useInfiniteQuery<any[]>({
-    queryKey: ["workflow", workflow_id, "gallery"],
+    queryKey: ["workflow", workflow_id, "gallery", originFilter, userFilter, fileTypeFilter],
     meta: {
       limit: BATCH_SIZE,
       offset: 0,
+      origin: originFilter,
+      user_id: userFilter,
+      file_type: fileTypeFilter,
     },
     getNextPageParam: (lastPage, allPages) => {
       return lastPage?.length === BATCH_SIZE
@@ -165,7 +184,12 @@ function RenderAlert({
 }
 
 export function GalleryView({ workflowID }: GalleryViewProps) {
-  const query = useGalleryData(workflowID);
+  const [originFilter, setOriginFilter] = useQueryState("origin");
+  const [userFilter, setUserFilter] = useQueryState("user");
+  const [fileTypeFilter, setFileTypeFilter] = useQueryState("fileType");
+  
+  const query = useGalleryData(workflowID, originFilter || undefined, userFilter || undefined, fileTypeFilter || undefined);
+  
   const loadMoreButtonRef = useRef<HTMLButtonElement>(null);
   const [runId, setRunId] = useQueryState("run-id");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -308,7 +332,64 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
             />
           </div>
         )}
-        {/* Replace columns with flexbox layout */}
+        
+        {/* Filter UI */}
+        <div className="m-4 flex flex-wrap gap-2 items-center">
+          <ToggleGroup type="single" value={originFilter || ""} onValueChange={(value) => setOriginFilter(value || null)}>
+            <ToggleGroupItem value="" className="flex items-center gap-1">
+              All Sources
+            </ToggleGroupItem>
+            <ToggleGroupItem value="manual" className="flex items-center gap-1">
+              <span>Manual</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="api" className="flex items-center gap-1">
+              <span>API</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+          
+          <Select value={userFilter || ""} onValueChange={(value) => setUserFilter(value || null)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  <span>All Users</span>
+                </div>
+              </SelectItem>
+              {/* Note: In a real implementation, we would fetch and map users here */}
+              {/* This is a simplified version for the current task */}
+            </SelectContent>
+          </Select>
+          
+          <Select value={fileTypeFilter || ""} onValueChange={(value) => setFileTypeFilter(value || null)}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="All Files" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">
+                <div className="flex items-center gap-2">
+                  <span>All Files</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="image">
+                <div className="flex items-center gap-2">
+                  <Image className="h-4 w-4" />
+                  <span>Images</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="video">
+                <div className="flex items-center gap-2">
+                  <Film className="h-4 w-4" />
+                  <span>Videos</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        
+        {/* Gallery layout */}
         <div className="m-4 flex gap-0.5 overflow-clip rounded-xl">
           {columns.map((col, i) => (
             <div key={`column-${i}`} className={widthClass}>
@@ -376,7 +457,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
                               onClick={() => {
                                 setSelectedOutputUrl(outputUrl);
                                 setSelectedFilename(
-                                  page.data?.images?.[0]?.filename,
+                                  page.data?.images?.[0]?.filename || null,
                                 );
                                 setMoveDialogOpen(true);
                               }}
