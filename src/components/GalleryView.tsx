@@ -1,20 +1,29 @@
-import { FileURLRender } from "@/components/workflows/OutputRender";
-import { useInfiniteQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { useEffect, useRef, useState } from "react";
+import { FileURLRender } from "@/components/workflows/OutputRender";
+import { useAddAsset } from "@/hooks/hook";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { queryClient } from "@/lib/providers";
+import { cn } from "@/lib/utils";
+import { downloadImage } from "@/utils/download-image";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
   Download,
   Ellipsis,
+  Film,
+  FolderOpen,
+  Image,
   Loader2,
   Search,
   X,
-  FolderOpen,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { RunDetails } from "./workflows/WorkflowComponent";
-import { MyDrawer } from "./drawer";
 import { useQueryState } from "nuqs";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { MyDrawer } from "./drawer";
+import { MoveAssetDialog } from "./move-asset-dialog";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,14 +32,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { toast } from "sonner";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { downloadImage } from "@/utils/download-image";
-import { queryClient } from "@/lib/providers";
-import { MoveAssetDialog } from "./move-asset-dialog";
-import { useAddAsset } from "@/hooks/hook";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { RunDetails } from "./workflows/WorkflowComponent";
+import { UserFilterSelect } from "./user-filter-select";
+import { UserIcon } from "./run/SharePageComponent";
 
 type GalleryViewProps = {
   workflowID: string;
@@ -53,17 +64,32 @@ interface GalleryItem {
   queue_time?: number;
   output_id?: string;
   run_id?: string;
+  origin?: string;
+  user_id?: string;
 }
 
 const BATCH_SIZE = 20;
 
-export function useGalleryData(workflow_id: string) {
+export function useGalleryData(
+  workflow_id: string,
+  originFilter?: string,
+  userFilter?: string,
+  fileTypeFilter?: string,
+) {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   return useInfiniteQuery<any[]>({
     queryKey: ["workflow", workflow_id, "gallery"],
+    queryKeyHashFn: (queryKey) => {
+      return [...queryKey, originFilter, userFilter, fileTypeFilter].join(",");
+    },
     meta: {
       limit: BATCH_SIZE,
       offset: 0,
+      params: {
+        ...(originFilter ? { origin: originFilter } : {}),
+        ...(userFilter ? { user_id: userFilter } : {}),
+        ...(fileTypeFilter ? { file_type: fileTypeFilter } : {}),
+      },
     },
     getNextPageParam: (lastPage, allPages) => {
       return lastPage?.length === BATCH_SIZE
@@ -165,7 +191,17 @@ function RenderAlert({
 }
 
 export function GalleryView({ workflowID }: GalleryViewProps) {
-  const query = useGalleryData(workflowID);
+  const [originFilter, setOriginFilter] = useQueryState("origin");
+  const [userFilter, setUserFilter] = useQueryState("user");
+  const [fileTypeFilter, setFileTypeFilter] = useQueryState("fileType");
+
+  const query = useGalleryData(
+    workflowID,
+    originFilter || "not-api",
+    userFilter || undefined,
+    fileTypeFilter || undefined,
+  );
+
   const loadMoreButtonRef = useRef<HTMLButtonElement>(null);
   const [runId, setRunId] = useQueryState("run-id");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -180,6 +216,14 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
   );
   const [selectedFilename, setSelectedFilename] = useState<string | null>(null);
   const { mutate: addAsset } = useAddAsset();
+
+  // Handle user filter changes from UserFilterSelect
+  const handleUserFilterChange = (userIds: string) => {
+    // For now, use the first user ID since backend expects single user_id
+    // TODO: Update backend to support multiple user IDs like workflows endpoint
+    const firstUserId = userIds.split(",")[0] || null;
+    setUserFilter(firstUserId);
+  };
 
   // Update column count based on screen size
   useEffect(() => {
@@ -271,6 +315,11 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
 
   const items = query.data?.pages.flat() || [];
 
+  // Debug: Log the first few items to see what data we're getting
+  if (items.length > 0) {
+    console.log("Gallery items sample:", items.slice(0, 3));
+  }
+
   // Split items into columns
   const columns: GalleryItem[][] = Array.from(
     { length: columnCount },
@@ -308,10 +357,73 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
             />
           </div>
         )}
-        {/* Replace columns with flexbox layout */}
+
+        {/* Filter UI */}
+        <div className="relative z-10 m-4 flex flex-wrap justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Select
+              value={originFilter || "not-api"}
+              onValueChange={(value) =>
+                setOriginFilter(value === "not-api" ? null : value)
+              }
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Workspace" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="not-api">
+                  <div className="flex items-center gap-2">
+                    <span>Workspace</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="api">
+                  <div className="flex items-center gap-2">
+                    <span>API</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select
+              value={fileTypeFilter || "all-files"}
+              onValueChange={(value) =>
+                setFileTypeFilter(value === "all-files" ? null : value)
+              }
+            >
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="All Files" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all-files">
+                  <div className="flex items-center gap-2">
+                    <span>All Files</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="image">
+                  <div className="flex items-center gap-2">
+                    <Image className="h-4 w-4" />
+                    <span>Images</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="video">
+                  <div className="flex items-center gap-2">
+                    <Film className="h-4 w-4" />
+                    <span>Videos</span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <UserFilterSelect onFilterChange={handleUserFilterChange} />
+        </div>
+
+        {/* Gallery layout */}
         <div className="m-4 flex gap-0.5 overflow-clip rounded-xl">
-          {columns.map((col, i) => (
-            <div key={`column-${i}`} className={widthClass}>
+          {columns.map((col, colIndex) => (
+            <div
+              key={`column-${colIndex}-${columnCount}`}
+              className={widthClass}
+            >
               {col.map((page: GalleryItem) => {
                 const outputUrl =
                   page.data?.images?.[0]?.url ||
@@ -376,7 +488,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
                               onClick={() => {
                                 setSelectedOutputUrl(outputUrl);
                                 setSelectedFilename(
-                                  page.data?.images?.[0]?.filename,
+                                  page.data?.images?.[0]?.filename || null,
                                 );
                                 setMoveDialogOpen(true);
                               }}
@@ -415,6 +527,18 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
                             <span className="rounded bg-white/20 px-1.5 py-0.5 text-[10px] text-white/90">
                               {page.data?.images?.[0]?.filename}
                             </span>
+                          )}
+                          {/* Debug info */}
+                          {/* {page.origin && (
+                            <span className="rounded bg-blue-500/60 px-1.5 py-0.5 text-[10px] text-white/90">
+                              {page.origin}
+                            </span>
+                          )} */}
+                          {page.user_id && (
+                            <UserIcon
+                              user_id={page.user_id}
+                              className="h-3.5 w-3.5"
+                            />
                           )}
                         </div>
                         <Search className="h-3.5 w-3.5 text-white/90" />

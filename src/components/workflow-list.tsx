@@ -163,20 +163,22 @@ export function WorkflowList() {
           <UserFilterSelect onFilterChange={setSelectedUserIds} />
 
           {/* Grid/list toggle moved to the right */}
-          <div className="flex rounded-md border bg-background shadow-sm">
+          <div className="flex rounded-md border bg-background shadow-sm h-9">
             <Button
               variant={view === "grid" ? "secondary" : "ghost"}
               size="icon"
+              className="h-full"
               onClick={() => setView("grid")}
             >
-              <Grid2X2 className="h-4 w-4" />
+              <Grid2X2 className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant={view === "list" ? "secondary" : "ghost"}
               size="icon"
               onClick={() => setView("list")}
+              className="h-full"
             >
-              <LayoutList className="h-4 w-4" />
+              <LayoutList className="h-3.5 w-3.5" />
             </Button>
           </div>
 
