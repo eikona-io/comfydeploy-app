@@ -275,16 +275,10 @@ export function RunDetails(props: {
         >
           <TabsList className="">
             <TabsTrigger value="inputs">Inputs</TabsTrigger>
-            {!isPlayground && (
-              <TabsTrigger value="outputs">Outputs</TabsTrigger>
-            )}
-            <>
-              <TabsTrigger value="logs">Logs</TabsTrigger>
-              {/* <TabsTrigger value="graph">Execution</TabsTrigger> */}
-              {run.webhook && (
-                <TabsTrigger value="webhook">Webhook</TabsTrigger>
-              )}
-            </>
+            <TabsTrigger value="outputs">Outputs</TabsTrigger>
+            <TabsTrigger value="logs">Logs</TabsTrigger>
+            {/* <TabsTrigger value="graph">Execution</TabsTrigger> */}
+            {run.webhook && <TabsTrigger value="webhook">Webhook</TabsTrigger>}
           </TabsList>
           <TabsContent value="inputs">
             <ScrollArea className="h-[calc(100vh-470px)]">
