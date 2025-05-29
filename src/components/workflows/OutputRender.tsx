@@ -70,6 +70,7 @@ export function ModelRenderer(props: {
   url: string;
   mediaClasses?: string;
   isMainView?: boolean;
+  isSmallView?: boolean;
 }) {
   return (
     <Suspense fallback={<LoadingFallback mediaClasses={props.mediaClasses} />}>
@@ -178,6 +179,7 @@ function _FileURLRender({
         url={url}
         mediaClasses={mediaClasses}
         isMainView={isMainView}
+        isSmallView={isSmallView}
       />
     );
   }
