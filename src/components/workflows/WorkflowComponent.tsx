@@ -380,7 +380,7 @@ function RunMachine({ machineId }: { machineId: string }) {
   return (
     <InfoItem
       label="Machine"
-      value={<div className="text-xs">{machine?.name}</div>}
+      value={<div className="line-clamp-1 text-xs">{machine?.name}</div>}
     />
   );
 }

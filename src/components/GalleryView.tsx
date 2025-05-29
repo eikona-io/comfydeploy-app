@@ -47,7 +47,7 @@ interface GalleryItem {
   data?: {
     images?: Array<{ url: string; filename: string }>;
     gifs?: Array<{ url: string }>;
-    model_file?: Array<{ url: string }>;
+    files?: Array<{ url: string }>;
   };
   run_duration?: number;
   queue_time?: number;
@@ -316,7 +316,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
                 const outputUrl =
                   page.data?.images?.[0]?.url ||
                   page.data?.gifs?.[0]?.url ||
-                  page.data?.model_file?.[0]?.url ||
+                  page.data?.files?.[0]?.url ||
                   "";
                 const totalTime =
                   Math.round(
