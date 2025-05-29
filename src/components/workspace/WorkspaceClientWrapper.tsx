@@ -283,15 +283,14 @@ export function WorkspaceClientWrapper({
                 <ErrorBoundary
                   fallback={(error) => (
                     <div className="flex h-full w-full flex-col items-center justify-center rounded-lg border border-gray-200 bg-gray-50/50 p-4 text-center">
-                      <div className="mb-4 text-destructive">
-                        <AlertTriangle className="mx-auto h-10 w-10" />
+                      <div className="mb-4 text-primary">
+                        <RefreshCw className="mx-auto h-10 w-10" />
                       </div>
                       <h3 className="mb-2 font-medium text-lg">
-                        Something went wrong
+                        New update available
                       </h3>
                       <p className="mb-4 text-muted-foreground text-sm">
-                        There was an error loading the workflow preview:{" "}
-                        {error.message}
+                        Please refresh the page to get the latest update
                       </p>
                       <Button
                         onClick={() => window.location.reload()}
