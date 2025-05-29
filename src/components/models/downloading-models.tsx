@@ -226,16 +226,19 @@ function DownloadingModelItem({
             {model.status === "failed" && (
               <AlertCircle className="h-5 w-5 text-destructive" />
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-              onClick={() => cancelMutation.mutate()}
-              disabled={cancelMutation.isPending}
-              title="Cancel download"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {/* Only show cancel button if download has been in progress for more than 1 hour */}
+            {new Date().getTime() - new Date(model.created_at).getTime() > 60 * 60 * 1000 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                onClick={() => cancelMutation.mutate()}
+                disabled={cancelMutation.isPending}
+                title="Cancel download"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
             {modelUrl && (
               <Button
                 variant="ghost"
