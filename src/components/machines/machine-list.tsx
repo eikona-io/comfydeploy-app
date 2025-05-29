@@ -104,12 +104,29 @@ export function MachineList() {
     return query.data?.pages.flat() || [];
   }, [query.data]);
 
-  // Calculate checkbox state
-  const totalMachines = query.data?.pages[0]?.length || 0;
-  const isAllSelected =
-    totalMachines > 0 && selectedMachines.size === totalMachines;
-  const isPartiallySelected =
-    selectedMachines.size > 0 && selectedMachines.size < totalMachines;
+  // Calculate total machines across all loaded pages
+  const totalLoadedMachines = useMemo(() => {
+    if (!query.data?.pages) return 0;
+    return query.data.pages.reduce((total, page) => total + page.length, 0);
+  }, [query.data]);
+
+  // Calculate checkbox state based on all loaded machines
+  const isAllSelected = useMemo(() => {
+    if (totalLoadedMachines === 0) return false;
+    if (selectedMachines.size === 0) return false;
+
+    // Check if all loaded machines are selected
+    for (const page of query.data?.pages || []) {
+      for (const machine of page) {
+        if (!selectedMachines.has(machine.id)) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }, [totalLoadedMachines, selectedMachines, query.data]);
+
+  const isPartiallySelected = selectedMachines.size > 0 && !isAllSelected;
 
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
@@ -164,11 +181,11 @@ export function MachineList() {
                             setSelectedMachines(new Set());
                           }
                         }}
-                        className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary"
+                        className="border-primary bg-primary data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary"
                       />
                       <label
                         htmlFor="select-all"
-                        className="cursor-pointer select-none text-muted-foreground text-xs font-medium whitespace-nowrap group-hover:text-gray-900"
+                        className="cursor-pointer select-none whitespace-nowrap font-medium text-muted-foreground text-xs group-hover:text-gray-900"
                       >
                         Select All
                       </label>
@@ -180,10 +197,10 @@ export function MachineList() {
                               initial={{ opacity: 0, width: 0 }}
                               animate={{ opacity: 1, width: "auto" }}
                               exit={{ opacity: 0, width: 0 }}
-                              className="text-gray-500 text-xs font-medium whitespace-nowrap"
+                              className="whitespace-nowrap font-medium text-gray-500 text-xs"
                               transition={{ duration: 0.15 }}
                             >
-                              {selectedMachines.size} of {totalMachines}
+                              {selectedMachines.size} of {totalLoadedMachines}
                             </motion.span>
                           </>
                         )}
