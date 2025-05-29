@@ -110,10 +110,34 @@ async function generateThumbnail(url: string): Promise<string> {
         throw new Error("Failed to initialize shared renderer");
       }
 
-      // Clear previous model from scene
-      const existingModel = sharedScene.getObjectByName("thumbnail-model");
-      if (existingModel) {
-        sharedScene.remove(existingModel);
+      // Properly clear ALL models from scene before adding new one
+      const objectsToRemove: THREE.Object3D[] = [];
+      sharedScene.traverse((child) => {
+        if (
+          child.type === "Mesh" ||
+          child.type === "Group" ||
+          child.name === "thumbnail-model"
+        ) {
+          objectsToRemove.push(child);
+        }
+      });
+
+      for (const obj of objectsToRemove) {
+        sharedScene?.remove(obj);
+        // Dispose of geometries and materials to prevent memory leaks
+        if ("geometry" in obj) {
+          (obj as any).geometry?.dispose();
+        }
+        if ("material" in obj) {
+          const material = (obj as any).material;
+          if (Array.isArray(material)) {
+            for (const mat of material) {
+              mat?.dispose();
+            }
+          } else {
+            material?.dispose();
+          }
+        }
       }
 
       const fileExtension = url.split(".").pop()?.toLowerCase();
