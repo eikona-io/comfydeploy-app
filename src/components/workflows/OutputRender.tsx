@@ -186,7 +186,11 @@ function _FileURLRender({
   const textExtensions = [".txt", ".json", ".md"];
   if (textExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
     if (isSmallView) {
-      return <FileText className="h-4 w-4 text-muted-foreground" />;
+      return (
+        <div className="flex h-full w-full items-center justify-center">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+        </div>
+      );
     }
 
     return (
