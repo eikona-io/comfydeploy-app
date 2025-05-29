@@ -110,13 +110,15 @@ async function generateThumbnail(url: string): Promise<string> {
         throw new Error("Failed to initialize shared renderer");
       }
 
-      // Properly clear ALL models from scene before adding new one
+      // More aggressive scene cleanup - remove everything except lights
       const objectsToRemove: THREE.Object3D[] = [];
       sharedScene.traverse((child) => {
+        // Keep only lights and the scene itself
         if (
-          child.type === "Mesh" ||
-          child.type === "Group" ||
-          child.name === "thumbnail-model"
+          child !== sharedScene &&
+          !(child instanceof THREE.Light) &&
+          child.type !== "AmbientLight" &&
+          child.type !== "DirectionalLight"
         ) {
           objectsToRemove.push(child);
         }
@@ -125,19 +127,30 @@ async function generateThumbnail(url: string): Promise<string> {
       for (const obj of objectsToRemove) {
         sharedScene?.remove(obj);
         // Dispose of geometries and materials to prevent memory leaks
-        if ("geometry" in obj) {
-          (obj as any).geometry?.dispose();
-        }
-        if ("material" in obj) {
-          const material = (obj as any).material;
-          if (Array.isArray(material)) {
-            for (const mat of material) {
+        if (obj instanceof THREE.Mesh) {
+          obj.geometry?.dispose();
+          if (Array.isArray(obj.material)) {
+            for (const mat of obj.material) {
               mat?.dispose();
             }
           } else {
-            material?.dispose();
+            obj.material?.dispose();
           }
         }
+
+        // Recursively dispose of children
+        obj.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.geometry?.dispose();
+            if (Array.isArray(child.material)) {
+              for (const mat of child.material) {
+                mat?.dispose();
+              }
+            } else {
+              child.material?.dispose();
+            }
+          }
+        });
       }
 
       const fileExtension = url.split(".").pop()?.toLowerCase();
