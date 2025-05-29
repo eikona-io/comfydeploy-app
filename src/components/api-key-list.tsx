@@ -170,10 +170,10 @@ function EmptyState() {
   );
 }
 
-function LoadingState() {
+function LoadingState({ withHeader = true }: { withHeader?: boolean }) {
   return (
     <>
-      <TableHeader />
+      {withHeader && <TableHeader />}
       <div className="mx-auto max-w-screen-2xl space-y-4 p-6">
         {Array.from({ length: 4 }).map((_, index) => (
           <div
@@ -246,7 +246,7 @@ export function APIKeyList() {
             renderItem={(item: APIKey) => (
               <APIKeyRow item={item} onDelete={() => data.refetch()} />
             )}
-            renderLoading={() => <LoadingState />}
+            renderLoading={() => <LoadingState withHeader={false} />}
           />
         )}
       </div>
