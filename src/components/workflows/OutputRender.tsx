@@ -235,12 +235,10 @@ function _FileURLRender({
         {isLoading && (
           <div
             className={cn(
-              "absolute inset-0 flex h-full w-full items-center justify-center bg-gray-100/50",
+              "absolute inset-0 flex h-full w-full items-center justify-center bg-gray-100/50 [animation:pulse_3s_cubic-bezier(0.4,0,0.6,1)_infinite] dark:bg-zinc-700/50",
               mediaClasses,
             )}
-          >
-            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
-          </div>
+          />
         )}
         <img
           onLoad={handleLoad}

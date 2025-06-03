@@ -110,7 +110,7 @@ function GallerySkeleton() {
           // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
           key={index}
           className={
-            "mb-0.5 w-full animate-pulse break-inside-avoid rounded-[4px] bg-gray-200"
+            "mb-0.5 w-full animate-pulse break-inside-avoid rounded-[4px] bg-gray-200 dark:bg-zinc-700/50"
           }
           style={{ height: `${height}px` }}
         />
