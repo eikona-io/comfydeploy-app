@@ -74,10 +74,10 @@ export function RemovedNodes({ nodes }: { nodes?: NodeChange[] }) {
         {nodes.map((node, i) => (
           <span
             key={i}
-            className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 font-medium text-red-700 text-xs"
+            className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 font-medium text-red-700 text-xs dark:bg-red-800/50 dark:text-red-400"
           >
             {node.name}
-            <span className="ml-1 font-mono text-red-500 opacity-75">
+            <span className="ml-1 font-mono text-red-500 opacity-75 dark:text-red-400">
               ({node.hash.slice(0, 7)})
             </span>
           </span>
@@ -99,10 +99,10 @@ export function AddedNodes({ nodes }: { nodes?: NodeChange[] }) {
         {nodes.map((node, i) => (
           <span
             key={i}
-            className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 font-medium text-green-700 text-xs"
+            className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 font-medium text-green-700 text-xs dark:bg-green-800/50 dark:text-green-400"
           >
             {node.name}
-            <span className="ml-1 font-mono text-green-500 opacity-75">
+            <span className="ml-1 font-mono text-green-500 opacity-75 dark:text-green-400">
               ({node.hash.slice(0, 7)})
             </span>
           </span>
@@ -124,16 +124,16 @@ export function MovedOrUpdatedNodes({ nodes }: { nodes?: NodeChange[] }) {
         {nodes.map((node, i) => (
           <span
             key={i}
-            className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 font-medium text-blue-700 text-xs"
+            className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 font-medium text-blue-700 text-xs dark:bg-blue-800/50 dark:text-blue-400"
           >
             {node.name}
             {node.positionChanged && (
-              <span className="ml-1 text-blue-500 opacity-75 font-mono">
+              <span className="ml-1 font-mono text-blue-500 opacity-75 dark:text-blue-400">
                 (pos: {node.prevPosition! + 1} → {node.position + 1})
               </span>
             )}
             {node.hashChanged && (
-              <span className="ml-1 text-yellow-600 opacity-75 font-mono">
+              <span className="ml-1 font-mono text-yellow-600 opacity-75 dark:text-yellow-400">
                 ({node.prevHash?.slice(0, 7)} → {node.hash.slice(0, 7)})
               </span>
             )}
@@ -174,7 +174,7 @@ export function RemovedCommands({ commands }: { commands?: CommandChange[] }) {
         {commands.map((cmd, i) => (
           <span
             key={i}
-            className="inline-flex max-w-md items-center truncate rounded-md bg-red-50 px-2 py-1 font-medium font-mono text-red-700 text-xs"
+            className="inline-flex max-w-md items-center truncate rounded-md bg-red-50 px-2 py-1 font-medium font-mono text-red-700 text-xs dark:bg-red-700/50 dark:text-red-400"
             title={cmd.data}
           >
             {cmd.data}
@@ -197,7 +197,7 @@ export function AddedCommands({ commands }: { commands?: CommandChange[] }) {
         {commands.map((cmd, i) => (
           <span
             key={i}
-            className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 font-medium text-green-700 text-xs font-mono"
+            className="inline-flex items-center rounded-md bg-green-50 px-2 py-1 font-medium font-mono text-green-700 text-xs dark:bg-green-700/50 dark:text-green-400"
           >
             {cmd.data}
           </span>
@@ -219,7 +219,7 @@ export function MovedCommands({ commands }: { commands?: CommandChange[] }) {
         {commands.map((cmd, i) => (
           <span
             key={i}
-            className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 font-medium text-blue-700 text-xs font-mono"
+            className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 font-medium font-mono text-blue-700 text-xs dark:bg-blue-700/50 dark:text-blue-400"
           >
             {cmd.data}
             <span className="ml-1 text-blue-500 opacity-75">
@@ -279,14 +279,14 @@ export function FieldChanges({
       </div>
       <div className="flex items-center gap-2 text-sm">
         <div
-          className="rounded-md bg-red-50 px-2 py-1 font-mono text-red-700 text-xs"
+          className="rounded-md bg-red-50 px-2 py-1 font-mono text-red-700 text-xs dark:bg-red-700/50 dark:text-red-400"
           title={formatValue(oldValue)}
         >
           {truncateValue(formatValue(oldValue))}
         </div>
         <ArrowRight className="h-4 w-4 flex-shrink-0 text-gray-400" />
         <div
-          className="rounded-md bg-green-50 px-2 py-1 font-mono text-green-700 text-xs"
+          className="rounded-md bg-green-50 px-2 py-1 font-mono text-green-700 text-xs dark:bg-green-700/50 dark:text-green-400"
           title={formatValue(newValue)}
         >
           {truncateValue(formatValue(newValue))}
