@@ -15,12 +15,14 @@ import {
   LineChart,
   MessageCircle,
   MessageSquare,
+  Moon,
   Plus,
   Receipt,
   Rss,
   Save,
   Server,
   Settings,
+  Sun,
   Users,
   Workflow,
   Link2,
@@ -65,6 +67,7 @@ import {
 import {
   useCurrentPlan,
   useCurrentPlanWithStatus,
+  useIsBusinessAllowed,
 } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -119,6 +122,8 @@ import { ExternalNodeDocs } from "./workspace/external-node-docs";
 import { AssetBrowserSidebar } from "./workspace/assets-browser-sidebar";
 import { AssetType } from "./SDInputs/sd-asset-input";
 import { useDrawerStore } from "@/stores/drawer-store";
+import { useTheme } from "./theme-provider";
+import { dark } from "@clerk/themes";
 
 // Add Session type
 interface Session {
@@ -135,12 +140,14 @@ interface Session {
 function UserMenu() {
   const isAdminOnly = useIsAdminOnly();
   const isAdminAndMember = useIsAdminAndMember();
+  const { theme } = useTheme();
 
   return (
     <div className="flex h-full w-10 items-center justify-center">
       <UserButton
         userProfileProps={{}}
         appearance={{
+          baseTheme: theme === "dark" ? dark : undefined,
           elements: {
             userButtonPopoverRootBox: {
               pointerEvents: "initial",
@@ -412,7 +419,8 @@ function SessionSidebar() {
                         disabled={!hasChanged}
                         className={cn(
                           "mx-auto transition-colors",
-                          hasChanged && "bg-orange-200 hover:bg-orange-300",
+                          hasChanged &&
+                            "bg-orange-200 hover:bg-orange-300 dark:bg-orange-900/50 dark:hover:bg-orange-800/50",
                         )}
                       >
                         <Save className="h-4 w-4" />
@@ -1147,6 +1155,8 @@ export function AppSidebar() {
   const sessionId = useSessionIdInSessionView();
   const shareSlug = useShareSlug();
   const { setOpen } = useSidebar();
+  const { theme, setTheme } = useTheme();
+  const isBusinessAllowed = Boolean(useIsBusinessAllowed());
 
   const items = flatPages.map((page) => ({
     title: page.name,
@@ -1230,9 +1240,13 @@ export function AppSidebar() {
               <img
                 src="/icon-light.svg"
                 alt="comfydeploy"
-                className="ml-1 h-7 w-7"
+                className="ml-1 h-7 w-7 dark:hidden"
               />
-              {/* <IconWord /> */}
+              <img
+                src="/icon.svg"
+                alt="comfydeploy"
+                className="ml-1 hidden h-7 w-7 dark:block"
+              />
             </Link>
             <div className="flex items-center gap-1">
               <PlanBadge />
@@ -1241,14 +1255,15 @@ export function AppSidebar() {
           </div>
 
           {!(workflow_id && parentPath === "workflows") && (
-            <div className="mt-1 flex items-center justify-center gap-0 rounded-[8px] bg-gray-100">
+            <div className="mt-1 flex items-center justify-center gap-0 rounded-[8px] bg-gray-100 dark:bg-gradient-to-r dark:from-zinc-800 dark:to-zinc-900">
               <div className="flex min-h-[44px] w-full items-center justify-center">
                 <OrganizationSwitcher
-                  organizationProfileUrl="/organization-profile"
+                  organizationProfileUrl={`/org/${orgSlug}/organization-profile`}
                   organizationProfileMode="navigation"
                   afterSelectOrganizationUrl="/org/:slug/workflows"
                   afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
                   appearance={{
+                    baseTheme: theme === "dark" ? dark : undefined,
                     elements: {
                       rootBox: cn(
                         "items-center justify-center p-0 w-full",
@@ -1268,7 +1283,7 @@ export function AppSidebar() {
               </div>
               {orgId && (
                 <Link
-                  className="flex h-full items-center justify-center rounded-r-[8px] bg-gray-200/40 px-4 transition-colors hover:bg-gray-200"
+                  className="flex h-full items-center justify-center rounded-r-[8px] bg-gray-200/40 px-4 transition-colors hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
                   to="/organization-profile#/organization-members"
                 >
                   <Users className="h-4 w-4" />
@@ -1280,8 +1295,8 @@ export function AppSidebar() {
           {workflow_id && parentPath === "workflows" && (
             <>
               <WorkflowsBreadcrumb />
-              <div className="flex flex-col relative">
-                <div className="flex w-full flex-row gap-2 rounded-t-md rounded-b-none border bg-gray-100 p-2">
+              <div className="relative flex flex-col">
+                <div className="flex w-full flex-row gap-2 rounded-t-md rounded-b-none border bg-gray-100 p-2 dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-900">
                   <WorkflowDropdown
                     workflow_id={workflow_id}
                     className="min-w-0 flex-grow"
@@ -1303,7 +1318,7 @@ export function AppSidebar() {
                           params: { workflowId: workflow_id, view: "machine" },
                         });
                       }}
-                      className="rounded-b-md rounded-t-none border-b border-x bg-slate-100"
+                      className="rounded-t-none rounded-b-md border-x border-b bg-slate-100 dark:bg-gradient-to-tr dark:from-zinc-800 dark:to-zinc-900"
                     />
                   )}
               </div>
@@ -1331,10 +1346,31 @@ export function AppSidebar() {
                             }}
                           />
                         )}
-                        <SidebarMenuButton asChild>
+                        <SidebarMenuButton
+                          asChild
+                          className={cn(
+                            "transition-colors dark:hover:bg-zinc-700/40",
+                            item.url === `/${parentPath}` &&
+                              "dark:bg-zinc-800/40",
+                          )}
+                        >
                           <Link href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
+                            <item.icon
+                              className={cn(
+                                "transition-colors dark:text-gray-400",
+                                item.url === `/${parentPath}` &&
+                                  "dark:text-white",
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "transition-colors dark:text-gray-400",
+                                item.url === `/${parentPath}` &&
+                                  "dark:text-white",
+                              )}
+                            >
+                              {item.title}
+                            </span>
                           </Link>
                         </SidebarMenuButton>
 
@@ -1366,10 +1402,31 @@ export function AppSidebar() {
                             }}
                           />
                         )}
-                        <SidebarMenuButton asChild>
+                        <SidebarMenuButton
+                          asChild
+                          className={cn(
+                            "transition-colors dark:hover:bg-zinc-700/40",
+                            item.url === `/${parentPath}` &&
+                              "dark:bg-zinc-800/40",
+                          )}
+                        >
                           <Link href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
+                            <item.icon
+                              className={cn(
+                                "transition-colors dark:text-gray-400",
+                                item.url === `/${parentPath}` &&
+                                  "dark:text-white",
+                              )}
+                            />
+                            <span
+                              className={cn(
+                                "transition-colors dark:text-gray-400",
+                                item.url === `/${parentPath}` &&
+                                  "dark:text-white",
+                              )}
+                            >
+                              {item.title}
+                            </span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -1400,11 +1457,30 @@ export function AppSidebar() {
                   </span>
                 </a>
               ))}
+
+              {/* Theme Switch Item */}
+              {isBusinessAllowed && (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                <div
+                  className="flex w-full cursor-pointer flex-row items-center justify-between gap-2 pr-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => {
+                    setTheme(theme === "dark" ? "light" : "dark");
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    {theme === "dark" ? (
+                      <Moon size={16} className="w-3" />
+                    ) : (
+                      <Sun size={16} className="w-3" />
+                    )}
+                    <span>Theme</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </SidebarFooter>
       </Sidebar>
-
       {window.location.hostname === "localhost" && (
         <div className="fixed top-2 right-2 z-[9999] flex items-center gap-2 opacity-65">
           <Badge className="pointer-events-none bg-orange-300 text-orange-700 shadow-md">

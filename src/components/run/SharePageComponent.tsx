@@ -260,7 +260,7 @@ export function Playground(props: {
                 Learn about external inputs
               </a>
             </div>
-            <div className="flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white p-3 shadow-sm">
+            <div className="flex-1 overflow-hidden rounded-sm border border-gray-200 bg-white p-3 shadow-sm dark:border-gray-600/40 dark:bg-zinc-900">
               {isVersionLoading ? (
                 <div className="flex h-full items-center justify-center">
                   <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
@@ -367,7 +367,7 @@ export function Playground(props: {
 
         <div className="hidden h-full min-w-[120px] max-w-[120px] flex-col lg:flex">
           <span className="mb-1 ml-2 font-semibold text-sm">Gallery</span>
-          <div className="relative mb-2 flex-1 overflow-hidden rounded-sm border border-gray-200 shadow-sm">
+          <div className="relative mb-2 flex-1 overflow-hidden rounded-sm border border-gray-200 shadow-sm dark:border-gray-600/40">
             <VirtualizedInfiniteList
               ref={virtualizerRef}
               className="!h-full scrollbar-track-transparent scrollbar-thin scrollbar-none p-1.5"
@@ -383,8 +383,8 @@ export function Playground(props: {
                 ));
               }}
             />
-            <div className="pointer-events-none absolute top-0 right-0 left-0 z-10 h-10 bg-gradient-to-b from-white to-transparent" />
-            <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-10 bg-gradient-to-t from-white to-transparent" />
+            <div className="pointer-events-none absolute top-0 right-0 left-0 z-10 h-10 bg-gradient-to-b from-white to-transparent dark:from-zinc-900" />
+            <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-10 bg-gradient-to-t from-white to-transparent dark:from-zinc-900" />
           </div>
         </div>
       </div>
@@ -706,7 +706,7 @@ function RunDisplay({ runId }: { runId?: string }) {
 
       {/* Details section for all cases */}
       {runId && (
-        <div className="relative z-10 flex min-h-screen w-full justify-center rounded-t-sm border border-gray-200 bg-white/80 p-8 pb-16 drop-shadow-lg backdrop-blur-lg">
+        <div className="relative z-10 flex min-h-screen w-full justify-center rounded-t-sm border border-gray-200 bg-white/80 p-8 pb-16 drop-shadow-lg backdrop-blur-lg dark:border-zinc-700 dark:bg-zinc-800/80">
           <div className="w-full max-w-5xl px-4">
             <RunDetails run_id={runId} isPlayground={true} />
           </div>

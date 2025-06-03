@@ -33,6 +33,7 @@ import {
 } from "@clerk/clerk-react";
 import { Toaster } from "sonner";
 import { Providers, queryClient } from "../lib/providers";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
@@ -112,9 +113,9 @@ function RootComponent() {
   });
 
   return (
-    <>
-      <div className="fixed z-[-1] h-full w-full bg-white">
-        <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+    <ThemeProvider defaultTheme="system">
+      <div className="fixed z-[-1] h-full w-full bg-white dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-900">
+        <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:bg-[radial-gradient(#333333_1px,transparent_1px)]" />
       </div>
 
       {!isSessionPage && (
@@ -145,6 +146,6 @@ function RootComponent() {
         <ComfyCommand />
         <Toaster richColors closeButton={true} />
       </div>
-    </>
+    </ThemeProvider>
   );
 }

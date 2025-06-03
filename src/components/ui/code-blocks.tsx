@@ -8,6 +8,7 @@ import { Skeleton } from "./skeleton";
 // import Editor from "react-simple-code-editor";
 
 import type { HighlighterCore, StringLiteralUnion } from "shiki/core";
+import { useTheme } from "../theme-provider";
 import { cn } from "@/lib/utils";
 
 async function getHighlighter() {
@@ -19,6 +20,7 @@ async function getHighlighter() {
     { default: bash },
     { default: docker },
     { default: json },
+    { default: minLight },
     { default: oneDarkPro },
     { default: getWasm },
   ] = await Promise.all([
@@ -30,11 +32,12 @@ async function getHighlighter() {
     import("shiki/langs/dockerfile.mjs"),
     import("shiki/langs/json.mjs"),
     import("shiki/themes/min-light.mjs"),
+    import("shiki/themes/one-dark-pro.mjs"),
     import("shiki/wasm.mjs"),
   ]);
 
   const highlighter = await getHighlighterCore({
-    themes: [oneDarkPro],
+    themes: [minLight, oneDarkPro],
     langs: [ts, js, python, bash, docker, json],
     loadWasm: getWasm,
   });
@@ -99,6 +102,8 @@ export function CodeBlock(props: {
   const [_highlighter, setHighlighter] = React.useState<
     HighlighterCore | undefined
   >(highlighter);
+  const { theme } = useTheme();
+  const shikiTheme = theme === "dark" ? "one-dark-pro" : "min-light";
 
   useEffect(() => {
     if (!highlighter) getHighlighter().then(setHighlighter);
@@ -123,14 +128,14 @@ export function CodeBlock(props: {
 
     const code = _highlighter.codeToHtml(trim, {
       lang: props.lang,
-      theme: "min-light",
+      theme: shikiTheme,
     });
 
     return {
       code,
       codeLines,
     };
-  }, [props.code, _highlighter]);
+  }, [props.code, _highlighter, shikiTheme]);
 
   const skeletonHeight = codeLines * 1.5 + 2; // Adjust the multiplier based on your design needs
 
@@ -151,7 +156,7 @@ export function CodeBlock(props: {
       {code && (
         <>
           <p
-            className={`[&>pre]:!bg-gray-100 max-h-96 w-fit min-w-full overflow-visible rounded-lg [&>pre]:p-4 ${props.className}`}
+            className={`[&>pre]:!bg-gray-100 dark:[&>pre]:!bg-zinc-900 max-h-96 w-fit min-w-full overflow-visible rounded-lg [&>pre]:p-4 ${props.className}`}
             style={{
               overflowWrap: "break-word",
             }}

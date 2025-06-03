@@ -40,7 +40,7 @@ export default function MachinePage({
   if (isLoading || !machine) {
     return (
       <>
-        <div className="h-[57px] w-full border-b bg-[#fcfcfc] shadow-sm" />
+        <div className="h-[57px] w-full border-b bg-[#fcfcfc] shadow-sm dark:bg-zinc-900" />
         <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full max-w-[1200px] px-2 py-4 md:px-4">
           <LoadingMachineVerSkeleton />
         </div>
@@ -64,7 +64,7 @@ export function MachineTopStickyBar({ machine }: { machine: any }) {
   const navigate = useNavigate();
 
   return (
-    <div className="sticky top-0 z-50 flex flex-row justify-between border-gray-200 border-b bg-[#fcfcfc] p-4 shadow-sm">
+    <div className="sticky top-0 z-50 flex flex-row justify-between border-gray-200 border-b bg-[#fcfcfc] p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <div className="flex flex-row items-center gap-2">
         <Link
           to={`/machines/${machine.id}`}

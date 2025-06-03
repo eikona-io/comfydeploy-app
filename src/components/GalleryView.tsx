@@ -552,7 +552,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
           ))}
         </div>
 
-        <div className="pointer-events-none fixed top-0 left-0 h-20 w-full bg-gradient-to-b from-white to-transparent" />
+        <div className="pointer-events-none fixed top-0 left-0 h-20 w-full bg-gradient-to-b from-white to-transparent dark:from-zinc-900" />
 
         <div className="flex items-center justify-center gap-2 pb-4">
           {query.hasNextPage ? (
@@ -579,7 +579,7 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
       </div>
       {runId && (
         <MyDrawer
-          desktopClassName="w-[600px] ring-1 ring-gray-200"
+          desktopClassName="w-[600px] ring-1 ring-gray-200 dark:ring-gray-600/40"
           backgroundInteractive={true}
           open={isDrawerOpen}
           onClose={handleCloseRun}

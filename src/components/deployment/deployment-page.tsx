@@ -123,7 +123,7 @@ export function DeploymentPage() {
           </p>
         </div>
         <h3 className="mb-2 ml-2 font-medium text-sm">Environment</h3>
-        <div className="rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200">
+        <div className="rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200 dark:ring-zinc-700/80">
           {isDeploymentsLoading ? (
             <div className="flex h-[80px] flex-col items-center justify-center">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -170,7 +170,7 @@ export function DeploymentPage() {
           />
         </div>
 
-        <div className="h-[310px] overflow-clip rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200">
+        <div className="h-[310px] overflow-clip rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200 dark:ring-zinc-700/80">
           {deployments?.some((d: Deployment) =>
             ["production", "staging"].includes(d.environment),
           ) ? (
@@ -239,7 +239,7 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
     <div
-      className="grid cursor-pointer grid-cols-3 items-center rounded-[8px] border-gray-100 border-b px-4 py-1.5 text-xs last:border-b-0 hover:bg-gray-50"
+      className="grid cursor-pointer grid-cols-3 items-center rounded-[8px] border-gray-100 border-b px-4 py-1.5 text-xs last:border-b-0 hover:bg-gray-50 dark:border-zinc-700/80 dark:hover:bg-zinc-800/40"
       onClick={() => {
         setSelectedDeployment(deployment.id);
       }}
@@ -424,7 +424,7 @@ export function DeploymentDialog({
               )
             }
           >
-            <TabsList className="inline-flex items-center rounded-lg bg-white/95 h-fit ring-1 ring-gray-200/50">
+            <TabsList className="inline-flex h-fit items-center rounded-lg bg-white/95 ring-1 ring-gray-200/50 dark:bg-zinc-800 dark:ring-zinc-700/50">
               {!publicLinkOnly && (
                 <>
                   <TabsTrigger
@@ -432,8 +432,8 @@ export function DeploymentDialog({
                     className={cn(
                       "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                       selectedEnvironment === "staging"
-                        ? "bg-gradient-to-b from-white to-yellow-100 shadow-sm ring-1 ring-gray-200/50"
-                        : "text-gray-600 hover:bg-gray-100",
+                        ? "bg-gradient-to-b from-white to-yellow-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-yellow-900 dark:ring-yellow-900/50"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
                     )}
                   >
                     Staging
@@ -443,8 +443,8 @@ export function DeploymentDialog({
                     className={cn(
                       "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                       selectedEnvironment === "production"
-                        ? "bg-gradient-to-b from-white to-blue-100 shadow-sm ring-1 ring-gray-200/50"
-                        : "text-gray-600 hover:bg-gray-100",
+                        ? "bg-gradient-to-b from-white to-blue-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-blue-900 dark:ring-blue-900/50"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
                     )}
                   >
                     Production
@@ -456,8 +456,8 @@ export function DeploymentDialog({
                 className={cn(
                   "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
                   selectedEnvironment === "public-share"
-                    ? "bg-gradient-to-b from-white to-green-100 shadow-sm ring-1 ring-gray-200/50"
-                    : "text-gray-600 hover:bg-gray-100",
+                    ? "bg-gradient-to-b from-white to-green-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-green-900 dark:ring-green-900/50"
+                    : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
                 )}
               >
                 Link Share
@@ -535,7 +535,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
         <div className="-top-1 absolute right-2">
           <Button
             variant="default"
-            className="h-[30px] rounded-[8px] text-2xs focus-visible:ring-transparent"
+            className="h-[30px] rounded-[8px] text-2xs focus-visible:ring-transparent dark:bg-gradient-to-br dark:from-zinc-100 dark:to-zinc-300"
             size="sm"
             onClick={() => {
               setSelectedVersion(versions[0]);
@@ -546,7 +546,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
             Deploy Latest
             <Badge
               variant="outline"
-              className="!text-[11px] ml-2 h-[18px] bg-gray-400/50 py-0 text-white"
+              className="!text-[11px] ml-2 h-[18px] bg-gray-400/50 py-0 text-white dark:bg-zinc-900 dark:text-zinc-100"
             >
               v{versions?.[0].version}
             </Badge>
@@ -557,7 +557,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
       <VersionList
         hideSearch
         workflow_id={workflowId || ""}
-        className="relative z-[1] w-full rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200"
+        className="relative z-[1] w-full rounded-md bg-background p-1 shadow-sm ring-1 ring-gray-200 dark:ring-zinc-700/80"
         containerClassName="max-h-[200px]"
         height={30}
         renderItem={(item: Version) => {
@@ -569,7 +569,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
           return (
             <div
               className={cn(
-                "flex flex-row items-center justify-between gap-2 rounded-[6px] px-4 transition-colors hover:bg-gray-100",
+                "flex flex-row items-center justify-between gap-2 rounded-[6px] px-4 transition-colors hover:bg-gray-100 dark:hover:bg-zinc-800/40",
                 item.version === 1 && "rounded-b-sm",
                 item.version === versions?.[versions.length - 1]?.version &&
                   "rounded-t-sm",
@@ -644,8 +644,8 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                 <DropdownMenu>
                   <DropdownMenuTrigger
                     asChild
-                    className="h-full w-full cursor-pointer rounded-sm p-2 hover:bg-gray-50"
-                    onClick={(e) => e.stopPropagation()}
+                    className="h-full w-full cursor-pointer rounded-sm p-2 hover:bg-gray-50 dark:hover:bg-zinc-800/40"
+                    onClick={(e) => e.stopPropagation()} // Prevent triggering the row click
                   >
                     <MoreVertical size={16} />
                   </DropdownMenuTrigger>
@@ -896,7 +896,7 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
   };
 
   return (
-    <div className="rounded-md bg-background p-4 shadow-sm ring-1 ring-gray-200">
+    <div className="rounded-md bg-background p-4 shadow-sm ring-1 ring-gray-200 dark:ring-zinc-700/80">
       {isLoading ? (
         <div className="flex h-[300px] items-center justify-center">
           <Loader2 className="h-4 w-4 animate-spin" />
