@@ -54,7 +54,9 @@ export async function parseFilesToImgURLs(
     const toastId = toast.loading(`Uploading ${file.name}...`);
     try {
       const uploadFileResponse = await uploadFile(file);
-      toast.success(`${file.name} uploaded successfully`, { id: toastId });
+      toast.success(`${file.name} uploaded successfully to assets`, {
+        id: toastId,
+      });
       return uploadFileResponse.url;
     } catch (error) {
       toast.error(

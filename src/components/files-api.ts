@@ -9,6 +9,39 @@ export async function uploadFile(file: File) {
     );
   }
 
+  // Ensure upload folder exists
+  try {
+    await api({
+      url: "assets/folder",
+      init: {
+        method: "POST",
+        body: JSON.stringify({ name: "upload", parent_path: "/" }),
+      },
+    });
+  } catch (error: any) {
+    // Check for the "folder already exists" error in multiple ways
+    const errorMessage = error?.message || error?.toString() || "";
+    const errorDetail = error?.detail || "";
+    const errorBody = error?.body || "";
+
+    const isFolderExistsError =
+      errorMessage.includes("Folder already exists") ||
+      errorDetail === "Folder already exists" ||
+      (errorMessage.includes("status: 400") &&
+        errorMessage.includes("Folder already exists")) ||
+      (typeof errorBody === "string" &&
+        errorBody.includes("Folder already exists"));
+
+    if (isFolderExistsError) {
+      // This is expected and good - folder exists, we can continue
+      console.log("Upload folder already exists - continuing");
+    } else {
+      // For any other error, throw it
+      console.error("Failed to create upload folder:", error);
+      throw new Error("Failed to ensure upload folder exists");
+    }
+  }
+
   const formData = new FormData();
   formData.append("file", file);
 
