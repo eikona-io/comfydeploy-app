@@ -2,23 +2,35 @@ import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 
 export async function uploadFile(file: File) {
-  const formData = new FormData();
+  // Check file size limit
+  if (file.size > 50 * 1024 * 1024) {
+    throw new Error(
+      "File size exceeds 50MB limit. Please use the assets upload feature for large files.",
+    );
+  }
 
+  const formData = new FormData();
   formData.append("file", file);
 
   const response = await api({
-    url: "file/upload",
+    url: "assets/upload",
     skipDefaultHeaders: true,
     init: {
       method: "POST",
       body: formData,
-      redirect: "follow",
+    },
+    params: {
+      parent_path: "/upload",
     },
   });
   return response;
 }
 
-export async function generateUploadUrl(filename: string, contentType: string, size: number) {
+export async function generateUploadUrl(
+  filename: string,
+  contentType: string,
+  size: number,
+) {
   return await api({
     url: "volume/file/generate-upload-url",
     init: {
@@ -26,7 +38,7 @@ export async function generateUploadUrl(filename: string, contentType: string, s
       body: JSON.stringify({
         filename,
         contentType,
-        size
+        size,
       }),
     },
   });

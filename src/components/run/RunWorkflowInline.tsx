@@ -55,9 +55,14 @@ export async function parseFilesToImgURLs(
     try {
       const uploadFileResponse = await uploadFile(file);
       toast.success(`${file.name} uploaded successfully`, { id: toastId });
-      return uploadFileResponse.file_url;
+      return uploadFileResponse.url;
     } catch (error) {
-      toast.error(`Failed to upload ${file.name}`, { id: toastId });
+      toast.error(
+        `Failed to upload ${file.name}, ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+        { id: toastId },
+      );
       throw error;
     }
   };
@@ -324,12 +329,11 @@ export function RunWorkflowInline({
 
     setLoading2(true);
     setIsLoading(true);
-    const valuesParsed = await parseFilesToImgURLs({ ...values });
-    const val = parseInputValues(valuesParsed);
-    console.log(val);
-    setStatus({ state: "preparing", live_status: "", progress: 0 });
     try {
-      const origin = window.location.origin;
+      const valuesParsed = await parseFilesToImgURLs({ ...values });
+      const val = parseInputValues(valuesParsed);
+      console.log(val);
+      setStatus({ state: "preparing", live_status: "", progress: 0 });
       // if (v2RunApi || model_id) {
       const auth = await fetchToken();
       const body = model_id

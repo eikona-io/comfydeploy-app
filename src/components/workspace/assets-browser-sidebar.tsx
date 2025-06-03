@@ -38,10 +38,7 @@ export function AssetBrowserSidebar({ onItemClick }: AssetBrowserSidebarProps) {
           </p>
         </div>
         <div className="flex-1">
-          <AssetBrowser
-            onItemClick={handleAssetClick}
-            isPanel={true}
-          />
+          <AssetBrowser onItemClick={handleAssetClick} isPanel={true} />
         </div>
         <UploadProgress className="absolute top-12 right-4 z-10" />
       </div>

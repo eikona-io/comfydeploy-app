@@ -26,8 +26,8 @@ export function AssetsBrowserPopup({
         <Drawer.Content
           className={cn(
             isMobile
-              ? "fixed right-0 bottom-0 left-0 mt-24 flex h-[96%] flex-col rounded-t-[10px] bg-white md:top-0 md:right-0 md:bottom-0 md:h-full md:w-[400px] md:rounded-l-[10px] md:rounded-tr-none"
-              : "fixed top-2 right-2 bottom-2 z-10 flex w-[500px] rounded-[10px] border border-gray-300/50 shadow-lg",
+              ? "fixed right-0 bottom-0 left-0 mt-24 flex h-[96%] flex-col rounded-t-[10px] bg-white md:top-0 md:right-0 md:bottom-0 md:h-full md:w-[400px] md:rounded-l-[10px] md:rounded-tr-none dark:bg-zinc-900"
+              : "fixed top-2 right-2 bottom-2 z-10 flex w-[500px] rounded-[10px] border border-gray-300/50 shadow-lg dark:border-zinc-700/50",
           )}
           style={
             {
@@ -35,11 +35,12 @@ export function AssetsBrowserPopup({
             } as React.CSSProperties
           }
         >
-          <div className="flex h-full w-full grow flex-col rounded-[16px] bg-zinc-50 p-5">
-            <div className="flex justify-end mb-4">
+          <div className="flex h-full w-full grow flex-col rounded-[16px] bg-zinc-50 p-5 dark:bg-zinc-900">
+            <div className="mb-4 flex justify-end">
               <button
+                type="button"
                 onClick={() => setOpen(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+                className="rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 text-sm hover:bg-gray-50 dark:border-zinc-700/50 dark:bg-zinc-900 dark:text-zinc-400"
               >
                 Cancel
               </button>
