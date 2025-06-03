@@ -1,5 +1,6 @@
 import { useTheme } from "@/components/theme-provider";
 import { Badge } from "@/components/ui/badge";
+import { isDarkTheme } from "@/lib/utils";
 import { CreateOrganization } from "@clerk/clerk-react";
 import { dark } from "@clerk/themes";
 import { createFileRoute, redirect } from "@tanstack/react-router";
@@ -40,7 +41,7 @@ export function CreateOrgPage() {
         <CreateOrganization
           afterCreateOrganizationUrl="/pricing"
           appearance={{
-            baseTheme: theme === "dark" ? dark : undefined,
+            baseTheme: isDarkTheme(theme) ? dark : undefined,
             elements: {
               cardBox: "dark:border-zinc-700",
             },

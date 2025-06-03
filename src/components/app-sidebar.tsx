@@ -71,7 +71,7 @@ import {
 } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
-import { cn } from "@/lib/utils";
+import { cn, isDarkTheme } from "@/lib/utils";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { getOrgPathInfo } from "@/utils/org-path";
 import {
@@ -147,7 +147,7 @@ function UserMenu() {
       <UserButton
         userProfileProps={{}}
         appearance={{
-          baseTheme: theme === "dark" ? dark : undefined,
+          baseTheme: isDarkTheme(theme) ? dark : undefined,
           elements: {
             userButtonPopoverRootBox: {
               pointerEvents: "initial",
@@ -1263,7 +1263,7 @@ export function AppSidebar() {
                   afterSelectOrganizationUrl="/org/:slug/workflows"
                   afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
                   appearance={{
-                    baseTheme: theme === "dark" ? dark : undefined,
+                    baseTheme: isDarkTheme(theme) ? dark : undefined,
                     elements: {
                       rootBox: cn(
                         "items-center justify-center p-0 w-full",

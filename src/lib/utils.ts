@@ -7,6 +7,32 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * Get the resolved theme (actual dark/light theme)
+ * Handles "system" theme by checking the user's system preference
+ * @param theme - The theme value from useTheme hook ("dark" | "light" | "system")
+ * @returns "dark" | "light" - The actual resolved theme
+ */
+export function getResolvedTheme(
+  theme: "dark" | "light" | "system",
+): "dark" | "light" {
+  if (theme === "system") {
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  return theme;
+}
+
+/**
+ * Check if the current theme should use dark mode
+ * @param theme - The theme value from useTheme hook
+ * @returns boolean - true if dark theme should be used
+ */
+export function isDarkTheme(theme: "dark" | "light" | "system"): boolean {
+  return getResolvedTheme(theme) === "dark";
+}
+
 export function formatFileSize(fileSize: number) {
   let sizeString: string;
   if (fileSize >= 1073741824) {
@@ -30,19 +56,17 @@ export function formatBytes(bytes: number, decimals = 2): string {
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return (
-    Number.parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i]
-  );
+  return `${(bytes / k ** i).toFixed(dm)} ${sizes[i]}`;
 }
 
 export function formatTime(seconds: number): string {
   if (seconds < 60) {
     return `${Math.round(seconds)}s`;
-  } else if (seconds < 3600) {
-    return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
-  } else {
-    return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
   }
+  if (seconds < 3600) {
+    return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+  }
+  return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
 }
 
 export function isCustomBucket(url: string) {

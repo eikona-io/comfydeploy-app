@@ -1,5 +1,6 @@
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
+import { isDarkTheme } from "@/lib/utils";
 import { dark } from "@clerk/themes";
 import { OrganizationProfile, useAuth } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +15,6 @@ function RouteComponent() {
   const { orgId } = useAuth();
   const plan = useCurrentPlan();
   const { theme } = useTheme();
-  console.log("🚀 ~ RouteComponent ~ theme:", theme);
 
   if (!orgId) {
     return <div>Not Found</div>;
@@ -37,7 +37,7 @@ function RouteComponent() {
     <OrganizationProfile
       routing="virtual"
       appearance={{
-        baseTheme: theme === "dark" ? dark : undefined,
+        baseTheme: isDarkTheme(theme) ? dark : undefined,
         elements: {
           rootBox:
             "w-full h-full shadow-none outline-none bg-transparent px-0 ring-0 border-0",
