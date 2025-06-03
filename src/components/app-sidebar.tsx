@@ -1464,7 +1464,7 @@ export function AppSidebar() {
                 <div
                   className="flex w-full cursor-pointer flex-row items-center justify-between gap-2 pr-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => {
-                    setTheme(isDarkTheme(theme) ? "dark" : "light");
+                    setTheme(isDarkTheme(theme) ? "light" : "dark");
                   }}
                 >
                   <div className="flex items-center gap-2">
