@@ -1464,11 +1464,11 @@ export function AppSidebar() {
                 <div
                   className="flex w-full cursor-pointer flex-row items-center justify-between gap-2 pr-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
                   onClick={() => {
-                    setTheme(theme === "dark" ? "light" : "dark");
+                    setTheme(isDarkTheme(theme) ? "dark" : "light");
                   }}
                 >
                   <div className="flex items-center gap-2">
-                    {theme === "dark" ? (
+                    {isDarkTheme(theme) ? (
                       <Moon size={16} className="w-3" />
                     ) : (
                       <Sun size={16} className="w-3" />
