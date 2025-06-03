@@ -27,6 +27,7 @@ export const SDAssetInput = ({ onChange }: Props) => {
       setSidebarMode(true);
     } else {
       setOpen(true);
+      setIsOpen(true);
     }
   };
 

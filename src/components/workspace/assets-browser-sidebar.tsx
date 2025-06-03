@@ -4,6 +4,7 @@ import { UploadProgress } from "../upload/upload-progress";
 import { sendEventToCD } from "./sendEventToCD";
 import { useAssetsBrowserStore } from "./Workspace";
 import type { AssetType } from "../SDInputs/sd-asset-input";
+import { ScrollArea } from "../ui/scroll-area";
 
 interface AssetBrowserSidebarProps {
   onItemClick: (asset: AssetType) => void;
@@ -37,9 +38,9 @@ export function AssetBrowserSidebar({ onItemClick }: AssetBrowserSidebarProps) {
             Drag & drop files here to upload
           </p>
         </div>
-        <div className="flex-1">
+        <ScrollArea className="max-h-[calc(100vh-100px)] flex-1">
           <AssetBrowser onItemClick={handleAssetClick} isPanel={true} />
-        </div>
+        </ScrollArea>
         <UploadProgress className="absolute top-12 right-4 z-10" />
       </div>
     </UploadZone>
