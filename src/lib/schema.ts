@@ -7,4 +7,6 @@ export const machineGPUOptions = [
   "A100",
   "A100-80GB",
   "H100",
+  "H200",
+  "B200",
 ] as const;
