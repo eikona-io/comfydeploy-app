@@ -31,6 +31,8 @@ export const machineGPUOptions = [
   "A100",
   "A100-80GB",
   "H100",
+  "H200",
+  "B200",
 ] as const;
 
 const machineBuilderVersionTypes = ["2", "3", "4"] as const;
@@ -216,6 +218,20 @@ export function useGPUConfig() {
       pricePerSec: 0.02,
       tier: "business",
     },
+    {
+      id: "H200",
+      gpuName: "H200",
+      ram: "141GB",
+      pricePerSec: 0.02,
+      tier: "business",
+    },
+    {
+      id: "B200",
+      gpuName: "B200",
+      ram: "192GB",
+      pricePerSec: 0.02,
+      tier: "business",
+    },
   ];
 
   const gpuConfig = baseConfig.map((config) => ({
@@ -248,6 +264,8 @@ export const sharedMachineConfig: FieldConfig<
         ["A100", "business", "A100 (40GB)"],
         ["A100-80GB", "business", "A100-80GB (80GB)"],
         ["H100", "business", "H100 (80GB)"],
+        ["H200", "business", "H200 (141GB)"],
+        ["B200", "business", "B200 (192GB)"],
       ],
     },
   },
