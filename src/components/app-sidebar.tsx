@@ -1483,7 +1483,7 @@ export function AppSidebar() {
       </Sidebar>
       {window.location.hostname === "localhost" && (
         <div className="fixed top-2 right-2 z-[9999] flex items-center gap-2 opacity-65">
-          <Badge className="pointer-events-none bg-orange-300 text-orange-700 shadow-md">
+          <Badge className="pointer-events-none bg-orange-300 text-orange-700 shadow-md dark:bg-orange-900/50 dark:text-orange-400">
             Localhost
           </Badge>
 
