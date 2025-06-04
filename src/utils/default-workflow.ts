@@ -449,7 +449,7 @@ const workflow_json_flux = {
     },
     node_versions: {
       "comfy-core": "0.3.19",
-      "comfyui-deploy": "b3df94d1affcf7ce05ee7eeda99989194bcd9159",
+      "comfyui-deploy": "7b734c415aabd51b8bb8fad9fd719055b5ba359d",
     },
     frontendVersion: "1.18.10",
   },
@@ -3076,2418 +3076,1782 @@ const workflow_json_hunyuan3d = {
 };
 
 const bagel_workflow = {
-  "id": "4d670fa5-e222-4474-b3e5-6c3f211659a8",
-  "extra": {
-      "ds": {
-          "scale": 1.155889959860239,
-          "offset": [
-              -1736.9676847430605,
-              -988.4071267851009
-          ]
-      },
-      "frontendVersion": "1.20.7",
-      "VHS_MetadataImage": true,
-      "VHS_latentpreview": false,
-      "VHS_KeepIntermediate": true,
-      "VHS_latentpreviewrate": 0
+  id: "4d670fa5-e222-4474-b3e5-6c3f211659a8",
+  extra: {
+    ds: {
+      scale: 1.155889959860239,
+      offset: [-1736.9676847430605, -988.4071267851009],
+    },
+    frontendVersion: "1.20.7",
+    VHS_MetadataImage: true,
+    VHS_latentpreview: false,
+    VHS_KeepIntermediate: true,
+    VHS_latentpreviewrate: 0,
   },
-  "links": [
-      [
-          1,
-          1,
-          0,
-          2,
-          0,
-          "BAGEL_MODEL"
-      ],
-      [
-          3,
-          2,
-          1,
-          4,
-          0,
-          "STRING"
-      ],
-      [
-          9,
-          1,
-          0,
-          7,
-          0,
-          "BAGEL_MODEL"
-      ],
-      [
-          12,
-          7,
-          0,
-          9,
-          0,
-          "STRING"
-      ],
-      [
-          29,
-          1,
-          0,
-          26,
-          0,
-          "BAGEL_MODEL"
-      ],
-      [
-          31,
-          26,
-          1,
-          28,
-          0,
-          "STRING"
-      ],
-      [
-          32,
-          30,
-          0,
-          2,
-          1,
-          "STRING"
-      ],
-      [
-          35,
-          1,
-          0,
-          20,
-          0,
-          "BAGEL_MODEL"
-      ],
-      [
-          36,
-          31,
-          0,
-          20,
-          2,
-          "STRING"
-      ],
-      [
-          37,
-          32,
-          0,
-          7,
-          2,
-          "STRING"
-      ],
-      [
-          38,
-          19,
-          0,
-          33,
-          0,
-          "IMAGE"
-      ],
-      [
-          39,
-          33,
-          0,
-          20,
-          1,
-          "IMAGE"
-      ],
-      [
-          40,
-          20,
-          0,
-          34,
-          0,
-          "IMAGE"
-      ],
-      [
-          41,
-          7,
-          0,
-          26,
-          1,
-          "STRING"
-      ],
-      [
-          42,
-          23,
-          0,
-          35,
-          0,
-          "IMAGE"
-      ],
-      [
-          43,
-          35,
-          0,
-          7,
-          1,
-          "IMAGE"
-      ],
-      [
-          45,
-          2,
-          0,
-          37,
-          0,
-          "IMAGE"
-      ],
-      [
-          51,
-          26,
-          0,
-          42,
-          0,
-          "IMAGE"
-      ],
-      [
-          58,
-          51,
-          0,
-          47,
-          0,
-          "IMAGE"
-      ],
-      [
-          59,
-          51,
-          1,
-          49,
-          0,
-          "STRING"
-      ],
-      [
-          62,
-          48,
-          0,
-          51,
-          1,
-          "STRING"
-      ],
-      [
-          63,
-          51,
-          0,
-          53,
-          0,
-          "IMAGE"
-      ],
-      [
-          64,
-          1,
-          0,
-          51,
-          0,
-          "BAGEL_MODEL"
-      ],
-      [
-          65,
-          45,
-          0,
-          26,
-          2,
-          "INT"
-      ],
-      [
-          66,
-          45,
-          0,
-          20,
-          3,
-          "INT"
-      ],
-      [
-          67,
-          45,
-          0,
-          2,
-          2,
-          "INT"
-      ],
-      [
-          68,
-          45,
-          0,
-          51,
-          2,
-          "INT"
-      ],
-      [
-          69,
-          2,
-          0,
-          46,
-          0,
-          "IMAGE"
-      ],
-      [
-          70,
-          4,
-          0,
-          39,
-          0,
-          "STRING"
-      ],
-      [
-          71,
-          9,
-          0,
-          38,
-          0,
-          "STRING"
-      ],
-      [
-          72,
-          20,
-          1,
-          54,
-          0,
-          "STRING"
-      ],
-      [
-          73,
-          54,
-          0,
-          41,
-          0,
-          "STRING"
-      ],
-      [
-          74,
-          49,
-          0,
-          50,
-          0,
-          "STRING"
-      ],
-      [
-          75,
-          28,
-          0,
-          40,
-          0,
-          "STRING"
-      ]
+  links: [
+    [1, 1, 0, 2, 0, "BAGEL_MODEL"],
+    [3, 2, 1, 4, 0, "STRING"],
+    [9, 1, 0, 7, 0, "BAGEL_MODEL"],
+    [12, 7, 0, 9, 0, "STRING"],
+    [29, 1, 0, 26, 0, "BAGEL_MODEL"],
+    [31, 26, 1, 28, 0, "STRING"],
+    [32, 30, 0, 2, 1, "STRING"],
+    [35, 1, 0, 20, 0, "BAGEL_MODEL"],
+    [36, 31, 0, 20, 2, "STRING"],
+    [37, 32, 0, 7, 2, "STRING"],
+    [38, 19, 0, 33, 0, "IMAGE"],
+    [39, 33, 0, 20, 1, "IMAGE"],
+    [40, 20, 0, 34, 0, "IMAGE"],
+    [41, 7, 0, 26, 1, "STRING"],
+    [42, 23, 0, 35, 0, "IMAGE"],
+    [43, 35, 0, 7, 1, "IMAGE"],
+    [45, 2, 0, 37, 0, "IMAGE"],
+    [51, 26, 0, 42, 0, "IMAGE"],
+    [58, 51, 0, 47, 0, "IMAGE"],
+    [59, 51, 1, 49, 0, "STRING"],
+    [62, 48, 0, 51, 1, "STRING"],
+    [63, 51, 0, 53, 0, "IMAGE"],
+    [64, 1, 0, 51, 0, "BAGEL_MODEL"],
+    [65, 45, 0, 26, 2, "INT"],
+    [66, 45, 0, 20, 3, "INT"],
+    [67, 45, 0, 2, 2, "INT"],
+    [68, 45, 0, 51, 2, "INT"],
+    [69, 2, 0, 46, 0, "IMAGE"],
+    [70, 4, 0, 39, 0, "STRING"],
+    [71, 9, 0, 38, 0, "STRING"],
+    [72, 20, 1, 54, 0, "STRING"],
+    [73, 54, 0, 41, 0, "STRING"],
+    [74, 49, 0, 50, 0, "STRING"],
+    [75, 28, 0, 40, 0, "STRING"],
   ],
-  "nodes": [
-      {
-          "id": 35,
-          "pos": [
-              1790.7972412109375,
-              63.095176696777344
-          ],
-          "mode": 0,
-          "size": [
-              309.1890563964844,
-              154
-          ],
-          "type": "ComfyUIDeployExternalImage",
-          "flags": {},
-          "order": 8,
-          "inputs": [
-              {
-                  "link": 42,
-                  "name": "default_value",
-                  "type": "IMAGE",
-                  "shape": 7
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "image",
-                  "type": "IMAGE",
-                  "links": [
-                      43
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "ComfyUIDeployExternalImage"
-          },
-          "widgets_values": [
-              "ivl_img_input",
-              "image-understanding-input",
-              "",
-              "",
-              ""
-          ]
+  nodes: [
+    {
+      id: 35,
+      pos: [1790.7972412109375, 63.095176696777344],
+      mode: 0,
+      size: [309.1890563964844, 154],
+      type: "ComfyUIDeployExternalImage",
+      flags: {},
+      order: 8,
+      inputs: [
+        {
+          link: 42,
+          name: "default_value",
+          type: "IMAGE",
+          shape: 7,
+        },
+      ],
+      outputs: [
+        {
+          name: "image",
+          type: "IMAGE",
+          links: [43],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalImage",
       },
-      {
-          "id": 34,
-          "pos": [
-              3220.90380859375,
-              1188.750244140625
-          ],
-          "mode": 0,
-          "size": [
-              281.9683532714844,
-              342
-          ],
-          "type": "ComfyDeployOutputImage",
-          "flags": {},
-          "order": 22,
-          "inputs": [
-              {
-                  "link": 40,
-                  "name": "images",
-                  "type": "IMAGE"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputImage"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "jpg",
-              90,
-              "output_i2i"
-          ]
+      widgets_values: [
+        "ivl_img_input",
+        "image-understanding-input",
+        "",
+        "",
+        "",
+      ],
+    },
+    {
+      id: 34,
+      pos: [3220.90380859375, 1188.750244140625],
+      mode: 0,
+      size: [281.9683532714844, 342],
+      type: "ComfyDeployOutputImage",
+      flags: {},
+      order: 22,
+      inputs: [
+        {
+          link: 40,
+          name: "images",
+          type: "IMAGE",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputImage",
       },
-      {
-          "id": 39,
-          "pos": [
-              3191.69873046875,
-              -455.1521301269531
-          ],
-          "mode": 0,
-          "size": [
-              270,
-              106
-          ],
-          "type": "ComfyDeployOutputText",
-          "flags": {},
-          "order": 24,
-          "inputs": [
-              {
-                  "link": 70,
-                  "name": "text",
-                  "type": "STRING"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputText"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "txt",
-              "output_t2i_thinking"
-          ]
+      widgets_values: ["ComfyUI", "jpg", 90, "output_i2i"],
+    },
+    {
+      id: 39,
+      pos: [3191.69873046875, -455.1521301269531],
+      mode: 0,
+      size: [270, 106],
+      type: "ComfyDeployOutputText",
+      flags: {},
+      order: 24,
+      inputs: [
+        {
+          link: 70,
+          name: "text",
+          type: "STRING",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputText",
       },
-      {
-          "id": 40,
-          "pos": [
-              3105.32080078125,
-              515.3018798828125
-          ],
-          "mode": 0,
-          "size": [
-              270,
-              106
-          ],
-          "type": "ComfyDeployOutputText",
-          "flags": {},
-          "order": 30,
-          "inputs": [
-              {
-                  "link": 75,
-                  "name": "text",
-                  "type": "STRING"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputText"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "txt",
-              "output_understanding_thinking"
-          ]
+      widgets_values: ["ComfyUI", "txt", "output_t2i_thinking"],
+    },
+    {
+      id: 40,
+      pos: [3105.32080078125, 515.3018798828125],
+      mode: 0,
+      size: [270, 106],
+      type: "ComfyDeployOutputText",
+      flags: {},
+      order: 30,
+      inputs: [
+        {
+          link: 75,
+          name: "text",
+          type: "STRING",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputText",
       },
-      {
-          "id": 33,
-          "pos": [
-              2307.723876953125,
-              1204.6800537109375
-          ],
-          "mode": 0,
-          "size": [
-              309.1890563964844,
-              154
-          ],
-          "type": "ComfyUIDeployExternalImage",
-          "flags": {},
-          "order": 9,
-          "inputs": [
-              {
-                  "link": 38,
-                  "name": "default_value",
-                  "type": "IMAGE",
-                  "shape": 7
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "image",
-                  "type": "IMAGE",
-                  "links": [
-                      39
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "ComfyUIDeployExternalImage"
-          },
-          "widgets_values": [
-              "i2i_img_input",
-              "edit-image-input",
-              "",
-              "",
-              ""
-          ]
+      widgets_values: ["ComfyUI", "txt", "output_understanding_thinking"],
+    },
+    {
+      id: 33,
+      pos: [2307.723876953125, 1204.6800537109375],
+      mode: 0,
+      size: [309.1890563964844, 154],
+      type: "ComfyUIDeployExternalImage",
+      flags: {},
+      order: 9,
+      inputs: [
+        {
+          link: 38,
+          name: "default_value",
+          type: "IMAGE",
+          shape: 7,
+        },
+      ],
+      outputs: [
+        {
+          name: "image",
+          type: "IMAGE",
+          links: [39],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalImage",
       },
-      {
-          "id": 23,
-          "pos": [
-              1412.9571533203125,
-              61.397342681884766
-          ],
-          "mode": 0,
-          "size": [
-              274.080078125,
-              314.0000305175781
-          ],
-          "type": "LoadImage",
-          "flags": {},
-          "order": 0,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "IMAGE",
-                  "type": "IMAGE",
-                  "links": [
-                      42
-                  ]
-              },
-              {
-                  "name": "MASK",
-                  "type": "MASK",
-                  "links": null
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "LoadImage"
-          },
-          "widgets_values": [
-              "1ca61801-5b3a-4e43-bcc1-e64d4f0b0fb4.jpeg",
-              "image"
-          ]
+      widgets_values: ["i2i_img_input", "edit-image-input", "", "", ""],
+    },
+    {
+      id: 23,
+      pos: [1412.9571533203125, 61.397342681884766],
+      mode: 0,
+      size: [274.080078125, 314.0000305175781],
+      type: "LoadImage",
+      flags: {},
+      order: 0,
+      inputs: [],
+      outputs: [
+        {
+          name: "IMAGE",
+          type: "IMAGE",
+          links: [42],
+        },
+        {
+          name: "MASK",
+          type: "MASK",
+          links: null,
+        },
+      ],
+      properties: {
+        "Node name for S&R": "LoadImage",
       },
-      {
-          "id": 41,
-          "pos": [
-              3243.80078125,
-              1597.9720458984375
-          ],
-          "mode": 0,
-          "size": [
-              270,
-              106
-          ],
-          "type": "ComfyDeployOutputText",
-          "flags": {},
-          "order": 29,
-          "inputs": [
-              {
-                  "link": 73,
-                  "name": "text",
-                  "type": "STRING"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputText"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "txt",
-              "output_i2i_thinking"
-          ]
+      widgets_values: ["1ca61801-5b3a-4e43-bcc1-e64d4f0b0fb4.jpeg", "image"],
+    },
+    {
+      id: 41,
+      pos: [3243.80078125, 1597.9720458984375],
+      mode: 0,
+      size: [270, 106],
+      type: "ComfyDeployOutputText",
+      flags: {},
+      order: 29,
+      inputs: [
+        {
+          link: 73,
+          name: "text",
+          type: "STRING",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputText",
       },
-      {
-          "id": 48,
-          "pos": [
-              1683.343505859375,
-              2556.740478515625
-          ],
-          "mode": 0,
-          "size": [
-              400,
-              200
-          ],
-          "type": "ComfyUIDeployExternalText",
-          "flags": {},
-          "order": 1,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "text",
-                  "type": "STRING",
-                  "links": [
-                      62
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "ComfyUIDeployExternalText"
-          },
-          "widgets_values": [
-              "prompt_anim",
-              "Create a 3d animation of a turtle racing a rabbit aesops fables illustration for childrens",
-              "generate-anim-Prompt",
-              ""
-          ]
+      widgets_values: ["ComfyUI", "txt", "output_i2i_thinking"],
+    },
+    {
+      id: 48,
+      pos: [1683.343505859375, 2556.740478515625],
+      mode: 0,
+      size: [400, 200],
+      type: "ComfyUIDeployExternalText",
+      flags: {},
+      order: 1,
+      inputs: [],
+      outputs: [
+        {
+          name: "text",
+          type: "STRING",
+          links: [62],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalText",
       },
-      {
-          "id": 50,
-          "pos": [
-              3379.82080078125,
-              2622.69189453125
-          ],
-          "mode": 0,
-          "size": [
-              270,
-              106
-          ],
-          "type": "ComfyDeployOutputText",
-          "flags": {},
-          "order": 25,
-          "inputs": [
-              {
-                  "link": 74,
-                  "name": "text",
-                  "type": "STRING"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputText"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "txt",
-              "output_anim_thinking"
-          ]
+      widgets_values: [
+        "prompt_anim",
+        "Create a 3d animation of a turtle racing a rabbit aesops fables illustration for childrens",
+        "generate-anim-Prompt",
+        "",
+      ],
+    },
+    {
+      id: 50,
+      pos: [3379.82080078125, 2622.69189453125],
+      mode: 0,
+      size: [270, 106],
+      type: "ComfyDeployOutputText",
+      flags: {},
+      order: 25,
+      inputs: [
+        {
+          link: 74,
+          name: "text",
+          type: "STRING",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputText",
       },
-      {
-          "id": 53,
-          "pos": [
-              3043.62353515625,
-              2231.145751953125
-          ],
-          "mode": 0,
-          "size": [
-              281.9683532714844,
-              342
-          ],
-          "type": "ComfyDeployOutputImage",
-          "flags": {},
-          "order": 18,
-          "inputs": [
-              {
-                  "link": 63,
-                  "name": "images",
-                  "type": "IMAGE"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputImage"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "jpg",
-              90,
-              "output_anim"
-          ]
+      widgets_values: ["ComfyUI", "txt", "output_anim_thinking"],
+    },
+    {
+      id: 53,
+      pos: [3043.62353515625, 2231.145751953125],
+      mode: 0,
+      size: [281.9683532714844, 342],
+      type: "ComfyDeployOutputImage",
+      flags: {},
+      order: 18,
+      inputs: [
+        {
+          link: 63,
+          name: "images",
+          type: "IMAGE",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputImage",
       },
-      {
-          "id": 1,
-          "pos": [
-              1739.8939208984375,
-              -694.58203125
-          ],
-          "mode": 0,
-          "size": [
-              315,
-              106
-          ],
-          "type": "BagelModelLoader",
-          "flags": {},
-          "order": 2,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "model",
-                  "type": "BAGEL_MODEL",
-                  "label": "model",
-                  "links": [
-                      1,
-                      9,
-                      29,
-                      35,
-                      64
-                  ]
-              }
-          ],
-          "properties": {
-              "ver": "4bb49e5232604e4838463f130b3ba7026e428c1d",
-              "aux_id": "neverbiasu/ComfyUI-Bagel",
-              "Node name for S&R": "BagelModelLoader"
-          },
-          "widgets_values": [
-              "models/BAGEL-7B-MoT",
-              "bfloat16"
-          ]
+      widgets_values: ["ComfyUI", "jpg", 90, "output_anim"],
+    },
+    {
+      id: 1,
+      pos: [1739.8939208984375, -694.58203125],
+      mode: 0,
+      size: [315, 106],
+      type: "BagelModelLoader",
+      flags: {},
+      order: 2,
+      inputs: [],
+      outputs: [
+        {
+          name: "model",
+          type: "BAGEL_MODEL",
+          label: "model",
+          links: [1, 9, 29, 35, 64],
+        },
+      ],
+      properties: {
+        ver: "4bb49e5232604e4838463f130b3ba7026e428c1d",
+        aux_id: "neverbiasu/ComfyUI-Bagel",
+        "Node name for S&R": "BagelModelLoader",
       },
-      {
-          "id": 46,
-          "pos": [
-              2537.99755859375,
-              -406.5367126464844
-          ],
-          "mode": 0,
-          "size": [
-              270,
-              270
-          ],
-          "type": "SaveImage",
-          "flags": {},
-          "order": 15,
-          "inputs": [
-              {
-                  "link": 69,
-                  "name": "images",
-                  "type": "IMAGE"
-              }
-          ],
-          "outputs": [],
-          "properties": {},
-          "widgets_values": [
-              "ComfyUI"
-          ]
+      widgets_values: ["models/BAGEL-7B-MoT", "bfloat16"],
+    },
+    {
+      id: 46,
+      pos: [2537.99755859375, -406.5367126464844],
+      mode: 0,
+      size: [270, 270],
+      type: "SaveImage",
+      flags: {},
+      order: 15,
+      inputs: [
+        {
+          link: 69,
+          name: "images",
+          type: "IMAGE",
+        },
+      ],
+      outputs: [],
+      properties: {},
+      widgets_values: ["ComfyUI"],
+    },
+    {
+      id: 37,
+      pos: [3502.0390625, -561.8967895507812],
+      mode: 0,
+      size: [281.9683532714844, 342],
+      type: "ComfyDeployOutputImage",
+      flags: {},
+      order: 14,
+      inputs: [
+        {
+          link: 45,
+          name: "images",
+          type: "IMAGE",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputImage",
       },
-      {
-          "id": 37,
-          "pos": [
-              3502.0390625,
-              -561.8967895507812
-          ],
-          "mode": 0,
-          "size": [
-              281.9683532714844,
-              342
-          ],
-          "type": "ComfyDeployOutputImage",
-          "flags": {},
-          "order": 14,
-          "inputs": [
-              {
-                  "link": 45,
-                  "name": "images",
-                  "type": "IMAGE"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputImage"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "jpg",
-              90,
-              "output_t2i"
-          ]
+      widgets_values: ["ComfyUI", "jpg", 90, "output_t2i"],
+    },
+    {
+      id: 4,
+      pos: [2849.72265625, -448.93878173828125],
+      mode: 0,
+      size: [295.9617614746094, 404.6077880859375],
+      type: "ShowText|pysssss",
+      flags: {
+        collapsed: false,
       },
-      {
-          "id": 4,
-          "pos": [
-              2849.72265625,
-              -448.93878173828125
-          ],
-          "mode": 0,
-          "size": [
-              295.9617614746094,
-              404.6077880859375
-          ],
-          "type": "ShowText|pysssss",
-          "flags": {
-              "collapsed": false
-          },
-          "order": 16,
-          "inputs": [
-              {
-                  "link": 3,
-                  "name": "text",
-                  "type": "STRING",
-                  "label": "text"
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "STRING",
-                  "type": "STRING",
-                  "label": "STRING",
-                  "links": [
-                      70
-                  ],
-                  "shape": 6
-              }
-          ],
-          "properties": {
-              "ver": "1.2.5",
-              "cnr_id": "comfyui-custom-scripts",
-              "Node name for S&R": "ShowText|pysssss"
-          },
-          "widgets_values": [
-              "<think>\nThe image should depict an elderly samurai in traditional Japanese attire, surrounded by autumnal elements like falling leaves and a serene garden setting, with a calm and reflective mood.\nThe comprehensive prompt is: An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones, his face lined with age and wisdom. He grips a sheathed katana with calm reverence, surrounded by gently falling maple leaves and a small koi pond reflecting the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength. The scene is bathed in soft, warm lighting, with rich autumnal colors and a peaceful, timeless mood. Ultra-realistic details emphasize the texture of the kimono, the delicate motion of the leaves, and the subtle ripples in the pond, creating a harmonious and evocative composition.\n</think>"
-          ]
+      order: 16,
+      inputs: [
+        {
+          link: 3,
+          name: "text",
+          type: "STRING",
+          label: "text",
+        },
+      ],
+      outputs: [
+        {
+          name: "STRING",
+          type: "STRING",
+          label: "STRING",
+          links: [70],
+          shape: 6,
+        },
+      ],
+      properties: {
+        ver: "1.2.5",
+        cnr_id: "comfyui-custom-scripts",
+        "Node name for S&R": "ShowText|pysssss",
       },
-      {
-          "id": 38,
-          "pos": [
-              2176.451171875,
-              846.496337890625
-          ],
-          "mode": 0,
-          "size": [
-              270,
-              106
-          ],
-          "type": "ComfyDeployOutputText",
-          "flags": {},
-          "order": 26,
-          "inputs": [
-              {
-                  "link": 71,
-                  "name": "text",
-                  "type": "STRING"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputText"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "txt",
-              "output_image_description"
-          ]
+      widgets_values: [
+        "<think>\nThe image should depict an elderly samurai in traditional Japanese attire, surrounded by autumnal elements like falling leaves and a serene garden setting, with a calm and reflective mood.\nThe comprehensive prompt is: An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones, his face lined with age and wisdom. He grips a sheathed katana with calm reverence, surrounded by gently falling maple leaves and a small koi pond reflecting the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength. The scene is bathed in soft, warm lighting, with rich autumnal colors and a peaceful, timeless mood. Ultra-realistic details emphasize the texture of the kimono, the delicate motion of the leaves, and the subtle ripples in the pond, creating a harmonious and evocative composition.\n</think>",
+      ],
+    },
+    {
+      id: 38,
+      pos: [2176.451171875, 846.496337890625],
+      mode: 0,
+      size: [270, 106],
+      type: "ComfyDeployOutputText",
+      flags: {},
+      order: 26,
+      inputs: [
+        {
+          link: 71,
+          name: "text",
+          type: "STRING",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputText",
       },
-      {
-          "id": 54,
-          "pos": [
-              2812.54150390625,
-              1639.7513427734375
-          ],
-          "mode": 0,
-          "size": [
-              295.9617614746094,
-              404.6077880859375
-          ],
-          "type": "ShowText|pysssss",
-          "flags": {},
-          "order": 23,
-          "inputs": [
-              {
-                  "link": 72,
-                  "name": "text",
-                  "type": "STRING",
-                  "label": "text"
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "STRING",
-                  "type": "STRING",
-                  "label": "STRING",
-                  "links": [
-                      73
-                  ],
-                  "shape": 6
-              }
-          ],
-          "properties": {
-              "ver": "1.2.5",
-              "cnr_id": "comfyui-custom-scripts",
-              "Node name for S&R": "ShowText|pysssss"
-          },
-          "widgets_values": []
+      widgets_values: ["ComfyUI", "txt", "output_image_description"],
+    },
+    {
+      id: 54,
+      pos: [2812.54150390625, 1639.7513427734375],
+      mode: 0,
+      size: [295.9617614746094, 404.6077880859375],
+      type: "ShowText|pysssss",
+      flags: {},
+      order: 23,
+      inputs: [
+        {
+          link: 72,
+          name: "text",
+          type: "STRING",
+          label: "text",
+        },
+      ],
+      outputs: [
+        {
+          name: "STRING",
+          type: "STRING",
+          label: "STRING",
+          links: [73],
+          shape: 6,
+        },
+      ],
+      properties: {
+        ver: "1.2.5",
+        cnr_id: "comfyui-custom-scripts",
+        "Node name for S&R": "ShowText|pysssss",
       },
-      {
-          "id": 49,
-          "pos": [
-              3037.84521484375,
-              2628.9052734375
-          ],
-          "mode": 0,
-          "size": [
-              295.9617614746094,
-              404.6077880859375
-          ],
-          "type": "ShowText|pysssss",
-          "flags": {
-              "collapsed": false
-          },
-          "order": 19,
-          "inputs": [
-              {
-                  "link": 59,
-                  "name": "text",
-                  "type": "STRING",
-                  "label": "text"
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "STRING",
-                  "type": "STRING",
-                  "label": "STRING",
-                  "links": [
-                      74
-                  ],
-                  "shape": 6
-              }
-          ],
-          "properties": {
-              "ver": "1.2.5",
-              "cnr_id": "comfyui-custom-scripts",
-              "Node name for S&R": "ShowText|pysssss"
-          },
-          "widgets_values": [
-              "<think>\nThe model should generate an image showing a turtle and a rabbit in a race, with the turtle moving slowly but steadily and the rabbit appearing to run quickly but ultimately losing to the turtle, emphasizing the moral of the story.\nHere's the finished detailed prompt: A vibrant and whimsical 3D animation of Aesop's Fables, featuring a turtle and a rabbit racing in a lush, colorful forest setting. The turtle is depicted moving slowly but steadily, its shell glistening with intricate textures, while the rabbit appears to run quickly but is shown slightly behind, emphasizing the moral of the story. The scene is lively and engaging, with dynamic motion and playful expressions on both characters. The lighting is soft and natural, with dappled sunlight filtering through the trees, creating a warm and inviting atmosphere. The background includes detailed foliage, flowers, and a winding path, adding depth and charm. The overall style is cartoonish and child-friendly, with smooth, rounded shapes and bright, harmonious colors.\n</think>"
-          ]
+      widgets_values: [],
+    },
+    {
+      id: 49,
+      pos: [3037.84521484375, 2628.9052734375],
+      mode: 0,
+      size: [295.9617614746094, 404.6077880859375],
+      type: "ShowText|pysssss",
+      flags: {
+        collapsed: false,
       },
-      {
-          "id": 30,
-          "pos": [
-              1653.2440185546875,
-              -518.94189453125
-          ],
-          "mode": 0,
-          "size": [
-              400,
-              200
-          ],
-          "type": "ComfyUIDeployExternalText",
-          "flags": {},
-          "order": 3,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "text",
-                  "type": "STRING",
-                  "links": [
-                      32
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "ComfyUIDeployExternalText"
-          },
-          "widgets_values": [
-              "prompt_t2i",
-              "An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones. His face is lined with age and wisdom, and he grips a sheathed katana with calm reverence. Maple leaves drift gently around him, and a small koi pond reflects the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength.",
-              "generate-image-Prompt",
-              ""
-          ]
+      order: 19,
+      inputs: [
+        {
+          link: 59,
+          name: "text",
+          type: "STRING",
+          label: "text",
+        },
+      ],
+      outputs: [
+        {
+          name: "STRING",
+          type: "STRING",
+          label: "STRING",
+          links: [74],
+          shape: 6,
+        },
+      ],
+      properties: {
+        ver: "1.2.5",
+        cnr_id: "comfyui-custom-scripts",
+        "Node name for S&R": "ShowText|pysssss",
       },
-      {
-          "id": 31,
-          "pos": [
-              2196.019287109375,
-              1575.060302734375
-          ],
-          "mode": 0,
-          "size": [
-              400,
-              200
-          ],
-          "type": "ComfyUIDeployExternalText",
-          "flags": {},
-          "order": 4,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "text",
-                  "type": "STRING",
-                  "links": [
-                      36
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "ComfyUIDeployExternalText"
-          },
-          "widgets_values": [
-              "prompt_i2i",
-              "Extend the image 9:16 ratio and generate A full body shot the long side of the image should be 1024",
-              "edit-image-prompt",
-              ""
-          ]
+      widgets_values: [
+        "<think>\nThe model should generate an image showing a turtle and a rabbit in a race, with the turtle moving slowly but steadily and the rabbit appearing to run quickly but ultimately losing to the turtle, emphasizing the moral of the story.\nHere's the finished detailed prompt: A vibrant and whimsical 3D animation of Aesop's Fables, featuring a turtle and a rabbit racing in a lush, colorful forest setting. The turtle is depicted moving slowly but steadily, its shell glistening with intricate textures, while the rabbit appears to run quickly but is shown slightly behind, emphasizing the moral of the story. The scene is lively and engaging, with dynamic motion and playful expressions on both characters. The lighting is soft and natural, with dappled sunlight filtering through the trees, creating a warm and inviting atmosphere. The background includes detailed foliage, flowers, and a winding path, adding depth and charm. The overall style is cartoonish and child-friendly, with smooth, rounded shapes and bright, harmonious colors.\n</think>",
+      ],
+    },
+    {
+      id: 30,
+      pos: [1653.2440185546875, -518.94189453125],
+      mode: 0,
+      size: [400, 200],
+      type: "ComfyUIDeployExternalText",
+      flags: {},
+      order: 3,
+      inputs: [],
+      outputs: [
+        {
+          name: "text",
+          type: "STRING",
+          links: [32],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalText",
       },
-      {
-          "id": 42,
-          "pos": [
-              3123.12255859375,
-              62.92445373535156
-          ],
-          "mode": 0,
-          "size": [
-              281.9683532714844,
-              342
-          ],
-          "type": "ComfyDeployOutputImage",
-          "flags": {},
-          "order": 27,
-          "inputs": [
-              {
-                  "link": 51,
-                  "name": "images",
-                  "type": "IMAGE"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "Node name for S&R": "ComfyDeployOutputImage"
-          },
-          "widgets_values": [
-              "ComfyUI",
-              "jpg",
-              90,
-              "output_understanding_image"
-          ]
+      widgets_values: [
+        "prompt_t2i",
+        "An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones. His face is lined with age and wisdom, and he grips a sheathed katana with calm reverence. Maple leaves drift gently around him, and a small koi pond reflects the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength.",
+        "generate-image-Prompt",
+        "",
+      ],
+    },
+    {
+      id: 31,
+      pos: [2196.019287109375, 1575.060302734375],
+      mode: 0,
+      size: [400, 200],
+      type: "ComfyUIDeployExternalText",
+      flags: {},
+      order: 4,
+      inputs: [],
+      outputs: [
+        {
+          name: "text",
+          type: "STRING",
+          links: [36],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalText",
       },
-      {
-          "id": 28,
-          "pos": [
-              2721.386474609375,
-              603.6243286132812
-          ],
-          "mode": 0,
-          "size": [
-              295.9617614746094,
-              404.6077880859375
-          ],
-          "type": "ShowText|pysssss",
-          "flags": {},
-          "order": 28,
-          "inputs": [
-              {
-                  "link": 31,
-                  "name": "text",
-                  "type": "STRING",
-                  "label": "text"
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "STRING",
-                  "type": "STRING",
-                  "label": "STRING",
-                  "links": [
-                      75
-                  ],
-                  "shape": 6
-              }
-          ],
-          "properties": {
-              "ver": "1.2.5",
-              "cnr_id": "comfyui-custom-scripts",
-              "Node name for S&R": "ShowText|pysssss"
-          },
-          "widgets_values": [
-              "<think>\nThe model should generate an image of a person in a crouched position on asphalt, emphasizing street-style fashion with oversized sunglasses, chunky sneakers, and high socks, set against an urban environment.\nHere's the finished detailed prompt: A dynamic street-style shot featuring a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold and urban backdrop. The scene is set in a gritty city environment with concrete textures, scattered debris, and muted tones, illuminated by natural daylight. The person's outfit is modern and edgy, with a focus on oversized silhouettes and bold accessories. The image has a sharp, ultra-realistic quality with cinematic lighting, emphasizing the textures of the asphalt and the urban surroundings, while the person's pose conveys a sense of movement and confidence.\n</think>"
-          ]
+      widgets_values: [
+        "prompt_i2i",
+        "Extend the image 9:16 ratio and generate A full body shot the long side of the image should be 1024",
+        "edit-image-prompt",
+        "",
+      ],
+    },
+    {
+      id: 42,
+      pos: [3123.12255859375, 62.92445373535156],
+      mode: 0,
+      size: [281.9683532714844, 342],
+      type: "ComfyDeployOutputImage",
+      flags: {},
+      order: 27,
+      inputs: [
+        {
+          link: 51,
+          name: "images",
+          type: "IMAGE",
+        },
+      ],
+      outputs: [],
+      properties: {
+        "Node name for S&R": "ComfyDeployOutputImage",
       },
-      {
-          "id": 2,
-          "pos": [
-              2093.288330078125,
-              -562.8455810546875
-          ],
-          "mode": 0,
-          "size": [
-              376.3270568847656,
-              434.2239685058594
-          ],
-          "type": "BagelTextToImage",
-          "flags": {},
-          "order": 10,
-          "inputs": [
-              {
-                  "link": 1,
-                  "name": "model",
-                  "type": "BAGEL_MODEL",
-                  "label": "model"
-              },
-              {
-                  "link": 32,
-                  "name": "prompt",
-                  "type": "STRING",
-                  "widget": {
-                      "name": "prompt"
-                  }
-              },
-              {
-                  "link": 67,
-                  "name": "seed",
-                  "type": "INT",
-                  "widget": {
-                      "name": "seed"
-                  }
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "image",
-                  "type": "IMAGE",
-                  "label": "image",
-                  "links": [
-                      45,
-                      69
-                  ]
-              },
-              {
-                  "name": "thinking",
-                  "type": "STRING",
-                  "label": "thinking",
-                  "links": [
-                      3
-                  ]
-              }
-          ],
-          "properties": {
-              "ver": "4bb49e5232604e4838463f130b3ba7026e428c1d",
-              "aux_id": "neverbiasu/ComfyUI-Bagel",
-              "Node name for S&R": "BagelTextToImage"
-          },
-          "widgets_values": [
-              "A female cosplayer portraying an ethereal fairy or elf, wearing a flowing dress made of delicate fabrics in soft, mystical colors like emerald green and silver. She has pointed ears, a gentle, enchanting expression, and her outfit is adorned with sparkling jewels and intricate patterns. The background is a magical forest with glowing plants, mystical creatures, and a serene atmosphere.",
-              225609,
-              "randomize",
-              "1:1",
-              4,
-              50,
-              true,
-              0.4,
-              3,
-              0.1,
-              "global",
-              0.3
-          ]
+      widgets_values: ["ComfyUI", "jpg", 90, "output_understanding_image"],
+    },
+    {
+      id: 28,
+      pos: [2721.386474609375, 603.6243286132812],
+      mode: 0,
+      size: [295.9617614746094, 404.6077880859375],
+      type: "ShowText|pysssss",
+      flags: {},
+      order: 28,
+      inputs: [
+        {
+          link: 31,
+          name: "text",
+          type: "STRING",
+          label: "text",
+        },
+      ],
+      outputs: [
+        {
+          name: "STRING",
+          type: "STRING",
+          label: "STRING",
+          links: [75],
+          shape: 6,
+        },
+      ],
+      properties: {
+        ver: "1.2.5",
+        cnr_id: "comfyui-custom-scripts",
+        "Node name for S&R": "ShowText|pysssss",
       },
-      {
-          "id": 26,
-          "pos": [
-              2604.43115234375,
-              80.95854949951172
-          ],
-          "mode": 0,
-          "size": [
-              376.3270568847656,
-              434.2239685058594
-          ],
-          "type": "BagelTextToImage",
-          "flags": {},
-          "order": 21,
-          "inputs": [
-              {
-                  "link": 29,
-                  "name": "model",
-                  "type": "BAGEL_MODEL",
-                  "label": "model"
-              },
-              {
-                  "link": 41,
-                  "name": "prompt",
-                  "type": "STRING",
-                  "widget": {
-                      "name": "prompt"
-                  }
-              },
-              {
-                  "link": 65,
-                  "name": "seed",
-                  "type": "INT",
-                  "widget": {
-                      "name": "seed"
-                  }
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "image",
-                  "type": "IMAGE",
-                  "label": "image",
-                  "links": [
-                      51
-                  ]
-              },
-              {
-                  "name": "thinking",
-                  "type": "STRING",
-                  "label": "thinking",
-                  "links": [
-                      31
-                  ]
-              }
-          ],
-          "properties": {
-              "ver": "4bb49e5232604e4838463f130b3ba7026e428c1d",
-              "aux_id": "neverbiasu/ComfyUI-Bagel",
-              "Node name for S&R": "BagelTextToImage"
+      widgets_values: [
+        "<think>\nThe model should generate an image of a person in a crouched position on asphalt, emphasizing street-style fashion with oversized sunglasses, chunky sneakers, and high socks, set against an urban environment.\nHere's the finished detailed prompt: A dynamic street-style shot featuring a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold and urban backdrop. The scene is set in a gritty city environment with concrete textures, scattered debris, and muted tones, illuminated by natural daylight. The person's outfit is modern and edgy, with a focus on oversized silhouettes and bold accessories. The image has a sharp, ultra-realistic quality with cinematic lighting, emphasizing the textures of the asphalt and the urban surroundings, while the person's pose conveys a sense of movement and confidence.\n</think>",
+      ],
+    },
+    {
+      id: 2,
+      pos: [2093.288330078125, -562.8455810546875],
+      mode: 0,
+      size: [376.3270568847656, 434.2239685058594],
+      type: "BagelTextToImage",
+      flags: {},
+      order: 10,
+      inputs: [
+        {
+          link: 1,
+          name: "model",
+          type: "BAGEL_MODEL",
+          label: "model",
+        },
+        {
+          link: 32,
+          name: "prompt",
+          type: "STRING",
+          widget: {
+            name: "prompt",
           },
-          "widgets_values": [
-              "A female cosplayer portraying an ethereal fairy or elf, wearing a flowing dress made of delicate fabrics in soft, mystical colors like emerald green and silver. She has pointed ears, a gentle, enchanting expression, and her outfit is adorned with sparkling jewels and intricate patterns. The background is a magical forest with glowing plants, mystical creatures, and a serene atmosphere.",
-              890412,
-              "randomize",
-              "1:1",
-              4,
-              50,
-              true,
-              0.4,
-              3,
-              0,
-              "global",
-              0.3
-          ]
+        },
+        {
+          link: 67,
+          name: "seed",
+          type: "INT",
+          widget: {
+            name: "seed",
+          },
+        },
+      ],
+      outputs: [
+        {
+          name: "image",
+          type: "IMAGE",
+          label: "image",
+          links: [45, 69],
+        },
+        {
+          name: "thinking",
+          type: "STRING",
+          label: "thinking",
+          links: [3],
+        },
+      ],
+      properties: {
+        ver: "4bb49e5232604e4838463f130b3ba7026e428c1d",
+        aux_id: "neverbiasu/ComfyUI-Bagel",
+        "Node name for S&R": "BagelTextToImage",
       },
-      {
-          "id": 20,
-          "pos": [
-              2678.106201171875,
-              1189.306640625
-          ],
-          "mode": 0,
-          "size": [
-              400,
-              372
-          ],
-          "type": "BagelImageEdit",
-          "flags": {},
-          "order": 13,
-          "inputs": [
-              {
-                  "link": 35,
-                  "name": "model",
-                  "type": "BAGEL_MODEL"
-              },
-              {
-                  "link": 39,
-                  "name": "image",
-                  "type": "IMAGE"
-              },
-              {
-                  "link": 36,
-                  "name": "prompt",
-                  "type": "STRING",
-                  "widget": {
-                      "name": "prompt"
-                  }
-              },
-              {
-                  "link": 66,
-                  "name": "seed",
-                  "type": "INT",
-                  "widget": {
-                      "name": "seed"
-                  }
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "image",
-                  "type": "IMAGE",
-                  "links": [
-                      40
-                  ]
-              },
-              {
-                  "name": "thinking",
-                  "type": "STRING",
-                  "links": [
-                      72
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "BagelImageEdit"
+      widgets_values: [
+        "A female cosplayer portraying an ethereal fairy or elf, wearing a flowing dress made of delicate fabrics in soft, mystical colors like emerald green and silver. She has pointed ears, a gentle, enchanting expression, and her outfit is adorned with sparkling jewels and intricate patterns. The background is a magical forest with glowing plants, mystical creatures, and a serene atmosphere.",
+        225609,
+        "randomize",
+        "1:1",
+        4,
+        50,
+        true,
+        0.4,
+        3,
+        0.1,
+        "global",
+        0.3,
+      ],
+    },
+    {
+      id: 26,
+      pos: [2604.43115234375, 80.95854949951172],
+      mode: 0,
+      size: [376.3270568847656, 434.2239685058594],
+      type: "BagelTextToImage",
+      flags: {},
+      order: 21,
+      inputs: [
+        {
+          link: 29,
+          name: "model",
+          type: "BAGEL_MODEL",
+          label: "model",
+        },
+        {
+          link: 41,
+          name: "prompt",
+          type: "STRING",
+          widget: {
+            name: "prompt",
           },
-          "widgets_values": [
-              "",
-              609322,
-              "randomize",
-              4,
-              2,
-              50,
-              false,
-              0,
-              3,
-              0,
-              "text_channel",
-              0.3
-          ]
+        },
+        {
+          link: 65,
+          name: "seed",
+          type: "INT",
+          widget: {
+            name: "seed",
+          },
+        },
+      ],
+      outputs: [
+        {
+          name: "image",
+          type: "IMAGE",
+          label: "image",
+          links: [51],
+        },
+        {
+          name: "thinking",
+          type: "STRING",
+          label: "thinking",
+          links: [31],
+        },
+      ],
+      properties: {
+        ver: "4bb49e5232604e4838463f130b3ba7026e428c1d",
+        aux_id: "neverbiasu/ComfyUI-Bagel",
+        "Node name for S&R": "BagelTextToImage",
       },
-      {
-          "id": 19,
-          "pos": [
-              1978.532958984375,
-              1204.6800537109375
-          ],
-          "mode": 0,
-          "size": [
-              274.080078125,
-              314.00006103515625
-          ],
-          "type": "LoadImage",
-          "flags": {},
-          "order": 5,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "IMAGE",
-                  "type": "IMAGE",
-                  "links": [
-                      38
-                  ]
-              },
-              {
-                  "name": "MASK",
-                  "type": "MASK",
-                  "links": null
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "LoadImage"
+      widgets_values: [
+        "A female cosplayer portraying an ethereal fairy or elf, wearing a flowing dress made of delicate fabrics in soft, mystical colors like emerald green and silver. She has pointed ears, a gentle, enchanting expression, and her outfit is adorned with sparkling jewels and intricate patterns. The background is a magical forest with glowing plants, mystical creatures, and a serene atmosphere.",
+        890412,
+        "randomize",
+        "1:1",
+        4,
+        50,
+        true,
+        0.4,
+        3,
+        0,
+        "global",
+        0.3,
+      ],
+    },
+    {
+      id: 20,
+      pos: [2678.106201171875, 1189.306640625],
+      mode: 0,
+      size: [400, 372],
+      type: "BagelImageEdit",
+      flags: {},
+      order: 13,
+      inputs: [
+        {
+          link: 35,
+          name: "model",
+          type: "BAGEL_MODEL",
+        },
+        {
+          link: 39,
+          name: "image",
+          type: "IMAGE",
+        },
+        {
+          link: 36,
+          name: "prompt",
+          type: "STRING",
+          widget: {
+            name: "prompt",
           },
-          "widgets_values": [
-              "b37b543e-e194-40a2-bb07-88695b530fab.jpeg",
-              "image"
-          ]
+        },
+        {
+          link: 66,
+          name: "seed",
+          type: "INT",
+          widget: {
+            name: "seed",
+          },
+        },
+      ],
+      outputs: [
+        {
+          name: "image",
+          type: "IMAGE",
+          links: [40],
+        },
+        {
+          name: "thinking",
+          type: "STRING",
+          links: [72],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "BagelImageEdit",
       },
-      {
-          "id": 32,
-          "pos": [
-              1236.9964599609375,
-              499.2970886230469
-          ],
-          "mode": 0,
-          "size": [
-              400,
-              200
-          ],
-          "type": "ComfyUIDeployExternalText",
-          "flags": {},
-          "order": 6,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "text",
-                  "type": "STRING",
-                  "links": [
-                      37
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "ComfyUIDeployExternalText"
-          },
-          "widgets_values": [
-              "prompt_vl",
-              "generate a vivid word image description of the image add the art style, aesthetics, type of shot or composition no more than 50 words long",
-              "image-uderstanding-Prompt",
-              ""
-          ]
+      widgets_values: [
+        "",
+        609322,
+        "randomize",
+        4,
+        2,
+        50,
+        false,
+        0,
+        3,
+        0,
+        "text_channel",
+        0.3,
+      ],
+    },
+    {
+      id: 19,
+      pos: [1978.532958984375, 1204.6800537109375],
+      mode: 0,
+      size: [274.080078125, 314.00006103515625],
+      type: "LoadImage",
+      flags: {},
+      order: 5,
+      inputs: [],
+      outputs: [
+        {
+          name: "IMAGE",
+          type: "IMAGE",
+          links: [38],
+        },
+        {
+          name: "MASK",
+          type: "MASK",
+          links: null,
+        },
+      ],
+      properties: {
+        "Node name for S&R": "LoadImage",
       },
-      {
-          "id": 45,
-          "pos": [
-              1152.972412109375,
-              -177.17318725585938
-          ],
-          "mode": 0,
-          "size": [
-              400,
-              200
-          ],
-          "type": "ComfyUIDeployExternalNumberInt",
-          "flags": {},
-          "order": 7,
-          "inputs": [],
-          "outputs": [
-              {
-                  "name": "value",
-                  "type": "INT",
-                  "links": [
-                      65,
-                      66,
-                      67,
-                      68
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "ComfyUIDeployExternalNumberInt"
-          },
-          "widgets_values": [
-              "seed",
-              455521445,
-              "",
-              ""
-          ]
+      widgets_values: ["b37b543e-e194-40a2-bb07-88695b530fab.jpeg", "image"],
+    },
+    {
+      id: 32,
+      pos: [1236.9964599609375, 499.2970886230469],
+      mode: 0,
+      size: [400, 200],
+      type: "ComfyUIDeployExternalText",
+      flags: {},
+      order: 6,
+      inputs: [],
+      outputs: [
+        {
+          name: "text",
+          type: "STRING",
+          links: [37],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalText",
       },
-      {
-          "id": 7,
-          "pos": [
-              2151.330810546875,
-              84.67277526855469
-          ],
-          "mode": 0,
-          "size": [
-              400,
-              204
-          ],
-          "type": "BagelImageUnderstanding",
-          "flags": {},
-          "order": 12,
-          "inputs": [
-              {
-                  "link": 9,
-                  "name": "model",
-                  "type": "BAGEL_MODEL"
-              },
-              {
-                  "link": 43,
-                  "name": "image",
-                  "type": "IMAGE"
-              },
-              {
-                  "link": 37,
-                  "name": "prompt",
-                  "type": "STRING",
-                  "widget": {
-                      "name": "prompt"
-                  }
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "text",
-                  "type": "STRING",
-                  "links": [
-                      12,
-                      41
-                  ]
-              }
-          ],
-          "properties": {
-              "Node name for S&R": "BagelImageUnderstanding"
-          },
-          "widgets_values": [
-              "What do you see in this image?",
-              false,
-              false,
-              0.3,
-              512
-          ]
+      widgets_values: [
+        "prompt_vl",
+        "generate a vivid word image description of the image add the art style, aesthetics, type of shot or composition no more than 50 words long",
+        "image-uderstanding-Prompt",
+        "",
+      ],
+    },
+    {
+      id: 45,
+      pos: [1152.972412109375, -177.17318725585938],
+      mode: 0,
+      size: [400, 200],
+      type: "ComfyUIDeployExternalNumberInt",
+      flags: {},
+      order: 7,
+      inputs: [],
+      outputs: [
+        {
+          name: "value",
+          type: "INT",
+          links: [65, 66, 67, 68],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "ComfyUIDeployExternalNumberInt",
       },
-      {
-          "id": 9,
-          "pos": [
-              2162.37158203125,
-              366.0086669921875
-          ],
-          "mode": 0,
-          "size": [
-              295.9617614746094,
-              404.6077880859375
-          ],
-          "type": "ShowText|pysssss",
-          "flags": {},
-          "order": 20,
-          "inputs": [
-              {
-                  "link": 12,
-                  "name": "text",
-                  "type": "STRING",
-                  "label": "text"
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "STRING",
-                  "type": "STRING",
-                  "label": "STRING",
-                  "links": [
-                      71
-                  ],
-                  "shape": 6
-              }
-          ],
-          "properties": {
-              "ver": "1.2.5",
-              "cnr_id": "comfyui-custom-scripts",
-              "Node name for S&R": "ShowText|pysssss"
+      widgets_values: ["seed", 455521445, "", ""],
+    },
+    {
+      id: 7,
+      pos: [2151.330810546875, 84.67277526855469],
+      mode: 0,
+      size: [400, 204],
+      type: "BagelImageUnderstanding",
+      flags: {},
+      order: 12,
+      inputs: [
+        {
+          link: 9,
+          name: "model",
+          type: "BAGEL_MODEL",
+        },
+        {
+          link: 43,
+          name: "image",
+          type: "IMAGE",
+        },
+        {
+          link: 37,
+          name: "prompt",
+          type: "STRING",
+          widget: {
+            name: "prompt",
           },
-          "widgets_values": [
-              "A dynamic street-style shot captures a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold, urban backdrop."
-          ]
+        },
+      ],
+      outputs: [
+        {
+          name: "text",
+          type: "STRING",
+          links: [12, 41],
+        },
+      ],
+      properties: {
+        "Node name for S&R": "BagelImageUnderstanding",
       },
-      {
-          "id": 47,
-          "pos": [
-              2710.28076171875,
-              2257.26953125
-          ],
-          "mode": 0,
-          "size": [
-              210,
-              246.00001525878906
-          ],
-          "type": "PreviewImage",
-          "flags": {},
-          "order": 17,
-          "inputs": [
-              {
-                  "link": 58,
-                  "name": "images",
-                  "type": "IMAGE",
-                  "label": "images"
-              }
-          ],
-          "outputs": [],
-          "properties": {
-              "ver": "0.3.30",
-              "cnr_id": "comfy-core",
-              "Node name for S&R": "PreviewImage"
-          },
-          "widgets_values": []
+      widgets_values: [
+        "What do you see in this image?",
+        false,
+        false,
+        0.3,
+        512,
+      ],
+    },
+    {
+      id: 9,
+      pos: [2162.37158203125, 366.0086669921875],
+      mode: 0,
+      size: [295.9617614746094, 404.6077880859375],
+      type: "ShowText|pysssss",
+      flags: {},
+      order: 20,
+      inputs: [
+        {
+          link: 12,
+          name: "text",
+          type: "STRING",
+          label: "text",
+        },
+      ],
+      outputs: [
+        {
+          name: "STRING",
+          type: "STRING",
+          label: "STRING",
+          links: [71],
+          shape: 6,
+        },
+      ],
+      properties: {
+        ver: "1.2.5",
+        cnr_id: "comfyui-custom-scripts",
+        "Node name for S&R": "ShowText|pysssss",
       },
-      {
-          "id": 51,
-          "pos": [
-              2281.41162109375,
-              2514.998291015625
-          ],
-          "mode": 0,
-          "size": [
-              376.3270568847656,
-              434.2239685058594
-          ],
-          "type": "BagelTextToImage",
-          "flags": {},
-          "order": 11,
-          "inputs": [
-              {
-                  "link": 64,
-                  "name": "model",
-                  "type": "BAGEL_MODEL",
-                  "label": "model"
-              },
-              {
-                  "link": 62,
-                  "name": "prompt",
-                  "type": "STRING",
-                  "widget": {
-                      "name": "prompt"
-                  }
-              },
-              {
-                  "link": 68,
-                  "name": "seed",
-                  "type": "INT",
-                  "widget": {
-                      "name": "seed"
-                  }
-              }
-          ],
-          "outputs": [
-              {
-                  "name": "image",
-                  "type": "IMAGE",
-                  "label": "image",
-                  "links": [
-                      58,
-                      63
-                  ]
-              },
-              {
-                  "name": "thinking",
-                  "type": "STRING",
-                  "label": "thinking",
-                  "links": [
-                      59
-                  ]
-              }
-          ],
-          "properties": {
-              "ver": "4bb49e5232604e4838463f130b3ba7026e428c1d",
-              "aux_id": "neverbiasu/ComfyUI-Bagel",
-              "Node name for S&R": "BagelTextToImage"
+      widgets_values: [
+        "A dynamic street-style shot captures a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold, urban backdrop.",
+      ],
+    },
+    {
+      id: 47,
+      pos: [2710.28076171875, 2257.26953125],
+      mode: 0,
+      size: [210, 246.00001525878906],
+      type: "PreviewImage",
+      flags: {},
+      order: 17,
+      inputs: [
+        {
+          link: 58,
+          name: "images",
+          type: "IMAGE",
+          label: "images",
+        },
+      ],
+      outputs: [],
+      properties: {
+        ver: "0.3.30",
+        cnr_id: "comfy-core",
+        "Node name for S&R": "PreviewImage",
+      },
+      widgets_values: [],
+    },
+    {
+      id: 51,
+      pos: [2281.41162109375, 2514.998291015625],
+      mode: 0,
+      size: [376.3270568847656, 434.2239685058594],
+      type: "BagelTextToImage",
+      flags: {},
+      order: 11,
+      inputs: [
+        {
+          link: 64,
+          name: "model",
+          type: "BAGEL_MODEL",
+          label: "model",
+        },
+        {
+          link: 62,
+          name: "prompt",
+          type: "STRING",
+          widget: {
+            name: "prompt",
           },
-          "widgets_values": [
-              "A female cosplayer portraying an ethereal fairy or elf, wearing a flowing dress made of delicate fabrics in soft, mystical colors like emerald green and silver. She has pointed ears, a gentle, enchanting expression, and her outfit is adorned with sparkling jewels and intricate patterns. The background is a magical forest with glowing plants, mystical creatures, and a serene atmosphere.",
-              368164,
-              "randomize",
-              "1:1",
-              4,
-              50,
-              true,
-              0.4,
-              3,
-              0,
-              "global",
-              0.3
-          ]
-      }
+        },
+        {
+          link: 68,
+          name: "seed",
+          type: "INT",
+          widget: {
+            name: "seed",
+          },
+        },
+      ],
+      outputs: [
+        {
+          name: "image",
+          type: "IMAGE",
+          label: "image",
+          links: [58, 63],
+        },
+        {
+          name: "thinking",
+          type: "STRING",
+          label: "thinking",
+          links: [59],
+        },
+      ],
+      properties: {
+        ver: "4bb49e5232604e4838463f130b3ba7026e428c1d",
+        aux_id: "neverbiasu/ComfyUI-Bagel",
+        "Node name for S&R": "BagelTextToImage",
+      },
+      widgets_values: [
+        "A female cosplayer portraying an ethereal fairy or elf, wearing a flowing dress made of delicate fabrics in soft, mystical colors like emerald green and silver. She has pointed ears, a gentle, enchanting expression, and her outfit is adorned with sparkling jewels and intricate patterns. The background is a magical forest with glowing plants, mystical creatures, and a serene atmosphere.",
+        368164,
+        "randomize",
+        "1:1",
+        4,
+        50,
+        true,
+        0.4,
+        3,
+        0,
+        "global",
+        0.3,
+      ],
+    },
   ],
-  "config": {},
-  "groups": [],
-  "version": 0.4,
-  "revision": 0,
-  "last_link_id": 75,
-  "last_node_id": 55,
-  "workflow_api": {
-      "1": {
-          "_meta": {
-              "title": "BAGEL Model Loader"
-          },
-          "inputs": {
-              "precision": "bfloat16",
-              "model_path": "models/BAGEL-7B-MoT"
-          },
-          "class_type": "BagelModelLoader"
+  config: {},
+  groups: [],
+  version: 0.4,
+  revision: 0,
+  last_link_id: 75,
+  last_node_id: 55,
+  workflow_api: {
+    "1": {
+      _meta: {
+        title: "BAGEL Model Loader",
       },
-      "2": {
-          "_meta": {
-              "title": "BAGEL Text to Image"
-          },
-          "inputs": {
-              "seed": [
-                  "45",
-                  0
-              ],
-              "model": [
-                  "1",
-                  0
-              ],
-              "prompt": [
-                  "30",
-                  0
-              ],
-              "image_ratio": "1:1",
-              "cfg_interval": 0.4,
-              "num_timesteps": 50,
-              "show_thinking": true,
-              "cfg_renorm_min": 0.1,
-              "cfg_text_scale": 4,
-              "timestep_shift": 3,
-              "cfg_renorm_type": "global",
-              "text_temperature": 0.3
-          },
-          "class_type": "BagelTextToImage"
+      inputs: {
+        precision: "bfloat16",
+        model_path: "models/BAGEL-7B-MoT",
       },
-      "4": {
-          "_meta": {
-              "title": "Show Text 🐍"
-          },
-          "inputs": {
-              "text": [
-                  "2",
-                  1
-              ],
-              "text_0": "<think>\nThe image should depict an elderly samurai in traditional Japanese attire, surrounded by autumnal elements like falling leaves and a serene garden setting, with a calm and reflective mood.\nThe comprehensive prompt is: An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones, his face lined with age and wisdom. He grips a sheathed katana with calm reverence, surrounded by gently falling maple leaves and a small koi pond reflecting the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength. The scene is bathed in soft, warm lighting, with rich autumnal colors and a peaceful, timeless mood. Ultra-realistic details emphasize the texture of the kimono, the delicate motion of the leaves, and the subtle ripples in the pond, creating a harmonious and evocative composition.\n</think>"
-          },
-          "class_type": "ShowText|pysssss"
+      class_type: "BagelModelLoader",
+    },
+    "2": {
+      _meta: {
+        title: "BAGEL Text to Image",
       },
-      "7": {
-          "_meta": {
-              "title": "BAGEL Image Understanding"
-          },
-          "inputs": {
-              "image": [
-                  "35",
-                  0
-              ],
-              "model": [
-                  "1",
-                  0
-              ],
-              "prompt": [
-                  "32",
-                  0
-              ],
-              "do_sample": false,
-              "show_thinking": false,
-              "max_new_tokens": 512,
-              "text_temperature": 0.3
-          },
-          "class_type": "BagelImageUnderstanding"
+      inputs: {
+        seed: ["45", 0],
+        model: ["1", 0],
+        prompt: ["30", 0],
+        image_ratio: "1:1",
+        cfg_interval: 0.4,
+        num_timesteps: 50,
+        show_thinking: true,
+        cfg_renorm_min: 0.1,
+        cfg_text_scale: 4,
+        timestep_shift: 3,
+        cfg_renorm_type: "global",
+        text_temperature: 0.3,
       },
-      "9": {
-          "_meta": {
-              "title": "Show Text 🐍"
-          },
-          "inputs": {
-              "text": [
-                  "7",
-                  0
-              ],
-              "text_0": "A dynamic street-style shot captures a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold, urban backdrop."
-          },
-          "class_type": "ShowText|pysssss"
+      class_type: "BagelTextToImage",
+    },
+    "4": {
+      _meta: {
+        title: "Show Text 🐍",
       },
-      "19": {
-          "_meta": {
-              "title": "Load Image"
-          },
-          "inputs": {
-              "image": "b37b543e-e194-40a2-bb07-88695b530fab.jpeg"
-          },
-          "class_type": "LoadImage"
+      inputs: {
+        text: ["2", 1],
+        text_0:
+          "<think>\nThe image should depict an elderly samurai in traditional Japanese attire, surrounded by autumnal elements like falling leaves and a serene garden setting, with a calm and reflective mood.\nThe comprehensive prompt is: An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones, his face lined with age and wisdom. He grips a sheathed katana with calm reverence, surrounded by gently falling maple leaves and a small koi pond reflecting the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength. The scene is bathed in soft, warm lighting, with rich autumnal colors and a peaceful, timeless mood. Ultra-realistic details emphasize the texture of the kimono, the delicate motion of the leaves, and the subtle ripples in the pond, creating a harmonious and evocative composition.\n</think>",
       },
-      "20": {
-          "_meta": {
-              "title": "BAGEL Image Edit"
-          },
-          "inputs": {
-              "seed": [
-                  "45",
-                  0
-              ],
-              "image": [
-                  "33",
-                  0
-              ],
-              "model": [
-                  "1",
-                  0
-              ],
-              "prompt": [
-                  "31",
-                  0
-              ],
-              "cfg_interval": 0,
-              "cfg_img_scale": 2,
-              "num_timesteps": 50,
-              "show_thinking": false,
-              "cfg_renorm_min": 0,
-              "cfg_text_scale": 4,
-              "timestep_shift": 3,
-              "cfg_renorm_type": "text_channel",
-              "text_temperature": 0.3
-          },
-          "class_type": "BagelImageEdit"
+      class_type: "ShowText|pysssss",
+    },
+    "7": {
+      _meta: {
+        title: "BAGEL Image Understanding",
       },
-      "23": {
-          "_meta": {
-              "title": "Load Image"
-          },
-          "inputs": {
-              "image": "1ca61801-5b3a-4e43-bcc1-e64d4f0b0fb4.jpeg"
-          },
-          "class_type": "LoadImage"
+      inputs: {
+        image: ["35", 0],
+        model: ["1", 0],
+        prompt: ["32", 0],
+        do_sample: false,
+        show_thinking: false,
+        max_new_tokens: 512,
+        text_temperature: 0.3,
       },
-      "26": {
-          "_meta": {
-              "title": "BAGEL Text to Image"
-          },
-          "inputs": {
-              "seed": [
-                  "45",
-                  0
-              ],
-              "model": [
-                  "1",
-                  0
-              ],
-              "prompt": [
-                  "7",
-                  0
-              ],
-              "image_ratio": "1:1",
-              "cfg_interval": 0.4,
-              "num_timesteps": 50,
-              "show_thinking": true,
-              "cfg_renorm_min": 0,
-              "cfg_text_scale": 4,
-              "timestep_shift": 3,
-              "cfg_renorm_type": "global",
-              "text_temperature": 0.3
-          },
-          "class_type": "BagelTextToImage"
+      class_type: "BagelImageUnderstanding",
+    },
+    "9": {
+      _meta: {
+        title: "Show Text 🐍",
       },
-      "28": {
-          "_meta": {
-              "title": "Show Text 🐍"
-          },
-          "inputs": {
-              "text": [
-                  "26",
-                  1
-              ],
-              "text_0": "<think>\nThe model should generate an image of a person in a crouched position on asphalt, emphasizing street-style fashion with oversized sunglasses, chunky sneakers, and high socks, set against an urban environment.\nHere's the finished detailed prompt: A dynamic street-style shot featuring a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold and urban backdrop. The scene is set in a gritty city environment with concrete textures, scattered debris, and muted tones, illuminated by natural daylight. The person's outfit is modern and edgy, with a focus on oversized silhouettes and bold accessories. The image has a sharp, ultra-realistic quality with cinematic lighting, emphasizing the textures of the asphalt and the urban surroundings, while the person's pose conveys a sense of movement and confidence.\n</think>"
-          },
-          "class_type": "ShowText|pysssss"
+      inputs: {
+        text: ["7", 0],
+        text_0:
+          "A dynamic street-style shot captures a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold, urban backdrop.",
       },
-      "30": {
-          "_meta": {
-              "title": "External Text (ComfyUI Deploy)"
-          },
-          "inputs": {
-              "input_id": "prompt_t2i",
-              "description": "",
-              "display_name": "generate-image-Prompt",
-              "default_value": "An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones. His face is lined with age and wisdom, and he grips a sheathed katana with calm reverence. Maple leaves drift gently around him, and a small koi pond reflects the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength."
-          },
-          "class_type": "ComfyUIDeployExternalText"
+      class_type: "ShowText|pysssss",
+    },
+    "19": {
+      _meta: {
+        title: "Load Image",
       },
-      "31": {
-          "_meta": {
-              "title": "External Text (ComfyUI Deploy)"
-          },
-          "inputs": {
-              "input_id": "prompt_i2i",
-              "description": "",
-              "display_name": "edit-image-prompt",
-              "default_value": "Extend the image 9:16 ratio and generate A full body shot the long side of the image should be 1024"
-          },
-          "class_type": "ComfyUIDeployExternalText"
+      inputs: {
+        image: "b37b543e-e194-40a2-bb07-88695b530fab.jpeg",
       },
-      "32": {
-          "_meta": {
-              "title": "External Text (ComfyUI Deploy)"
-          },
-          "inputs": {
-              "input_id": "prompt_vl",
-              "description": "",
-              "display_name": "image-uderstanding-Prompt",
-              "default_value": "generate a vivid word image description of the image add the art style, aesthetics, type of shot or composition no more than 50 words long"
-          },
-          "class_type": "ComfyUIDeployExternalText"
+      class_type: "LoadImage",
+    },
+    "20": {
+      _meta: {
+        title: "BAGEL Image Edit",
       },
-      "33": {
-          "_meta": {
-              "title": "External Image (ComfyUI Deploy)"
-          },
-          "inputs": {
-              "input_id": "i2i_img_input",
-              "description": "",
-              "display_name": "edit-image-input",
-              "default_value": [
-                  "19",
-                  0
-              ],
-              "default_value_url": ""
-          },
-          "class_type": "ComfyUIDeployExternalImage"
+      inputs: {
+        seed: ["45", 0],
+        image: ["33", 0],
+        model: ["1", 0],
+        prompt: ["31", 0],
+        cfg_interval: 0,
+        cfg_img_scale: 2,
+        num_timesteps: 50,
+        show_thinking: false,
+        cfg_renorm_min: 0,
+        cfg_text_scale: 4,
+        timestep_shift: 3,
+        cfg_renorm_type: "text_channel",
+        text_temperature: 0.3,
       },
-      "34": {
-          "_meta": {
-              "title": "Image Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "images": [
-                  "20",
-                  0
-              ],
-              "quality": 90,
-              "file_type": "jpg",
-              "output_id": "output_i2i",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputImage"
+      class_type: "BagelImageEdit",
+    },
+    "23": {
+      _meta: {
+        title: "Load Image",
       },
-      "35": {
-          "_meta": {
-              "title": "External Image (ComfyUI Deploy)"
-          },
-          "inputs": {
-              "input_id": "ivl_img_input",
-              "description": "",
-              "display_name": "image-understanding-input",
-              "default_value": [
-                  "23",
-                  0
-              ],
-              "default_value_url": ""
-          },
-          "class_type": "ComfyUIDeployExternalImage"
+      inputs: {
+        image: "1ca61801-5b3a-4e43-bcc1-e64d4f0b0fb4.jpeg",
       },
-      "37": {
-          "_meta": {
-              "title": "Image Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "images": [
-                  "2",
-                  0
-              ],
-              "quality": 90,
-              "file_type": "jpg",
-              "output_id": "output_t2i",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputImage"
+      class_type: "LoadImage",
+    },
+    "26": {
+      _meta: {
+        title: "BAGEL Text to Image",
       },
-      "38": {
-          "_meta": {
-              "title": "Text Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "text": [
-                  "9",
-                  0
-              ],
-              "file_type": "txt",
-              "output_id": "output_image_description",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputText"
+      inputs: {
+        seed: ["45", 0],
+        model: ["1", 0],
+        prompt: ["7", 0],
+        image_ratio: "1:1",
+        cfg_interval: 0.4,
+        num_timesteps: 50,
+        show_thinking: true,
+        cfg_renorm_min: 0,
+        cfg_text_scale: 4,
+        timestep_shift: 3,
+        cfg_renorm_type: "global",
+        text_temperature: 0.3,
       },
-      "39": {
-          "_meta": {
-              "title": "Text Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "text": [
-                  "4",
-                  0
-              ],
-              "file_type": "txt",
-              "output_id": "output_t2i_thinking",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputText"
+      class_type: "BagelTextToImage",
+    },
+    "28": {
+      _meta: {
+        title: "Show Text 🐍",
       },
-      "40": {
-          "_meta": {
-              "title": "Text Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "text": [
-                  "28",
-                  0
-              ],
-              "file_type": "txt",
-              "output_id": "output_understanding_thinking",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputText"
+      inputs: {
+        text: ["26", 1],
+        text_0:
+          "<think>\nThe model should generate an image of a person in a crouched position on asphalt, emphasizing street-style fashion with oversized sunglasses, chunky sneakers, and high socks, set against an urban environment.\nHere's the finished detailed prompt: A dynamic street-style shot featuring a person crouched on asphalt, wearing oversized sunglasses, chunky sneakers, and high socks, with a bold and urban backdrop. The scene is set in a gritty city environment with concrete textures, scattered debris, and muted tones, illuminated by natural daylight. The person's outfit is modern and edgy, with a focus on oversized silhouettes and bold accessories. The image has a sharp, ultra-realistic quality with cinematic lighting, emphasizing the textures of the asphalt and the urban surroundings, while the person's pose conveys a sense of movement and confidence.\n</think>",
       },
-      "41": {
-          "_meta": {
-              "title": "Text Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "text": [
-                  "54",
-                  0
-              ],
-              "file_type": "txt",
-              "output_id": "output_i2i_thinking",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputText"
+      class_type: "ShowText|pysssss",
+    },
+    "30": {
+      _meta: {
+        title: "External Text (ComfyUI Deploy)",
       },
-      "42": {
-          "_meta": {
-              "title": "Image Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "images": [
-                  "26",
-                  0
-              ],
-              "quality": 90,
-              "file_type": "jpg",
-              "output_id": "output_understanding_image",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputImage"
+      inputs: {
+        input_id: "prompt_t2i",
+        description: "",
+        display_name: "generate-image-Prompt",
+        default_value:
+          "An elderly samurai standing in a tranquil autumn garden, dressed in a weathered kimono with deep crimson and muted gold tones. His face is lined with age and wisdom, and he grips a sheathed katana with calm reverence. Maple leaves drift gently around him, and a small koi pond reflects the amber twilight. The atmosphere is serene and nostalgic, evoking honor, memory, and quiet strength.",
       },
-      "45": {
-          "_meta": {
-              "title": "External Number Int (ComfyUI Deploy)"
-          },
-          "inputs": {
-              "input_id": "seed",
-              "description": "",
-              "display_name": "",
-              "default_value": 455521445
-          },
-          "class_type": "ComfyUIDeployExternalNumberInt"
+      class_type: "ComfyUIDeployExternalText",
+    },
+    "31": {
+      _meta: {
+        title: "External Text (ComfyUI Deploy)",
       },
-      "46": {
-          "_meta": {
-              "title": "Save Image"
-          },
-          "inputs": {
-              "images": [
-                  "2",
-                  0
-              ],
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "SaveImage"
+      inputs: {
+        input_id: "prompt_i2i",
+        description: "",
+        display_name: "edit-image-prompt",
+        default_value:
+          "Extend the image 9:16 ratio and generate A full body shot the long side of the image should be 1024",
       },
-      "47": {
-          "_meta": {
-              "title": "Preview Image"
-          },
-          "inputs": {
-              "images": [
-                  "51",
-                  0
-              ]
-          },
-          "class_type": "PreviewImage"
+      class_type: "ComfyUIDeployExternalText",
+    },
+    "32": {
+      _meta: {
+        title: "External Text (ComfyUI Deploy)",
       },
-      "48": {
-          "_meta": {
-              "title": "External Text (ComfyUI Deploy)"
-          },
-          "inputs": {
-              "input_id": "prompt_anim",
-              "description": "",
-              "display_name": "generate-anim-Prompt",
-              "default_value": "Create a 3d animation of a turtle racing a rabbit aesops fables illustration for childrens"
-          },
-          "class_type": "ComfyUIDeployExternalText"
+      inputs: {
+        input_id: "prompt_vl",
+        description: "",
+        display_name: "image-uderstanding-Prompt",
+        default_value:
+          "generate a vivid word image description of the image add the art style, aesthetics, type of shot or composition no more than 50 words long",
       },
-      "49": {
-          "_meta": {
-              "title": "Show Text 🐍"
-          },
-          "inputs": {
-              "text": [
-                  "51",
-                  1
-              ],
-              "text_0": "<think>\nThe model should generate an image showing a turtle and a rabbit in a race, with the turtle moving slowly but steadily and the rabbit appearing to run quickly but ultimately losing to the turtle, emphasizing the moral of the story.\nHere's the finished detailed prompt: A vibrant and whimsical 3D animation of Aesop's Fables, featuring a turtle and a rabbit racing in a lush, colorful forest setting. The turtle is depicted moving slowly but steadily, its shell glistening with intricate textures, while the rabbit appears to run quickly but is shown slightly behind, emphasizing the moral of the story. The scene is lively and engaging, with dynamic motion and playful expressions on both characters. The lighting is soft and natural, with dappled sunlight filtering through the trees, creating a warm and inviting atmosphere. The background includes detailed foliage, flowers, and a winding path, adding depth and charm. The overall style is cartoonish and child-friendly, with smooth, rounded shapes and bright, harmonious colors.\n</think>"
-          },
-          "class_type": "ShowText|pysssss"
+      class_type: "ComfyUIDeployExternalText",
+    },
+    "33": {
+      _meta: {
+        title: "External Image (ComfyUI Deploy)",
       },
-      "50": {
-          "_meta": {
-              "title": "Text Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "text": [
-                  "49",
-                  0
-              ],
-              "file_type": "txt",
-              "output_id": "output_anim_thinking",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputText"
+      inputs: {
+        input_id: "i2i_img_input",
+        description: "",
+        display_name: "edit-image-input",
+        default_value: ["19", 0],
+        default_value_url: "",
       },
-      "51": {
-          "_meta": {
-              "title": "BAGEL Text to Image"
-          },
-          "inputs": {
-              "seed": [
-                  "45",
-                  0
-              ],
-              "model": [
-                  "1",
-                  0
-              ],
-              "prompt": [
-                  "48",
-                  0
-              ],
-              "image_ratio": "1:1",
-              "cfg_interval": 0.4,
-              "num_timesteps": 50,
-              "show_thinking": true,
-              "cfg_renorm_min": 0,
-              "cfg_text_scale": 4,
-              "timestep_shift": 3,
-              "cfg_renorm_type": "global",
-              "text_temperature": 0.3
-          },
-          "class_type": "BagelTextToImage"
+      class_type: "ComfyUIDeployExternalImage",
+    },
+    "34": {
+      _meta: {
+        title: "Image Output (ComfyDeploy)",
       },
-      "53": {
-          "_meta": {
-              "title": "Image Output (ComfyDeploy)"
-          },
-          "inputs": {
-              "images": [
-                  "51",
-                  0
-              ],
-              "quality": 90,
-              "file_type": "jpg",
-              "output_id": "output_anim",
-              "filename_prefix": "ComfyUI"
-          },
-          "class_type": "ComfyDeployOutputImage"
+      inputs: {
+        images: ["20", 0],
+        quality: 90,
+        file_type: "jpg",
+        output_id: "output_i2i",
+        filename_prefix: "ComfyUI",
       },
-      "54": {
-          "_meta": {
-              "title": "Show Text 🐍"
-          },
-          "inputs": {
-              "text": [
-                  "20",
-                  1
-              ]
-          },
-          "class_type": "ShowText|pysssss"
-      }
+      class_type: "ComfyDeployOutputImage",
+    },
+    "35": {
+      _meta: {
+        title: "External Image (ComfyUI Deploy)",
+      },
+      inputs: {
+        input_id: "ivl_img_input",
+        description: "",
+        display_name: "image-understanding-input",
+        default_value: ["23", 0],
+        default_value_url: "",
+      },
+      class_type: "ComfyUIDeployExternalImage",
+    },
+    "37": {
+      _meta: {
+        title: "Image Output (ComfyDeploy)",
+      },
+      inputs: {
+        images: ["2", 0],
+        quality: 90,
+        file_type: "jpg",
+        output_id: "output_t2i",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputImage",
+    },
+    "38": {
+      _meta: {
+        title: "Text Output (ComfyDeploy)",
+      },
+      inputs: {
+        text: ["9", 0],
+        file_type: "txt",
+        output_id: "output_image_description",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputText",
+    },
+    "39": {
+      _meta: {
+        title: "Text Output (ComfyDeploy)",
+      },
+      inputs: {
+        text: ["4", 0],
+        file_type: "txt",
+        output_id: "output_t2i_thinking",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputText",
+    },
+    "40": {
+      _meta: {
+        title: "Text Output (ComfyDeploy)",
+      },
+      inputs: {
+        text: ["28", 0],
+        file_type: "txt",
+        output_id: "output_understanding_thinking",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputText",
+    },
+    "41": {
+      _meta: {
+        title: "Text Output (ComfyDeploy)",
+      },
+      inputs: {
+        text: ["54", 0],
+        file_type: "txt",
+        output_id: "output_i2i_thinking",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputText",
+    },
+    "42": {
+      _meta: {
+        title: "Image Output (ComfyDeploy)",
+      },
+      inputs: {
+        images: ["26", 0],
+        quality: 90,
+        file_type: "jpg",
+        output_id: "output_understanding_image",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputImage",
+    },
+    "45": {
+      _meta: {
+        title: "External Number Int (ComfyUI Deploy)",
+      },
+      inputs: {
+        input_id: "seed",
+        description: "",
+        display_name: "",
+        default_value: 455521445,
+      },
+      class_type: "ComfyUIDeployExternalNumberInt",
+    },
+    "46": {
+      _meta: {
+        title: "Save Image",
+      },
+      inputs: {
+        images: ["2", 0],
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "SaveImage",
+    },
+    "47": {
+      _meta: {
+        title: "Preview Image",
+      },
+      inputs: {
+        images: ["51", 0],
+      },
+      class_type: "PreviewImage",
+    },
+    "48": {
+      _meta: {
+        title: "External Text (ComfyUI Deploy)",
+      },
+      inputs: {
+        input_id: "prompt_anim",
+        description: "",
+        display_name: "generate-anim-Prompt",
+        default_value:
+          "Create a 3d animation of a turtle racing a rabbit aesops fables illustration for childrens",
+      },
+      class_type: "ComfyUIDeployExternalText",
+    },
+    "49": {
+      _meta: {
+        title: "Show Text 🐍",
+      },
+      inputs: {
+        text: ["51", 1],
+        text_0:
+          "<think>\nThe model should generate an image showing a turtle and a rabbit in a race, with the turtle moving slowly but steadily and the rabbit appearing to run quickly but ultimately losing to the turtle, emphasizing the moral of the story.\nHere's the finished detailed prompt: A vibrant and whimsical 3D animation of Aesop's Fables, featuring a turtle and a rabbit racing in a lush, colorful forest setting. The turtle is depicted moving slowly but steadily, its shell glistening with intricate textures, while the rabbit appears to run quickly but is shown slightly behind, emphasizing the moral of the story. The scene is lively and engaging, with dynamic motion and playful expressions on both characters. The lighting is soft and natural, with dappled sunlight filtering through the trees, creating a warm and inviting atmosphere. The background includes detailed foliage, flowers, and a winding path, adding depth and charm. The overall style is cartoonish and child-friendly, with smooth, rounded shapes and bright, harmonious colors.\n</think>",
+      },
+      class_type: "ShowText|pysssss",
+    },
+    "50": {
+      _meta: {
+        title: "Text Output (ComfyDeploy)",
+      },
+      inputs: {
+        text: ["49", 0],
+        file_type: "txt",
+        output_id: "output_anim_thinking",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputText",
+    },
+    "51": {
+      _meta: {
+        title: "BAGEL Text to Image",
+      },
+      inputs: {
+        seed: ["45", 0],
+        model: ["1", 0],
+        prompt: ["48", 0],
+        image_ratio: "1:1",
+        cfg_interval: 0.4,
+        num_timesteps: 50,
+        show_thinking: true,
+        cfg_renorm_min: 0,
+        cfg_text_scale: 4,
+        timestep_shift: 3,
+        cfg_renorm_type: "global",
+        text_temperature: 0.3,
+      },
+      class_type: "BagelTextToImage",
+    },
+    "53": {
+      _meta: {
+        title: "Image Output (ComfyDeploy)",
+      },
+      inputs: {
+        images: ["51", 0],
+        quality: 90,
+        file_type: "jpg",
+        output_id: "output_anim",
+        filename_prefix: "ComfyUI",
+      },
+      class_type: "ComfyDeployOutputImage",
+    },
+    "54": {
+      _meta: {
+        title: "Show Text 🐍",
+      },
+      inputs: {
+        text: ["20", 1],
+      },
+      class_type: "ShowText|pysssss",
+    },
   },
-  "environment": {
-      "comfyui_version": "094306b626e9cf505690c5d8b445032b3b8a36fa",
-      "gpu": "L40S",
-      "docker_command_steps": {
-          "steps": [
-              {
-                  "id": "d8665947-0",
-                  "data": "FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04\nENV TORCH_CUDA_ARCH_LIST=8.9",
-                  "type": "commands"
+  environment: {
+    comfyui_version: "094306b626e9cf505690c5d8b445032b3b8a36fa",
+    gpu: "L40S",
+    docker_command_steps: {
+      steps: [
+        {
+          id: "d8665947-0",
+          data: "FROM nvidia/cuda:12.8.1-cudnn-devel-ubuntu24.04\nENV TORCH_CUDA_ARCH_LIST=8.9",
+          type: "commands",
+        },
+        {
+          id: "b68a6f5d-d-ubuntu24",
+          data: "RUN apt-get update && \\\n    apt-get install -yq --no-install-recommends \\\n    build-essential \\\n    git \\\n    git-lfs \\\n    curl \\\n    ninja-build \\\n    ffmpeg \\\n    poppler-utils \\\n    aria2 \\\n    python3-dev \\\n    python3-pip \\\n    software-properties-common \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/*\n\nRUN pip3 install --upgrade pip setuptools wheel",
+          type: "commands",
+        },
+        {
+          id: "0e80dd22-9",
+          data: 'ENV CUDA_HOME=/usr/local/cuda\nENV PATH=${CUDA_HOME}/bin:${PATH}\nENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}\nENV CUDA_LAUNCH_BLOCKING=1\nENV TORCH_USE_CUDA_DSA=1\n\nRUN if [ -d "/usr/local/cuda-12.8" ]; then \\\n      echo "Linking libraries from /usr/local/cuda-12.8" && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcudart.so /usr/lib/libcudart.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcublas.so /usr/lib/libcublas.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcublasLt.so /usr/lib/libcublasLt.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcufft.so /usr/lib/libcufft.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libnvrtc.so /usr/lib/libnvrtc.so; \\\n    elif [ -d "/usr/local/cuda" ]; then \\\n      echo "Linking libraries from /usr/local/cuda" && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcudart.so /usr/lib/libcudart.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so /usr/lib/libcublas.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so /usr/lib/libcublasLt.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcufft.so /usr/lib/libcufft.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so /usr/lib/libnvrtc.so; \\\n    else \\\n      echo "Warning: Could not find CUDA directory for symlinking." ; \\\n    fi',
+          type: "commands",
+        },
+        {
+          id: "a53fb461-1",
+          data: "RUN pip install --pre -U xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
+          type: "commands",
+        },
+        {
+          id: "triton-install",
+          data: "\n#install\nRUN pip install triton\nRUN pip install sageattention\n#RUN MAX_JOBS=4 pip install flash-attn --no-build-isolation\n",
+          type: "commands",
+        },
+        {
+          id: "a6b8de0d-5",
+          data: "RUN pip install https://huggingface.co/impactframes/linux_whl/resolve/main/flash_attn-2.7.4%2Bcu128torch2.7-cp312-cp312-linux_x86_64.whl",
+          type: "commands",
+        },
+        {
+          id: "bnb-env-setup",
+          data: "ENV BNB_CUDA_VERSION=128\nENV USE_COMPILE_API=1\nENV CUDA_VISIBLE_DEVICES=0",
+          type: "commands",
+        },
+        {
+          id: "verify-core",
+          data: "RUN python3 -c \"import torch; print('PyTorch version:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA version:', torch.version.cuda)\"",
+          type: "commands",
+        },
+        {
+          id: "verify-bnb",
+          data: 'RUN python3 -c "import bitsandbytes as bnb; print(\'BitsAndBytes version:\', bnb.__version__)" || echo "BitsAndBytes import check complete"',
+          type: "commands",
+        },
+        {
+          id: "f930aea2-6",
+          data: {
+            url: "https://github.com/ltdrdata/ComfyUI-Impact-Pack",
+            hash: "f8e16df2be0ed2ce914ddd242ef9eadfa386bc2f",
+            meta: {
+              message: "bump version",
+              committer: {
+                date: "2025-05-18T23:33:30.000Z",
+                name: "Dr.Lt.Data",
+                email: "dr.lt.data@gmail.com",
               },
-              {
-                  "id": "b68a6f5d-d-ubuntu24",
-                  "data": "RUN apt-get update && \\\n    apt-get install -yq --no-install-recommends \\\n    build-essential \\\n    git \\\n    git-lfs \\\n    curl \\\n    ninja-build \\\n    ffmpeg \\\n    poppler-utils \\\n    aria2 \\\n    python3-dev \\\n    python3-pip \\\n    software-properties-common \\\n    && apt-get clean \\\n    && rm -rf /var/lib/apt/lists/*\n\nRUN pip3 install --upgrade pip setuptools wheel",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/ltdrdata/ComfyUI-Impact-Pack/commit/f8e16df2be0ed2ce914ddd242ef9eadfa386bc2f",
+              latest_hash: "f8e16df2be0ed2ce914ddd242ef9eadfa386bc2f",
+              stargazers_count: 2408,
+            },
+            name: "ComfyUI Impact Pack",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "87d04892-4",
+          data: {
+            url: "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
+            hash: "a7ce59e381934733bfae03b1be029756d6ce936d",
+            meta: {
+              message: "Fix Use Everywhere compatibility",
+              committer: {
+                date: "2025-04-26T20:27:20.000Z",
+                name: "AustinMroz",
+                email: "austinmroz@utexas.edu",
               },
-              {
-                  "id": "0e80dd22-9",
-                  "data": "ENV CUDA_HOME=/usr/local/cuda\nENV PATH=${CUDA_HOME}/bin:${PATH}\nENV LD_LIBRARY_PATH=${CUDA_HOME}/lib64:${LD_LIBRARY_PATH}\nENV CUDA_LAUNCH_BLOCKING=1\nENV TORCH_USE_CUDA_DSA=1\n\nRUN if [ -d \"/usr/local/cuda-12.8\" ]; then \\\n      echo \"Linking libraries from /usr/local/cuda-12.8\" && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcudart.so /usr/lib/libcudart.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcublas.so /usr/lib/libcublas.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcublasLt.so /usr/lib/libcublasLt.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libcufft.so /usr/lib/libcufft.so && \\\n      ln -sf /usr/local/cuda-12.8/targets/x86_64-linux/lib/libnvrtc.so /usr/lib/libnvrtc.so; \\\n    elif [ -d \"/usr/local/cuda\" ]; then \\\n      echo \"Linking libraries from /usr/local/cuda\" && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcudart.so /usr/lib/libcudart.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcublas.so /usr/lib/libcublas.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcublasLt.so /usr/lib/libcublasLt.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libcufft.so /usr/lib/libcufft.so && \\\n      ln -sf /usr/local/cuda/targets/x86_64-linux/lib/libnvrtc.so /usr/lib/libnvrtc.so; \\\n    else \\\n      echo \"Warning: Could not find CUDA directory for symlinking.\" ; \\\n    fi",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite/commit/a7ce59e381934733bfae03b1be029756d6ce936d",
+              latest_hash: "a7ce59e381934733bfae03b1be029756d6ce936d",
+              stargazers_count: 1000,
+            },
+            name: "ComfyUI-VideoHelperSuite",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "d1780483-6",
+          data: {
+            url: "https://github.com/kijai/ComfyUI-KJNodes",
+            hash: "44565e9bffc89de454d06b4abe08137d1247652a",
+            meta: {
+              message: " Add choice of device for imageresize",
+              committer: {
+                date: "2025-05-20T13:50:55.000Z",
+                name: "kijai",
+                email: "40791699+kijai@users.noreply.github.com",
               },
-              {
-                  "id": "a53fb461-1",
-                  "data": "RUN pip install --pre -U xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/kijai/ComfyUI-KJNodes/commit/44565e9bffc89de454d06b4abe08137d1247652a",
+              latest_hash: "44565e9bffc89de454d06b4abe08137d1247652a",
+              stargazers_count: 1362,
+            },
+            name: "KJNodes for ComfyUI",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "85df8805-8",
+          data: {
+            url: "https://github.com/rgthree/rgthree-comfy",
+            hash: "5288408220180af41ce50b0d29135e1ef5f83fdb",
+            meta: {
+              message:
+                "Save the Display Any response to the pnginfo so it pre-exists when reloading the workflow.",
+              committer: {
+                date: "2025-05-19T03:59:31.000Z",
+                name: "rgthree",
+                email: "regis.gaughan@gmail.com",
               },
-              {
-                  "id": "triton-install",
-                  "data": "\n#install\nRUN pip install triton\nRUN pip install sageattention\n#RUN MAX_JOBS=4 pip install flash-attn --no-build-isolation\n",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/rgthree/rgthree-comfy/commit/5288408220180af41ce50b0d29135e1ef5f83fdb",
+              latest_hash: "5288408220180af41ce50b0d29135e1ef5f83fdb",
+              stargazers_count: 1880,
+            },
+            name: "rgthree's ComfyUI Nodes",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "bf80e067-a",
+          data: {
+            url: "https://github.com/chflame163/ComfyUI_LayerStyle",
+            hash: "a46b1e6d26d45be9784c49f7065ba44700ef2b63",
+            meta: {
+              message: "update readme images",
+              committer: {
+                date: "2025-05-17T12:58:01.000Z",
+                name: "chflame163",
+                email: "chflame@163.com",
               },
-              {
-                  "id": "a6b8de0d-5",
-                  "data": "RUN pip install https://huggingface.co/impactframes/linux_whl/resolve/main/flash_attn-2.7.4%2Bcu128torch2.7-cp312-cp312-linux_x86_64.whl",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/chflame163/ComfyUI_LayerStyle/commit/a46b1e6d26d45be9784c49f7065ba44700ef2b63",
+              latest_hash: "a46b1e6d26d45be9784c49f7065ba44700ef2b63",
+              stargazers_count: 2258,
+            },
+            name: "ComfyUI Layer Style",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "4ab30b1c-4",
+          data: {
+            url: "https://github.com/cubiq/ComfyUI_essentials",
+            hash: "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
+            meta: {
+              message: "maintenance mode",
+              committer: {
+                date: "2025-04-14T07:33:21.000Z",
+                name: "cubiq",
+                email: "matteo@elf.io",
               },
-              {
-                  "id": "bnb-env-setup",
-                  "data": "ENV BNB_CUDA_VERSION=128\nENV USE_COMPILE_API=1\nENV CUDA_VISIBLE_DEVICES=0",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/cubiq/ComfyUI_essentials/commit/9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
+              latest_hash: "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
+              stargazers_count: 836,
+            },
+            name: "ComfyUI Essentials",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "8bfd5b9e-6",
+          data: {
+            url: "https://github.com/sipherxyz/comfyui-art-venture",
+            hash: "fc00f4a094be1ba41d6c7bfcc157fb075d289573",
+            meta: {
+              message: "fix(web): error when redefine value property",
+              committer: {
+                date: "2025-04-15T08:23:05.000Z",
+                name: "Tung Nguyen",
+                email: "tung.nguyen@atherlabs.com",
               },
-              {
-                  "id": "verify-core",
-                  "data": "RUN python3 -c \"import torch; print('PyTorch version:', torch.__version__); print('CUDA available:', torch.cuda.is_available()); print('CUDA version:', torch.version.cuda)\"",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/sipherxyz/comfyui-art-venture/commit/fc00f4a094be1ba41d6c7bfcc157fb075d289573",
+              latest_hash: "fc00f4a094be1ba41d6c7bfcc157fb075d289573",
+              stargazers_count: 253,
+            },
+            name: "comfyui-art-venture",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "ffe77db4-f",
+          data: {
+            url: "https://github.com/comfy-deploy/comfyui-llm-toolkit",
+            hash: "ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
+            meta: {
+              message: "Add files via upload",
+              committer: {
+                date: "2025-05-24T13:25:38.000Z",
+                name: "GitHub",
+                email: "noreply@github.com",
               },
-              {
-                  "id": "verify-bnb",
-                  "data": "RUN python3 -c \"import bitsandbytes as bnb; print('BitsAndBytes version:', bnb.__version__)\" || echo \"BitsAndBytes import check complete\"",
-                  "type": "commands"
+              commit_url:
+                "https://github.com/comfy-deploy/comfyui-llm-toolkit/commit/ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
+              latest_hash: "ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
+              stargazers_count: 12,
+            },
+            name: "ComfyUI LLM Toolkit",
+            files: [],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "4387e0dd-3",
+          data: {
+            url: "https://github.com/pythongosssss/ComfyUI-Custom-Scripts",
+            hash: "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+            meta: {
+              message: "Update pyproject.toml",
+              committer: {
+                date: "2025-04-30T12:00:09.000Z",
+                name: "GitHub",
+                email: "noreply@github.com",
               },
-              {
-                  "id": "f930aea2-6",
-                  "data": {
-                      "url": "https://github.com/ltdrdata/ComfyUI-Impact-Pack",
-                      "hash": "f8e16df2be0ed2ce914ddd242ef9eadfa386bc2f",
-                      "meta": {
-                          "message": "bump version",
-                          "committer": {
-                              "date": "2025-05-18T23:33:30.000Z",
-                              "name": "Dr.Lt.Data",
-                              "email": "dr.lt.data@gmail.com"
-                          },
-                          "commit_url": "https://github.com/ltdrdata/ComfyUI-Impact-Pack/commit/f8e16df2be0ed2ce914ddd242ef9eadfa386bc2f",
-                          "latest_hash": "f8e16df2be0ed2ce914ddd242ef9eadfa386bc2f",
-                          "stargazers_count": 2408
-                      },
-                      "name": "ComfyUI Impact Pack",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
+              latest_hash: "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
+            },
+            name: "ComfyUI-Custom-Scripts",
+            files: ["https://github.com/pythongosssss/ComfyUI-Custom-Scripts"],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "35d617c0-f",
+          data: "# 2) Install all other requirements from default PyPI\nRUN pip3 install --no-cache-dir \\\n    accelerate \\\n    decord \\\n    einops \\\n    huggingface_hub \\\n    matplotlib \\\n    numpy \\\n    opencv_python \\\n    pyarrow \\\n    PyYAML \\\n    requests \\\n    safetensors \\\n    scipy \\\n    sentencepiece \\\n    transformers \\\n    bitsandbytes \\    \n    wandb",
+          type: "commands",
+        },
+        {
+          id: "comfyui-deploy",
+          data: {
+            url: "https://github.com/BennyKok/comfyui-deploy",
+            hash: "7b734c415aabd51b8bb8fad9fd719055b5ba359d",
+            meta: {
+              message: "fix: import",
+              committer: {
+                date: "2025-05-27T07:14:29.000Z",
+                name: "BennyKok",
+                email: "itechbenny@gmail.com",
               },
-              {
-                  "id": "87d04892-4",
-                  "data": {
-                      "url": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite",
-                      "hash": "a7ce59e381934733bfae03b1be029756d6ce936d",
-                      "meta": {
-                          "message": "Fix Use Everywhere compatibility",
-                          "committer": {
-                              "date": "2025-04-26T20:27:20.000Z",
-                              "name": "AustinMroz",
-                              "email": "austinmroz@utexas.edu"
-                          },
-                          "commit_url": "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite/commit/a7ce59e381934733bfae03b1be029756d6ce936d",
-                          "latest_hash": "a7ce59e381934733bfae03b1be029756d6ce936d",
-                          "stargazers_count": 1000
-                      },
-                      "name": "ComfyUI-VideoHelperSuite",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
+              commit_url:
+                "https://github.com/BennyKok/comfyui-deploy/commit/7b734c415aabd51b8bb8fad9fd719055b5ba359d",
+              latest_hash: "7b734c415aabd51b8bb8fad9fd719055b5ba359d",
+              stargazers_count: 1335,
+            },
+            name: "ComfyUI Deploy",
+            files: ["https://github.com/BennyKok/comfyui-deploy"],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "cad23787-8",
+          data: {
+            url: "https://github.com/city96/ComfyUI-GGUF",
+            hash: "a2b75978fd50c0227a58316619b79d525b88e570",
+            meta: {
+              message: "Create pyproject.toml",
+              committer: {
+                date: "2025-05-08T23:08:35.000Z",
+                name: "City",
+                email: "125218114+city96@users.noreply.github.com",
               },
-              {
-                  "id": "d1780483-6",
-                  "data": {
-                      "url": "https://github.com/kijai/ComfyUI-KJNodes",
-                      "hash": "44565e9bffc89de454d06b4abe08137d1247652a",
-                      "meta": {
-                          "message": " Add choice of device for imageresize",
-                          "committer": {
-                              "date": "2025-05-20T13:50:55.000Z",
-                              "name": "kijai",
-                              "email": "40791699+kijai@users.noreply.github.com"
-                          },
-                          "commit_url": "https://github.com/kijai/ComfyUI-KJNodes/commit/44565e9bffc89de454d06b4abe08137d1247652a",
-                          "latest_hash": "44565e9bffc89de454d06b4abe08137d1247652a",
-                          "stargazers_count": 1362
-                      },
-                      "name": "KJNodes for ComfyUI",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
+              latest_hash: "a2b75978fd50c0227a58316619b79d525b88e570",
+            },
+            name: "ComfyUI-GGUF",
+            files: ["https://github.com/city96/ComfyUI-GGUF"],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+        {
+          id: "b9fa9cae-8",
+          data: {
+            url: "https://github.com/if-ai/BAGEL.git",
+            hash: "07dd135c45eb6c2843e0b478776ca49f4297de74",
+            meta: {
+              message:
+                "Fix: Remove undefined 'seed' variable call in ImageUnderstanding",
+              committer: {
+                date: "2025-05-30T06:24:09.000Z",
+                name: "impactframes",
+                email: "if@impactframes.ai",
               },
-              {
-                  "id": "85df8805-8",
-                  "data": {
-                      "url": "https://github.com/rgthree/rgthree-comfy",
-                      "hash": "5288408220180af41ce50b0d29135e1ef5f83fdb",
-                      "meta": {
-                          "message": "Save the Display Any response to the pnginfo so it pre-exists when reloading the workflow.",
-                          "committer": {
-                              "date": "2025-05-19T03:59:31.000Z",
-                              "name": "rgthree",
-                              "email": "regis.gaughan@gmail.com"
-                          },
-                          "commit_url": "https://github.com/rgthree/rgthree-comfy/commit/5288408220180af41ce50b0d29135e1ef5f83fdb",
-                          "latest_hash": "5288408220180af41ce50b0d29135e1ef5f83fdb",
-                          "stargazers_count": 1880
-                      },
-                      "name": "rgthree's ComfyUI Nodes",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "bf80e067-a",
-                  "data": {
-                      "url": "https://github.com/chflame163/ComfyUI_LayerStyle",
-                      "hash": "a46b1e6d26d45be9784c49f7065ba44700ef2b63",
-                      "meta": {
-                          "message": "update readme images",
-                          "committer": {
-                              "date": "2025-05-17T12:58:01.000Z",
-                              "name": "chflame163",
-                              "email": "chflame@163.com"
-                          },
-                          "commit_url": "https://github.com/chflame163/ComfyUI_LayerStyle/commit/a46b1e6d26d45be9784c49f7065ba44700ef2b63",
-                          "latest_hash": "a46b1e6d26d45be9784c49f7065ba44700ef2b63",
-                          "stargazers_count": 2258
-                      },
-                      "name": "ComfyUI Layer Style",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "4ab30b1c-4",
-                  "data": {
-                      "url": "https://github.com/cubiq/ComfyUI_essentials",
-                      "hash": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
-                      "meta": {
-                          "message": "maintenance mode",
-                          "committer": {
-                              "date": "2025-04-14T07:33:21.000Z",
-                              "name": "cubiq",
-                              "email": "matteo@elf.io"
-                          },
-                          "commit_url": "https://github.com/cubiq/ComfyUI_essentials/commit/9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
-                          "latest_hash": "9d9f4bedfc9f0321c19faf71855e228c93bd0dc9",
-                          "stargazers_count": 836
-                      },
-                      "name": "ComfyUI Essentials",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "8bfd5b9e-6",
-                  "data": {
-                      "url": "https://github.com/sipherxyz/comfyui-art-venture",
-                      "hash": "fc00f4a094be1ba41d6c7bfcc157fb075d289573",
-                      "meta": {
-                          "message": "fix(web): error when redefine value property",
-                          "committer": {
-                              "date": "2025-04-15T08:23:05.000Z",
-                              "name": "Tung Nguyen",
-                              "email": "tung.nguyen@atherlabs.com"
-                          },
-                          "commit_url": "https://github.com/sipherxyz/comfyui-art-venture/commit/fc00f4a094be1ba41d6c7bfcc157fb075d289573",
-                          "latest_hash": "fc00f4a094be1ba41d6c7bfcc157fb075d289573",
-                          "stargazers_count": 253
-                      },
-                      "name": "comfyui-art-venture",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "ffe77db4-f",
-                  "data": {
-                      "url": "https://github.com/comfy-deploy/comfyui-llm-toolkit",
-                      "hash": "ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
-                      "meta": {
-                          "message": "Add files via upload",
-                          "committer": {
-                              "date": "2025-05-24T13:25:38.000Z",
-                              "name": "GitHub",
-                              "email": "noreply@github.com"
-                          },
-                          "commit_url": "https://github.com/comfy-deploy/comfyui-llm-toolkit/commit/ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
-                          "latest_hash": "ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
-                          "stargazers_count": 12
-                      },
-                      "name": "ComfyUI LLM Toolkit",
-                      "files": [],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "4387e0dd-3",
-                  "data": {
-                      "url": "https://github.com/pythongosssss/ComfyUI-Custom-Scripts",
-                      "hash": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5",
-                      "meta": {
-                          "message": "Update pyproject.toml",
-                          "committer": {
-                              "date": "2025-04-30T12:00:09.000Z",
-                              "name": "GitHub",
-                              "email": "noreply@github.com"
-                          },
-                          "latest_hash": "aac13aa7ce35b07d43633c3bbe654a38c00d74f5"
-                      },
-                      "name": "ComfyUI-Custom-Scripts",
-                      "files": [
-                          "https://github.com/pythongosssss/ComfyUI-Custom-Scripts"
-                      ],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "35d617c0-f",
-                  "data": "# 2) Install all other requirements from default PyPI\nRUN pip3 install --no-cache-dir \\\n    accelerate \\\n    decord \\\n    einops \\\n    huggingface_hub \\\n    matplotlib \\\n    numpy \\\n    opencv_python \\\n    pyarrow \\\n    PyYAML \\\n    requests \\\n    safetensors \\\n    scipy \\\n    sentencepiece \\\n    transformers \\\n    bitsandbytes \\    \n    wandb",
-                  "type": "commands"
-              },
-              {
-                  "id": "comfyui-deploy",
-                  "data": {
-                      "url": "https://github.com/BennyKok/comfyui-deploy",
-                      "hash": "7b734c415aabd51b8bb8fad9fd719055b5ba359d",
-                      "meta": {
-                          "message": "fix: import",
-                          "committer": {
-                              "date": "2025-05-27T07:14:29.000Z",
-                              "name": "BennyKok",
-                              "email": "itechbenny@gmail.com"
-                          },
-                          "commit_url": "https://github.com/BennyKok/comfyui-deploy/commit/7b734c415aabd51b8bb8fad9fd719055b5ba359d",
-                          "latest_hash": "7b734c415aabd51b8bb8fad9fd719055b5ba359d",
-                          "stargazers_count": 1335
-                      },
-                      "name": "ComfyUI Deploy",
-                      "files": [
-                          "https://github.com/BennyKok/comfyui-deploy"
-                      ],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "cad23787-8",
-                  "data": {
-                      "url": "https://github.com/city96/ComfyUI-GGUF",
-                      "hash": "a2b75978fd50c0227a58316619b79d525b88e570",
-                      "meta": {
-                          "message": "Create pyproject.toml",
-                          "committer": {
-                              "date": "2025-05-08T23:08:35.000Z",
-                              "name": "City",
-                              "email": "125218114+city96@users.noreply.github.com"
-                          },
-                          "latest_hash": "a2b75978fd50c0227a58316619b79d525b88e570"
-                      },
-                      "name": "ComfyUI-GGUF",
-                      "files": [
-                          "https://github.com/city96/ComfyUI-GGUF"
-                      ],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              },
-              {
-                  "id": "b9fa9cae-8",
-                  "data": {
-                      "url": "https://github.com/if-ai/BAGEL.git",
-                      "hash": "07dd135c45eb6c2843e0b478776ca49f4297de74",
-                      "meta": {
-                          "message": "Fix: Remove undefined 'seed' variable call in ImageUnderstanding",
-                          "committer": {
-                              "date": "2025-05-30T06:24:09.000Z",
-                              "name": "impactframes",
-                              "email": "if@impactframes.ai"
-                          },
-                          "commit_url": "https://github.com/if-ai/BAGEL/commit/07dd135c45eb6c2843e0b478776ca49f4297de74",
-                          "latest_hash": "07dd135c45eb6c2843e0b478776ca49f4297de74",
-                          "stargazers_count": 0
-                      },
-                      "name": "BAGEL.git",
-                      "files": [
-                          "https://github.com/if-ai/BAGEL.git"
-                      ],
-                      "install_type": "git-clone"
-                  },
-                  "type": "custom-node"
-              }
-          ]
-      },
-      "max_containers": 2,
-      "install_custom_node_with_gpu": false,
-      "run_timeout": 300,
-      "scaledown_window": 60,
-      "extra_docker_commands": [],
-      "base_docker_image": "nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04",
-      "python_version": "3.12",
-      "extra_args": null,
-      "prestart_command": null,
-      "min_containers": 0,
-      "machine_hash": "610da88340d2be9d3e520d84b384a7b7dd45b3825652e4fc885b8173f1d7df5d",
-      "disable_metadata": true
-  }
+              commit_url:
+                "https://github.com/if-ai/BAGEL/commit/07dd135c45eb6c2843e0b478776ca49f4297de74",
+              latest_hash: "07dd135c45eb6c2843e0b478776ca49f4297de74",
+              stargazers_count: 0,
+            },
+            name: "BAGEL.git",
+            files: ["https://github.com/if-ai/BAGEL.git"],
+            install_type: "git-clone",
+          },
+          type: "custom-node",
+        },
+      ],
+    },
+    max_containers: 2,
+    install_custom_node_with_gpu: false,
+    run_timeout: 300,
+    scaledown_window: 60,
+    extra_docker_commands: [],
+    base_docker_image: "nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04",
+    python_version: "3.12",
+    extra_args: null,
+    prestart_command: null,
+    min_containers: 0,
+    machine_hash:
+      "610da88340d2be9d3e520d84b384a7b7dd45b3825652e4fc885b8173f1d7df5d",
+    disable_metadata: true,
+  },
 };
 
 export const defaultWorkflowTemplates: defaultWorkflowTemplateType[] = [
@@ -5524,7 +4888,8 @@ export const defaultWorkflowTemplates: defaultWorkflowTemplateType[] = [
     workflowName: "BAGEL",
     workflowDescription: "BAGEL workflow for text to image and image editing.",
     workflowJson: JSON.stringify(bagel_workflow),
-    workflowImageUrl: "https://comfy-deploy-output.s3.us-east-2.amazonaws.com/outputs/runs/c2a15057-e13f-4297-bf9f-7d8b3b71ede0/ComfyUI_00009_.jpg", 
-    hasEnvironment: true, 
-  }
+    workflowImageUrl:
+      "https://comfy-deploy-output.s3.us-east-2.amazonaws.com/outputs/runs/c2a15057-e13f-4297-bf9f-7d8b3b71ede0/ComfyUI_00009_.jpg",
+    hasEnvironment: true,
+  },
 ];
