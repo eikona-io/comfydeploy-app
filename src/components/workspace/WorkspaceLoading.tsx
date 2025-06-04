@@ -236,10 +236,10 @@ export function WorkspaceMachineLoading({
   }, []);
 
   return (
-    <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-50 to-stone-200">
+    <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-50 to-stone-200 dark:from-zinc-900 dark:to-zinc-700">
       {/* Grid background */}
       <div
-        className="absolute inset-0 overflow-hidden opacity-5"
+        className="absolute inset-0 overflow-hidden opacity-5 dark:opacity-70"
         style={{
           backgroundImage: `linear-gradient(#2c2c2c 1px, transparent 1px),
                        linear-gradient(90deg, #2c2c2c 1px, transparent 1px)`,
@@ -247,7 +247,7 @@ export function WorkspaceMachineLoading({
         }}
       >
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 dark:opacity-0"
           style={{
             animation: "moveGradient 3s linear infinite",
             background:
@@ -293,12 +293,13 @@ export function WorkspaceMachineLoading({
           viewBox="0 0 74 60"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="dark:opacity-80"
         >
           <circle
             cx="30"
             cy="43"
             r="3"
-            fill="black"
+            className="fill-black dark:fill-white"
             style={{
               animation: "pulse 2s ease-in-out infinite",
             }}
@@ -307,7 +308,7 @@ export function WorkspaceMachineLoading({
             cx="17"
             cy="43"
             r="3"
-            fill="black"
+            className="fill-black dark:fill-white"
             style={{
               animation: "pulse 2s ease-in-out infinite",
               animationDelay: "1s", // Offset timing for second circle
@@ -315,7 +316,7 @@ export function WorkspaceMachineLoading({
           />
           <path
             d="M70.5 30.5L58.5 7.5C57.5 5.5 56.2728 3.5 54 3.5C52.4 3.5 31 3.5 20.5 3.5C18.5 3.5 16.4633 5.07334 15.5 7C14.5 9 9.60018 17.7996 6.5 24C3.5 30 3.5 28.5 3.5 31C3.5 36 3.5 44 3.5 49.5C3.5 52 5.1 56.5 9.5 56.5C13.9 56.5 47.8333 56.5 64.5 56.5C66.5 56.5 70.5 54.5 70.5 49.5C70.5 45.5 70.5 40.1667 70.5 36C70.5 30.7304 66.3674 30 65 30C61 30 24 30 6 30"
-            stroke="black"
+            className="stroke-black dark:stroke-white"
             strokeWidth="6"
             strokeLinecap="round"
             opacity={0.1}
@@ -323,7 +324,7 @@ export function WorkspaceMachineLoading({
 
           <path
             d="M70.5 30.5L58.5 7.5C57.5 5.5 56.2728 3.5 54 3.5C52.4 3.5 31 3.5 20.5 3.5C18.5 3.5 16.4633 5.07334 15.5 7C14.5 9 9.60018 17.7996 6.5 24C3.5 30 3.5 28.5 3.5 31C3.5 36 3.5 44 3.5 49.5C3.5 52 5.1 56.5 9.5 56.5C13.9 56.5 47.8333 56.5 64.5 56.5C66.5 56.5 70.5 54.5 70.5 49.5C70.5 45.5 70.5 40.1667 70.5 36C70.5 30.7304 66.3674 30 65 30C61 30 24 30 6 30"
-            stroke="black"
+            className="stroke-black dark:stroke-white"
             strokeWidth="6"
             strokeLinecap="round"
             strokeDasharray="50 400"
