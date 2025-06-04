@@ -6,6 +6,7 @@ export function Icon() {
       viewBox="0 0 1025 179"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      className="dark:invert"
     >
       <path
         fillRule="evenodd"
