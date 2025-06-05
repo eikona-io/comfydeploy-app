@@ -32,7 +32,7 @@ export function UploadProgress({ className }: UploadProgressProps) {
 
   return (
     <div
-      className={`w-[300px] rounded-md border bg-white p-3 shadow-sm ${className}`}
+      className={`w-[300px] rounded-md border bg-white p-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${className}`}
     >
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-medium text-sm">File Upload</h3>
@@ -43,7 +43,7 @@ export function UploadProgress({ className }: UploadProgressProps) {
               clearQueue();
               clearFailedFiles();
             }}
-            className="text-gray-500 text-xs hover:text-gray-700"
+            className="text-gray-500 text-xs hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-300"
           >
             <X className="h-4 w-4" />
           </button>
@@ -53,12 +53,12 @@ export function UploadProgress({ className }: UploadProgressProps) {
       {/* Current upload progress */}
       {currentFile && progress !== null && (
         <div className="mb-3">
-          <div className="mb-1 flex justify-between text-gray-700 text-xs">
+          <div className="mb-1 flex justify-between text-gray-700 text-xs dark:text-zinc-400">
             <span className="max-w-[200px] truncate">{currentFile.name}</span>
             <span>{formatFileSize(currentFile.size)}</span>
           </div>
           <Progress value={progress} className="h-2" />
-          <p className="mt-1 flex justify-between text-gray-500 text-xs">
+          <p className="mt-1 flex justify-between text-gray-500 text-xs dark:text-zinc-400">
             <span>Uploading...</span>
             <span>{Math.round(progress)}%</span>
           </p>
@@ -68,21 +68,21 @@ export function UploadProgress({ className }: UploadProgressProps) {
       {/* Pending files */}
       {fileQueue.length > 0 && (
         <div className="mt-2">
-          <p className="mb-1 font-medium text-gray-700 text-xs">
+          <p className="mb-1 font-medium text-gray-700 text-xs dark:text-zinc-400">
             Pending ({fileQueue.length})
           </p>
           <div className="max-h-[100px] overflow-y-auto">
             {fileQueue.slice(0, maxFilesToShow).map((file, index) => (
               <div
                 key={`${file.name}-${index}`}
-                className="flex justify-between py-1 text-gray-500 text-xs"
+                className="flex justify-between py-1 text-gray-500 text-xs dark:text-zinc-400"
               >
                 <span className="max-w-[200px] truncate">{file.name}</span>
                 <span>{formatFileSize(file.size)}</span>
               </div>
             ))}
             {fileQueue.length > maxFilesToShow && (
-              <p className="mt-1 text-gray-500 text-xs">
+              <p className="mt-1 text-gray-500 text-xs dark:text-zinc-400">
                 +{fileQueue.length - maxFilesToShow} more files (
                 {formatFileSize(totalQueueSize)})
               </p>
@@ -94,20 +94,20 @@ export function UploadProgress({ className }: UploadProgressProps) {
       {/* Failed uploads */}
       {failedFiles.length > 0 && (
         <div className="mt-2 border-t pt-2">
-          <p className="mb-1 font-medium text-red-500 text-xs">
+          <p className="mb-1 font-medium text-red-500 text-xs dark:text-red-400">
             Failed ({failedFiles.length})
           </p>
           <div className="max-h-[60px] overflow-y-auto">
             {failedFiles.slice(0, 3).map((fileName, index) => (
               <div
                 key={`failed-${index}`}
-                className="truncate py-1 text-red-400 text-xs"
+                className="truncate py-1 text-red-400 text-xs dark:text-red-400"
               >
                 {fileName}
               </div>
             ))}
             {failedFiles.length > 3 && (
-              <p className="text-red-400 text-xs">
+              <p className="text-red-400 text-xs dark:text-red-400">
                 +{failedFiles.length - 3} more failed uploads
               </p>
             )}

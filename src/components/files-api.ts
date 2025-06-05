@@ -1,14 +1,8 @@
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
+import { toast } from "sonner";
 
 export async function uploadFile(file: File) {
-  // Check file size limit
-  if (file.size > 50 * 1024 * 1024) {
-    throw new Error(
-      "File size exceeds 50MB limit. Please use the assets upload feature for large files.",
-    );
-  }
-
   // Ensure upload folder exists
   try {
     await api({
@@ -42,21 +36,93 @@ export async function uploadFile(file: File) {
     }
   }
 
-  const formData = new FormData();
-  formData.append("file", file);
+  // Handle small files with regular upload
+  if (file.size < 50 * 1024 * 1024) {
+    const formData = new FormData();
+    formData.append("file", file);
 
-  const response = await api({
-    url: "assets/upload",
-    skipDefaultHeaders: true,
-    init: {
-      method: "POST",
-      body: formData,
-    },
+    const response = await api({
+      url: "assets/upload",
+      skipDefaultHeaders: true,
+      init: {
+        method: "POST",
+        body: formData,
+      },
+      params: {
+        parent_path: "/upload",
+      },
+    });
+    return response;
+  }
+
+  const toastId = toast.loading("Preparing upload...", {
+    duration: Number.POSITIVE_INFINITY,
+  });
+
+  // Get presigned URL
+  const presignedUrlResponse = await api({
+    url: "assets/presigned-url",
     params: {
+      file_name: file.name,
       parent_path: "/upload",
+      size: file.size,
+      type: file.type,
     },
   });
-  return response;
+
+  toast.loading("Starting upload...", { id: toastId });
+
+  // Upload to presigned URL with progress tracking
+  const xhr = new XMLHttpRequest();
+
+  const uploadPromise = new Promise((resolve, reject) => {
+    xhr.open("PUT", presignedUrlResponse.url, true);
+    xhr.setRequestHeader("Content-Type", file.type);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const progressPercentage = Math.round((e.loaded / e.total) * 80) + 10;
+        toast.loading(`Uploading... ${progressPercentage}%`, { id: toastId });
+      }
+    };
+
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(xhr.response);
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`));
+      }
+    };
+
+    xhr.onerror = () => {
+      reject(new Error("Network error during upload"));
+    };
+
+    xhr.send(file);
+  });
+
+  await uploadPromise;
+
+  toast.loading("Finalizing upload...", { id: toastId });
+
+  // Register the uploaded asset
+  const registeredAsset = await api({
+    url: "assets/register",
+    init: {
+      method: "POST",
+      body: JSON.stringify({
+        file_id: presignedUrlResponse.file_id,
+        file_name: file.name,
+        file_size: file.size,
+        db_path: presignedUrlResponse.db_path,
+        url: presignedUrlResponse.download_url,
+        mime_type: file.type,
+      }),
+    },
+  });
+
+  toast.success("File uploaded successfully!", { id: toastId });
+  return registeredAsset;
 }
 
 export async function generateUploadUrl(
