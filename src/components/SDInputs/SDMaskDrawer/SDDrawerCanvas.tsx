@@ -59,7 +59,10 @@ export const SDDrawerCanvas = forwardRef(
       const minZoom =
         (containerEl.current?.offsetHeight || 1) / (image.height || 1);
       canvas.setZoom(minZoom);
-      var center = canvas.getCenter();
+      const center = {
+        left: canvas.getWidth() / 2,
+        top: canvas.getHeight() / 2,
+      };
       canvas.viewportTransform![4] =
         center.left - (canvas.getWidth() * canvas.getZoom()) / 2; // Center horizontally
       canvas.viewportTransform![5] =
@@ -88,7 +91,10 @@ export const SDDrawerCanvas = forwardRef(
       const minZoom =
         (containerEl.current?.offsetHeight || 1) / (image.height || 1);
       canvas.setZoom(minZoom);
-      var center = canvas.getCenter();
+      const center = {
+        left: canvas.getWidth() / 2,
+        top: canvas.getHeight() / 2,
+      };
 
       canvas.viewportTransform![4] =
         center.left - (canvas.getWidth() * canvas.getZoom()) / 2; // Center horizontally
