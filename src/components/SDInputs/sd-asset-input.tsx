@@ -34,6 +34,7 @@ export const SDAssetInput = ({ onChange }: Props) => {
   const handleAsset = (asset: AssetType) => {
     onChange(asset.url);
     setIsOpen(false);
+    setOpen(false);
   };
 
   return (

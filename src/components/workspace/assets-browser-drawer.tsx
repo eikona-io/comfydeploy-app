@@ -27,7 +27,7 @@ export function AssetsBrowserPopup({
           className={cn(
             isMobile
               ? "fixed right-0 bottom-0 left-0 mt-24 flex h-[96%] flex-col rounded-t-[10px] bg-white md:top-0 md:right-0 md:bottom-0 md:h-full md:w-[400px] md:rounded-l-[10px] md:rounded-tr-none dark:bg-zinc-900"
-              : "fixed top-2 right-2 bottom-2 z-10 flex w-[500px] rounded-[10px] border border-gray-300/50 shadow-lg dark:border-zinc-700/50",
+              : "fixed top-2 right-2 bottom-2 z-50 flex w-[500px] rounded-[10px] border border-gray-300/50 shadow-lg dark:border-zinc-700/50",
           )}
           style={
             {
