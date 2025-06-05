@@ -40,7 +40,7 @@ import {
 import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
@@ -458,6 +458,7 @@ export function WorkflowImportMachineSetup({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
+  const { data: latestHashes } = useLatestHashes();
   const useExistingMachine = !!validation.selectedMachineId;
   const { data: existingMachine } = useQuery<any>({
     queryKey: ["machine", validation.selectedMachineId],
@@ -503,7 +504,10 @@ export function WorkflowImportMachineSetup({
       : {
           id: "new",
           type: "comfy-deploy-serverless",
-          comfyui_version: validation.comfyUiHash || comfyui_hash,
+          comfyui_version:
+            validation.comfyUiHash ||
+            latestHashes?.comfyui_hash ||
+            "158419f3a0017c2ce123484b14b6c527716d6ec8",
           name: validation.machineName,
           gpu: validation.gpuType,
           docker_command_steps: validation.docker_command_steps,

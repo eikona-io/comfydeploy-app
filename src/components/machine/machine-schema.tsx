@@ -1,5 +1,5 @@
 import type { FieldConfig } from "@/components/auto-form/types";
-import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { FALLBACK_COMFYUI_HASH_CONSTANT } from "@/utils/comfydeploy-hash";
 import { Link } from "@tanstack/react-router";
 import { ExternalLinkIcon } from "lucide-react";
 import { z } from "zod";
@@ -69,7 +69,7 @@ export const serverlessFormSchema = z.object({
   comfyui_version: z
     .string()
     .regex(/^[0-9a-f]{40}$/i, "Must be a valid 40-character git commit hash")
-    .default(comfyui_hash)
+    .default(FALLBACK_COMFYUI_HASH_CONSTANT)
     .describe("ComfyUI Version"),
   gpu: z.enum(machineGPUOptions).default("A10G"),
   docker_command_steps: z

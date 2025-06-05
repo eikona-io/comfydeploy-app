@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { defaultWorkflowTemplates } from "@/utils/default-workflow";
 import { useNavigate } from "@tanstack/react-router";
 import { CheckCircle2, Circle, CircleCheckBig, Lightbulb } from "lucide-react";
@@ -171,6 +171,8 @@ type SearchParams = {
 
 export default function WorkflowImport() {
   const navigate = useNavigate();
+  const { data: latestHashes, isLoading: hashesLoading } = useLatestHashes();
+
   const [validation, setValidation] = useState<StepValidation>({
     workflowName: "Untitled Workflow",
     importOption:
@@ -183,11 +185,72 @@ export default function WorkflowImport() {
     machineOption: "new",
     machineName: "Untitled Machine",
     gpuType: "A10G",
-    comfyUiHash: comfyui_hash,
+    comfyUiHash:
+      latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
     selectedComfyOption: "recommended",
     dependencies: undefined,
     selectedConflictingNodes: {},
+    docker_command_steps: {
+      steps: [
+        {
+          id: crypto.randomUUID().slice(0, 10),
+          type: "custom-node",
+          data: {
+            name: "ComfyUI Deploy",
+            url: "https://github.com/BennyKok/comfyui-deploy",
+            files: [],
+            install_type: "git-clone",
+            pip: [],
+            hash: latestHashes?.comfydeploy_hash,
+          },
+        },
+      ],
+    },
   });
+
+  // Update comfyUiHash when latestHashes becomes available
+  useEffect(() => {
+    if (latestHashes?.comfyui_hash && !hashesLoading) {
+      setValidation((prev) => ({
+        ...prev,
+        comfyUiHash: latestHashes.comfyui_hash,
+        docker_command_steps: {
+          steps: [
+            {
+              id: crypto.randomUUID().slice(0, 10),
+              type: "custom-node",
+              data: {
+                name: "ComfyUI Deploy",
+                url: "https://github.com/BennyKok/comfyui-deploy",
+                files: [],
+                install_type: "git-clone",
+                pip: [],
+                hash: latestHashes?.comfydeploy_hash,
+              },
+            },
+          ],
+        },
+      }));
+    }
+  }, [
+    latestHashes?.comfyui_hash,
+    latestHashes?.comfydeploy_hash,
+    hashesLoading,
+  ]);
+
+  // Show loading while hashes are being fetched
+  if (hashesLoading) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-muted-foreground text-sm">
+            Loading latest versions...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const createWorkflow = async (machineId?: string) => {
     const requestBody = {
@@ -631,6 +694,8 @@ function DefaultOption({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
+  const { data: latestHashes } = useLatestHashes();
+
   // Initialize innerSelected from validation if it exists, otherwise use default
   const [workflowSelected, setWorkflowSelected] = useState<string>(
     validation.workflowJson
@@ -662,10 +727,70 @@ function DefaultOption({
           const environment = workflowData.environment;
 
           if (environment) {
+            // Update docker_command_steps to use latest ComfyUI Deploy hash and add if missing
+            let updatedDockerSteps = environment.docker_command_steps;
+
+            if (environment.docker_command_steps) {
+              // Check if ComfyUI Deploy already exists
+              const hasComfyDeploy =
+                environment.docker_command_steps.steps?.some(
+                  (step: DockerCommandStep) =>
+                    step.type === "custom-node" &&
+                    (step.data as CustomNodeData)?.url ===
+                      "https://github.com/BennyKok/comfyui-deploy",
+                );
+
+              updatedDockerSteps = {
+                ...environment.docker_command_steps,
+                steps: [
+                  // Update existing steps and ComfyUI Deploy hash if present
+                  ...(environment.docker_command_steps.steps?.map(
+                    (step: DockerCommandStep) => {
+                      if (
+                        step.type === "custom-node" &&
+                        (step.data as CustomNodeData)?.url ===
+                          "https://github.com/BennyKok/comfyui-deploy"
+                      ) {
+                        return {
+                          ...step,
+                          data: {
+                            ...(step.data as CustomNodeData),
+                            hash:
+                              latestHashes?.comfydeploy_hash ||
+                              (step.data as CustomNodeData).hash,
+                          },
+                        };
+                      }
+                      return step;
+                    },
+                  ) || []),
+                  // Add ComfyUI Deploy if it doesn't exist
+                  ...(hasComfyDeploy
+                    ? []
+                    : [
+                        {
+                          id: crypto.randomUUID().slice(0, 10),
+                          type: "custom-node" as const,
+                          data: {
+                            name: "ComfyUI Deploy",
+                            url: "https://github.com/BennyKok/comfyui-deploy",
+                            files: [],
+                            install_type: "git-clone" as const,
+                            pip: [],
+                            hash: latestHashes?.comfydeploy_hash,
+                          } as CustomNodeData,
+                        },
+                      ]),
+                ],
+              };
+            }
+
             Object.assign(updatedValidation, {
-              docker_command_steps: environment.docker_command_steps,
+              docker_command_steps: updatedDockerSteps,
               gpuType: environment.gpu,
-              comfyUiHash: environment.comfyui_version,
+              // Use latest ComfyUI hash instead of hardcoded value
+              comfyUiHash:
+                latestHashes?.comfyui_hash || environment.comfyui_version,
               install_custom_node_with_gpu:
                 environment.install_custom_node_with_gpu,
               base_docker_image: environment.base_docker_image,
@@ -679,7 +804,13 @@ function DefaultOption({
 
       setValidation(updatedValidation);
     }
-  }, [workflowSelected, validation.importOption]);
+  }, [
+    workflowSelected,
+    validation.importOption,
+    latestHashes?.comfyui_hash,
+    latestHashes?.comfydeploy_hash,
+    setValidation,
+  ]);
 
   return (
     <AccordionOption
@@ -748,6 +879,7 @@ function ImportOptions({
   validation,
   setValidation,
 }: StepComponentProps<StepValidation>) {
+  const { data: latestHashes } = useLatestHashes();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [workflowJsonUrl, setWorkflowJsonUrl] = useQueryState("workflow_json");
@@ -784,7 +916,9 @@ function ImportOptions({
           docker_command_steps: undefined,
           hasEnvironment: false,
           gpuType: "A10G",
-          comfyUiHash: comfyui_hash,
+          comfyUiHash:
+            latestHashes?.comfyui_hash ||
+            "158419f3a0017c2ce123484b14b6c527716d6ec8",
           install_custom_node_with_gpu: false,
           base_docker_image: undefined,
           python_version: "3.11",
@@ -808,7 +942,9 @@ function ImportOptions({
 
           docker_command_steps: undefined,
           gpuType: "A10G",
-          comfyUiHash: comfyui_hash,
+          comfyUiHash:
+            latestHashes?.comfyui_hash ||
+            "158419f3a0017c2ce123484b14b6c527716d6ec8",
           install_custom_node_with_gpu: false,
           base_docker_image: undefined,
           python_version: "3.11",
@@ -838,7 +974,7 @@ function ImportOptions({
         ...data,
       }));
     },
-    [validation, setValidation],
+    [validation, setValidation, latestHashes],
   );
 
   const handleFileSelect = async (file: File) => {

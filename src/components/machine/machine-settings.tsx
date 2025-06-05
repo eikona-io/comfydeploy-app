@@ -21,16 +21,11 @@ import {
   useCurrentPlan,
   useCurrentPlanWithStatus,
 } from "@/hooks/use-current-plan";
-import {
-  useGithubBranchInfo,
-  useGithubReleases,
-} from "@/hooks/use-github-branch-info";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { useCachedQuery } from "@/lib/use-cached-query";
 import { cn } from "@/lib/utils";
-import { comfyui_hash } from "@/utils/comfydeploy-hash";
 import { useAuth } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";

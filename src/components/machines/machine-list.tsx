@@ -24,7 +24,7 @@ import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { useNavigate } from "@tanstack/react-router";
 import {
   Cloud,
@@ -57,6 +57,44 @@ interface Machine {
 }
 
 export function MachineList() {
+  const { data: latestHashes } = useLatestHashes();
+
+  // Helper function to ensure ComfyDeploy node is included in docker steps
+  const ensureComfyDeployNode = () => {
+    const comfyDeployUrl = "https://github.com/BennyKok/comfyui-deploy";
+
+    if (latestHashes?.comfydeploy_hash) {
+      const comfyDeployNode = {
+        id: crypto.randomUUID().slice(0, 10),
+        type: "custom-node" as const,
+        data: {
+          name: "ComfyUI Deploy",
+          hash: latestHashes.comfydeploy_hash,
+          url: comfyDeployUrl,
+          files: [comfyDeployUrl],
+          install_type: "git-clone" as const,
+          meta: {
+            message: "Official ComfyUI Deploy integration node",
+            latest_hash: latestHashes.comfydeploy_hash,
+            committer: {
+              name: "ComfyUI Deploy",
+              email: "support@comfyuideploy.com",
+              date: new Date().toISOString(),
+            },
+            commit_url: `${comfyDeployUrl}/commit/${latestHashes.comfydeploy_hash}`,
+            stargazers_count: 0,
+          },
+        },
+      };
+
+      return {
+        steps: [comfyDeployNode],
+      };
+    }
+
+    return { steps: [] };
+  };
+
   const [selectedMachines, setSelectedMachines] = useState<Set<string>>(
     new Set(),
   );
@@ -514,11 +552,11 @@ export function MachineList() {
         data={{
           name: "My Machine",
           gpu: "A10G",
-          comfyui_version: comfyui_hash,
+          comfyui_version:
+            latestHashes?.comfyui_hash ||
+            "158419f3a0017c2ce123484b14b6c527716d6ec8",
           machine_builder_version: "4",
-          docker_command_steps: {
-            steps: [],
-          },
+          docker_command_steps: ensureComfyDeployNode(),
 
           // default values
           allow_concurrent_inputs: 1,

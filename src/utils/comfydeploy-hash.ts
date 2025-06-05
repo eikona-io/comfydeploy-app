@@ -16,10 +16,11 @@ export function useLatestHashes() {
     retry: 2,
     select: (data: LatestHashesResponse) => ({
       comfydeploy_hash: data?.comfydeploy_hash || FALLBACK_COMFYDEPLOY_HASH,
-      comfyui_hash: data?.comfyui_hash || FALLBACK_COMFYUI_HASH
-    })
+      comfyui_hash: data?.comfyui_hash || FALLBACK_COMFYUI_HASH,
+    }),
   });
 }
 
-export const comfydeploy_hash = FALLBACK_COMFYDEPLOY_HASH;
-export const comfyui_hash = FALLBACK_COMFYUI_HASH;
+// Export fallback constants for schema defaults
+export const FALLBACK_COMFYDEPLOY_HASH_CONSTANT = FALLBACK_COMFYDEPLOY_HASH;
+export const FALLBACK_COMFYUI_HASH_CONSTANT = FALLBACK_COMFYUI_HASH;
