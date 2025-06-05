@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { useMachine } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
-import { comfydeploy_hash, comfyui_hash } from "@/utils/comfydeploy-hash";
+import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
@@ -13,12 +13,12 @@ import { MachineSettingsWrapper } from "../machine/machine-settings";
 import { LoadingIcon } from "../ui/custom/loading-icon";
 import { Input } from "../ui/input";
 
-const newMachine = {
+const createNewMachine = (latestHashes: any) => ({
   name: "My New Machine",
   id: "new",
   type: "comfy-deploy-serverless",
   gpu: "A10G",
-  comfyui_version: comfyui_hash,
+  comfyui_version: latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
   docker_command_steps: {
     steps: [
       {
@@ -29,7 +29,7 @@ const newMachine = {
           url: "https://github.com/BennyKok/comfyui-deploy",
           files: ["https://github.com/BennyKok/comfyui-deploy"],
           install_type: "git-clone",
-          hash: comfydeploy_hash,
+          hash: latestHashes?.comfydeploy_hash || "c47865ec266daf924cc7ef19223e9cf70122eb41",
         },
       },
     ],
@@ -43,7 +43,7 @@ const newMachine = {
   idle_timeout: 60,
   ws_timeout: 2,
   python_version: "3.11",
-};
+});
 
 export function filterMachineConfig(machine: any) {
   // Pick only the fields defined in MachineConfig
@@ -76,10 +76,11 @@ export function MachineCreate() {
   const sub = useCurrentPlan();
   const [cloneMachineId, setCloneMachineId] = useQueryState("machineId");
   const { data: machine, isLoading } = useMachine(cloneMachineId ?? undefined);
+  const { data: latestHashes } = useLatestHashes();
 
   // Initialize with newMachine if not cloning, otherwise wait for machine data
   const [formValues, setFormValues] = useState<any>(
-    cloneMachineId ? undefined : newMachine,
+    cloneMachineId ? undefined : createNewMachine(latestHashes),
   );
 
   // Update formValues when machine data is loaded
@@ -130,7 +131,7 @@ export function MachineCreate() {
                   value={formValues?.name}
                   onChange={(e) =>
                     setFormValues((prev) =>
-                      prev ? { ...prev, name: e.target.value } : newMachine,
+                      prev ? { ...prev, name: e.target.value } : createNewMachine(latestHashes),
                     )
                   }
                 />
@@ -140,7 +141,7 @@ export function MachineCreate() {
                 machine={formValues}
                 onValueChange={(key, value) => {
                   setFormValues((prev) =>
-                    prev ? { ...prev, [key]: value } : newMachine,
+                    prev ? { ...prev, [key]: value } : createNewMachine(latestHashes),
                   );
                 }}
                 disableUnsavedChangesWarningServerless={true}
