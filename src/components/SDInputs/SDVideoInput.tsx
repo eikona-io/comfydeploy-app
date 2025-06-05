@@ -78,10 +78,11 @@ export function SDVideoInput({
   return (
     <div className={className} ref={dropRef}>
       {header}
-      <div className={`${inputClasses} flex gap-2`}>
+      <div className={`${inputClasses} flex gap-1`}>
         {!displayVideoName && (
           <>
             <Input
+              className="rounded-[8px]"
               placeholder="Type your URL or drop a file"
               value={String(file?.name || file || "")}
               onChange={(e) => onChange(e.target.value)}
@@ -96,7 +97,7 @@ export function SDVideoInput({
                   buttonVariants({
                     variant: "outline",
                     className:
-                      "cursor-pointer transition-colors hover:bg-gray-50",
+                      "cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50",
                   }),
                 )}
               >
