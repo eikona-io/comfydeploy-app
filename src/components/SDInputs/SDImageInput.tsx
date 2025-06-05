@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { Eye, Paperclip, Trash } from "lucide-react";
+import { Eye, Paperclip, Pencil, Trash } from "lucide-react";
 import {
   type ChangeEvent,
   type DragEvent,
@@ -16,6 +16,7 @@ import {
   useState,
 } from "react";
 import { SDAssetInput } from "./sd-asset-input";
+import { ImageInputsTooltip } from "../image-inputs-tooltip";
 
 type SDImageInputProps = {
   label?: string;
@@ -55,6 +56,10 @@ export function SDImageInput({
     return null;
   }, [file]);
 
+  // Check if there's text in the input (URL string)
+  const hasTextInput =
+    typeof file === "string" && String(file).trim().length > 0;
+
   function onDeleteImg() {
     if (!file) {
       return;
@@ -68,7 +73,7 @@ export function SDImageInput({
       e.stopPropagation();
       const { files } = e.dataTransfer;
       console.log(files);
-      if (files && files.length) {
+      if (files?.length) {
         onChange(multiple ? files : files[0]);
       }
     };
@@ -100,37 +105,47 @@ export function SDImageInput({
               onChange={(e) => onChange(e.target.value)}
             />
 
-            <Label
-              htmlFor={`file-input-${label}`}
-              className="flex items-center justify-center"
-            >
-              <div
-                className={cn(
-                  buttonVariants({
-                    variant: "outline",
-                    className:
-                      "cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50",
-                  }),
-                )}
-              >
-                <Paperclip size={18} />
-              </div>
-            </Label>
-            <Input
-              id={`file-input-${label}`}
-              accept="image/*"
-              className="hidden"
-              onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                if (!e?.target.files) {
-                  return;
-                }
-                onChange(e.target.files[0]);
-              }}
-              type="file"
-            />
-            <div className="flex items-center justify-center">
-              <SDAssetInput onChange={onChange} />
-            </div>
+            {hasTextInput ? (
+              <ImageInputsTooltip tooltipText="Edit">
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                >
+                  <Pencil size={18} />
+                </Button>
+              </ImageInputsTooltip>
+            ) : (
+              <>
+                <Input
+                  id={`file-input-${label}`}
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                    if (!e?.target.files) {
+                      return;
+                    }
+                    onChange(e.target.files[0]);
+                  }}
+                  type="file"
+                />
+                <Label
+                  htmlFor={`file-input-${label}`}
+                  className={cn(
+                    buttonVariants({
+                      variant: "outline",
+                      className:
+                        "cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50",
+                    }),
+                  )}
+                >
+                  <Paperclip size={18} />
+                </Label>
+                <div className="flex items-center justify-center">
+                  <SDAssetInput onChange={onChange} />
+                </div>
+              </>
+            )}
           </>
         )}
         {ImgView && (
@@ -185,15 +200,13 @@ function ListView({ viewList, onDelete, onMaskChange }: listViewProps) {
               <TableRow key={item.imgName} className="w-full ">
                 <TableCell className="flex w-full items-center justify-between py-2 font-medium">
                   <div
-                    className="flex flex-auto cursor-pointer items-center justify-between duration-200 ease-in-out hover:text-slate-600"
+                    className="flex flex-auto cursor-pointer items-center justify-between gap-2 duration-200 ease-in-out hover:text-slate-600"
                     onClick={(e) => {
                       e.preventDefault();
                       setImgPreview(item);
                     }}
                   >
-                    <p className="max-w-[250px] overflow-hidden text-ellipsis">
-                      {item.imgName}
-                    </p>
+                    <p className="line-clamp-1">{item.imgName}</p>
                     <Eye />
                   </div>
                   {onDelete && (

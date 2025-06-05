@@ -409,12 +409,13 @@ export function SDInputsRender({
           </div>
           {images.map((x, i) => {
             return (
-              <div className="flex items-center gap-2">
+              <div
+                className="flex items-center gap-1"
+                key={`${inputNode.input_id} ${i}`}
+              >
                 <SDImageInput
-                  key={`${inputNode.input_id} ${i}`}
                   file={x}
                   className="w-full flex-1"
-                  inputClasses="bg-gray-50"
                   multiple={true}
                   // {...genericProps}
                   onChange={(file: File | string | undefined | FileList) => {
@@ -435,7 +436,9 @@ export function SDInputsRender({
                   }}
                 />
                 <Button
-                  variant={"outline"}
+                  variant={"ghost"}
+                  className="text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+                  type="button"
                   onClick={(e) => {
                     e.preventDefault();
                     const newImages = images.filter((_, index) => index !== i);
@@ -476,7 +479,7 @@ export function SDInputsRender({
             onValueChange={(value) => updateInput(inputNode.input_id, value)}
             value={inputValue as string}
           >
-            <SelectTrigger>
+            <SelectTrigger className="mt-1">
               <SelectValue placeholder="Select one..." />
             </SelectTrigger>
             <SelectContent>
