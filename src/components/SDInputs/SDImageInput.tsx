@@ -1,26 +1,20 @@
-"use client";
-
 import { SDImageInputPreview } from "@/components/SDInputs/SDImageInputPreview";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import { useAssetBrowserStore } from "@/stores/asset-browser-store";
 import { Eye, Paperclip, Trash } from "lucide-react";
-import React, {
+import {
   type ChangeEvent,
   type DragEvent,
-  ReactElement,
   type ReactNode,
   type RefObject,
   useEffect,
-  useImperativeHandle,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { useAssetsBrowserStore } from "../workspace/Workspace";
 import { SDAssetInput } from "./sd-asset-input";
 
 type SDImageInputProps = {
@@ -203,7 +197,7 @@ function ListView({ viewList, onDelete, onMaskChange }: listViewProps) {
                     <Eye />
                   </div>
                   {onDelete && (
-                    <Button variant="ghost">
+                    <Button variant="ghost" type="button">
                       <Trash
                         className="text-red-700 ease-in-out hover:text-red-600"
                         size={20}
