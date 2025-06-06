@@ -285,11 +285,6 @@ function usePages() {
     //       },
     //     ]
     //   : []),
-    {
-      name: "Plan",
-      path: "/pricing",
-      icon: CreditCard,
-    },
   ];
 
   return {
@@ -324,6 +319,12 @@ const links = [
     title: "Blog",
     url: "https://www.comfydeploy.com/blog",
     icon: Rss,
+  },
+  {
+    title: "Plan",
+    url: "/pricing",
+    icon: CreditCard,
+    internal: true,
   },
 ];
 
@@ -1449,14 +1450,30 @@ export function AppSidebar() {
 
           {!(workflow_id && parentPath === "workflows") && (
             <div className="grid grid-cols-2 gap-2 px-2">
-              {links.map((item, index) => (
-                <a href={item.url} key={index} target="_blank" rel="noreferrer">
-                  <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
+              {links.map((item, index) =>
+                item.internal ? (
+                  <Link
+                    key={index}
+                    to={item.url}
+                    className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground"
+                  >
                     <item.icon size={16} className="w-3" />
                     <span>{item.title}</span>
-                  </span>
-                </a>
-              ))}
+                  </Link>
+                ) : (
+                  <a
+                    href={item.url}
+                    key={index}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
+                      <item.icon size={16} className="w-3" />
+                      <span>{item.title}</span>
+                    </span>
+                  </a>
+                ),
+              )}
 
               {/* Theme Switch Item */}
               {isBusinessAllowed && (
