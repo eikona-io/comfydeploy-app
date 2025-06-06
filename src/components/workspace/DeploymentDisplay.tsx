@@ -1130,38 +1130,49 @@ export function DeploymentSettings({
         </div>
       </div>
 
-      <ApiPlaygroundDemo
-        key={deployment.id}
-        defaultInputs={
-          workflowInput
-            ? Object.fromEntries([
-                ["deployment_id", deployment.id],
-                [
-                  "inputs",
-                  Object.fromEntries(
-                    workflowInput.map((x) => {
-                      if (!x) return [""];
-                      // Check for specific class types that require a custom URL
-                      if (
-                        [
-                          "ComfyUIDeployExternalImage",
-                          "ComfyUIDeployExternalImageAlpha",
-                        ].includes(x.class_type)
-                      ) {
-                        return [x.input_id, "/* put your image url here */"];
-                      }
-                      // Special case for batch images
-                      if (x.class_type === "ComfyUIDeployExternalImageBatch") {
-                        return [x.input_id, ["/* put your image url here */"]];
-                      }
-                      return [x.input_id, x.default_value ?? ""];
-                    }),
-                  ),
-                ],
-              ])
-            : {}
-        }
-      />
+      {deployment.environment === "public-share" ? (
+        <div className="my-4">
+          <ShareLinkDisplay deployment={deployment} />
+        </div>
+      ) : (
+        <ApiPlaygroundDemo
+          key={deployment.id}
+          defaultInputs={
+            workflowInput
+              ? Object.fromEntries([
+                  ["deployment_id", deployment.id],
+                  [
+                    "inputs",
+                    Object.fromEntries(
+                      workflowInput.map((x) => {
+                        if (!x) return [""];
+                        // Check for specific class types that require a custom URL
+                        if (
+                          [
+                            "ComfyUIDeployExternalImage",
+                            "ComfyUIDeployExternalImageAlpha",
+                          ].includes(x.class_type)
+                        ) {
+                          return [x.input_id, "/* put your image url here */"];
+                        }
+                        // Special case for batch images
+                        if (
+                          x.class_type === "ComfyUIDeployExternalImageBatch"
+                        ) {
+                          return [
+                            x.input_id,
+                            ["/* put your image url here */"],
+                          ];
+                        }
+                        return [x.input_id, x.default_value ?? ""];
+                      }),
+                    ),
+                  ],
+                ])
+              : {}
+          }
+        />
+      )}
     </div>
   );
 }
@@ -1175,6 +1186,26 @@ export function DeploymentDrawer(props: {
     enabled: !!selectedDeployment,
     queryKey: ["deployment", selectedDeployment],
   });
+
+  if (isLoading) {
+    return <></>;
+  }
+
+  if (deployment?.environment === "public-share") {
+    return (
+      <MyDrawer
+        open={!!selectedDeployment}
+        onClose={() => setSelectedDeployment(null)}
+      >
+        <DeploymentSettings
+          key={deployment.id}
+          deployment={deployment}
+          onClose={() => setSelectedDeployment(null)}
+        />
+        {props.children}
+      </MyDrawer>
+    );
+  }
 
   return (
     <Dialog
@@ -1190,7 +1221,7 @@ export function DeploymentDrawer(props: {
           <DialogTitle>Deployment Settings</DialogTitle>
         </DialogHeader>
 
-        {isLoading || (!deployment && selectedDeployment) ? (
+        {!deployment && selectedDeployment ? (
           <div className="flex flex-col px-2">
             <div className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-zinc-50 pt-1 pb-4 dark:bg-zinc-900">
               <div className="flex items-center gap-4">
@@ -1230,5 +1261,62 @@ export function DeploymentDrawer(props: {
         ) : null}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
+  const [copying, setCopying] = useState(false);
+
+  const [slug, workflow_name] = deployment.share_slug?.split("_") ?? [];
+  const shareLink = `${window.location.origin}/share/${slug}/${workflow_name}`;
+
+  const handleCopy = async () => {
+    if (!deployment.id) return;
+    setCopying(true);
+    await navigator.clipboard.writeText(shareLink);
+    toast.success("Link copied to clipboard!");
+    setTimeout(() => setCopying(false), 1000);
+  };
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium text-sm">Sharing Link</h3>
+          <Badge
+            variant="secondary"
+            className="bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+          >
+            Public
+          </Badge>
+        </div>
+      </div>
+      {deployment.id ? (
+        <div className="flex gap-2">
+          <Input
+            readOnly
+            value={shareLink}
+            className="border-zinc-200 bg-zinc-50 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-800"
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleCopy}
+            className="shrink-0 transition-all duration-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+          >
+            {copying ? (
+              <Check className="h-4 w-4 text-emerald-600" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between rounded-md bg-amber-50 p-3 text-amber-700 dark:bg-amber-900 dark:text-amber-300">
+          <span className="text-sm">
+            No sharing link available. Please reshare again.
+          </span>
+        </div>
+      )}
+    </div>
   );
 }
