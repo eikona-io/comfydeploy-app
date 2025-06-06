@@ -258,7 +258,7 @@ export function SDImageEditor({
                     </div>
                     <div className="mt-4 flex flex-col items-center justify-center gap-2">
                       <span className="text-muted-foreground text-xs">
-                        Use E/D keys or scroll to adjust the brush size.
+                        Use E/D/Z keys or scroll to adjust the brush size.
                       </span>
                       <DrawerMenu
                         onUndo={onUndo}

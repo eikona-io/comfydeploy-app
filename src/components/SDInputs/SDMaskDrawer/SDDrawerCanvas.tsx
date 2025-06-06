@@ -1,6 +1,6 @@
 import type { ImgView } from "@/components/SDInputs/SDImageInput";
 import { fabricImage } from "@/components/SDInputs/SDMaskDrawerUtils/fabricImage";
-import { Canvas, Image, PencilBrush } from "fabric";
+import { Canvas, FabricImage, Image, PencilBrush } from "fabric";
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import "./main.css";
 
@@ -121,15 +121,22 @@ export const SDDrawerCanvas = forwardRef(
         center.left - (canvas.getWidth() * canvas.getZoom()) / 2; // Center horizontally
       canvas.viewportTransform![5] =
         center.top - (canvas.getHeight() * canvas.getZoom()) / 2; // Center vertically
-      const imgInstance = new Image(fabricImage(image.imgURL), {
-        left: canvas.getWidth() / 2,
-        top: canvas.getHeight() / 2,
-        originX: "center",
-        originY: "center",
-        hasControls: false,
-        selectable: false,
-      });
-      canvas.add(imgInstance);
+
+      const imgElement = fabricImage(image.imgURL);
+      imgElement.onload = () => {
+        // Only add to canvas after image is loaded
+        const imgInstance = new FabricImage(imgElement, {
+          left: canvas.getWidth() / 2,
+          top: canvas.getHeight() / 2,
+          originX: "center",
+          originY: "center",
+          hasControls: false,
+          selectable: false,
+        });
+        canvas.add(imgInstance);
+        canvas.renderAll(); // Force re-render
+      };
+
       return () => {
         canvas.dispose();
       };
@@ -186,6 +193,15 @@ export const SDDrawerCanvas = forwardRef(
           // Press 'D' to toggle draw mode
           toggleEraser(false);
           callbacksRef.current.onModeChange?.("brush");
+        } else if (e.key === "z") {
+          // Press 'Z' to undo
+          if (history.current.length > 0 && maskCanvasInstance.current) {
+            const lastObject = history.current.pop();
+            if (lastObject) {
+              maskCanvasInstance.current.remove(lastObject);
+              maskCanvasInstance.current.renderAll();
+            }
+          }
         }
       }
 
