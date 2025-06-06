@@ -356,6 +356,32 @@ function RouteComponent() {
     return "initial";
   };
 
+  // Add this utility function to get the first available file URL from any type
+  const getFirstFileUrl = (item: any): string | null => {
+    // Return null if data is undefined
+    if (!item?.data) {
+      return null;
+    }
+
+    // Check for images first (most common)
+    if (item.data.images?.[0]?.url) {
+      return item.data.images[0].url;
+    }
+    // Check for gifs
+    if (item.data.gifs?.[0]?.url) {
+      return item.data.gifs[0].url;
+    }
+    // Check for files
+    if (item.data.files?.[0]?.url) {
+      return item.data.files[0].url;
+    }
+    // Check for model files
+    if (item.data.model_files?.[0]?.url) {
+      return item.data.model_files[0].url;
+    }
+    return null;
+  };
+
   if (isLoading)
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -533,31 +559,36 @@ function RouteComponent() {
               className="scrollbar-none !h-[384px] w-[70px]"
               queryResult={galleryData}
               renderItem={(item, index) => {
+                const fileUrl = getFirstFileUrl(item);
+
+                if (!fileUrl) {
+                  return <></>;
+                }
+
                 return (
                   // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
                   <div
-                    onClick={() =>
-                      handleGalleryImageSelect(item.data.images[0].url, index)
-                    }
+                    onClick={() => handleGalleryImageSelect(fileUrl, index)}
                     className="cursor-pointer shadow-md"
                   >
                     <FileURLRender
                       key={item.output_id}
-                      url={item.data.images[0].url}
-                      imgClasses="aspect-square max-w-full object-cover rounded-[6px] pointer-events-none"
+                      url={fileUrl}
+                      imgClasses="aspect-square max-w-full object-cover rounded-[6px] pointer-events-none overflow-hidden"
                     />
                   </div>
                 );
               }}
-              renderItemClassName={(item, index) =>
-                cn(
+              renderItemClassName={(item, index) => {
+                const fileUrl = getFirstFileUrl(item);
+                return cn(
                   "transition-all duration-200 !w-[60px]",
-                  item.data?.images?.[0]?.url === completedImageUrls?.[0] ||
+                  fileUrl === completedImageUrls?.[0] ||
                     index === selectedImageIndex
                     ? "ml-2"
                     : "hover:ml-1.5",
-                )
-              }
+                );
+              }}
               estimateSize={64}
               renderLoading={() => {
                 return [...Array(4)].map((_, i) => (
@@ -572,10 +603,10 @@ function RouteComponent() {
         </motion.div>
 
         {/* Top gradient overlay */}
-        <div className="pointer-events-none absolute top-0 left-0 h-10 w-full bg-gradient-to-b from-white to-transparent" />
+        <div className="pointer-events-none absolute top-0 left-0 h-10 w-full bg-gradient-to-b from-white to-transparent dark:from-zinc-800 dark:to-transparent" />
 
         {/* Bottom gradient overlay */}
-        <div className="pointer-events-none absolute bottom-0 left-0 h-10 w-full bg-gradient-to-t from-white to-transparent" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-10 w-full bg-gradient-to-t from-white to-transparent dark:from-zinc-800 dark:to-transparent" />
       </div>
 
       {/* functions (bottom) */}
@@ -649,7 +680,7 @@ function RouteComponent() {
 
       {/* functions (right) */}
       <div className="-translate-y-1/2 fixed top-1/2 right-2 z-20 hidden lg:block">
-        <div className="run-workflow-inline w-[500px] rounded-xl border border-gray-200 bg-white/50 p-4 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-xl">
+        <div className="run-workflow-inline w-[500px] rounded-xl border border-gray-200 bg-white/50 p-4 shadow-sm backdrop-blur-md transition-all duration-300 hover:shadow-xl dark:border-zinc-800 dark:bg-zinc-900/50">
           <RunWorkflowInline
             blocking={false}
             default_values={default_values}
@@ -686,7 +717,7 @@ function RouteComponent() {
 
       {isImageDetailDrawerOpen && (
         <MyDrawer
-          desktopClassName="w-[500px] shadow-lg border-2 border-gray-200"
+          desktopClassName="w-[500px] shadow-lg border-2 border-gray-200 dark:border-zinc-800 dark:bg-zinc-900"
           open={!!isImageDetailDrawerOpen}
           backgroundInteractive={true}
           onClose={() => setIsImageDetailDrawerOpen(false)}
