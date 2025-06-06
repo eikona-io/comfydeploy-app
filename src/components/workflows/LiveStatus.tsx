@@ -145,7 +145,7 @@ export function LiveStatus({
     <>
       {!ended && realtimeStatus && (
         <div className="col-span-2 w-full max-w-[260px] flex-col items-start gap-1 text-2xs">
-          {liveStatus}
+          <div className="whitespace-nowrap">{liveStatus}</div>
           <Progress
             value={run.progress * 100}
             className="w-full max-w-[260px]"
