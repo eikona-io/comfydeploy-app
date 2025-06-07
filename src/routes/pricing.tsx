@@ -607,7 +607,7 @@ function GPUPricingTable() {
                         <TableCell className="border-0 font-medium px-2 py-1 text-xs">
                           <div className="flex items-center gap-2">
                             {gpu}
-                            {gpu === "L40S" && (
+                            {(gpu === "H200" || gpu === "B200") && (
                               <Badge
                                 variant="secondary"
                                 className="bg-blue-50 h-4 px-1 py-0 text-[10px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
