@@ -187,7 +187,7 @@ export function SDInputGroup({
         )}
       >
         {isEmpty ? (
-          <div className="p-4 text-center text-muted-foreground text-sm">
+          <div className="p-4 text-center text-muted-foreground text-xs">
             Drop inputs here to create a group
           </div>
         ) : (
