@@ -846,7 +846,7 @@ function WorkspaceConfigPopover({
           is_fluid_machine,
           query,
           setVersion,
-          setOpen,
+          setOpen: () => {},
           snapshotAction: "COMMIT_ONLY",
           comfyui_snapshot,
           comfyui_snapshot_loading,
