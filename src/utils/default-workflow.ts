@@ -2925,7 +2925,7 @@ const workflow_json_hunyuan3d = {
     },
   },
   environment: {
-    comfyui_version: "158419f3a0017c2ce123484b14b6c527716d6ec8",
+    comfyui_version: "094306b626e9cf505690c5d8b445032b3b8a36fa",
     gpu: "L40S",
     docker_command_steps: {
       steps: [
