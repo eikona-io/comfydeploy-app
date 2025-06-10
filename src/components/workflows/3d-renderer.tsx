@@ -257,7 +257,7 @@ function Model({ url }: { url: string }) {
     modelScene = obj;
   } else {
     // Handle GLB/GLTF files (default)
-    useGLTF.preload(url);
+    // Remove preload to avoid CORS issues - let useGLTF handle loading with proper CORS config
     const { scene } = useGLTF(url, undefined, undefined, (loader) => {
       // Always set crossOrigin to handle CORS properly
       loader.setCrossOrigin("anonymous");
