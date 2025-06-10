@@ -263,7 +263,7 @@ export function GuideDialog({ guideType }: GuideDialogProps) {
 
   return (
     <AlertDialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-      <AlertDialogContent className="border-none bg-zinc-100 p-0">
+      <AlertDialogContent className="border-none bg-zinc-100 p-0 dark:bg-zinc-900">
         <img
           src={currentStepData.image}
           alt={currentStepData.title}
@@ -274,7 +274,7 @@ export function GuideDialog({ guideType }: GuideDialogProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>{currentStepData.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              <ul className="list-disc space-y-1 pl-5 text-zinc-700">
+              <ul className="list-disc space-y-1 pl-5 text-zinc-700 dark:text-zinc-300">
                 {currentStepData.description.map((item, i) => {
                   if (isValidElement(item)) {
                     return item;
@@ -301,7 +301,7 @@ export function GuideDialog({ guideType }: GuideDialogProps) {
                           href={item.link}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline"
+                          className="text-blue-600 hover:underline dark:text-blue-400"
                         >
                           {item.text}
                         </a>
@@ -319,7 +319,7 @@ export function GuideDialog({ guideType }: GuideDialogProps) {
             {currentStep > 0 && (
               <Button
                 variant="ghost"
-                className="text-muted-foreground hover:bg-zinc-200"
+                className="text-muted-foreground hover:bg-zinc-200 dark:hover:bg-zinc-800"
                 onClick={handleBack}
               >
                 Back
