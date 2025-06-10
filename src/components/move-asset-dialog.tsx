@@ -321,7 +321,10 @@ export function MoveAssetDialog({
           <button
             type="button"
             className="flex h-5 w-5 items-center justify-center text-gray-500 dark:text-zinc-400"
-            onClick={() => toggleFolder(node.id, node.path)}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFolder(node.id, node.path);
+            }}
           >
             {node.isExpanded ? (
               <ChevronDown className="h-4 w-4" />
@@ -333,7 +336,10 @@ export function MoveAssetDialog({
           {/* Folder icon and name */}
           <button
             className="flex flex-1 items-center gap-2 text-left"
-            onClick={() => handleSelect(node.path)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSelect(node.path);
+            }}
             type="button"
           >
             {node.isExpanded ? (

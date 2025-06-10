@@ -1,4 +1,7 @@
-import { FileURLRender } from "@/components/workflows/OutputRender";
+import {
+  FileURLRender,
+  FileURLRenderDropdown,
+} from "@/components/workflows/OutputRender";
 import { useAssetList, useDeleteAsset, useUpdateAsset } from "@/hooks/hook";
 import { cn, formatFileSize } from "@/lib/utils";
 import { useAssetBrowserStore } from "@/stores/asset-browser-store";
@@ -842,8 +845,8 @@ function AssetActions({
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      <FileURLRenderDropdown
+        triggerIcon={
           <Button
             variant="ghost"
             size="icon"
@@ -855,23 +858,29 @@ function AssetActions({
           >
             <MoreVertical className="h-4 w-4" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent blocking={true} className="w-40">
-          {!asset.is_folder && (
-            <DropdownMenuItem onClick={() => handleMoveAsset(asset)}>
-              <FolderUp className="mr-2 h-4 w-4" />
-              Move
-            </DropdownMenuItem>
-          )}
+        }
+        itemUrl={asset.url || ""}
+        itemFilename={asset.name}
+        canAddToAssets={false}
+        canDownload={false}
+      >
+        {!asset.is_folder && (
           <DropdownMenuItem
-            className="text-red-600"
-            onClick={() => setDeleteDialogOpen(true)}
+            onClick={() => handleMoveAsset(asset)}
+            className="justify-between"
           >
-            <Trash className="mr-2 h-4 w-4" />
-            Delete
+            Move
+            <FolderUp className="h-4 w-4" />
           </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        )}
+        <DropdownMenuItem
+          className="justify-between text-red-600"
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          Delete
+          <Trash className="h-4 w-4" />
+        </DropdownMenuItem>
+      </FileURLRenderDropdown>
 
       {/* Delete dialog is handled here, Move dialog is handled at the AssetBrowser level */}
 
