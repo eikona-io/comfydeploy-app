@@ -169,6 +169,90 @@ type SearchParams = {
   workflow_json?: string;
 };
 
+// Add this helper function near the top of the file, after the imports
+function ensureComfyUIDeployInSteps(
+  dockerSteps: any,
+  latestHashes?: { comfydeploy_hash?: string },
+): any {
+  if (!dockerSteps?.steps) {
+    return {
+      steps: [
+        {
+          id: crypto.randomUUID().slice(0, 10),
+          type: "custom-node",
+          data: {
+            name: "ComfyUI Deploy",
+            url: "https://github.com/BennyKok/comfyui-deploy",
+            files: [],
+            install_type: "git-clone",
+            pip: [],
+            hash: latestHashes?.comfydeploy_hash,
+          },
+        },
+      ],
+    };
+  }
+
+  // Check if ComfyUI Deploy already exists (case insensitive)
+  const hasComfyDeploy = dockerSteps.steps.some((step: any) => {
+    if (step.type !== "custom-node") return false;
+    console.log("step: ", step);
+    const url = step.data?.url?.toLowerCase();
+    return (
+      url === "https://github.com/bennykok/comfyui-deploy" ||
+      url === "https://github.com/bennykok/comfyui-deploy.git" ||
+      url === "git@github.com:bennykok/comfyui-deploy.git"
+    );
+  });
+
+  if (hasComfyDeploy) {
+    console.log("hasComfyDeploy: ", hasComfyDeploy);
+    // Update existing ComfyUI Deploy with latest hash if needed
+    return {
+      ...dockerSteps,
+      steps: dockerSteps.steps.map((step: any) => {
+        if (step.type !== "custom-node") return step;
+        const url = step.data?.url?.toLowerCase();
+        const isComfyDeploy =
+          url === "https://github.com/bennykok/comfyui-deploy" ||
+          url === "https://github.com/bennykok/comfyui-deploy.git" ||
+          url === "git@github.com:bennykok/comfyui-deploy.git";
+
+        if (isComfyDeploy) {
+          return {
+            ...step,
+            data: {
+              ...step.data,
+              hash: step.data.hash || latestHashes?.comfydeploy_hash,
+            },
+          };
+        }
+        return step;
+      }),
+    };
+  }
+
+  // Add ComfyUI Deploy if not present
+  return {
+    ...dockerSteps,
+    steps: [
+      ...dockerSteps.steps,
+      {
+        id: crypto.randomUUID().slice(0, 10),
+        type: "custom-node",
+        data: {
+          name: "ComfyUI Deploy",
+          url: "https://github.com/BennyKok/comfyui-deploy",
+          files: [],
+          install_type: "git-clone",
+          pip: [],
+          hash: latestHashes?.comfydeploy_hash,
+        },
+      },
+    ],
+  };
+}
+
 export default function WorkflowImport() {
   const navigate = useNavigate();
   const { data: latestHashes, isLoading: hashesLoading } = useLatestHashes();
@@ -521,6 +605,12 @@ export default function WorkflowImport() {
                 throw new Error("Missing required fields");
               }
 
+              // Ensure ComfyUI Deploy is always present before API call
+              const finalDockerSteps = ensureComfyUIDeployInSteps(
+                validation.docker_command_steps,
+                latestHashes,
+              );
+
               response = await api({
                 url: "machine/serverless",
                 init: {
@@ -529,7 +619,7 @@ export default function WorkflowImport() {
                     name: validation.machineName,
                     comfyui_version: validation.comfyUiHash,
                     gpu: validation.gpuType,
-                    docker_command_steps: validation.docker_command_steps,
+                    docker_command_steps: finalDockerSteps,
                     install_custom_node_with_gpu:
                       validation.install_custom_node_with_gpu,
                     base_docker_image: validation.base_docker_image,
@@ -850,7 +940,7 @@ function DefaultOption({
                       ) : (
                         <Circle className="h-4 w-4" />
                       )}
-                      <h3 className="font-medium text-shadow">
+                      <h3 className="line-clamp-1 font-medium text-shadow">
                         {template.workflowName}
                       </h3>
                     </div>
