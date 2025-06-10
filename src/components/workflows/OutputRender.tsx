@@ -25,7 +25,14 @@ import {
   FolderOpen,
   Clock,
 } from "lucide-react";
-import { useEffect, useState, useCallback, lazy, Suspense } from "react";
+import {
+  useEffect,
+  useState,
+  useCallback,
+  lazy,
+  Suspense,
+  type ReactNode,
+} from "react";
 import { ShineBorder } from "../magicui/shine-border";
 import { downloadImage } from "@/utils/download-image";
 import {
@@ -88,6 +95,7 @@ type fileURLRenderProps = {
   canFullScreen?: boolean;
   isSmallView?: boolean;
   canDownload?: boolean;
+  showFullResolution?: boolean;
 
   // temp fix
   isAssetBrowser?: boolean;
@@ -101,6 +109,7 @@ function _FileURLRender({
   isMainView = false,
   isSmallView = false,
   isAssetBrowser = false,
+  showFullResolution = false,
 }: fileURLRenderProps) {
   const { token } = useAuthStore();
   const a = new URL(url);
@@ -247,7 +256,11 @@ function _FileURLRender({
             mediaClasses,
             isLoading ? "opacity-0" : "opacity-100",
           )}
-          src={getOptimizedImage(url, isSmallView, token)}
+          src={
+            showFullResolution
+              ? url
+              : getOptimizedImage(url, isSmallView, token)
+          }
           alt={filename}
           loading={lazyLoading ? "lazy" : undefined}
           onError={() => {
@@ -402,6 +415,7 @@ export function FileURLRender(props: fileURLRenderProps) {
                   url={props.url}
                   imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
                   lazyLoading={props.lazyLoading}
+                  showFullResolution={true}
                 />
               </div>
             </DialogContent>
@@ -538,35 +552,6 @@ function MediaDisplay({
   lazyLoading: boolean;
   canDownload: boolean;
 }) {
-  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
-
-  const expandImage = useCallback(({ url }: { url: string }) => {
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }, []);
-
-  const { mutate: addAsset } = useAddAsset();
-
-  const handleAddAsset = async ({
-    url,
-    path,
-  }: {
-    url: string;
-    path: string;
-  }) => {
-    try {
-      await addAsset({ url, path });
-      toast.success(`${urlImage.filename} added to assets`);
-      setMoveDialogOpen(false);
-    } catch (error) {
-      toast.error(`Failed to add asset: ${error}`);
-    }
-  };
-
   const [open, setOpen] = useState(false);
 
   return (
@@ -591,61 +576,10 @@ function MediaDisplay({
 
         <div className="absolute top-0 right-0 w-full rounded-t-[4px] bg-gradient-to-t from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <div className="flex items-center justify-end">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hover:bg-transparent"
-                >
-                  <Ellipsis className="h-3.5 w-3.5 text-white/90" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-52" blocking={true}>
-                {urlImage.filename && (
-                  <>
-                    <DropdownMenuLabel className="line-clamp-1">
-                      {urlImage.filename}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                  </>
-                )}
-                <DropdownMenuItem
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    expandImage({ url: urlImage.url });
-                  }}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    View Full Resolution <Expand className="h-3.5 w-3.5" />
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    setMoveDialogOpen(true);
-                  }}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    Add to assets <FolderOpen className="h-3.5 w-3.5" />
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    await downloadImage({
-                      url: urlImage.url,
-                      fileName: urlImage.filename,
-                    });
-                  }}
-                >
-                  <div className="flex w-full items-center justify-between">
-                    Download <Download className="h-3.5 w-3.5" />
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <FileURLRenderDropdown
+              itemUrl={urlImage.url}
+              itemFilename={urlImage.filename}
+            />
           </div>
         </div>
         <div className="absolute bottom-0 left-0 w-full rounded-b-[4px] bg-gradient-to-b from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -677,15 +611,111 @@ function MediaDisplay({
               url={urlImage.url}
               imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
               lazyLoading={lazyLoading}
+              showFullResolution={true}
             />
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+export function FileURLRenderDropdown({
+  itemUrl,
+  triggerIcon,
+  open,
+  onOpenChange,
+  itemFilename,
+  canDownload = true,
+  canAddToAssets = true,
+  children,
+}: {
+  itemUrl: string;
+  triggerIcon?: any;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  itemFilename?: string;
+  canDownload?: boolean;
+  canAddToAssets?: boolean;
+  children?: ReactNode;
+}) {
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+
+  const { mutate: addAsset } = useAddAsset();
+
+  const handleAddAsset = async ({
+    url,
+    path,
+  }: {
+    url: string;
+    path: string;
+  }) => {
+    try {
+      await addAsset({ url, path });
+      toast.success(`${itemFilename} added to assets`);
+      setMoveDialogOpen(false);
+    } catch (error) {
+      toast.error(`Failed to add asset: ${error}`);
+    }
+  };
+
+  return (
+    <>
+      <DropdownMenu open={open} onOpenChange={onOpenChange}>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="hover:bg-transparent">
+            {triggerIcon || <Ellipsis className="h-3.5 w-3.5 text-white/90" />}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-52" blocking={true}>
+          {itemFilename && (
+            <>
+              <DropdownMenuLabel className="line-clamp-1">
+                {itemFilename}
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+            </>
+          )}
+          {canDownload && (
+            <DropdownMenuItem
+              onClick={async (e) => {
+                e.stopPropagation();
+                await downloadImage({
+                  url: itemUrl,
+                  fileName: itemFilename,
+                });
+              }}
+            >
+              <div className="flex w-full items-center justify-between">
+                Download <Download className="h-3.5 w-3.5" />
+              </div>
+            </DropdownMenuItem>
+          )}
+          {canAddToAssets && (
+            <DropdownMenuItem
+              onClick={(event) => {
+                event.stopPropagation();
+                setMoveDialogOpen(true);
+              }}
+            >
+              <div className="flex w-full items-center justify-between">
+                Add to assets <FolderOpen className="h-3.5 w-3.5" />
+              </div>
+            </DropdownMenuItem>
+          )}
+          {children && (
+            <>
+              {(canDownload || canAddToAssets) && <DropdownMenuSeparator />}
+              {children}
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <MoveAssetDialog
         asset={{
           id: "temp",
-          name: urlImage.filename || "New Asset",
+          name: itemFilename || "New Asset",
           path: "/",
           is_folder: false,
           file_size: 0,
@@ -695,7 +725,7 @@ function MediaDisplay({
         }}
         open={moveDialogOpen}
         onOpenChange={setMoveDialogOpen}
-        onConfirm={(path) => handleAddAsset({ url: urlImage.url, path })}
+        onConfirm={(path) => handleAddAsset({ url: itemUrl, path })}
         dialogTitle="Add to Assets"
         dialogDescription="Select a destination folder for the asset"
         confirmText="Add Here"

@@ -1,5 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { FileURLRender } from "@/components/workflows/OutputRender";
+import {
+  FileURLRender,
+  FileURLRenderDropdown,
+} from "@/components/workflows/OutputRender";
 import { useAddAsset } from "@/hooks/hook";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -446,76 +449,36 @@ export function GalleryView({ workflowID }: GalleryViewProps) {
                     />
                     <div className="absolute top-0 right-0 w-full rounded-t-[4px] bg-gradient-to-t from-transparent to-black/70 p-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                       <div className="flex items-center justify-end">
-                        <DropdownMenu
+                        <FileURLRenderDropdown
                           open={openDropdownId === page.output_id}
                           onOpenChange={(isOpen) =>
                             setOpenDropdownId(
                               isOpen ? (page.output_id ?? null) : null,
                             )
                           }
+                          itemUrl={outputUrl}
+                          itemFilename={
+                            page.data?.images?.[0]?.filename ||
+                            page.data?.gifs?.[0]?.filename ||
+                            page.data?.files?.[0]?.filename ||
+                            undefined
+                          }
                         >
-                          <DropdownMenuTrigger>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="hover:bg-transparent"
-                            >
-                              <Ellipsis className="h-3.5 w-3.5 text-white/90" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-52">
-                            {page.data?.images?.[0]?.filename && (
-                              <>
-                                <DropdownMenuLabel>
-                                  {page.data?.images?.[0]?.filename}
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                              </>
-                            )}
-                            <DropdownMenuItem
-                              onClick={async () => {
-                                await downloadImage({
-                                  url: outputUrl,
-                                  fileName: page.data?.images?.[0]?.filename,
-                                });
-                              }}
-                            >
-                              <div className="flex w-full items-center justify-between">
-                                Download <Download className="h-3.5 w-3.5" />
-                              </div>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedOutputUrl(outputUrl);
-                                setSelectedFilename(
-                                  page.data?.images?.[0]?.filename || null,
-                                );
-                                setMoveDialogOpen(true);
-                              }}
-                            >
-                              <div className="flex w-full items-center justify-between">
-                                Add to assets{" "}
-                                <FolderOpen className="h-3.5 w-3.5" />
-                              </div>
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                              disabled={loadingCoverId === page.output_id}
-                              onClick={async (e) => {
-                                e.preventDefault();
-                                await handleSetAsCoverImage(outputUrl);
-                              }}
-                            >
-                              <div className="flex w-full items-center justify-between">
-                                Set as Cover Image
-                                {loadingCoverId === page.output_id && (
-                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                                )}
-                              </div>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                          <DropdownMenuItem
+                            disabled={loadingCoverId === page.output_id}
+                            onClick={async (e) => {
+                              e.preventDefault();
+                              await handleSetAsCoverImage(outputUrl);
+                            }}
+                          >
+                            <div className="flex w-full items-center justify-between">
+                              Set as Cover Image
+                              {loadingCoverId === page.output_id && (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              )}
+                            </div>
+                          </DropdownMenuItem>
+                        </FileURLRenderDropdown>
                       </div>
                     </div>
                     <div className="absolute bottom-0 left-0 w-full rounded-b-[4px] bg-gradient-to-b from-transparent to-black/70 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
