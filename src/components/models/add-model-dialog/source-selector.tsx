@@ -22,6 +22,18 @@ const sources: ModelSourceOption[] = [
     icon: () => <img src="/civitai.svg" alt="CivitAI" width={32} height={32} />,
   },
   {
+    id: "comfyui",
+    label: "ComfyUI Models",
+    icon: () => (
+      <img
+        src="https://avatars.githubusercontent.com/u/166579949"
+        alt="ComfyUI"
+        width={24}
+        height={24}
+      />
+    ),
+  },
+  {
     id: "link",
     label: "URL",
     icon: Link,

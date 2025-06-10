@@ -9,6 +9,7 @@ import type { ModelSource, AddModelRequest } from "@/types/models";
 import { SourceSelector } from "./source-selector";
 import { HuggingfaceForm } from "./huggingface-form";
 import { CivitaiForm } from "./civitai-form";
+import { ComfyUIForm } from "./comfyui-form";
 import { LinkForm } from "./link-form";
 import { LocalUploadForm } from "./local-upload-form";
 import { api } from "@/lib/api";
@@ -84,6 +85,14 @@ export function AddModelDialog({
       case "civitai":
         return (
           <CivitaiForm
+            onSubmit={handleSubmit}
+            folderPath={initialFolderPath}
+            isSubmitting={isSubmitting}
+          />
+        );
+      case "comfyui":
+        return (
+          <ComfyUIForm
             onSubmit={handleSubmit}
             folderPath={initialFolderPath}
             isSubmitting={isSubmitting}
