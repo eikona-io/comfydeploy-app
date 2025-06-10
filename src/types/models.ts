@@ -1,4 +1,9 @@
-export type ModelSource = "huggingface" | "civitai" | "link" | "local";
+export type ModelSource =
+  | "huggingface"
+  | "civitai"
+  | "link"
+  | "local"
+  | "comfyui";
 
 export interface ModelSourceOption {
   id: ModelSource;
@@ -14,6 +19,17 @@ export interface HuggingfaceModel {
 
 export interface CivitaiModel {
   url: string;
+}
+
+export interface ComfyUIModel {
+  name: string;
+  type: string;
+  provider: string;
+  filename: string;
+  save_path: string;
+  size: number;
+  download_url: string;
+  reference_url: string;
 }
 
 export interface AddModelRequest {
@@ -32,6 +48,10 @@ export interface AddModelRequest {
   s3ObjectKey?: string;
   local?: {
     originalFilename: string;
+  };
+  comfyui?: {
+    modelName: string;
+    downloadUrl: string;
   };
 }
 
