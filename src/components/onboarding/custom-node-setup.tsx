@@ -875,7 +875,7 @@ function SelectedNodeList({
       </div>
 
       {showNewCommand && (
-        <div className="relative flex flex-col gap-2 rounded-[6px] border border-gray-200 bg-gray-50 p-2">
+        <div className="relative flex flex-col gap-2 rounded-[6px] border border-gray-200 bg-gray-50 p-2 dark:border-zinc-700 dark:bg-zinc-800">
           <div className="flex items-center justify-between">
             <span className="font-medium text-sm">New Custom Command</span>
             <div className="flex">
@@ -958,28 +958,28 @@ function SelectedNodeList({
                         </h4>
                         <div className="space-y-3">
                           <div>
-                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
+                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs dark:text-zinc-400">
                               Format
                             </p>
-                            <div className="flex items-center rounded border border-slate-200 bg-slate-100 p-1.5">
-                              <Terminal className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                            <div className="flex items-center rounded border border-slate-200 bg-slate-100 p-1.5 dark:border-zinc-700 dark:bg-zinc-700">
+                              <Terminal className="mr-1.5 h-3.5 w-3.5 text-slate-500 dark:text-zinc-400" />
                               <code className="font-mono text-xs">
                                 RUN pip install{" "}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   {"{"}package_name{"}"}
                                 </span>
                               </code>
                             </div>
                           </div>
                           <div>
-                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
+                            <p className="mb-1 ml-1 font-medium text-slate-600 text-xs dark:text-zinc-400">
                               Example
                             </p>
-                            <div className="flex items-center rounded border border-slate-200 bg-slate-100 p-1.5">
-                              <Terminal className="mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                            <div className="flex items-center rounded border border-slate-200 bg-slate-100 p-1.5 dark:border-zinc-700 dark:bg-zinc-700">
+                              <Terminal className="mr-1.5 h-3.5 w-3.5 text-slate-500 dark:text-zinc-400" />
                               <code className="font-mono text-xs">
                                 RUN pip install{" "}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   numpy
                                 </span>
                               </code>
@@ -1023,19 +1023,19 @@ function SelectedNodeList({
                             <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
                               Format
                             </p>
-                            <div className="flex items-start rounded border border-slate-200 bg-slate-100 p-1.5">
-                              <Terminal className="mt-1 mr-1.5 h-3.5 w-3.5 text-slate-500" />
+                            <div className="flex items-start rounded border border-slate-200 bg-slate-100 p-1.5 dark:border-zinc-700 dark:bg-zinc-700">
+                              <Terminal className="mt-1 mr-1.5 h-3.5 w-3.5 text-slate-500 dark:text-zinc-400" />
                               <code className="font-mono text-xs">
                                 RUN mkdir -p{" "}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   {"{"}model_path{"}"}
                                 </span>
                                 <br />
                                 RUN wget -O{" "}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   {"{"}model_path_with_filename{"}"}
                                 </span>{" "}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   {"{"}model_install_url{"}"}
                                 </span>
                               </code>
@@ -1045,37 +1045,37 @@ function SelectedNodeList({
                             <p className="mb-1 ml-1 font-medium text-slate-600 text-xs">
                               Example
                             </p>
-                            <div className="flex items-start rounded border border-slate-200 bg-slate-100 p-1.5">
-                              <Terminal className="mt-1 mr-1.5 h-3.5 w-3.5 shrink-0 text-slate-500" />
+                            <div className="flex items-start rounded border border-slate-200 bg-slate-100 p-1.5 dark:border-zinc-700 dark:bg-zinc-700">
+                              <Terminal className="mt-1 mr-1.5 h-3.5 w-3.5 shrink-0 text-slate-500 dark:text-zinc-400" />
                               <code className="break-all font-mono text-xs">
                                 RUN mkdir -p
                                 <br />
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   /comfyui/custom_nodes/comfyui_demo_node/model/LLM/
                                 </span>
                                 <br />
                                 RUN wget -O
                                 <br />
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   /comfyui/custom_nodes/comfyui_demo_node/model/LLM/gemma-3-27b.gguf
                                 </span>
                                 <br />
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-700 dark:text-zinc-300">
                                   https://huggingface.co/gemma/gemma-3-27b
                                 </span>
                               </code>
                             </div>
                           </div>
                           <Separator className="my-2" />
-                          <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 p-2">
-                            <p className="mb-1 font-medium text-slate-600 text-xs">
+                          <div className="mt-2 rounded-md border border-gray-200 bg-gray-50 p-2 dark:border-zinc-700 dark:bg-zinc-700">
+                            <p className="mb-1 font-medium text-slate-600 text-xs dark:text-zinc-400">
                               Note
                             </p>
                             <div className="flex items-center text-gray-500 text-xs">
                               <CircleHelp className="mr-1.5 h-3.5 w-3.5 text-slate-400" />
                               <span>
                                 Our folder root path is{" "}
-                                <code className="bg-slate-100 px-1 py-0.5 font-mono text-2xs text-slate-700">
+                                <code className="bg-slate-100 px-1 py-0.5 font-mono text-2xs text-slate-700 dark:bg-zinc-700 dark:text-zinc-300">
                                   /comfyui/custom_nodes/
                                 </code>
                                 .
@@ -1421,8 +1421,9 @@ function CustomNodeCard({
                   <code className="shrink-0 rounded bg-gray-100 px-1 py-0.5 text-[10px] dark:bg-zinc-700">
                     <span
                       className={cn(
-                        isHashChanged && "text-amber-600 dark:text-amber-400",
-                        " dark:text-zinc-400",
+                        isHashChanged
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-gray-500 dark:text-zinc-400",
                       )}
                     >
                       {node.data.hash?.slice(0, 7)}
