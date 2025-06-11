@@ -32,6 +32,7 @@ import { useSessionAPI } from "@/hooks/use-session-api";
 import { api } from "@/lib/api";
 import { useParams, useRouter } from "@tanstack/react-router";
 import {
+  AlertCircleIcon,
   ArrowRightToLine,
   Droplets,
   Loader2,
@@ -52,6 +53,7 @@ import { queryClient } from "@/lib/providers";
 import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { Textarea } from "../ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 interface SessionForm {
   machineId: string;
@@ -290,9 +292,27 @@ export function SessionCreatorForm({
             </FormDescription>
             <FormMessage />
           </FormItem>
-
           {/* <div className="flex flex-row gap-2"></div> */}
-
+          <Alert
+            variant="destructive"
+            className="cursor-pointer bg-red-500/10 py-3 transition-colors hover:bg-red-500/20 dark:bg-red-900/30 dark:hover:bg-red-900/40"
+            onClick={() => {
+              router.navigate({
+                to: "/workflows/$workflowId/$view",
+                params: { workflowId, view: "machine" },
+              });
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircleIcon size={16} className="dark:text-red-500" />
+              <AlertTitle className="mb-0 text-sm dark:text-red-500">
+                Machine not ready
+              </AlertTitle>
+            </div>
+            <AlertDescription className="ml-6 text-xs dark:text-red-500">
+              <p>Please check the machine status. Click for details.</p>
+            </AlertDescription>
+          </Alert>
           <div className="flex justify-end gap-2">
             <FormField
               control={form.control}
@@ -302,6 +322,7 @@ export function SessionCreatorForm({
                   {/* <FormLabel>GPU Type</FormLabel> */}
                   <FormControl>
                     <GPUSelectBox
+                      disabled={selectedMachine?.status !== "ready"}
                       className="w-full"
                       value={field.value}
                       onChange={field.onChange}
@@ -328,7 +349,9 @@ export function SessionCreatorForm({
                     value={field.value.toString()}
                   >
                     <FormControl>
-                      <SelectTrigger>
+                      <SelectTrigger
+                        disabled={selectedMachine?.status !== "ready"}
+                      >
                         <SelectValue placeholder="Select timeout">
                           {field.value} mins
                         </SelectValue>
@@ -365,9 +388,6 @@ export function SessionCreatorForm({
               Icon={Rocket}
               iconPlacement="right"
             >
-              {/* {createDynamicSession.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )} */}
               Start ComfyUI
             </Button>
           </div>
