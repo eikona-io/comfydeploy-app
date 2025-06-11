@@ -357,7 +357,10 @@ export function SessionCreatorForm({
             <Button
               type="submit"
               className="gap-1"
-              disabled={createDynamicSession.isPending}
+              disabled={
+                createDynamicSession.isPending ||
+                selectedMachine?.status !== "ready"
+              }
               isLoading={createDynamicSession.isPending}
               Icon={Rocket}
               iconPlacement="right"
