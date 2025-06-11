@@ -293,26 +293,28 @@ export function SessionCreatorForm({
             <FormMessage />
           </FormItem>
           {/* <div className="flex flex-row gap-2"></div> */}
-          <Alert
-            variant="destructive"
-            className="cursor-pointer bg-red-500/10 py-3 transition-colors hover:bg-red-500/20 dark:bg-red-900/30 dark:hover:bg-red-900/40"
-            onClick={() => {
-              router.navigate({
-                to: "/workflows/$workflowId/$view",
-                params: { workflowId, view: "machine" },
-              });
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <AlertCircleIcon size={16} className="dark:text-red-500" />
-              <AlertTitle className="mb-0 text-sm dark:text-red-500">
-                Machine not ready
-              </AlertTitle>
-            </div>
-            <AlertDescription className="ml-6 text-xs dark:text-red-500">
-              <p>Please check the machine status. Click for details.</p>
-            </AlertDescription>
-          </Alert>
+          {selectedMachine?.status !== "ready" && (
+            <Alert
+              variant="destructive"
+              className="cursor-pointer bg-red-500/10 py-3 transition-colors hover:bg-red-500/20 dark:bg-red-900/30 dark:hover:bg-red-900/40"
+              onClick={() => {
+                router.navigate({
+                  to: "/workflows/$workflowId/$view",
+                  params: { workflowId, view: "machine" },
+                });
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <AlertCircleIcon size={16} className="dark:text-red-500" />
+                <AlertTitle className="mb-0 text-sm dark:text-red-500">
+                  Machine not ready
+                </AlertTitle>
+              </div>
+              <AlertDescription className="ml-6 text-xs dark:text-red-500">
+                <p>Please check the machine status. Click for details.</p>
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="flex justify-end gap-2">
             <FormField
               control={form.control}
