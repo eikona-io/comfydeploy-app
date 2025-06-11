@@ -38,11 +38,6 @@ const generationQueue: Array<{
   reject: (error: unknown) => void;
 }> = [];
 
-// Helper function to detect if URL is an S3 signed URL
-function isS3SignedUrl(url: string): boolean {
-  return url.includes("amazonaws.com") && url.includes("X-Amz-Signature");
-}
-
 function initSharedRenderer() {
   if (!sharedRenderer) {
     const canvas = document.createElement("canvas");
@@ -190,10 +185,8 @@ async function generateThumbnailInternal(url: string): Promise<string> {
         );
       } else {
         const loader = new GLTFLoader();
-        // Only set crossOrigin for non-S3 signed URLs
-        if (!isS3SignedUrl(url)) {
-          loader.setCrossOrigin("anonymous");
-        }
+        // Always set crossOrigin to handle CORS properly
+        loader.setCrossOrigin("anonymous");
         loader.load(
           url,
           (gltf: GLTF) => {
@@ -264,12 +257,10 @@ function Model({ url }: { url: string }) {
     modelScene = obj;
   } else {
     // Handle GLB/GLTF files (default)
-    useGLTF.preload(url);
+    // Remove preload to avoid CORS issues - let useGLTF handle loading with proper CORS config
     const { scene } = useGLTF(url, undefined, undefined, (loader) => {
-      // Only set crossOrigin for non-S3 signed URLs
-      if (!isS3SignedUrl(url)) {
-        loader.setCrossOrigin("anonymous");
-      }
+      // Always set crossOrigin to handle CORS properly
+      loader.setCrossOrigin("anonymous");
     });
     modelScene = scene;
   }
