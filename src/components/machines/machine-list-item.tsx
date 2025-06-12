@@ -10,7 +10,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
-import { useMachine, useMachineEvents } from "@/hooks/use-machine";
+import { useMachineEvents, useMachineVersion } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import {
@@ -332,6 +332,7 @@ export function MachineListItem({
           </div>
 
           {showMigrateDialog && <MigrateOldMachineDialog machine={machine} />}
+          <MigrateMachineToModalLatestVersion machine={machine} />
         </div>
         <Link
           to={"/machines/$machineId"}
@@ -463,6 +464,59 @@ export function MachineListItem({
         dialogOpen={rebuildModalOpen}
         setDialogOpen={setRebuildModalOpen}
       />
+    </>
+  );
+}
+
+function MigrateMachineToModalLatestVersion({ machine }: { machine: any }) {
+  const { data: machineVersion, isLoading: machineVersionLoading } =
+    useMachineVersion(machine.id, machine.machine_version_id);
+
+  const shouldShowRebuild = useMemo(() => {
+    if (!machineVersion?.build_log) return false;
+
+    try {
+      const logs = JSON.parse(machineVersion.build_log);
+      if (!Array.isArray(logs)) return false;
+
+      // Find Modal Version log entry efficiently - only search until found
+      for (const log of logs) {
+        if (
+          log.logs &&
+          typeof log.logs === "string" &&
+          log.logs.startsWith("Modal Version:")
+        ) {
+          // Extract version number using regex
+          const versionMatch = log.logs.match(
+            /Modal Version:\s*(\d+\.\d+\.\d+)/,
+          );
+          if (versionMatch) {
+            const version = versionMatch[1];
+            const [major] = version.split(".").map(Number);
+            // Show rebuild if version < 1.0.0 (i.e., major version is 0)
+            return major < 1;
+          }
+          break; // Stop searching once we find the Modal Version log
+        }
+      }
+
+      return false; // No Modal Version found
+    } catch (error) {
+      console.error("Error parsing build log:", error);
+      return false;
+    }
+  }, [machineVersion?.build_log]);
+
+  if (machineVersionLoading || !shouldShowRebuild) return null;
+
+  return (
+    <>
+      <div className="flex items-center gap-2 rounded-md border border-amber-300 border-dashed bg-amber-50 px-2.5 py-1.5 transition-colors duration-200 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950 dark:hover:bg-amber-900">
+        <Info className="h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-500" />
+        <span className="whitespace-nowrap font-medium text-amber-700 text-xs dark:text-amber-400">
+          Rebuild required
+        </span>
+      </div>
     </>
   );
 }
