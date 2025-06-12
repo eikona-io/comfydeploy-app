@@ -234,6 +234,11 @@ function usePages() {
         ]
       : []),
     {
+      name: "Sessions",
+      path: "/sessions",
+      icon: History,
+    },
+    {
       name: "Models",
       path: "/models",
       icon: Database,

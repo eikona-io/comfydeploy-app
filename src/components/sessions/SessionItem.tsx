@@ -17,6 +17,10 @@ interface SessionItemProps {
     session_id: string;
     gpu: string;
     created_at: string;
+    user_id?: string;
+    org_id?: string;
+    workflowId?: string;
+    creator_name?: string;
   };
   index: number;
   isActive: boolean;
@@ -65,9 +69,15 @@ export function SessionItem({
                       relative={true}
                     />
                   </div>
+                  {session.creator_name && (
+                    <div className="text-2xs text-muted-foreground">
+                      by {session.creator_name}
+                    </div>
+                  )}
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{session.session_id}</p>
+                  {session.workflowId && <p>Workflow: {session.workflowId}</p>}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -75,6 +85,11 @@ export function SessionItem({
               {session.gpu && (
                 <Badge variant="secondary" className="text-xs">
                   {session.gpu}
+                </Badge>
+              )}
+              {session.workflowId && (
+                <Badge variant="outline" className="text-xs">
+                  Workflow
                 </Badge>
               )}
             </div>

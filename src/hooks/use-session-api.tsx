@@ -73,11 +73,11 @@ export function useSessionAPI(machineId?: string | null) {
       },
       refetchInterval: 2000,
       meta: {
-        params: {
+        params: machineId ? {
           machine_id: machineId,
-        },
+        } : {},
       },
-      enabled: !!machineId,
+      enabled: true,
       // queryFn: async () => {
       //   return await api({
       //     url: "session",
@@ -89,6 +89,18 @@ export function useSessionAPI(machineId?: string | null) {
       //     ,
       //   });
       // },
+    }),
+  };
+}
+
+export function useAllSessionsAPI() {
+  return {
+    listAllSessions: useQuery<any[]>({
+      queryKey: ["sessions", "all"],
+      refetchInterval: 5000,
+      meta: {
+        params: {}, // No machine_id parameter
+      },
     }),
   };
 }
