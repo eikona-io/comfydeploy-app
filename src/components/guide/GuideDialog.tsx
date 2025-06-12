@@ -149,6 +149,10 @@ const allGuideSteps = [
           and redeploy in your deployment settings.
         </AlertDescription>
       </Alert>,
+      {
+        text: "Let us know if you have any questions or need assistance!",
+        link: "https://discord.com/invite/c222Cwyget",
+      },
     ],
   },
 ];
