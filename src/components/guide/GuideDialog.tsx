@@ -128,11 +128,11 @@ const allGuideSteps = [
           Only for the machine(s) with "Rebuild required" dialog
         </AlertTitle>
         <AlertDescription className="text-muted-foreground text-xs">
-          No impact for the new machines
+          No impact for the new and self-hosted machines (e.g. Runpod)
         </AlertDescription>
       </Alert>,
       "Your machine uses an older version that will be deprecated in the coming weeks",
-      "Make sure to rebuild your machine to the latest version",
+      "Rebuild your machine now to avoid service disruptions and ensure continued compatibility",
       <Alert
         key="test-alert"
         className="-ml-3 border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950"
@@ -146,7 +146,7 @@ const allGuideSteps = [
         </AlertTitle>
         <AlertDescription className="text-amber-600 text-xs leading-5 dark:text-amber-500">
           Recommend cloning your machine first to test, then switch the machine
-          in your deployment settings.
+          and redeploy in your deployment settings.
         </AlertDescription>
       </Alert>,
     ],
@@ -277,7 +277,7 @@ export function GuideDialog({ guideType }: GuideDialogProps) {
               <ul className="list-disc space-y-1 pl-5 text-zinc-700 dark:text-zinc-300">
                 {currentStepData.description.map((item, i) => {
                   if (isValidElement(item)) {
-                    return item;
+                    return <div className="py-2">{item}</div>;
                   }
 
                   // Check if the item is a string or an object with icon/link
