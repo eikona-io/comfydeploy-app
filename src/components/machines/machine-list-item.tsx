@@ -30,6 +30,7 @@ import {
   Copy,
   RefreshCcw,
   Trash2,
+  Download,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -46,8 +47,8 @@ import {
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
 import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
 import { toast } from "sonner";
+import { callServerPromise } from "@/lib/call-server-promise";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -405,7 +406,7 @@ export function MachineListItem({
                     setMachineActionDropdownOpen(false);
                     navigate({
                       to: "/machines",
-                      search: { view: "create", machineId: machine.id },
+                      search: { view: "create" as const, action: undefined },
                     });
                   }}
                 >
@@ -426,6 +427,39 @@ export function MachineListItem({
                 >
                   Rebuild
                   <RefreshCcw className="h-4 w-4" />
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="flex items-center justify-between"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    setMachineActionDropdownOpen(false);
+                    
+                    try {
+                      const response = await api({
+                        url: `machine/${machine.id}/export`,
+                        init: { method: "GET" }
+                      });
+                      
+                      const blob = new Blob([JSON.stringify(response, null, 2)], {
+                        type: "application/json",
+                      });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `machine-${machine.name}-${new Date().toISOString().split('T')[0]}.json`;
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
+                      URL.revokeObjectURL(url);
+                      
+                      toast.success("Machine exported successfully");
+                    } catch (error) {
+                      toast.error("Failed to export machine");
+                    }
+                  }}
+                >
+                  Export JSON
+                  <Download className="h-4 w-4" />
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -486,7 +520,7 @@ function MigrateOldMachineDialog({ machine }: { machine: any }) {
       docker_command_steps: {
         ...machine.docker_command_steps,
         steps: machine.docker_command_steps.steps.filter(
-          (step) =>
+          (step: any) =>
             step?.type !== "custom-node" ||
             !step?.data?.url
               ?.toLowerCase()
