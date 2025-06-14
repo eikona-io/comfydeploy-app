@@ -124,6 +124,7 @@ import { AssetType } from "./SDInputs/sd-asset-input";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useTheme } from "./theme-provider";
 import { dark } from "@clerk/themes";
+import { GuideDialog } from "./guide/GuideDialog";
 
 // Add Session type
 interface Session {
@@ -1515,6 +1516,7 @@ export function AppSidebar() {
           </Badge>
         </div>
       )}
+      <GuideDialog guideType="machine" />
     </>
   );
 }

@@ -15,6 +15,16 @@
       "has": [
         {
           "type": "host",
+          "value": ":preview.vercel.app"
+        }
+      ],
+      "destination": "https://staging.api.comfydeploy.com/api/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "has": [
+        {
+          "type": "host",
           "value": "app.comfydeploy.com"
         }
       ],

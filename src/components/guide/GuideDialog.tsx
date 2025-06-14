@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, isValidElement } from "react";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -16,8 +16,11 @@ import {
   Box,
   Timer,
   Rocket,
+  CheckCircle2Icon,
+  AlertCircle,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 const allGuideSteps = [
   {
@@ -114,9 +117,47 @@ const allGuideSteps = [
       "Monitor API requests in the requests page",
     ],
   },
+  {
+    title: "[Action Required] Machine Rebuild",
+    image:
+      "https://cd-misc.s3.us-east-2.amazonaws.com/guide/modal_migration.png",
+    description: [
+      <Alert key="test-alert" className="-ml-3">
+        <CheckCircle2Icon size={16} />
+        <AlertTitle>
+          Only for the machine(s) with "Rebuild required" dialog
+        </AlertTitle>
+        <AlertDescription className="text-muted-foreground text-xs">
+          No impact for the new and self-hosted machines (e.g. Runpod)
+        </AlertDescription>
+      </Alert>,
+      "Your machine uses an older version that will be deprecated in the coming weeks",
+      "Rebuild your machine now to avoid service disruptions and ensure continued compatibility",
+      <Alert
+        key="test-alert"
+        className="-ml-3 border-amber-300 bg-amber-50 dark:border-amber-800 dark:bg-amber-950"
+      >
+        <AlertCircle
+          size={16}
+          className="!text-amber-600 dark:!text-amber-500"
+        />
+        <AlertTitle className="text-amber-600 dark:text-amber-500">
+          For production machines...
+        </AlertTitle>
+        <AlertDescription className="text-amber-600 text-xs leading-5 dark:text-amber-500">
+          Recommend cloning your machine first to test, then switch the machine
+          and redeploy in your deployment settings.
+        </AlertDescription>
+      </Alert>,
+      {
+        text: "Let us know if you have any questions or need assistance!",
+        link: "https://discord.com/invite/c222Cwyget",
+      },
+    ],
+  },
 ];
 
-export type GuideType = "workspace" | "session" | "deployment";
+export type GuideType = "workspace" | "session" | "deployment" | "machine";
 
 const getGuideSteps = (guideType: GuideType) => {
   switch (guideType) {
@@ -126,6 +167,8 @@ const getGuideSteps = (guideType: GuideType) => {
       return allGuideSteps.slice(3, 6);
     case "deployment":
       return allGuideSteps.slice(6, 7);
+    case "machine":
+      return allGuideSteps.slice(7, 8);
     default:
       return [];
   }
@@ -237,6 +280,10 @@ export function GuideDialog({ guideType }: GuideDialogProps) {
             <AlertDialogDescription>
               <ul className="list-disc space-y-1 pl-5 text-zinc-700 dark:text-zinc-300">
                 {currentStepData.description.map((item, i) => {
+                  if (isValidElement(item)) {
+                    return <div className="py-2">{item}</div>;
+                  }
+
                   // Check if the item is a string or an object with icon/link
                   if (typeof item === "string") {
                     return (
