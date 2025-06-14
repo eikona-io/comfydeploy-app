@@ -92,15 +92,3 @@ export function useSessionAPI(machineId?: string | null) {
     }),
   };
 }
-
-export function useAllSessionsAPI() {
-  return {
-    listAllSessions: useQuery<any[]>({
-      queryKey: ["sessions", "all"],
-      refetchInterval: 5000,
-      meta: {
-        params: {}, // No machine_id parameter
-      },
-    }),
-  };
-}

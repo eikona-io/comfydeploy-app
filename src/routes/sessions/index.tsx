@@ -1,7 +1,7 @@
 import React from "react";
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { SessionItem } from "@/components/sessions/SessionItem";
-import { useAllSessionsAPI } from "@/hooks/use-session-api";
+import { useSessionAPI } from "@/hooks/use-session-api";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/sessions/")({
@@ -9,8 +9,8 @@ export const Route = createFileRoute("/sessions/")({
 }) as any;
 
 function SessionsOverview() {
-  const { listAllSessions } = useAllSessionsAPI();
-  const { data: sessions, isLoading } = listAllSessions;
+  const { listSession } = useSessionAPI();
+  const { data: sessions, isLoading } = listSession;
   const router = useRouter();
 
   const handleSessionSelect = (sessionId: string, session: any) => {
