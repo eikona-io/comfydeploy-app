@@ -6,12 +6,23 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
-import { Shield, ArrowRight, Lock, Loader2, X } from "lucide-react";
+import {
+  Shield,
+  ArrowRight,
+  Lock,
+  Loader2,
+  X,
+  Building,
+  User,
+} from "lucide-react";
 import { useState } from "react";
+import { useAuth, useOrganization, useUser } from "@clerk/clerk-react";
 
 export const Route = createFileRoute("/auth/request/$requestId/")({
   component: RouteComponent,
@@ -21,14 +32,21 @@ function RouteComponent() {
   const { requestId } = Route.useParams();
   const [isAuthValid, setIsAuthValid] = useState(false);
   const [authError, setAuthError] = useState(false);
+
+  // Get user and organization info
+  const { orgId } = useAuth();
+  const { user } = useUser();
+  const { organization } = useOrganization();
+
   const { data: request, isLoading } = useQuery<{ api_key: string }>({
-    queryKey: ["platform", "comfyui", "auth"],
+    queryKey: ["platform", "comfyui", "auth-response"],
     queryKeyHashFn: (queryKey) => [...queryKey, requestId].toString(),
     meta: {
       params: {
         request_id: requestId,
       },
     },
+    refetchOnWindowFocus: false,
   });
 
   const isAlreadyAuthorized = request?.api_key;
@@ -36,7 +54,7 @@ function RouteComponent() {
   const onAcceptAuth = async () => {
     try {
       const response = await api({
-        url: "platform/comfyui/auth",
+        url: "platform/comfyui/auth-request",
         init: {
           method: "POST",
           body: JSON.stringify({
@@ -56,6 +74,18 @@ function RouteComponent() {
     }
   };
 
+  const handleClose = () => {
+    try {
+      window.close();
+      // If we reach here, window.close() didn't work
+      setTimeout(() => {
+        console.log("Please close this window manually");
+      }, 100);
+    } catch (error) {
+      console.log("Please close this window manually");
+    }
+  };
+
   if (isLoading)
     return (
       <div className="flex h-screen w-full items-center justify-center p-4">
@@ -67,6 +97,42 @@ function RouteComponent() {
     <div className="flex h-screen w-full items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-md">
         <CardHeader className="text-center">
+          {/* Account Info Section */}
+          <div className="mb-4 flex w-full items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={user?.imageUrl} />
+                <AvatarFallback>
+                  {organization
+                    ? organization.name?.[0]?.toUpperCase()
+                    : user?.fullName?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col items-start">
+                <div className="flex items-center gap-2">
+                  {organization ? (
+                    <>
+                      <Building className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <span className="font-medium text-gray-500 text-xs dark:text-gray-300">
+                        {organization.name}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <span className="font-medium text-gray-500 text-xs dark:text-gray-300">
+                        {user?.fullName || "Personal Account"}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {organization ? "Organization" : "Personal"}
+            </Badge>
+          </div>
+
           <motion.div
             className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
               isAuthValid || isAlreadyAuthorized
@@ -123,7 +189,7 @@ function RouteComponent() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <CardTitle className="text-xl">Access Granted</CardTitle>
+                <CardTitle className="mt-2 text-lg">Access Granted</CardTitle>
                 <CardDescription className="mt-1">
                   You can now close this window and continue to ComfyUI.
                 </CardDescription>
@@ -136,7 +202,7 @@ function RouteComponent() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <CardTitle className="text-xl">
+                <CardTitle className="mt-2 text-lg">
                   Access Already Granted
                 </CardTitle>
                 <CardDescription className="mt-1">
@@ -152,7 +218,9 @@ function RouteComponent() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <CardTitle className="text-xl">Authorization Failed</CardTitle>
+                <CardTitle className="mt-2 text-lg">
+                  Authorization Failed
+                </CardTitle>
                 <CardDescription className="mt-1">
                   Failed to grant access. Please try to close the window and
                   relogin again.
@@ -166,7 +234,7 @@ function RouteComponent() {
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
               >
-                <CardTitle className="text-xl">
+                <CardTitle className="mt-2 text-lg">
                   Grant Access to ComfyUI
                 </CardTitle>
                 <CardDescription className="mt-1">
@@ -184,10 +252,7 @@ function RouteComponent() {
               variant={"expandIcon"}
               Icon={ArrowRight}
               iconPlacement="right"
-              onClick={() => {
-                console.log("closing window");
-                window.close();
-              }}
+              onClick={handleClose}
             >
               Close
             </Button>
