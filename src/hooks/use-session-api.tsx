@@ -73,11 +73,11 @@ export function useSessionAPI(machineId?: string | null) {
       },
       refetchInterval: 2000,
       meta: {
-        params: {
+        params: machineId ? {
           machine_id: machineId,
-        },
+        } : {},
       },
-      enabled: !!machineId,
+      enabled: true,
       // queryFn: async () => {
       //   return await api({
       //     url: "session",

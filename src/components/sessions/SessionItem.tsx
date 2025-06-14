@@ -7,6 +7,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Timer } from "@/components/workflows/Timer";
+import { UserIcon } from "@/components/run/SharePageComponent";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -17,11 +18,15 @@ interface SessionItemProps {
     session_id: string;
     gpu: string;
     created_at: string;
+    user_id?: string;
+    org_id?: string;
+    workflowId?: string;
+    creator_name?: string;
   };
   index: number;
   isActive: boolean;
   onSelect: (sessionId: string) => void;
-  onDelete: (sessionId: string) => Promise<void>;
+  onDelete: (sessionId: string) => void;
 }
 
 export function SessionItem({
@@ -36,10 +41,13 @@ export function SessionItem({
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsStopping(true);
-    await onDelete(session.session_id);
-    setTimeout(() => {
-      setIsStopping(false);
-    }, 10000);
+    try {
+      await onDelete(session.session_id);
+    } finally {
+      setTimeout(() => {
+        setIsStopping(false);
+      }, 10000);
+    }
   };
 
   return (
@@ -59,15 +67,24 @@ export function SessionItem({
               <Tooltip>
                 <TooltipTrigger className="flex flex-row items-center gap-3 text-left">
                   {index + 1}
+                  {session.user_id && (
+                    <UserIcon user_id={session.user_id} className="h-4 w-4" />
+                  )}
                   <div className="w-14 overflow-hidden text-2xs">
                     <Timer
                       start={new Date(session.created_at).getTime()}
                       relative={true}
                     />
                   </div>
+                  {session.creator_name && (
+                    <div className="text-2xs text-muted-foreground">
+                      by {session.creator_name}
+                    </div>
+                  )}
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{session.session_id}</p>
+                  {session.workflowId && <p>Workflow: {session.workflowId}</p>}
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -75,6 +92,11 @@ export function SessionItem({
               {session.gpu && (
                 <Badge variant="secondary" className="text-xs">
                   {session.gpu}
+                </Badge>
+              )}
+              {session.workflowId && (
+                <Badge variant="outline" className="text-xs">
+                  Workflow
                 </Badge>
               )}
             </div>
