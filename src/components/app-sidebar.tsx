@@ -388,7 +388,7 @@ function SessionSidebar() {
         <Sidebar
           collapsible="none"
           className={cn(
-            "h-screen w-[50px]",
+            "h-[calc(100dvh-40px)] md:h-svh w-[50px]",
             "border-r shadow-[1px_0_3px_0_rgba(0,0,0,0.1)]",
           )}
         >
@@ -557,7 +557,7 @@ function SessionSidebar() {
           {activeDrawer && (
             <motion.div
               className={cn(
-                "absolute top-0 left-0 h-screen border-r bg-background shadow-lg",
+                "absolute left-0 top-[40px] md:top-0 h-[calc(100dvh-40px)] md:h-svh border-r bg-background shadow-lg",
                 "z-[-1]",
               )}
               initial={{ x: -575, width: 450, opacity: 1 }}
