@@ -24,6 +24,7 @@ import { Route as AssetsImport } from './routes/assets'
 import { Route as ApiKeysImport } from './routes/api-keys'
 import { Route as IndexImport } from './routes/index'
 import { Route as WorkflowsIndexImport } from './routes/workflows/index'
+import { Route as SessionsIndexImport } from './routes/sessions/index'
 import { Route as OrganizationProfileIndexImport } from './routes/organization-profile/index'
 import { Route as MachinesIndexImport } from './routes/machines/index'
 import { Route as AnalyticsIndexImport } from './routes/analytics/index'
@@ -38,6 +39,7 @@ import { Route as MachinesMachineIdFilesImport } from './routes/machines/$machin
 import { Route as MachinesMachineIdActivityImport } from './routes/machines/$machineId/activity'
 import { Route as MachinesMachineIdMachineVersionIdImport } from './routes/machines/$machineId/$machineVersionId'
 import { Route as MachinesMachineIdHistoryIndexImport } from './routes/machines/$machineId/history/index'
+import { Route as AuthRequestRequestIdIndexImport } from './routes/auth/request/$requestId/index'
 
 // Create/Update Routes
 
@@ -120,6 +122,12 @@ const WorkflowsIndexRoute = WorkflowsIndexImport.update({
 } as any).lazy(() =>
   import('./routes/workflows/index.lazy').then((d) => d.Route),
 )
+
+const SessionsIndexRoute = SessionsIndexImport.update({
+  id: '/sessions/',
+  path: '/sessions/',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const OrganizationProfileIndexRoute = OrganizationProfileIndexImport.update({
   id: '/organization-profile/',
@@ -211,6 +219,12 @@ const MachinesMachineIdHistoryIndexRoute =
     path: '/machines/$machineId/history/',
     getParentRoute: () => rootRoute,
   } as any)
+
+const AuthRequestRequestIdIndexRoute = AuthRequestRequestIdIndexImport.update({
+  id: '/auth/request/$requestId/',
+  path: '/auth/request/$requestId/',
+  getParentRoute: () => rootRoute,
+} as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -335,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizationProfileIndexImport
       parentRoute: typeof rootRoute
     }
+    '/sessions/': {
+      id: '/sessions/'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof SessionsIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/workflows/': {
       id: '/workflows/'
       path: '/workflows'
@@ -398,6 +419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SessionsSessionIdIndexImport
       parentRoute: typeof rootRoute
     }
+    '/auth/request/$requestId/': {
+      id: '/auth/request/$requestId/'
+      path: '/auth/request/$requestId'
+      fullPath: '/auth/request/$requestId'
+      preLoaderRoute: typeof AuthRequestRequestIdIndexImport
+      parentRoute: typeof rootRoute
+    }
     '/machines/$machineId/history/': {
       id: '/machines/$machineId/history/'
       path: '/machines/$machineId/history'
@@ -428,6 +456,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsIndexRoute
   '/machines': typeof MachinesIndexRoute
   '/organization-profile': typeof OrganizationProfileIndexRoute
+  '/sessions': typeof SessionsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
@@ -437,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
   '/sessions/$sessionId': typeof SessionsSessionIdIndexRoute
+  '/auth/request/$requestId': typeof AuthRequestRequestIdIndexRoute
   '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -458,6 +488,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsIndexRoute
   '/machines': typeof MachinesIndexRoute
   '/organization-profile': typeof OrganizationProfileIndexRoute
+  '/sessions': typeof SessionsIndexRoute
   '/workflows': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
@@ -467,6 +498,7 @@ export interface FileRoutesByTo {
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
   '/sessions/$sessionId': typeof SessionsSessionIdIndexRoute
+  '/auth/request/$requestId': typeof AuthRequestRequestIdIndexRoute
   '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -489,6 +521,7 @@ export interface FileRoutesById {
   '/analytics/': typeof AnalyticsIndexRoute
   '/machines/': typeof MachinesIndexRoute
   '/organization-profile/': typeof OrganizationProfileIndexRoute
+  '/sessions/': typeof SessionsIndexRoute
   '/workflows/': typeof WorkflowsIndexRoute
   '/machines/$machineId/$machineVersionId': typeof MachinesMachineIdMachineVersionIdRoute
   '/machines/$machineId/activity': typeof MachinesMachineIdActivityRoute
@@ -498,6 +531,7 @@ export interface FileRoutesById {
   '/machines/$machineId/': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members/': typeof OrganizationProfileOrganizationMembersIndexRoute
   '/sessions/$sessionId/': typeof SessionsSessionIdIndexRoute
+  '/auth/request/$requestId/': typeof AuthRequestRequestIdIndexRoute
   '/machines/$machineId/history/': typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -521,6 +555,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/machines'
     | '/organization-profile'
+    | '/sessions'
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
@@ -530,6 +565,7 @@ export interface FileRouteTypes {
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
     | '/sessions/$sessionId'
+    | '/auth/request/$requestId'
     | '/machines/$machineId/history'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -550,6 +586,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/machines'
     | '/organization-profile'
+    | '/sessions'
     | '/workflows'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
@@ -559,6 +596,7 @@ export interface FileRouteTypes {
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
     | '/sessions/$sessionId'
+    | '/auth/request/$requestId'
     | '/machines/$machineId/history'
   id:
     | '__root__'
@@ -579,6 +617,7 @@ export interface FileRouteTypes {
     | '/analytics/'
     | '/machines/'
     | '/organization-profile/'
+    | '/sessions/'
     | '/workflows/'
     | '/machines/$machineId/$machineVersionId'
     | '/machines/$machineId/activity'
@@ -588,6 +627,7 @@ export interface FileRouteTypes {
     | '/machines/$machineId/'
     | '/organization-profile/organization-members/'
     | '/sessions/$sessionId/'
+    | '/auth/request/$requestId/'
     | '/machines/$machineId/history/'
   fileRoutesById: FileRoutesById
 }
@@ -610,6 +650,7 @@ export interface RootRouteChildren {
   AnalyticsIndexRoute: typeof AnalyticsIndexRoute
   MachinesIndexRoute: typeof MachinesIndexRoute
   OrganizationProfileIndexRoute: typeof OrganizationProfileIndexRoute
+  SessionsIndexRoute: typeof SessionsIndexRoute
   WorkflowsIndexRoute: typeof WorkflowsIndexRoute
   MachinesMachineIdMachineVersionIdRoute: typeof MachinesMachineIdMachineVersionIdRoute
   MachinesMachineIdActivityRoute: typeof MachinesMachineIdActivityRoute
@@ -619,6 +660,7 @@ export interface RootRouteChildren {
   MachinesMachineIdIndexRoute: typeof MachinesMachineIdIndexRoute
   OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute
   SessionsSessionIdIndexRoute: typeof SessionsSessionIdIndexRoute
+  AuthRequestRequestIdIndexRoute: typeof AuthRequestRequestIdIndexRoute
   MachinesMachineIdHistoryIndexRoute: typeof MachinesMachineIdHistoryIndexRoute
 }
 
@@ -640,6 +682,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsIndexRoute: AnalyticsIndexRoute,
   MachinesIndexRoute: MachinesIndexRoute,
   OrganizationProfileIndexRoute: OrganizationProfileIndexRoute,
+  SessionsIndexRoute: SessionsIndexRoute,
   WorkflowsIndexRoute: WorkflowsIndexRoute,
   MachinesMachineIdMachineVersionIdRoute:
     MachinesMachineIdMachineVersionIdRoute,
@@ -651,6 +694,7 @@ const rootRouteChildren: RootRouteChildren = {
   OrganizationProfileOrganizationMembersIndexRoute:
     OrganizationProfileOrganizationMembersIndexRoute,
   SessionsSessionIdIndexRoute: SessionsSessionIdIndexRoute,
+  AuthRequestRequestIdIndexRoute: AuthRequestRequestIdIndexRoute,
   MachinesMachineIdHistoryIndexRoute: MachinesMachineIdHistoryIndexRoute,
 }
 
@@ -681,6 +725,7 @@ export const routeTree = rootRoute
         "/analytics/",
         "/machines/",
         "/organization-profile/",
+        "/sessions/",
         "/workflows/",
         "/machines/$machineId/$machineVersionId",
         "/machines/$machineId/activity",
@@ -690,6 +735,7 @@ export const routeTree = rootRoute
         "/machines/$machineId/",
         "/organization-profile/organization-members/",
         "/sessions/$sessionId/",
+        "/auth/request/$requestId/",
         "/machines/$machineId/history/"
       ]
     },
@@ -744,6 +790,9 @@ export const routeTree = rootRoute
     "/organization-profile/": {
       "filePath": "organization-profile/index.tsx"
     },
+    "/sessions/": {
+      "filePath": "sessions/index.tsx"
+    },
     "/workflows/": {
       "filePath": "workflows/index.tsx"
     },
@@ -770,6 +819,9 @@ export const routeTree = rootRoute
     },
     "/sessions/$sessionId/": {
       "filePath": "sessions/$sessionId/index.tsx"
+    },
+    "/auth/request/$requestId/": {
+      "filePath": "auth/request/$requestId/index.tsx"
     },
     "/machines/$machineId/history/": {
       "filePath": "machines/$machineId/history/index.tsx"
