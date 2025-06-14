@@ -9,7 +9,7 @@ export const Route = createFileRoute("/sessions/")({
 }) as any;
 
 function SessionsOverview() {
-  const { listSession } = useSessionAPI();
+  const { listSession, deleteSession } = useSessionAPI();
   const { data: sessions, isLoading } = listSession;
   const router = useRouter();
 
@@ -24,7 +24,14 @@ function SessionsOverview() {
   };
 
   const handleSessionDelete = async (sessionId: string) => {
-    console.log("Delete session:", sessionId);
+    try {
+      await deleteSession.mutateAsync({
+        sessionId: sessionId,
+        waitForShutdown: true,
+      });
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+    }
   };
 
   if (isLoading) {
