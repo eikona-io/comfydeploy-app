@@ -20,8 +20,9 @@ import {
   X,
   Building,
   User,
+  Clock,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth, useOrganization, useUser } from "@clerk/clerk-react";
 
 export const Route = createFileRoute("/auth/request/$requestId/")({
@@ -32,13 +33,17 @@ function RouteComponent() {
   const { requestId } = Route.useParams();
   const [isAuthValid, setIsAuthValid] = useState(false);
   const [authError, setAuthError] = useState(false);
+  const [isExpired, setIsExpired] = useState(false);
 
   // Get user and organization info
-  const { orgId } = useAuth();
   const { user } = useUser();
   const { organization } = useOrganization();
 
-  const { data: request, isLoading } = useQuery<{ api_key: string }>({
+  const {
+    data: request,
+    isLoading,
+    error,
+  } = useQuery<{ api_key: string }>({
     queryKey: ["platform", "comfyui", "auth-response"],
     queryKeyHashFn: (queryKey) => [...queryKey, requestId].toString(),
     meta: {
@@ -49,7 +54,14 @@ function RouteComponent() {
     refetchOnWindowFocus: false,
   });
 
-  const isAlreadyAuthorized = request?.api_key;
+  // Check for expired error
+  useEffect(() => {
+    if (error?.message?.includes("status: 410")) {
+      setIsExpired(true);
+    }
+  }, [error]);
+
+  const isAlreadyAuthorized = request?.api_key && !isExpired;
 
   const onAcceptAuth = async () => {
     try {
@@ -137,7 +149,7 @@ function RouteComponent() {
             className={`mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
               isAuthValid || isAlreadyAuthorized
                 ? "bg-green-100 dark:bg-green-900"
-                : authError
+                : authError || isExpired
                   ? "bg-red-100 dark:bg-red-900"
                   : "bg-blue-100 dark:bg-blue-900"
             }`}
@@ -155,6 +167,16 @@ function RouteComponent() {
                   transition={{ type: "spring", bounce: 0.5, duration: 0.3 }}
                 >
                   <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </motion.div>
+              ) : isExpired ? (
+                <motion.div
+                  key="expired"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ type: "spring", bounce: 0.5, duration: 0.3 }}
+                >
+                  <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
                 </motion.div>
               ) : authError ? (
                 <motion.div
@@ -210,6 +232,22 @@ function RouteComponent() {
                   window.
                 </CardDescription>
               </motion.div>
+            ) : isExpired ? (
+              <motion.div
+                key="auth-expired"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CardTitle className="mt-2 text-lg">
+                  Auth Request Expired
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  This authorization request has expired. Please close this
+                  window and try again from ComfyUI.
+                </CardDescription>
+              </motion.div>
             ) : authError ? (
               <motion.div
                 key="auth-error"
@@ -246,7 +284,7 @@ function RouteComponent() {
         </CardHeader>
 
         <CardContent>
-          {isAuthValid || isAlreadyAuthorized || authError ? (
+          {isAuthValid || isAlreadyAuthorized || authError || isExpired ? (
             <Button
               className="w-full"
               variant={"expandIcon"}
