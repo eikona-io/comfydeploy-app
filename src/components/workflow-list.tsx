@@ -34,6 +34,7 @@ import {
   PinIcon,
   PinOff,
   Play,
+  Share,
   Workflow,
 } from "lucide-react";
 import * as React from "react";
@@ -508,6 +509,42 @@ function WorkflowCard({
                         Clone
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          try {
+                            const response = await fetch(
+                              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
+                              {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                  workflow_id: workflow.id,
+                                  title: workflow.name,
+                                  description: `Shared workflow: ${workflow.name}`,
+                                  is_public: true,
+                                }),
+                              }
+                            );
+                            
+                            if (response.ok) {
+                              const sharedWorkflow = await response.json();
+                              const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
+                              await navigator.clipboard.writeText(shareUrl);
+                              toast.success("Share link copied to clipboard!");
+                            } else {
+                              toast.error("Failed to create share link");
+                            }
+                          } catch (error) {
+                            toast.error("Failed to create share link");
+                          }
+                        }}
+                      >
+                        Share
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         className="text-destructive dark:text-red-400"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -693,6 +730,43 @@ function WorkflowCard({
                       >
                         <Code className="h-4 w-4 mr-2" />
                         Clone
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          try {
+                            const response = await fetch(
+                              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
+                              {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                  workflow_id: workflow.id,
+                                  title: workflow.name,
+                                  description: `Shared workflow: ${workflow.name}`,
+                                  is_public: true,
+                                }),
+                              }
+                            );
+                            
+                            if (response.ok) {
+                              const sharedWorkflow = await response.json();
+                              const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
+                              await navigator.clipboard.writeText(shareUrl);
+                              toast.success("Share link copied to clipboard!");
+                            } else {
+                              toast.error("Failed to create share link");
+                            }
+                          } catch (error) {
+                            toast.error("Failed to create share link");
+                          }
+                        }}
+                      >
+                        <Share className="h-4 w-4 mr-2" />
+                        Share
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
