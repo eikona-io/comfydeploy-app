@@ -494,7 +494,10 @@ function WorkflowPageComponent() {
           {currentView === "workspace" && (
             <GuideDialog guideType={sessionId ? "session" : "workspace"} />
           )}
-          <WorkspaceClientWrapper workflow_id={workflowId} />
+          <WorkspaceClientWrapper 
+            workflow_id={workflowId} 
+            onShareWorkflow={() => setIsShareDialogOpen(true)}
+          />
         </div>
       ) : null}
       {view}
