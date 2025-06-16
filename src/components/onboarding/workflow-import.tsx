@@ -875,12 +875,16 @@ function DefaultOption({
               };
             }
 
+            const comfyVersion =
+              environment.required_comfy_vesrion
+                ? environment.comfyui_version
+                : latestHashes?.comfyui_hash || environment.comfyui_version;
+
             Object.assign(updatedValidation, {
               docker_command_steps: updatedDockerSteps,
               gpuType: environment.gpu,
-              // Use latest ComfyUI hash instead of hardcoded value
-              comfyUiHash:
-                latestHashes?.comfyui_hash || environment.comfyui_version,
+              // Use latest ComfyUI hash unless the template requires a specific version
+              comfyUiHash: comfyVersion,
               install_custom_node_with_gpu:
                 environment.install_custom_node_with_gpu,
               base_docker_image: environment.base_docker_image,
