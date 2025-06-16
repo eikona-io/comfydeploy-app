@@ -249,64 +249,20 @@ function processModel(
 
 function Model({ url }: { url: string }) {
   const fileExtension = url.split(".").pop()?.toLowerCase();
-  const [objModel, setObjModel] = useState<THREE.Object3D | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   let modelScene: THREE.Object3D;
 
   if (fileExtension === "obj") {
-    // Handle OBJ files with manual loading
-    useEffect(() => {
-      setIsLoading(true);
-      setError(null);
-
-      const loader = new OBJLoader();
+    // Handle OBJ files with proper CORS configuration
+    const obj = useLoader(OBJLoader, url, (loader) => {
+      // Set crossOrigin for CORS handling
       loader.crossOrigin = "anonymous";
-
-      loader.load(
-        url,
-        (object) => {
-          setObjModel(object);
-          setIsLoading(false);
-        },
-        (progress) => {
-          // Loading progress
-          console.log("Loading progress:", progress);
-        },
-        (error) => {
-          console.error("Error loading OBJ:", error);
-          setError(
-            error instanceof Error ? error.message : "Failed to load OBJ file",
-          );
-          setIsLoading(false);
-        },
-      );
-    }, [url]);
-
-    if (isLoading) {
-      return <ModelLoader />;
-    }
-
-    if (error) {
-      return (
-        <Html center>
-          <div className="flex flex-col items-center justify-center gap-2 text-red-600">
-            <div className="text-sm">Failed to load OBJ file</div>
-            <div className="text-xs">{error}</div>
-          </div>
-        </Html>
-      );
-    }
-
-    if (!objModel) {
-      return <ModelLoader />;
-    }
-
-    modelScene = objModel;
+    });
+    modelScene = obj;
   } else {
     // Handle GLB/GLTF files (default)
     const { scene } = useGLTF(url, undefined, undefined, (loader) => {
+      // Always set crossOrigin to handle CORS properly
       loader.setCrossOrigin("anonymous");
     });
     modelScene = scene;
