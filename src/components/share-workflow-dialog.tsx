@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { Share } from "lucide-react";
+import { api } from "@/lib/api";
 
 interface ShareWorkflowDialogProps {
   open: boolean;
@@ -38,37 +39,30 @@ export function ShareWorkflowDialog({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflowId}/share`,
-        {
+      const sharedWorkflow = await api({
+        url: `workflow/${workflowId}/share`,
+        init: {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             workflow_id: workflowId,
             title,
             description,
             is_public: isPublic,
           }),
-        }
-      );
+        },
+      });
 
-      if (response.ok) {
-        const sharedWorkflow = await response.json();
+      if (sharedWorkflow) {
         const shareUrl = `${window.location.origin}/share/${sharedWorkflow.user_id}/${sharedWorkflow.share_slug}`;
-        
+
         await navigator.clipboard.writeText(shareUrl);
         toast.success("Share link created and copied to clipboard!");
-        
+
         onOpenChange(false);
-        
+
         setTitle(workflowName);
         setDescription(`Shared workflow: ${workflowName}`);
         setIsPublic(true);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast.error(errorData.detail || "Failed to create share link");
       }
     } catch (error) {
       console.error("Share workflow error:", error);
@@ -119,9 +113,9 @@ export function ShareWorkflowDialog({
 
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="public">Public</Label>
+              <Label htmlFor="public">Publish to Community</Label>
               <div className="text-sm text-muted-foreground">
-                Make this workflow visible to everyone
+                Make this workflow discoverable by the community
               </div>
             </div>
             <Switch
