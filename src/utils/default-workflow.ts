@@ -2927,6 +2927,7 @@ const workflow_json_hunyuan3d = {
   },
   environment: {
     comfyui_version: "094306b626e9cf505690c5d8b445032b3b8a36fa",
+    required_comfy_version: true,
     gpu: "L40S",
     docker_command_steps: {
       steps: [
@@ -4512,6 +4513,7 @@ const bagel_workflow = {
   },
   environment: {
     comfyui_version: "094306b626e9cf505690c5d8b445032b3b8a36fa",
+    required_comfy_version: true,
     gpu: "L40S",
     docker_command_steps: {
       steps: [
@@ -20987,6 +20989,7 @@ const any_2_live_action_api_only = {
   },
   "environment": {
       "comfyui_version": "094306b626e9cf505690c5d8b445032b3b8a36fa",
+      "required_comfy_version": true,
       "gpu": "L40S",
       "docker_command_steps": {
           "steps": [
