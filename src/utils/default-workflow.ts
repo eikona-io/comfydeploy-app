@@ -4729,7 +4729,7 @@ const bagel_workflow = {
           id: "ffe77db4-f",
           data: {
             url: "https://github.com/comfy-deploy/comfyui-llm-toolkit",
-            hash: "ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
+            hash: "2a2c99c46431b75ea4feef79ca2fe817c39c9cc3",
             meta: {
               message: "Add files via upload",
               committer: {
@@ -4738,8 +4738,8 @@ const bagel_workflow = {
                 email: "noreply@github.com",
               },
               commit_url:
-                "https://github.com/comfy-deploy/comfyui-llm-toolkit/commit/ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
-              latest_hash: "ed2cb7e9989e1405c95cd7a057d8bcca0aa94230",
+                "https://github.com/comfy-deploy/comfyui-llm-toolkit/commit/2a2c99c46431b75ea4feef79ca2fe817c39c9cc3",
+              latest_hash: "2a2c99c46431b75ea4feef79ca2fe817c39c9cc3",
               stargazers_count: 12,
             },
             name: "ComfyUI LLM Toolkit",
