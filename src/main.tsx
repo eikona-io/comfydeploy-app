@@ -29,6 +29,7 @@ import { SidebarGhost } from "./components/ui/sidebar-ghost";
 import { LoadingProgress } from "./components/ui/loading-progress";
 import { AnimatePresence } from "framer-motion";
 
+
 // Add this function before creating the orgRoute
 function updateRoutePaths(route: RouteType) {
   // console.log(route.options);
