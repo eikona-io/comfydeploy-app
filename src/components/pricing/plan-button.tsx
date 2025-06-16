@@ -364,6 +364,21 @@ export function UpgradeButton(props: PlanButtonProps) {
                 return;
               }
 
+              if (label === "Manage" || label.includes("Manage")) {
+                const res = await callServerPromise(
+                  api({
+                    url: `platform/stripe/dashboard?redirect_url=${encodeURIComponent(
+                      window.location.href,
+                    )}`,
+                  }),
+                  {
+                    loadingText: "Redirecting to Stripe...",
+                  },
+                );
+                window.open(res.url, "_blank");
+                return;
+              }
+
               if (
                 label === "Upgrade" ||
                 label === "Downgrade" ||
