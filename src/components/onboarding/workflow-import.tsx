@@ -876,7 +876,7 @@ function DefaultOption({
             }
 
             const comfyVersion =
-              environment.required_comfy_vesrion
+              environment.required_comfy_version
                 ? environment.comfyui_version
                 : latestHashes?.comfyui_hash || environment.comfyui_version;
 

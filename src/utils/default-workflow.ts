@@ -824,7 +824,7 @@ const workflow_json_flux = {
   },
   environment: {
     comfyui_version: "158419f3a0017c2ce123484b14b6c527716d6ec8",
-    required_comfy_vesrion: true,
+    required_comfy_version: true,
     gpu: "A10G",
     docker_command_steps: { steps: [] },
     max_containers: 1,
