@@ -824,7 +824,7 @@ const workflow_json_flux = {
   },
   environment: {
     comfyui_version: "158419f3a0017c2ce123484b14b6c527716d6ec8",
-    required_comfy_version: true,
+    required_comfy_version: false,
     gpu: "A10G",
     docker_command_steps: { steps: [] },
     max_containers: 1,
@@ -2953,7 +2953,7 @@ const workflow_json_hunyuan3d = {
         },
         {
           id: "a53fb461-1",
-          data: "RUN pip install --pre -U xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
+          data: "RUN pip install --pre -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
           type: "commands",
         },
         {
@@ -4513,7 +4513,7 @@ const bagel_workflow = {
   },
   environment: {
     comfyui_version: "094306b626e9cf505690c5d8b445032b3b8a36fa",
-    required_comfy_version: true,
+    required_comfy_version: false,
     gpu: "L40S",
     docker_command_steps: {
       steps: [
@@ -4534,7 +4534,7 @@ const bagel_workflow = {
         },
         {
           id: "a53fb461-1",
-          data: "RUN pip install --pre -U xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
+          data: "RUN pip install --pre -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
           type: "commands",
         },
         {
@@ -20989,7 +20989,7 @@ const any_2_live_action_api_only = {
   },
   "environment": {
       "comfyui_version": "094306b626e9cf505690c5d8b445032b3b8a36fa",
-      "required_comfy_version": true,
+      "required_comfy_version": false,
       "gpu": "L40S",
       "docker_command_steps": {
           "steps": [
@@ -21010,7 +21010,7 @@ const any_2_live_action_api_only = {
               },
               {
                   "id": "a53fb461-1",
-                  "data": "RUN pip install --pre -U xformers torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
+                  "data": "RUN pip install --pre -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128",
                   "type": "commands"
               },
               {
