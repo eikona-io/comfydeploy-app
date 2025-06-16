@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { easeOut } from "framer-motion";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, ChevronLeft, Share } from "lucide-react";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { lazy, useEffect, useState } from "react";
 import { MyDrawer } from "../drawer";
@@ -235,16 +235,8 @@ export function WorkspaceClientWrapper({
                   defaultMachineVersionId={
                     workflow?.selected_machine_version_id
                   }
+                  onShareWorkflow={props.onShareWorkflow}
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-shrink-0"
-                  onClick={() => props.onShareWorkflow?.()}
-                >
-                  <Share className="h-4 w-4 mr-2" />
-                  Share Workflow
-                </Button>
               </div>
               <MachineUpdateChecker machineId={machine.id} />
             </motion.div>
