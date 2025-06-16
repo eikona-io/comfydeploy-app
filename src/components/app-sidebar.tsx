@@ -20,6 +20,7 @@ import {
   Receipt,
   Rss,
   Save,
+  Search,
   Server,
   Settings,
   Sun,
@@ -219,6 +220,11 @@ function usePages() {
       name: "Workflows",
       path: "/workflows",
       icon: Workflow,
+    },
+    {
+      name: "Explore",
+      path: "/explore",
+      icon: Search,
     },
     // {
     //   name: "Models",

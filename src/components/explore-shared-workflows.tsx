@@ -1,0 +1,327 @@
+"use client";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
+import {
+  Download,
+  Eye,
+  Grid2X2,
+  LayoutList,
+  Search,
+  User,
+} from "lucide-react";
+import * as React from "react";
+import { getRelativeTime } from "@/lib/get-relative-time";
+import { useSharedWorkflows } from "@/hooks/use-shared-workflows";
+import { useDebounce } from "use-debounce";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+
+type SharedWorkflow = {
+  id: string;
+  user_id: string;
+  org_id: string;
+  workflow_id: string;
+  workflow_version_id: string;
+  workflow_export: Record<string, any>;
+  share_slug: string;
+  title: string;
+  description: string;
+  cover_image: string;
+  is_public: boolean;
+  view_count: number;
+  download_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
+export function ExploreSharedWorkflows() {
+  const [view, setView] = useLocalStorage<"list" | "grid">(
+    "explore-view-mode",
+    "grid",
+  );
+
+  const [searchValue, setSearchValue] = React.useState<string | null>(null);
+  const [debouncedSearchValue] = useDebounce(searchValue, 250);
+
+  const {
+    data: sharedWorkflowsData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useSharedWorkflows(debouncedSearchValue ?? "");
+
+  const parentRef = React.useRef<HTMLDivElement>(null);
+  useInfiniteScroll(parentRef, fetchNextPage, hasNextPage, isFetchingNextPage);
+
+  const flatData = React.useMemo(
+    () => sharedWorkflowsData?.pages.flat() ?? [],
+    [sharedWorkflowsData],
+  );
+
+  return (
+    <div className="flex h-full w-full flex-col">
+      <div className="flex w-full flex-row items-center gap-2 p-4">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search shared workflows..."
+            value={searchValue ?? ""}
+            onChange={(event) => {
+              if (event.target.value === "") {
+                setSearchValue(null);
+              } else {
+                setSearchValue(event.target.value);
+              }
+            }}
+            className="pl-8"
+          />
+        </div>
+        <div className="flex items-center gap-1 rounded-md border p-1">
+          <Button
+            variant={view === "grid" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setView("grid")}
+            className="h-7 w-7 p-0"
+          >
+            <Grid2X2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant={view === "list" ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => setView("list")}
+            className="h-7 w-7 p-0"
+          >
+            <LayoutList className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div
+        ref={parentRef}
+        className="flex-1 overflow-auto px-4 pb-4"
+      >
+        {isLoading ? (
+          <div
+            className={cn(
+              view === "grid"
+                ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "space-y-2",
+            )}
+          >
+            {Array.from({ length: 8 }).map((_, i) => (
+              <SharedWorkflowCardSkeleton key={i} view={view} />
+            ))}
+          </div>
+        ) : flatData.length === 0 ? (
+          <div className="flex h-64 items-center justify-center text-muted-foreground">
+            No shared workflows found
+          </div>
+        ) : (
+          <div
+            className={cn(
+              view === "grid"
+                ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                : "space-y-2",
+            )}
+          >
+            {flatData.map((workflow: SharedWorkflow) => (
+              <SharedWorkflowCard
+                key={workflow.id}
+                workflow={workflow}
+                view={view}
+              />
+            ))}
+          </div>
+        )}
+
+        {isFetchingNextPage && (
+          <div className="mt-4">
+            <div
+              className={cn(
+                view === "grid"
+                  ? "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  : "space-y-2",
+              )}
+            >
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SharedWorkflowCardSkeleton key={`loading-${i}`} view={view} />
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SharedWorkflowCardSkeleton({ view }: { view: "list" | "grid" }) {
+  if (view === "list") {
+    return (
+      <div className="flex items-center space-x-4 rounded-lg border p-4">
+        <Skeleton className="h-12 w-12 rounded" />
+        <div className="space-y-2 flex-1">
+          <Skeleton className="h-4 w-[200px]" />
+          <Skeleton className="h-3 w-[150px]" />
+        </div>
+        <div className="flex space-x-2">
+          <Skeleton className="h-6 w-12" />
+          <Skeleton className="h-6 w-12" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border p-4 space-y-3">
+      <Skeleton className="h-32 w-full rounded" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+      <div className="flex justify-between">
+        <Skeleton className="h-6 w-16" />
+        <Skeleton className="h-6 w-16" />
+      </div>
+    </div>
+  );
+}
+
+function SharedWorkflowCard({
+  workflow,
+  view,
+}: {
+  workflow: SharedWorkflow;
+  view: "list" | "grid";
+}) {
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/shared-workflows/${workflow.share_slug}/download`
+      );
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `${workflow.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      console.error('Download failed:', error);
+    }
+  };
+
+  if (view === "list") {
+    return (
+      <Link
+        to="/share/$user/$slug"
+        params={{ user: workflow.user_id, slug: workflow.share_slug }}
+        className="flex items-center space-x-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+      >
+        <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+          {workflow.cover_image ? (
+            <img
+              src={workflow.cover_image}
+              alt={workflow.title}
+              className="h-full w-full object-cover rounded"
+            />
+          ) : (
+            <User className="h-6 w-6 text-muted-foreground" />
+          )}
+        </div>
+        <div className="flex-1 space-y-1">
+          <h3 className="font-medium line-clamp-1">{workflow.title}</h3>
+          <p className="text-sm text-muted-foreground line-clamp-1">
+            {workflow.description || "No description"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {getRelativeTime(workflow.created_at)}
+          </p>
+        </div>
+        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+          <div className="flex items-center space-x-1">
+            <Eye className="h-4 w-4" />
+            <span>{workflow.view_count}</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Download className="h-4 w-4" />
+            <span>{workflow.download_count}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownload}
+            className="h-8"
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <Link
+      to="/share/$user/$slug"
+      params={{ user: workflow.user_id, slug: workflow.share_slug }}
+      className="group rounded-lg border p-4 hover:bg-muted/50 transition-colors space-y-3"
+    >
+      <div className="aspect-video rounded bg-muted flex items-center justify-center overflow-hidden">
+        {workflow.cover_image ? (
+          <img
+            src={workflow.cover_image}
+            alt={workflow.title}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <User className="h-8 w-8 text-muted-foreground" />
+        )}
+      </div>
+      <div className="space-y-2">
+        <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
+          {workflow.title}
+        </h3>
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {workflow.description || "No description"}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {getRelativeTime(workflow.created_at)}
+        </p>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3 text-sm text-muted-foreground">
+          <div className="flex items-center space-x-1">
+            <Eye className="h-4 w-4" />
+            <span>{workflow.view_count}</span>
+          </div>
+          <div className="flex items-center space-x-1">
+            <Download className="h-4 w-4" />
+            <span>{workflow.download_count}</span>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownload}
+          className="h-8 opacity-0 group-hover:opacity-100 transition-opacity"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+      </div>
+    </Link>
+  );
+}

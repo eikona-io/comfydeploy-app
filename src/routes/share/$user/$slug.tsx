@@ -48,6 +48,24 @@ type ShareDeployment = {
   };
 };
 
+type SharedWorkflow = {
+  id: string;
+  user_id: string;
+  org_id: string;
+  workflow_id: string;
+  workflow_version_id: string;
+  workflow_export: Record<string, any>;
+  share_slug: string;
+  title: string;
+  description: string;
+  cover_image: string;
+  is_public: boolean;
+  view_count: number;
+  download_count: number;
+  created_at: string;
+  updated_at: string;
+};
+
 type RunResult = {
   outputs: {
     data: {
@@ -69,9 +87,22 @@ function RouteComponent() {
   const user = useAuth();
 
   const {
+    data: sharedWorkflow,
+    isLoading: isSharedWorkflowLoading,
+    error: sharedWorkflowError,
+  } = useQuery<SharedWorkflow>({
+    queryKey: ["shared-workflow", slug],
+    queryFn: () => {
+      return fetch(
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/shared-workflows/${slug}`,
+      ).then((res) => (res.ok ? res.json() : null));
+    },
+  });
+
+  const {
     data: shareDeployment,
-    isLoading,
-    error,
+    isLoading: isDeploymentLoading,
+    error: deploymentError,
   } = useQuery<ShareDeployment>({
     queryKey: ["share", userParam, slug],
     queryFn: () => {
@@ -79,12 +110,19 @@ function RouteComponent() {
         `${process.env.NEXT_PUBLIC_CD_API_URL}/api/share/${userParam}/${slug}`,
       ).then((res) => (res.ok ? res.json() : null));
     },
+    enabled: !sharedWorkflow && !isSharedWorkflowLoading,
   });
+
+  const isLoading = isSharedWorkflowLoading || isDeploymentLoading;
+  const error = sharedWorkflowError || deploymentError;
+  const shareData = sharedWorkflow || shareDeployment;
 
   const { isSignedIn } = useUser();
 
   const [default_values, setDefaultValues] = useState(
-    getDefaultValuesFromWorkflow(shareDeployment?.input_types),
+    getDefaultValuesFromWorkflow(
+      sharedWorkflow?.workflow_export?.input_types || shareDeployment?.input_types
+    ),
   );
 
   // Change the state to handle multiple images
@@ -110,14 +148,16 @@ function RouteComponent() {
   });
 
   const { data: orgName } = useQuery({
-    enabled: !!shareDeployment?.org_id,
-    queryKey: ["org", shareDeployment?.org_id],
+    enabled: !!(sharedWorkflow?.org_id || shareDeployment?.org_id),
+    queryKey: ["org", sharedWorkflow?.org_id || shareDeployment?.org_id],
     queryFn: () => {
-      return clerk.getOrganization(shareDeployment?.org_id || "");
+      return clerk.getOrganization((sharedWorkflow?.org_id || shareDeployment?.org_id) || "");
     },
   });
 
-  const galleryData = useGalleryData(shareDeployment?.workflow.id);
+  const galleryData = useGalleryData(
+    sharedWorkflow?.workflow_id || shareDeployment?.workflow.id
+  );
 
   const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
   const selectedImageData = useMemo(() => {

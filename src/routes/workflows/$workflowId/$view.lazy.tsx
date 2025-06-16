@@ -7,6 +7,7 @@ import {
   DeploymentPage,
   useSelectedDeploymentStore,
 } from "@/components/deployment/deployment-page";
+import { ShareWorkflowDialog } from "@/components/share-workflow-dialog";
 import { MachineVersionWrapper } from "@/components/machine/machine-overview";
 import { MachineTopStickyBar } from "@/components/machine/machine-page";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
@@ -134,6 +135,7 @@ function WorkflowPageComponent() {
   const { workflowId, view: currentView } = Route.useParams();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<Version | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const { setSelectedDeployment, selectedDeployment } =
     useSelectedDeploymentStore();
   const { data: versions } = useQuery<Version[]>({
@@ -345,10 +347,7 @@ function WorkflowPageComponent() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  if (versions?.[0]) {
-                                    setSelectedVersion(versions[0]);
-                                    setIsDrawerOpen(true);
-                                  }
+                                  setIsShareDialogOpen(true);
                                 }}
                               >
                                 <Share className="h-4 w-4" />
@@ -509,6 +508,12 @@ function WorkflowPageComponent() {
         workflowId={workflowId}
         onSuccess={setSelectedDeployment}
         publicLinkOnly={true}
+      />
+      <ShareWorkflowDialog
+        open={isShareDialogOpen}
+        onOpenChange={setIsShareDialogOpen}
+        workflowId={workflowId}
+        workflowName={workflow?.name || "Untitled Workflow"}
       />
       <DeploymentDrawer>
         {selectedDeployment === publicShareDeployment?.id && (
