@@ -347,7 +347,10 @@ function WorkflowPageComponent() {
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  setIsShareDialogOpen(true);
+                                  if (versions?.[0]) {
+                                    setSelectedVersion(versions[0]);
+                                    setIsDrawerOpen(true);
+                                  }
                                 }}
                               >
                                 <Share className="h-4 w-4" />
@@ -494,8 +497,8 @@ function WorkflowPageComponent() {
           {currentView === "workspace" && (
             <GuideDialog guideType={sessionId ? "session" : "workspace"} />
           )}
-          <WorkspaceClientWrapper 
-            workflow_id={workflowId} 
+          <WorkspaceClientWrapper
+            workflow_id={workflowId}
             onShareWorkflow={() => setIsShareDialogOpen(true)}
           />
         </div>
