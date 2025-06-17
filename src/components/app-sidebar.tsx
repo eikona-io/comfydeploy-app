@@ -20,6 +20,7 @@ import {
   Receipt,
   Rss,
   Save,
+  Search,
   Server,
   Settings,
   Sun,
@@ -220,6 +221,11 @@ function usePages() {
       path: "/workflows",
       icon: Workflow,
     },
+    {
+      name: "Explore",
+      path: "/explore",
+      icon: Search,
+    },
     // {
     //   name: "Models",
     //   path: "/models",
@@ -234,6 +240,11 @@ function usePages() {
           },
         ]
       : []),
+    {
+      name: "Sessions",
+      path: "/sessions",
+      icon: History,
+    },
     {
       name: "Models",
       path: "/models",
@@ -286,11 +297,6 @@ function usePages() {
     //       },
     //     ]
     //   : []),
-    {
-      name: "Plan",
-      path: "/pricing",
-      icon: CreditCard,
-    },
   ];
 
   return {
@@ -325,6 +331,12 @@ const links = [
     title: "Blog",
     url: "https://www.comfydeploy.com/blog",
     icon: Rss,
+  },
+  {
+    title: "Plan",
+    url: "/pricing",
+    icon: CreditCard,
+    internal: true,
   },
 ];
 
@@ -382,7 +394,7 @@ function SessionSidebar() {
         <Sidebar
           collapsible="none"
           className={cn(
-            "h-screen w-[50px]",
+            "h-[calc(100dvh-40px)] md:h-svh w-[50px]",
             "border-r shadow-[1px_0_3px_0_rgba(0,0,0,0.1)]",
           )}
         >
@@ -551,7 +563,7 @@ function SessionSidebar() {
           {activeDrawer && (
             <motion.div
               className={cn(
-                "absolute top-0 left-0 h-screen border-r bg-background shadow-lg",
+                "absolute left-0 top-[40px] md:top-0 h-[calc(100dvh-40px)] md:h-svh border-r bg-background shadow-lg",
                 "z-[-1]",
               )}
               initial={{ x: -575, width: 450, opacity: 1 }}
@@ -1450,14 +1462,30 @@ export function AppSidebar() {
 
           {!(workflow_id && parentPath === "workflows") && (
             <div className="grid grid-cols-2 gap-2 px-2">
-              {links.map((item, index) => (
-                <a href={item.url} key={index} target="_blank" rel="noreferrer">
-                  <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
+              {links.map((item, index) =>
+                item.internal ? (
+                  <Link
+                    key={index}
+                    to={item.url}
+                    className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground"
+                  >
                     <item.icon size={16} className="w-3" />
                     <span>{item.title}</span>
-                  </span>
-                </a>
-              ))}
+                  </Link>
+                ) : (
+                  <a
+                    href={item.url}
+                    key={index}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
+                      <item.icon size={16} className="w-3" />
+                      <span>{item.title}</span>
+                    </span>
+                  </a>
+                ),
+              )}
 
               {/* Theme Switch Item */}
               {isBusinessAllowed && (

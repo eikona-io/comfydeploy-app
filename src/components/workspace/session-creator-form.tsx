@@ -41,6 +41,7 @@ import {
   Save,
   Sparkles,
   StopCircle,
+  Share,
 } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
@@ -70,6 +71,7 @@ interface SessionCreatorFormProps {
   onSuccess?: () => void;
   showCancelButton?: boolean;
   onCancel?: () => void;
+  onShareWorkflow?: () => void;
 }
 
 export function MachineSessionsList({ machineId }: { machineId: string }) {
@@ -169,6 +171,7 @@ export function SessionCreatorForm({
   onSuccess,
   showCancelButton = false,
   onCancel,
+  onShareWorkflow,
 }: SessionCreatorFormProps) {
   const router = useRouter();
   const { createSession: createDynamicSession } = useSessionAPI();
@@ -245,8 +248,21 @@ export function SessionCreatorForm({
   }
   return (
     <div className="flex w-full flex-col gap-6">
-      <div>
+      <div className="flex items-center justify-between">
         <h2 className="font-semibold text-lg">ComfyUI</h2>
+        {onShareWorkflow && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={onShareWorkflow}
+            className="shrink-0"
+          >
+            <span className="sr-only">Share Workflow</span>
+            <Share className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+      <div className="flex items-center justify-between">
         <p className="flex items-center gap-2 text-muted-foreground text-sm">
           Start and edit your workflow{" "}
           <Badge

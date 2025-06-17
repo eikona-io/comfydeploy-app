@@ -77,12 +77,14 @@ type RunResult = {
   status: string;
 };
 
-export const Route = createFileRoute("/share/$user/$slug")({
+export const Route = createFileRoute("/share/playground/$user/$slug")({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { user: userParam, slug } = useParams({ from: "/share/$user/$slug" });
+  const { user: userParam, slug } = useParams({
+    from: "/share/playground/$user/$slug",
+  });
   const clerk = useClerk();
   const user = useAuth();
 
@@ -92,10 +94,15 @@ function RouteComponent() {
     error: sharedWorkflowError,
   } = useQuery<SharedWorkflow>({
     queryKey: ["shared-workflow", slug],
-    queryFn: () => {
-      return fetch(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/shared-workflows/${slug}`,
-      ).then((res) => (res.ok ? res.json() : null));
+    queryFn: async () => {
+      try {
+        return await api({
+          url: `shared-workflows/${slug}`,
+        });
+      } catch (error) {
+        console.error("Failed to fetch shared workflow:", error);
+        return null;
+      }
     },
   });
 
@@ -105,10 +112,15 @@ function RouteComponent() {
     error: deploymentError,
   } = useQuery<ShareDeployment>({
     queryKey: ["share", userParam, slug],
-    queryFn: () => {
-      return fetch(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/share/${userParam}/${slug}`,
-      ).then((res) => (res.ok ? res.json() : null));
+    queryFn: async () => {
+      try {
+        return await api({
+          url: `share/${userParam}/${slug}`,
+        });
+      } catch (error) {
+        console.error("Failed to fetch share deployment:", error);
+        return null;
+      }
     },
     enabled: !sharedWorkflow && !isSharedWorkflowLoading,
   });

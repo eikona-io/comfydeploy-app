@@ -28,12 +28,14 @@ import {
   Code,
   Edit,
   Grid2X2,
+  Globe,
   Image,
   LayoutList,
   MoreHorizontal,
   PinIcon,
   PinOff,
   Play,
+  Share,
   Workflow,
 } from "lucide-react";
 import * as React from "react";
@@ -321,6 +323,56 @@ function WorkflowCardSkeleton({ view = "grid" }: { view?: "list" | "grid" }) {
   );
 }
 
+// Component to display publication status
+function PublicationStatusBadge({ workflowId }: { workflowId: string }) {
+  const { data: sharedWorkflows } = useQuery({
+    queryKey: ["workflow", workflowId, "shared-status"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const existingShare = sharedWorkflows?.shared_workflows?.find(
+    (share: any) => share.workflow_id === workflowId,
+  );
+
+  if (!existingShare) return null;
+
+  return (
+    <div className="absolute top-2 left-2">
+      <Badge
+        variant="default"
+        className="bg-green-600 hover:bg-green-700 text-white text-xs"
+      >
+        <Globe className="w-3 h-3 mr-1" />
+        Community
+      </Badge>
+    </div>
+  );
+}
+
+// Inline publication status for list view
+function PublicationStatusInline({ workflowId }: { workflowId: string }) {
+  const { data: sharedWorkflows } = useQuery({
+    queryKey: ["workflow", workflowId, "shared-status"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const existingShare = sharedWorkflows?.shared_workflows?.find(
+    (share: any) => share.workflow_id === workflowId,
+  );
+
+  if (!existingShare) return null;
+
+  return (
+    <Badge
+      variant="default"
+      className="bg-green-600 hover:bg-green-700 text-white text-[10px] h-5 px-1.5 shrink-0"
+    >
+      <Globe className="w-2.5 h-2.5 mr-1" />
+      Community
+    </Badge>
+  );
+}
+
 function WorkflowCard({
   workflow,
   mutate,
@@ -508,6 +560,42 @@ function WorkflowCard({
                         Clone
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          try {
+                            const response = await fetch(
+                              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
+                              {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                  workflow_id: workflow.id,
+                                  title: workflow.name,
+                                  description: `Shared workflow: ${workflow.name}`,
+                                  is_public: true,
+                                }),
+                              },
+                            );
+
+                            if (response.ok) {
+                              const sharedWorkflow = await response.json();
+                              const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
+                              await navigator.clipboard.writeText(shareUrl);
+                              toast.success("Share link copied to clipboard!");
+                            } else {
+                              toast.error("Failed to create share link");
+                            }
+                          } catch (error) {
+                            toast.error("Failed to create share link");
+                          }
+                        }}
+                      >
+                        Share
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         className="text-destructive dark:text-red-400"
                         onClick={(e) => {
                           e.stopPropagation();
@@ -554,6 +642,8 @@ function WorkflowCard({
                   <PinIcon className="rotate-45 text-white drop-shadow-md" />
                 </div>
               )}
+
+              <PublicationStatusBadge workflowId={workflow.id} />
             </Card>
             <div className="flex flex-col px-2 pt-2">
               <div className="flex w-full flex-row justify-between truncate font-medium text-gray-700 text-md dark:text-gray-300">
@@ -615,6 +705,7 @@ function WorkflowCard({
                   {workflow.pinned && (
                     <PinIcon className="h-3 w-3 rotate-45 text-muted-foreground shrink-0" />
                   )}
+                  <PublicationStatusInline workflowId={workflow.id} />
                   {status && (
                     <Badge
                       variant={status === "success" ? "success" : "secondary"}
@@ -693,6 +784,43 @@ function WorkflowCard({
                       >
                         <Code className="h-4 w-4 mr-2" />
                         Clone
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          try {
+                            const response = await fetch(
+                              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
+                              {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                },
+                                body: JSON.stringify({
+                                  workflow_id: workflow.id,
+                                  title: workflow.name,
+                                  description: `Shared workflow: ${workflow.name}`,
+                                  is_public: true,
+                                }),
+                              },
+                            );
+
+                            if (response.ok) {
+                              const sharedWorkflow = await response.json();
+                              const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
+                              await navigator.clipboard.writeText(shareUrl);
+                              toast.success("Share link copied to clipboard!");
+                            } else {
+                              toast.error("Failed to create share link");
+                            }
+                          } catch (error) {
+                            toast.error("Failed to create share link");
+                          }
+                        }}
+                      >
+                        <Share className="h-4 w-4 mr-2" />
+                        Share
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem

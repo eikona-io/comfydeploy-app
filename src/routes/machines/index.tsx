@@ -1,40 +1,43 @@
-import { MachineCreate } from '@/components/machines/machine-create'
-import { MachineList } from '@/components/machines/machine-list'
-import { useCurrentPlan } from '@/hooks/use-current-plan'
-import { useKeyboardShortcut } from '@/hooks/use-keyboard-shortcut'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/machines/')({
+import { MachineCreate } from "@/components/machines/machine-create";
+import { MachineList } from "@/components/machines/machine-list";
+import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+export const Route = createFileRoute("/machines/")({
   component: RouteComponent,
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      view: search.view === 'create' ? 'create' : undefined,
+      view: search.view === "create" ? "create" : undefined,
       action:
-        search.action === 'update-custom-nodes'
-          ? 'update-custom-nodes'
+        search.action === "update-custom-nodes"
+          ? "update-custom-nodes"
           : undefined,
-    }
+    };
   },
-})
+});
 
 function RouteComponent() {
-  const navigate = useNavigate({ from: '/machines' })
-  const sub = useCurrentPlan()
-  const { view } = Route.useSearch()
+  const navigate = useNavigate({ from: "/machines" });
+  const sub = useCurrentPlan();
+  const { view } = Route.useSearch();
 
   useKeyboardShortcut(
-    'c',
+    "c",
     () => {
       if (!sub?.features.machineLimited) {
         navigate({
-          search: { view: 'create' },
-        })
+          search: { view: "create" as const, action: undefined },
+        });
       }
     },
     {
-      exactPath: '/machines',
+      exactPath: "/machines",
     },
-  )
+  );
 
-  return view === 'create' ? <MachineCreate /> : <MachineList />
+  if (view === "create") {
+    return <MachineCreate />;
+  }
+
+  return <MachineList />;
 }

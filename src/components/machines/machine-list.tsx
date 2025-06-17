@@ -33,9 +33,11 @@ import {
   Plus,
   RefreshCcw,
   Server,
+  Upload,
+  LoaderCircle,
 } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
@@ -55,7 +57,6 @@ interface Machine {
   machine_builder_version?: string | number;
   // Add other machine properties as needed
 }
-
 export function MachineList() {
   const { data: latestHashes } = useLatestHashes();
 
@@ -102,6 +103,8 @@ export function MachineList() {
   const [searchValue, setSearchValue] = useQueryState("search");
   const [openCustomDialog, setOpenCustomDialog] = useState(false);
   const [openServerlessDialog, setOpenServerlessDialog] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
   const navigate = useNavigate({ from: "/machines" });
 
@@ -165,6 +168,65 @@ export function MachineList() {
   }, [totalLoadedMachines, selectedMachines, query.data]);
 
   const isPartiallySelected = selectedMachines.size > 0 && !isAllSelected;
+
+  const handleImportMachine = async (file: File) => {
+    setIsImporting(true);
+    try {
+      const fileContent = await file.text();
+      const machineData = JSON.parse(fileContent);
+
+      const response = await api({
+        url: "machine/import",
+        init: {
+          method: "POST",
+          body: JSON.stringify(machineData),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      });
+
+      toast.success(`Machine "${response.name}" imported successfully`);
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Import error:", error);
+      // Try to extract the error message from the API response
+      let errorMessage =
+        "Failed to import machine. Please check the file format.";
+
+      if (error?.message) {
+        // The api function returns errors like "HTTP error! status: 400, body: {json}"
+        // Try to parse the body part if it exists
+        const message = error.message;
+        if (message.includes("body: ")) {
+          try {
+            const bodyPart = message.split("body: ")[1];
+            const parsedBody = JSON.parse(bodyPart);
+            if (parsedBody.detail) {
+              errorMessage = `Import failed: ${parsedBody.detail}`;
+            } else if (parsedBody.message) {
+              errorMessage = `Import failed: ${parsedBody.message}`;
+            } else {
+              errorMessage = `Import failed: ${message}`;
+            }
+          } catch (parseError) {
+            // If JSON parsing fails, just use the original message
+            errorMessage = `Import failed: ${message}`;
+          }
+        } else {
+          errorMessage = `Import failed: ${message}`;
+        }
+      } else if (error?.detail) {
+        errorMessage = `Import failed: ${error.detail}`;
+      } else if (typeof error === "string") {
+        errorMessage = `Import failed: ${error}`;
+      }
+
+      toast.error(errorMessage);
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
@@ -580,6 +642,19 @@ export function MachineList() {
         }}
       />
 
+      <input
+        type="file"
+        accept=".json"
+        ref={fileInputRef}
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleImportMachine(file);
+          }
+        }}
+      />
+
       <Fab
         refScrollingContainerKey="fab-machine-list"
         mainItem={{
@@ -621,6 +696,17 @@ export function MachineList() {
               disabledText: sub?.features.machineLimited
                 ? `Max ${sub?.features.machineLimit} Self-hosted machines for your account. Upgrade to create more machines.`
                 : "Upgrade to Business plan to create self-hosted machines.",
+            },
+          },
+          {
+            name: "Import Machine",
+            icon: isImporting ? LoaderCircle : Upload,
+            onClick: () => {
+              if (!isImporting) fileInputRef.current?.click();
+            },
+            disabled: {
+              disabled: isImporting,
+              disabledText: "Importing...",
             },
           },
         ]}
