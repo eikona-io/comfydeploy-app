@@ -483,6 +483,41 @@ export function DeploymentDialog({
           </div>
         )}
 
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">Integration</h3>
+          <CodeBlock
+            lang="ts"
+            code={`import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const res = await fetch("https://api.comfydeploy.com/api/run/deployment/queue", {
+    method: "POST",
+    headers: {
+      Authorization: \`Bearer ${process.env.COMFYDEPLOY_TOKEN}\`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ deployment_id: "<ID>", inputs: body }),
+  });
+
+  return NextResponse.json(await res.json());
+}`}
+            className="text-xs"
+          />
+          <a
+            href="https://v0.dev/chat/api/open?title=ComfyDeploy%20Integration&prompt=Build%20a%20UI%20that%20uses%20this%20Next.js%20route%20to%20run%20a%20deployment.%5CnGenerate%20a%20form%20from%20the%20deployment's%20input%20schema%20and%20ask%20the%20user%20for%20a%20ComfyDeploy%20auth%20token.%5CnSubmit%20the%20form%20to%20the%20route%20and%20show%20a%20progress%20message.%5CnPoll%20%60%2Fapi%2Frun%2F%7Brun_id%7D%60%20every%202%20seconds%20until%20status%20is%20finished%20then%20display%20the%20result.&content=aW1wb3J0IHsgTmV4dFJlcXVlc3QsIE5leHRSZXNwb25zZSB9IGZyb20gIm5leHQvc2VydmVyIjsKCmV4cG9ydCBhc3luYyBmdW5jdGlvbiBQT1NUKHJlcTogTmV4dFJlcXVlc3QpIHsKICBjb25zdCBib2R5ID0gYXdhaXQgcmVxLmpzb24oKTsKICBjb25zdCByZXMgPSBhd2FpdCBmZXRjaCgiaHR0cHM6Ly9hcGkuY29tZnlkZXBsb3kuY29tL2FwaS9ydW4vZGVwbG95bWVudC9xdWV1ZSIsIHsKICAgIG1ldGhvZDogIlBPU1QiLAogICAgaGVhZGVyczogewogICAgICBBdXRob3JpemF0aW9uOiBgQmVhcmVyICR7cHJvY2Vzcy5lbnYuQ09NRllERVBMT1lfVE9LRU59YCwKICAgICAgIkNvbnRlbnQtVHlwZSI6ICJhcHBsaWNhdGlvbi9qc29uIiwKICAgIH0sCiAgICBib2R5OiBKU09OLnN0cmluZ2lmeSh7IGRlcGxveW1lbnRfaWQ6ICI8SUQ+IiwgaW5wdXRzOiBib2R5IH0pLAogIH0pOwoKICByZXR1cm4gTmV4dFJlc3BvbnNlLmpzb24oYXdhaXQgcmVzLmpzb24oKSk7Cn0K&target=app/api/comfydeploy/route.ts"
+            rel="noreferrer"
+            target="_blank"
+          >
+            <img
+              alt="Open in v0"
+              height="32"
+              src="https://v0.dev/chat-static/button.svg"
+              width="99"
+            />
+          </a>
+        </div>
+
         <div className="flex justify-end gap-2">
           <Button
             variant="outline"
