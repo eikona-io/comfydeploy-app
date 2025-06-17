@@ -6,14 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
-import {
-  Download,
-  Eye,
-  Grid2X2,
-  LayoutList,
-  Search,
-  User,
-} from "lucide-react";
+import { Download, Eye, Grid2X2, LayoutList, Search, User } from "lucide-react";
 import * as React from "react";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { useSharedWorkflows } from "@/hooks/use-shared-workflows";
@@ -27,7 +20,7 @@ type SharedWorkflow = {
   org_id: string;
   workflow_id: string;
   workflow_version_id: string;
-  workflow_export: Record<string, any>;
+  workflow_export: Record<string, unknown>;
   share_slug: string;
   title: string;
   description: string;
@@ -102,10 +95,7 @@ export function ExploreSharedWorkflows() {
         </div>
       </div>
 
-      <div
-        ref={parentRef}
-        className="flex-1 overflow-auto px-4 pb-4"
-      >
+      <div ref={parentRef} className="flex-1 overflow-auto px-4 pb-4">
         {isLoading ? (
           <div
             className={cn(
@@ -202,33 +192,33 @@ function SharedWorkflowCard({
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/shared-workflows/${workflow.share_slug}/download`
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/shared-workflows/${workflow.share_slug}/download`,
       );
-      
+
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.style.display = 'none';
+        const a = document.createElement("a");
+        a.style.display = "none";
         a.href = url;
-        a.download = `${workflow.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+        a.download = `${workflow.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}.json`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error("Download failed:", error);
     }
   };
 
   if (view === "list") {
     return (
       <Link
-        to="/share/$user/$slug"
+        to="/share/workflow/$user/$slug"
         params={{ user: workflow.user_id, slug: workflow.share_slug }}
         className="flex items-center space-x-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors"
       >
@@ -276,7 +266,7 @@ function SharedWorkflowCard({
 
   return (
     <Link
-      to="/share/$user/$slug"
+      to="/share/workflow/$user/$slug"
       params={{ user: workflow.user_id, slug: workflow.share_slug }}
       className="group rounded-lg border p-4 hover:bg-muted/50 transition-colors space-y-3"
     >

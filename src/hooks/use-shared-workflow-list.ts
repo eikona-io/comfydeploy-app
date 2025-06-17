@@ -2,22 +2,45 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 
 const BATCH_SIZE = 20;
 
+interface SharedWorkflow {
+  id: string;
+  user_id: string;
+  org_id: string;
+  workflow_id: string;
+  workflow_version_id: string;
+  workflow_export: Record<string, unknown>;
+  share_slug: string;
+  title: string;
+  description: string;
+  cover_image: string;
+  is_public: boolean;
+  view_count: number;
+  download_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface SharedWorkflowListResponse {
+  shared_workflows: SharedWorkflow[];
+  total: number;
+}
+
 export function useSharedWorkflowList(
-  debouncedSearchValue: string,
-  user_ids: string = "", // format: "user_xxxxxx,user_yyyyyy"
-  limit: number = BATCH_SIZE,
+  debouncedSearchValue = "",
+  user_id = "", // Changed from user_ids to user_id to match backend
+  limit = BATCH_SIZE,
 ) {
-  return useInfiniteQuery<any[]>({
+  return useInfiniteQuery<SharedWorkflow[]>({
     queryKey: ["shared-workflows"],
     queryKeyHashFn: (queryKey) => {
-      return [...queryKey, debouncedSearchValue, limit, user_ids].join(",");
+      return [...queryKey, debouncedSearchValue, limit, user_id].join(",");
     },
     meta: {
       limit: limit,
       offset: 0,
       params: {
         search: debouncedSearchValue ?? "",
-        user_ids: user_ids,
+        user_id: user_id, // Changed from user_ids to user_id
       },
     },
     getNextPageParam: (lastPage, allPages) => {
@@ -31,5 +54,18 @@ export function useSharedWorkflowList(
       return undefined;
     },
     initialPageParam: 0,
+    select: (data) => ({
+      ...data,
+      pages: data.pages.map(
+        (page: SharedWorkflowListResponse | SharedWorkflow[]) => {
+          // Handle the backend response structure
+          return (
+            (page as SharedWorkflowListResponse)?.shared_workflows ||
+            (page as SharedWorkflow[]) ||
+            []
+          );
+        },
+      ),
+    }),
   });
 }
