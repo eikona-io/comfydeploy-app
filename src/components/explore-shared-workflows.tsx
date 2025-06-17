@@ -13,6 +13,7 @@ import { useSharedWorkflows } from "@/hooks/use-shared-workflows";
 import { useDebounce } from "use-debounce";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { UserIcon } from "@/components/run/SharePageComponent";
 
 type SharedWorkflow = {
   id: string;
@@ -61,7 +62,7 @@ export function ExploreSharedWorkflows() {
     <div className="flex h-full w-full flex-col">
       <div className="flex w-full flex-row items-center gap-2 p-4">
         <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search shared workflows..."
             value={searchValue ?? ""}
@@ -72,7 +73,7 @@ export function ExploreSharedWorkflows() {
                 setSearchValue(event.target.value);
               }
             }}
-            className="pl-8"
+            className="pl-9"
           />
         </div>
         <div className="flex items-center gap-1 rounded-md border p-1">
@@ -105,7 +106,7 @@ export function ExploreSharedWorkflows() {
             )}
           >
             {Array.from({ length: 8 }).map((_, i) => (
-              <SharedWorkflowCardSkeleton key={i} view={view} />
+              <SharedWorkflowCardSkeleton key={`skeleton-${i}`} view={view} />
             ))}
           </div>
         ) : flatData.length === 0 ? (
@@ -140,7 +141,10 @@ export function ExploreSharedWorkflows() {
               )}
             >
               {Array.from({ length: 4 }).map((_, i) => (
-                <SharedWorkflowCardSkeleton key={`loading-${i}`} view={view} />
+                <SharedWorkflowCardSkeleton
+                  key={`loading-skeleton-${i}`}
+                  view={view}
+                />
               ))}
             </div>
           </div>
@@ -155,7 +159,7 @@ function SharedWorkflowCardSkeleton({ view }: { view: "list" | "grid" }) {
     return (
       <div className="flex items-center space-x-4 rounded-lg border p-4">
         <Skeleton className="h-12 w-12 rounded" />
-        <div className="space-y-2 flex-1">
+        <div className="flex-1 space-y-2">
           <Skeleton className="h-4 w-[200px]" />
           <Skeleton className="h-3 w-[150px]" />
         </div>
@@ -220,46 +224,51 @@ function SharedWorkflowCard({
       <Link
         to="/share/workflow/$user/$slug"
         params={{ user: workflow.user_id, slug: workflow.share_slug }}
-        className="flex items-center space-x-4 rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+        className="group flex items-center space-x-4 rounded-lg border p-4 transition-all hover:border-primary/50 hover:bg-muted/50"
       >
-        <div className="h-12 w-12 rounded bg-muted flex items-center justify-center">
+        <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg bg-muted">
           {workflow.cover_image ? (
             <img
               src={workflow.cover_image}
               alt={workflow.title}
-              className="h-full w-full object-cover rounded"
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (
             <User className="h-6 w-6 text-muted-foreground" />
           )}
         </div>
-        <div className="flex-1 space-y-1">
-          <h3 className="font-medium line-clamp-1">{workflow.title}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-1">
+        <div className="min-w-0 flex-1 space-y-2">
+          <h3 className="font-semibold line-clamp-1 transition-colors group-hover:text-primary">
+            {workflow.title}
+          </h3>
+          <p className="line-clamp-2 text-xs text-muted-foreground">
             {workflow.description || "No description"}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {getRelativeTime(workflow.created_at)}
-          </p>
-        </div>
-        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <Eye className="h-4 w-4" />
-            <span>{workflow.view_count}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <UserIcon user_id={workflow.user_id} className="h-4 w-4" />
+              <span>{getRelativeTime(workflow.created_at)}</span>
+            </div>
+            <div className="flex items-center space-x-3 text-xs text-muted-foreground">
+              <div className="flex items-center space-x-1">
+                <Eye className="h-3 w-3" />
+                <span>{workflow.view_count}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Download className="h-3 w-3" />
+                <span>{workflow.download_count}</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center space-x-1">
-            <Download className="h-4 w-4" />
-            <span>{workflow.download_count}</span>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownload}
-            className="h-8"
-          >
-            <Download className="h-4 w-4" />
-          </Button>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleDownload}
+          className="h-8 w-8 p-0 opacity-60 transition-opacity group-hover:opacity-100"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
       </Link>
     );
   }
@@ -268,49 +277,77 @@ function SharedWorkflowCard({
     <Link
       to="/share/workflow/$user/$slug"
       params={{ user: workflow.user_id, slug: workflow.share_slug }}
-      className="group rounded-lg border p-4 hover:bg-muted/50 transition-colors space-y-3"
+      className="group relative overflow-hidden rounded-lg border transition-all duration-300 hover:border-primary/50 hover:shadow-lg"
     >
-      <div className="aspect-video rounded bg-muted flex items-center justify-center overflow-hidden">
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-muted">
         {workflow.cover_image ? (
           <img
             src={workflow.cover_image}
             alt={workflow.title}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (
           <User className="h-8 w-8 text-muted-foreground" />
         )}
-      </div>
-      <div className="space-y-2">
-        <h3 className="font-medium line-clamp-2 group-hover:text-primary transition-colors">
-          {workflow.title}
-        </h3>
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {workflow.description || "No description"}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          {getRelativeTime(workflow.created_at)}
-        </p>
-      </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3 text-sm text-muted-foreground">
-          <div className="flex items-center space-x-1">
-            <Eye className="h-4 w-4" />
-            <span>{workflow.view_count}</span>
+
+        {/* Use button overlay */}
+        <Button
+          variant="default"
+          size="sm"
+          asChild
+          className="absolute right-3 top-3 h-8 px-3 bg-primary/90 text-white opacity-0 shadow-md backdrop-blur-sm transition-opacity hover:bg-primary group-hover:opacity-100"
+        >
+          <Link
+            to="/workflows"
+            search={{
+              view: "import",
+              shared_workflow_id: workflow.id,
+              shared_slug: workflow.share_slug,
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            Use
+          </Link>
+        </Button>
+
+        {/* Bottom gradient overlay */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+
+        {/* User and metrics overlay */}
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="flex items-center gap-2">
+            <UserIcon
+              user_id={workflow.user_id}
+              className="h-6 w-6 border-2 border-white"
+            />
           </div>
-          <div className="flex items-center space-x-1">
-            <Download className="h-4 w-4" />
-            <span>{workflow.download_count}</span>
+          <div className="flex items-center space-x-3 text-sm text-white">
+            <div className="flex items-center space-x-1">
+              <Eye className="h-4 w-4" />
+              <span>{workflow.view_count}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Download className="h-4 w-4" />
+              <span>{workflow.download_count}</span>
+            </div>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleDownload}
-          className="h-8 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <Download className="h-4 w-4" />
-        </Button>
+      </div>
+
+      <div className="p-4 space-y-3">
+        <div className="space-y-2">
+          <h3 className="line-clamp-2 font-semibold leading-tight transition-colors group-hover:text-primary">
+            {workflow.title}
+          </h3>
+          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {workflow.description || "No description"}
+          </p>
+        </div>
+
+        {/* Only show timestamp - clean and minimal */}
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{getRelativeTime(workflow.created_at)}</span>
+        </div>
       </div>
     </Link>
   );

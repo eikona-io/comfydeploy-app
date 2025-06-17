@@ -28,6 +28,7 @@ import {
   Code,
   Edit,
   Grid2X2,
+  Globe,
   Image,
   LayoutList,
   MoreHorizontal,
@@ -322,6 +323,56 @@ function WorkflowCardSkeleton({ view = "grid" }: { view?: "list" | "grid" }) {
   );
 }
 
+// Component to display publication status
+function PublicationStatusBadge({ workflowId }: { workflowId: string }) {
+  const { data: sharedWorkflows } = useQuery({
+    queryKey: ["workflow", workflowId, "shared-status"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const existingShare = sharedWorkflows?.shared_workflows?.find(
+    (share: any) => share.workflow_id === workflowId,
+  );
+
+  if (!existingShare) return null;
+
+  return (
+    <div className="absolute top-2 left-2">
+      <Badge
+        variant="default"
+        className="bg-green-600 hover:bg-green-700 text-white text-xs"
+      >
+        <Globe className="w-3 h-3 mr-1" />
+        Community
+      </Badge>
+    </div>
+  );
+}
+
+// Inline publication status for list view
+function PublicationStatusInline({ workflowId }: { workflowId: string }) {
+  const { data: sharedWorkflows } = useQuery({
+    queryKey: ["workflow", workflowId, "shared-status"],
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const existingShare = sharedWorkflows?.shared_workflows?.find(
+    (share: any) => share.workflow_id === workflowId,
+  );
+
+  if (!existingShare) return null;
+
+  return (
+    <Badge
+      variant="default"
+      className="bg-green-600 hover:bg-green-700 text-white text-[10px] h-5 px-1.5 shrink-0"
+    >
+      <Globe className="w-2.5 h-2.5 mr-1" />
+      Community
+    </Badge>
+  );
+}
+
 function WorkflowCard({
   workflow,
   mutate,
@@ -526,9 +577,9 @@ function WorkflowCard({
                                   description: `Shared workflow: ${workflow.name}`,
                                   is_public: true,
                                 }),
-                              }
+                              },
                             );
-                            
+
                             if (response.ok) {
                               const sharedWorkflow = await response.json();
                               const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
@@ -591,6 +642,8 @@ function WorkflowCard({
                   <PinIcon className="rotate-45 text-white drop-shadow-md" />
                 </div>
               )}
+
+              <PublicationStatusBadge workflowId={workflow.id} />
             </Card>
             <div className="flex flex-col px-2 pt-2">
               <div className="flex w-full flex-row justify-between truncate font-medium text-gray-700 text-md dark:text-gray-300">
@@ -652,6 +705,7 @@ function WorkflowCard({
                   {workflow.pinned && (
                     <PinIcon className="h-3 w-3 rotate-45 text-muted-foreground shrink-0" />
                   )}
+                  <PublicationStatusInline workflowId={workflow.id} />
                   {status && (
                     <Badge
                       variant={status === "success" ? "success" : "secondary"}
@@ -749,9 +803,9 @@ function WorkflowCard({
                                   description: `Shared workflow: ${workflow.name}`,
                                   is_public: true,
                                 }),
-                              }
+                              },
                             );
-                            
+
                             if (response.ok) {
                               const sharedWorkflow = await response.json();
                               const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;

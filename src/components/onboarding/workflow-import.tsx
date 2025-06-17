@@ -257,6 +257,10 @@ export default function WorkflowImport() {
   const navigate = useNavigate();
   const { data: latestHashes, isLoading: hashesLoading } = useLatestHashes();
 
+  // Get query parameters for shared workflow import
+  const [sharedWorkflowId] = useQueryState("shared_workflow_id");
+  const [sharedSlug] = useQueryState("shared_slug");
+
   const [validation, setValidation] = useState<StepValidation>({
     workflowName: "Untitled Workflow",
     importOption:
@@ -321,6 +325,96 @@ export default function WorkflowImport() {
     latestHashes?.comfydeploy_hash,
     hashesLoading,
   ]);
+
+  // Handle shared workflow import
+  useEffect(() => {
+    if (sharedSlug && !validation.importJson) {
+      const fetchSharedWorkflow = async () => {
+        try {
+          const sharedWorkflow = await api({
+            url: `shared-workflows/${sharedSlug}`,
+          });
+
+          if (sharedWorkflow?.workflow_export) {
+            const workflowJson = JSON.stringify(
+              sharedWorkflow.workflow_export,
+              null,
+              2,
+            );
+
+            // Extract environment data from shared workflow if it exists
+            const environment = sharedWorkflow.workflow_export.environment;
+            const environmentFields: Partial<StepValidation> = {};
+
+            if (environment) {
+              // Map environment fields to validation state
+              if (environment.comfyui_version) {
+                environmentFields.comfyUiHash = environment.comfyui_version;
+                environmentFields.selectedComfyOption = "custom";
+              }
+              if (environment.gpu) {
+                environmentFields.gpuType = environment.gpu;
+              }
+              if (environment.python_version) {
+                environmentFields.python_version = environment.python_version;
+              }
+              if (environment.base_docker_image) {
+                environmentFields.base_docker_image =
+                  environment.base_docker_image;
+              }
+              if (environment.install_custom_node_with_gpu !== undefined) {
+                environmentFields.install_custom_node_with_gpu =
+                  environment.install_custom_node_with_gpu;
+              }
+              if (environment.docker_command_steps) {
+                environmentFields.docker_command_steps =
+                  environment.docker_command_steps;
+              }
+
+              environmentFields.hasEnvironment = true;
+            }
+
+            setValidation((prev) => ({
+              ...prev,
+              workflowName: sharedWorkflow.title || prev.workflowName,
+              machineName: sharedWorkflow.title
+                ? `${sharedWorkflow.title} Machine`
+                : prev.machineName,
+              importOption: "import",
+              importJson: workflowJson,
+              ...environmentFields,
+            }));
+
+            if (environment) {
+              const configItems = [];
+              if (environment.comfyui_version)
+                configItems.push("ComfyUI version");
+              if (environment.gpu) configItems.push("GPU type");
+              if (environment.python_version)
+                configItems.push("Python version");
+              if (environment.docker_command_steps)
+                configItems.push("custom nodes");
+
+              const environmentMessage =
+                configItems.length > 0
+                  ? ` with pre-configured ${configItems.join(", ")}`
+                  : " with environment configuration";
+              toast.success(
+                `Imported workflow: ${sharedWorkflow.title}${environmentMessage}`,
+              );
+            } else {
+              toast.success(`Imported workflow: ${sharedWorkflow.title}`);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to fetch shared workflow:", error);
+          toast.error("Failed to load shared workflow");
+        }
+      };
+
+      fetchSharedWorkflow();
+    }
+  }, [sharedSlug, validation.importJson]);
 
   // Show loading while hashes are being fetched
   if (hashesLoading) {
@@ -875,10 +969,9 @@ function DefaultOption({
               };
             }
 
-            const comfyVersion =
-              environment.required_comfy_version
-                ? environment.comfyui_version
-                : latestHashes?.comfyui_hash || environment.comfyui_version;
+            const comfyVersion = environment.required_comfy_version
+              ? environment.comfyui_version
+              : latestHashes?.comfyui_hash || environment.comfyui_version;
 
             Object.assign(updatedValidation, {
               docker_command_steps: updatedDockerSteps,
