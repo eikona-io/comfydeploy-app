@@ -42,9 +42,7 @@ export function ShareWorkflowDialog({
   workflowName,
 }: ShareWorkflowDialogProps) {
   const [title, setTitle] = useState(workflowName);
-  const [description, setDescription] = useState(
-    `Shared workflow: ${workflowName}`,
-  );
+  const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverImage, setCoverImage] = useState<string>("");
 
@@ -58,21 +56,28 @@ export function ShareWorkflowDialog({
   });
 
   // Check if this workflow already has shared versions
-  const existingShare = existingShares?.shared_workflows?.find(
-    (share: any) => share.workflow_id === workflowId,
-  );
+  const existingShare = (
+    existingShares as {
+      shared_workflows?: Array<{
+        workflow_id: string;
+        title: string;
+        description: string;
+        cover_image?: string;
+        user_id: string;
+        share_slug: string;
+      }>;
+    }
+  )?.shared_workflows?.find((share) => share.workflow_id === workflowId);
 
   // Update form fields when existing share is found
   useEffect(() => {
     if (existingShare) {
       setTitle(existingShare.title);
-      setDescription(
-        existingShare.description || `Shared workflow: ${workflowName}`,
-      );
+      setDescription(existingShare.description || "");
       setCoverImage(existingShare.cover_image || "");
     } else {
       setTitle(workflowName);
-      setDescription(`Shared workflow: ${workflowName}`);
+      setDescription("");
       setCoverImage("");
     }
   }, [existingShare, workflowName]);
@@ -168,7 +173,12 @@ export function ShareWorkflowDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate cover image requirement
+    // Validate required fields
+    if (!description.trim()) {
+      toast.error("Description is required before publishing");
+      return;
+    }
+
     if (!coverImage.trim()) {
       toast.error("Cover image is required before publishing");
       return;
@@ -242,7 +252,7 @@ export function ShareWorkflowDialog({
             <Alert className="mb-4 border-green-200 bg-green-50">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                <div className="font-semibold mb-1">
+                <div className="mb-1 font-semibold">
                   <span className="text-green-700">
                     🌍 Published to Community
                   </span>
@@ -298,13 +308,14 @@ export function ShareWorkflowDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description">Description *</Label>
               <Textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Enter workflow description (optional)"
+                placeholder="Enter workflow description"
                 rows={3}
+                required
               />
             </div>
 
@@ -329,6 +340,14 @@ export function ShareWorkflowDialog({
                   <div
                     className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400"
                     onClick={() => setAssetBrowserOpen(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setAssetBrowserOpen(true);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
                   >
                     <ImageIcon className="h-6 w-6 text-gray-400" />
                   </div>
@@ -362,7 +381,9 @@ export function ShareWorkflowDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !coverImage.trim()}
+                disabled={
+                  isSubmitting || !coverImage.trim() || !description.trim()
+                }
               >
                 {isSubmitting
                   ? existingShare
