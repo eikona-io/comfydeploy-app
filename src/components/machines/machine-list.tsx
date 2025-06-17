@@ -57,7 +57,6 @@ interface Machine {
   machine_builder_version?: string | number;
   // Add other machine properties as needed
 }
-
 export function MachineList() {
   const { data: latestHashes } = useLatestHashes();
 
@@ -189,8 +188,41 @@ export function MachineList() {
 
       toast.success(`Machine "${response.name}" imported successfully`);
       window.location.reload();
-    } catch (error) {
-      toast.error("Failed to import machine. Please check the file format.");
+    } catch (error: any) {
+      console.error("Import error:", error);
+      // Try to extract the error message from the API response
+      let errorMessage =
+        "Failed to import machine. Please check the file format.";
+
+      if (error?.message) {
+        // The api function returns errors like "HTTP error! status: 400, body: {json}"
+        // Try to parse the body part if it exists
+        const message = error.message;
+        if (message.includes("body: ")) {
+          try {
+            const bodyPart = message.split("body: ")[1];
+            const parsedBody = JSON.parse(bodyPart);
+            if (parsedBody.detail) {
+              errorMessage = `Import failed: ${parsedBody.detail}`;
+            } else if (parsedBody.message) {
+              errorMessage = `Import failed: ${parsedBody.message}`;
+            } else {
+              errorMessage = `Import failed: ${message}`;
+            }
+          } catch (parseError) {
+            // If JSON parsing fails, just use the original message
+            errorMessage = `Import failed: ${message}`;
+          }
+        } else {
+          errorMessage = `Import failed: ${message}`;
+        }
+      } else if (error?.detail) {
+        errorMessage = `Import failed: ${error.detail}`;
+      } else if (typeof error === "string") {
+        errorMessage = `Import failed: ${error}`;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsImporting(false);
     }
