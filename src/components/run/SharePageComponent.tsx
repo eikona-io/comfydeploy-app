@@ -44,6 +44,7 @@ import {
   type ReactNode,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -120,15 +121,18 @@ export function Playground(props: {
     workflow_id ?? "",
   );
 
+  // Memoize the inputs from workflow to prevent unnecessary re-computations
+  const workflowInputs = useMemo(() => {
+    return getInputsFromWorkflow(version);
+  }, [version?.id]);
+
   const [default_values, setDefaultValues] = useState(
-    getDefaultValuesFromWorkflow(getInputsFromWorkflow(version)),
+    getDefaultValuesFromWorkflow(workflowInputs),
   );
 
   useEffect(() => {
-    setDefaultValues(
-      getDefaultValuesFromWorkflow(getInputsFromWorkflow(version)),
-    );
-  }, [version?.version]);
+    setDefaultValues(getDefaultValuesFromWorkflow(workflowInputs));
+  }, [workflowInputs]);
 
   const lastRunIdRef = useRef<string | null>(null);
 
@@ -269,7 +273,7 @@ export function Playground(props: {
                 <RunWorkflowInline
                   blocking={false}
                   default_values={default_values}
-                  inputs={getInputsFromWorkflow(version)}
+                  inputs={workflowInputs}
                   runOrigin={props.runOrigin}
                   workflow_version_id={version?.id}
                   machine_id={props.workflow?.selected_machine_id}
@@ -410,7 +414,7 @@ export function Playground(props: {
           <RunWorkflowInline
             blocking={false}
             default_values={default_values}
-            inputs={getInputsFromWorkflow(version)}
+            inputs={workflowInputs}
             runOrigin={props.runOrigin}
             workflow_version_id={version?.id}
             machine_id={props.workflow?.selected_machine_id}
