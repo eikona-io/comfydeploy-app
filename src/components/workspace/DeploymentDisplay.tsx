@@ -83,6 +83,7 @@ import { NewStepper } from "./StaticStepper";
 import { VersionDetails } from "./VersionDetails";
 import ApiPlaygroundDemo from "../api-playground-demo";
 import { useAuthStore } from "@/lib/auth-store";
+import { useAuth } from "@clerk/clerk-react";
 
 const curlTemplate = `
 curl --request POST \
@@ -1346,53 +1347,57 @@ function V0IntegrationButton({
   inputs: ReturnType<typeof getInputsFromWorkflow>;
 }) {
   const [href, setHref] = useState<string>("");
-  const token = useAuthStore((state) => state.token);
-
-  useEffect(() => {
-    if (!deployment || !token) return;
-
-    // v0 API limits: title <= 32 chars, prompt <= 500 chars
-    const title = "ComfyDeploy Integration";
-
-    // Build schema lines (may be empty) and truncate if needed
-    const schemaLines = (inputs ?? []).map(
-      (i) => `${i.input_id}: ${i.default_value ?? ""}`,
-    );
-    let schemaSnippet = schemaLines.join("\n");
-    if (schemaSnippet.length > 220) {
-      schemaSnippet = `${schemaSnippet.slice(0, 210)}\n...`;
-    }
-
-    const promptBase = `Build a minimal integration page for a ComfyDeploy deployment.\n\nRequirements:\n1. Ask the user to paste their ComfyDeploy API token and store it in client state.\n2. Render input fields based on the schema below.\n${schemaSnippet}\n3. On submit call the \"queueRun\" server action defined in the backend.\n4. Poll \"getRun\" every 2 seconds until status === success and display outputs (images / JSON).`;
-
-    const prompt =
-      promptBase.length > 500 ? `${promptBase.slice(0, 497)}...` : promptBase;
-
-    // Build the spec URL that v0 will fetch
-    const apiBase =
-      typeof window !== "undefined"
-        ? (process.env.NEXT_PUBLIC_CD_API_URL ?? window.location.origin)
-        : (process.env.NEXT_PUBLIC_CD_API_URL ?? "");
-
-    const specUrl = `${apiBase}/api/deployment/${deployment.id}/v0-ui-spec?cd_token=${token}`;
-
-    const url = `https://v0.dev/chat/api/open?title=${encodeURIComponent(
-      title,
-    )}&prompt=${encodeURIComponent(prompt)}&url=${encodeURIComponent(specUrl)}`;
-
-    setHref(url);
-  }, [deployment, inputs, token]);
-
-  if (!href) return null;
+  // const token = useAuthStore((state) => state.token);
+  const { getToken } = useAuth();
 
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className="w-fit">
+    <button
+      type="button"
+      onClick={async () => {
+        const token = await getToken();
+        if (!token) return;
+
+        // v0 API limits: title <= 32 chars, prompt <= 500 chars
+        const title = "ComfyDeploy Integration";
+
+        // Build schema lines (may be empty) and truncate if needed
+        const schemaLines = (inputs ?? []).map(
+          (i) => `${i.input_id}: ${i.default_value ?? ""}`,
+        );
+        let schemaSnippet = schemaLines.join("\n");
+        if (schemaSnippet.length > 220) {
+          schemaSnippet = `${schemaSnippet.slice(0, 210)}\n...`;
+        }
+
+        const promptBase = `Build a minimal integration page for a ComfyDeploy deployment.\n\nRequirements:\n1. Ask the user to paste their ComfyDeploy API token and store it in client state.\n2. Render input fields based on the schema below.\n${schemaSnippet}\n3. On submit call the \"queueRun\" server action defined in the backend.\n4. Poll \"getRun\" every 2 seconds until status === success and display outputs (images / JSON).`;
+
+        const prompt =
+          promptBase.length > 500
+            ? `${promptBase.slice(0, 497)}...`
+            : promptBase;
+
+        // Build the spec URL that v0 will fetch
+        const apiBase =
+          typeof window !== "undefined"
+            ? (process.env.NEXT_PUBLIC_CD_API_URL ?? window.location.origin)
+            : (process.env.NEXT_PUBLIC_CD_API_URL ?? "");
+
+        const specUrl = `${apiBase}/api/deployment/${deployment.id}/v0-ui-spec?cd_token=${token}`;
+
+        const url = `https://v0.dev/chat/api/open?title=${encodeURIComponent(
+          title,
+        )}&prompt=${encodeURIComponent(prompt)}&url=${encodeURIComponent(specUrl)}`;
+
+        window.open(url, "_blank");
+      }}
+      className="w-fit"
+    >
       <img
         src="https://v0.dev/chat-static/button.svg"
         alt="Open in v0"
         width={99}
         height={32}
       />
-    </a>
+    </button>
   );
 }
