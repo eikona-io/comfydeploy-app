@@ -82,6 +82,7 @@ import { useWorkflowDeployments } from "./ContainersTable";
 import { NewStepper } from "./StaticStepper";
 import { VersionDetails } from "./VersionDetails";
 import ApiPlaygroundDemo from "../api-playground-demo";
+import { useAuthStore } from "@/lib/auth-store";
 
 const curlTemplate = `
 curl --request POST \
@@ -290,6 +291,13 @@ export function OutputRender() {
   return <></>
 }
 `;
+
+// Replace integrationBackendTemplate definition
+const _integrationBackendTemplate = `"use server";
+import { ComfyDeploy } from "comfydeploy";
+const cd = new ComfyDeploy({ bearer: "<TOKEN>" });
+export async function queueRun(inputs){ return (await cd.run.deployment.queue({ deploymentId: "<ID>", inputs })).runId; }
+export async function getRun(runId){ return await cd.run.get(runId); }`;
 
 export interface Deployment {
   id: string;
@@ -1073,60 +1081,64 @@ export function DeploymentSettings({
   return (
     <div className="flex flex-col px-2">
       <div className="sticky top-0 z-10 flex items-center justify-between gap-4 rounded-[8px] bg-zinc-50 px-4 py-2 dark:bg-zinc-900">
-        <div className="flex items-center gap-4">
-          <div className="font-medium text-md">Deployment</div>
-          <Select
-            value={deployment.id}
-            onValueChange={(value) => {
-              const newDeployment = deployments?.find((d) => d.id === value);
-              if (newDeployment) {
-                setSelectedDeployment(newDeployment.id);
-              }
-            }}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue>
-                <div className="flex items-center gap-2">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      getEnvColor(deployment.environment),
-                      "whitespace-nowrap text-sm",
-                    )}
-                  >
-                    {deployment.environment}
-                  </Badge>
-                </div>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {deployments
-                ?.filter(
-                  (d) =>
-                    d.environment === "production" ||
-                    d.environment === "staging",
-                )
-                .map((d) => (
-                  <SelectItem
-                    key={d.id}
-                    value={d.id}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          getEnvColor(d.environment),
-                          "whitespace-nowrap text-sm",
-                        )}
-                      >
-                        {d.environment}
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+        <div className="flex w-full items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <div className="font-medium text-md">Deployment</div>
+            <Select
+              value={deployment.id}
+              onValueChange={(value) => {
+                const newDeployment = deployments?.find((d) => d.id === value);
+                if (newDeployment) {
+                  setSelectedDeployment(newDeployment.id);
+                }
+              }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        getEnvColor(deployment.environment),
+                        "whitespace-nowrap text-sm",
+                      )}
+                    >
+                      {deployment.environment}
+                    </Badge>
+                  </div>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {deployments
+                  ?.filter(
+                    (d) =>
+                      d.environment === "production" ||
+                      d.environment === "staging",
+                  )
+                  .map((d) => (
+                    <SelectItem
+                      key={d.id}
+                      value={d.id}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            getEnvColor(d.environment),
+                            "whitespace-nowrap text-sm",
+                          )}
+                        >
+                          {d.environment}
+                        </Badge>
+                      </div>
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <V0IntegrationButton deployment={deployment} inputs={workflowInput} />
         </div>
       </div>
 
@@ -1135,43 +1147,48 @@ export function DeploymentSettings({
           <ShareLinkDisplay deployment={deployment} />
         </div>
       ) : (
-        <ApiPlaygroundDemo
-          key={deployment.id}
-          defaultInputs={
-            workflowInput
-              ? Object.fromEntries([
-                  ["deployment_id", deployment.id],
-                  [
-                    "inputs",
-                    Object.fromEntries(
-                      workflowInput.map((x) => {
-                        if (!x) return [""];
-                        // Check for specific class types that require a custom URL
-                        if (
-                          [
-                            "ComfyUIDeployExternalImage",
-                            "ComfyUIDeployExternalImageAlpha",
-                          ].includes(x.class_type)
-                        ) {
-                          return [x.input_id, "/* put your image url here */"];
-                        }
-                        // Special case for batch images
-                        if (
-                          x.class_type === "ComfyUIDeployExternalImageBatch"
-                        ) {
-                          return [
-                            x.input_id,
-                            ["/* put your image url here */"],
-                          ];
-                        }
-                        return [x.input_id, x.default_value ?? ""];
-                      }),
-                    ),
-                  ],
-                ])
-              : {}
-          }
-        />
+        <>
+          <ApiPlaygroundDemo
+            key={deployment.id}
+            defaultInputs={
+              workflowInput
+                ? Object.fromEntries([
+                    ["deployment_id", deployment.id],
+                    [
+                      "inputs",
+                      Object.fromEntries(
+                        workflowInput.map((x) => {
+                          if (!x) return [""];
+                          // Check for specific class types that require a custom URL
+                          if (
+                            [
+                              "ComfyUIDeployExternalImage",
+                              "ComfyUIDeployExternalImageAlpha",
+                            ].includes(x.class_type)
+                          ) {
+                            return [
+                              x.input_id,
+                              "/* put your image url here */",
+                            ];
+                          }
+                          // Special case for batch images
+                          if (
+                            x.class_type === "ComfyUIDeployExternalImageBatch"
+                          ) {
+                            return [
+                              x.input_id,
+                              ["/* put your image url here */"],
+                            ];
+                          }
+                          return [x.input_id, x.default_value ?? ""];
+                        }),
+                      ),
+                    ],
+                  ])
+                : {}
+            }
+          />
+        </>
       )}
     </div>
   );
@@ -1318,5 +1335,64 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
         </div>
       )}
     </div>
+  );
+}
+
+function V0IntegrationButton({
+  deployment,
+  inputs,
+}: {
+  deployment: Deployment;
+  inputs: ReturnType<typeof getInputsFromWorkflow>;
+}) {
+  const [href, setHref] = useState<string>("");
+  const token = useAuthStore((state) => state.token);
+
+  useEffect(() => {
+    if (!deployment || !token) return;
+
+    // v0 API limits: title <= 32 chars, prompt <= 500 chars
+    const title = "ComfyDeploy Integration";
+
+    // Build schema lines (may be empty) and truncate if needed
+    const schemaLines = (inputs ?? []).map(
+      (i) => `${i.input_id}: ${i.default_value ?? ""}`,
+    );
+    let schemaSnippet = schemaLines.join("\n");
+    if (schemaSnippet.length > 220) {
+      schemaSnippet = `${schemaSnippet.slice(0, 210)}\n...`;
+    }
+
+    const promptBase = `Build a minimal integration page for a ComfyDeploy deployment.\n\nRequirements:\n1. Ask the user to paste their ComfyDeploy API token and store it in client state.\n2. Render input fields based on the schema below.\n${schemaSnippet}\n3. On submit call the \"queueRun\" server action defined in the backend.\n4. Poll \"getRun\" every 2 seconds until status === success and display outputs (images / JSON).`;
+
+    const prompt =
+      promptBase.length > 500 ? `${promptBase.slice(0, 497)}...` : promptBase;
+
+    // Build the spec URL that v0 will fetch
+    const apiBase =
+      typeof window !== "undefined"
+        ? (process.env.NEXT_PUBLIC_CD_API_URL ?? window.location.origin)
+        : (process.env.NEXT_PUBLIC_CD_API_URL ?? "");
+
+    const specUrl = `${apiBase}/api/deployment/${deployment.id}/v0-ui-spec?cd_token=${token}`;
+
+    const url = `https://v0.dev/chat/api/open?title=${encodeURIComponent(
+      title,
+    )}&prompt=${encodeURIComponent(prompt)}&url=${encodeURIComponent(specUrl)}`;
+
+    setHref(url);
+  }, [deployment, inputs, token]);
+
+  if (!href) return null;
+
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className="w-fit">
+      <img
+        src="https://v0.dev/chat-static/button.svg"
+        alt="Open in v0"
+        width={99}
+        height={32}
+      />
+    </a>
   );
 }
