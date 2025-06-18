@@ -1236,8 +1236,12 @@ export function RunWorkflowInline({
                       const groupInputs = groupedInputsByGroup[group.id] || [];
                       const isEmpty = groupInputs.length === 0;
 
-                      // Skip rendering if group has been dissolved
-                      if (isDraggingRef.current && isEmpty) {
+                      // Hide the dragged group placeholder while moving it
+                      if (
+                        isDraggingRef.current &&
+                        isEmpty &&
+                        activeIdState === group.id
+                      ) {
                         return null;
                       }
 

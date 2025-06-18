@@ -8,7 +8,7 @@ import { parseAsBoolean, useQueryState } from "nuqs";
 import { cn } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { ChevronDown, ChevronUp, Play, Search, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { MyDrawer } from "../drawer";
 import { useSearch } from "@tanstack/react-router";
 import {
@@ -99,6 +99,11 @@ function InputComponent({ workflowId }: { workflowId: string }) {
     workflowId ?? "",
   );
   const { workflow } = useCurrentWorkflow(workflowId);
+
+  const workflowInputs = useMemo(
+    () => getInputsFromWorkflow(version),
+    [version?.id],
+  );
   const { data: run, isLoading: isRunLoading } = useQuery({
     enabled: !!runId,
     queryKey: ["run", runId],
@@ -107,14 +112,12 @@ function InputComponent({ workflowId }: { workflowId: string }) {
   const lastRunIdRef = useRef<string | null>(null);
 
   const [default_values, setDefaultValues] = useState(
-    getDefaultValuesFromWorkflow(getInputsFromWorkflow(version)),
+    getDefaultValuesFromWorkflow(workflowInputs),
   );
 
   useEffect(() => {
-    setDefaultValues(
-      getDefaultValuesFromWorkflow(getInputsFromWorkflow(version)),
-    );
-  }, [version?.version]);
+    setDefaultValues(getDefaultValuesFromWorkflow(workflowInputs));
+  }, [workflowInputs]);
 
   useEffect(() => {
     if (runId) {
@@ -162,7 +165,7 @@ function InputComponent({ workflowId }: { workflowId: string }) {
               <RunWorkflowInline
                 blocking={false}
                 default_values={default_values}
-                inputs={getInputsFromWorkflow(version)}
+                inputs={workflowInputs}
                 workflow_version_id={version?.id}
                 machine_id={workflow?.selected_machine_id}
                 workflow_api={version?.workflow_api}
