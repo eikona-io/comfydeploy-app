@@ -45,6 +45,7 @@ const publicRoutes = [
   "/auth/sign-in",
   "/auth/sign-up",
   "/waitlist",
+  "/explore",
   { path: "/share", wildcard: true },
 ];
 

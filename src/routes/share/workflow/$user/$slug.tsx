@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { WorkflowProperties } from "@/components/workflow-preview/workflow-properties";
 import { UserIcon } from "@/components/run/SharePageComponent";
+import { useAuth, useClerk } from "@clerk/clerk-react";
 
 const ComfyUIFlow = lazy(() =>
   import("@/components/workflow-preview/comfyui-flow").then((mod) => ({
@@ -76,10 +77,8 @@ function SharedWorkflowDetails() {
   const { user: userParam, slug } = Route.useParams();
   const [isDownloading, setIsDownloading] = useState(false);
   const navigate = useNavigate();
-
-  // Debug logging
-  console.log("Route params:", { userParam, slug });
-  console.log("API URL will be:", `shared-workflows/${slug}`);
+  const auth = useAuth();
+  const clerk = useClerk();
 
   const {
     data: sharedWorkflow,
@@ -136,6 +135,14 @@ function SharedWorkflowDetails() {
 
   const handleDownload = async () => {
     if (!sharedWorkflow) return;
+
+    // Check if user is signed in
+    if (!auth.isSignedIn) {
+      clerk.openSignIn({
+        redirectUrl: window.location.href,
+      });
+      return;
+    }
 
     setIsDownloading(true);
     try {
