@@ -277,7 +277,7 @@ function SharedWorkflowCard({
     <Link
       to="/share/workflow/$user/$slug"
       params={{ user: workflow.user_id, slug: workflow.share_slug }}
-      className="group relative overflow-hidden rounded-lg border transition-all duration-300 hover:border-primary/50 hover:shadow-lg"
+      className="group relative overflow-hidden rounded-lg border transition-all duration-300 hover:border-primary/50 hover:shadow-lg dark:border-zinc-700/50"
     >
       <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-muted">
         {workflow.cover_image ? (
@@ -295,7 +295,7 @@ function SharedWorkflowCard({
           variant="default"
           size="sm"
           asChild
-          className="absolute right-3 top-3 h-8 px-3 bg-primary/90 text-white opacity-0 shadow-md backdrop-blur-sm transition-opacity hover:bg-primary group-hover:opacity-100"
+          className="absolute top-3 right-3 h-8 bg-primary/90 px-3 text-white opacity-0 shadow-md backdrop-blur-sm transition-opacity hover:bg-primary group-hover:opacity-100 dark:text-zinc-900"
         >
           <Link
             to="/workflows"
@@ -316,10 +316,7 @@ function SharedWorkflowCard({
         {/* User and metrics overlay */}
         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between opacity-0 transition-opacity duration-300 group-hover:opacity-100">
           <div className="flex items-center gap-2">
-            <UserIcon
-              user_id={workflow.user_id}
-              className="h-6 w-6 border-2 border-white"
-            />
+            <UserIcon user_id={workflow.user_id} className="h-6 w-6" />
           </div>
           <div className="flex items-center space-x-3 text-sm text-white">
             <div className="flex items-center space-x-1">

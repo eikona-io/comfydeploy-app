@@ -175,6 +175,7 @@ async function generateThumbnailInternal(url: string): Promise<string> {
 
       if (fileExtension === "obj") {
         const loader = new OBJLoader();
+        loader.crossOrigin = "anonymous";
         loader.load(
           url,
           (obj) => {
@@ -252,12 +253,14 @@ function Model({ url }: { url: string }) {
   let modelScene: THREE.Object3D;
 
   if (fileExtension === "obj") {
-    // Handle OBJ files
-    const obj = useLoader(OBJLoader, url);
+    // Handle OBJ files with proper CORS configuration
+    const obj = useLoader(OBJLoader, url, (loader) => {
+      // Set crossOrigin for CORS handling
+      loader.crossOrigin = "anonymous";
+    });
     modelScene = obj;
   } else {
     // Handle GLB/GLTF files (default)
-    // Remove preload to avoid CORS issues - let useGLTF handle loading with proper CORS config
     const { scene } = useGLTF(url, undefined, undefined, (loader) => {
       // Always set crossOrigin to handle CORS properly
       loader.setCrossOrigin("anonymous");
