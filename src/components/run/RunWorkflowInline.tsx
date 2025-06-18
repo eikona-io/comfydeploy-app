@@ -662,6 +662,27 @@ export function RunWorkflowInline({
         }
       }
 
+      // Position ungrouped input relative to a group
+      if (
+        !activeId.toString().startsWith("group-") &&
+        overId.toString().startsWith("group-") &&
+        activeId !== overId
+      ) {
+        setLayoutOrder((prevOrder) => {
+          const activeLayoutIndex = prevOrder.findIndex(
+            (item) => item.id === activeId,
+          );
+          const overLayoutIndex = prevOrder.findIndex(
+            (item) => item.id === overId,
+          );
+          if (activeLayoutIndex !== -1 && overLayoutIndex !== -1) {
+            return arrayMove(prevOrder, activeLayoutIndex, overLayoutIndex);
+          }
+          return prevOrder;
+        });
+        return;
+      }
+
       // Handle reordering within the same context
       if (activeId !== overId) {
         const oldIndex = reorderedInputs.findIndex(
