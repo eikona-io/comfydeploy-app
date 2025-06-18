@@ -247,10 +247,10 @@ function SharedWorkflowDetails() {
           {/* Details */}
           <div className="flex-1 space-y-4">
             <div>
-              <h1 className="mb-2 text-3xl font-bold">
+              <h1 className="mb-2 font-semibold text-2xl">
                 {sharedWorkflow.title}
               </h1>
-              <p className="text-lg text-muted-foreground">
+              <p className="text-muted-foreground text-sm leading-5">
                 {sharedWorkflow.description || "No description provided"}
               </p>
             </div>
@@ -312,7 +312,7 @@ function SharedWorkflowDetails() {
           {/* Workflow Visual Preview */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Workflow className="h-5 w-5" />
                 Workflow Preview
               </CardTitle>
@@ -344,7 +344,7 @@ function SharedWorkflowDetails() {
           {sharedWorkflow.workflow_export.environment && (
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
                   <Settings className="h-5 w-5" />
                   Environment Configuration
                 </CardTitle>
@@ -456,7 +456,7 @@ function SharedWorkflowDetails() {
           {/* Usage Instructions */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <User className="h-5 w-5" />
                 How to Use
               </CardTitle>

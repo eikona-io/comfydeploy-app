@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import {
   Dialog,
@@ -11,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   Share,
@@ -33,6 +30,8 @@ interface ShareWorkflowDialogProps {
   onOpenChange: (open: boolean) => void;
   workflowId: string;
   workflowName: string;
+  workflowDescription?: string;
+  workflowCoverImage?: string;
 }
 
 export function ShareWorkflowDialog({
@@ -40,11 +39,15 @@ export function ShareWorkflowDialog({
   onOpenChange,
   workflowId,
   workflowName,
+  workflowDescription,
+  workflowCoverImage,
 }: ShareWorkflowDialogProps) {
   const [title, setTitle] = useState(workflowName);
-  const [description, setDescription] = useState("");
+  const [description, setDescription] = useState(workflowDescription || "");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [coverImage, setCoverImage] = useState<string>("");
+  const [coverImage, setCoverImage] = useState<string>(
+    workflowCoverImage || "",
+  );
 
   const queryClient = useQueryClient();
   const { setOpen: setAssetBrowserOpen } = useAssetsBrowserStore();
@@ -77,10 +80,10 @@ export function ShareWorkflowDialog({
       setCoverImage(existingShare.cover_image || "");
     } else {
       setTitle(workflowName);
-      setDescription("");
-      setCoverImage("");
+      setDescription(workflowDescription || "");
+      setCoverImage(workflowCoverImage || "");
     }
-  }, [existingShare, workflowName]);
+  }, [existingShare, workflowName, workflowDescription, workflowCoverImage]);
 
   const handleCopyExistingLink = async () => {
     if (existingShare) {
@@ -233,6 +236,9 @@ export function ShareWorkflowDialog({
 
   return (
     <>
+      {open && (
+        <div className="fixed inset-0 z-50 bg-black/15 backdrop-blur-sm" />
+      )}
       <Dialog
         open={open}
         onOpenChange={(newOpen) => {
@@ -240,7 +246,7 @@ export function ShareWorkflowDialog({
           onOpenChange(newOpen);
         }}
       >
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[500px]" hideOverlay={true}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share className="h-5 w-5" />
@@ -249,11 +255,11 @@ export function ShareWorkflowDialog({
           </DialogHeader>
 
           {existingShare && (
-            <Alert className="mb-4 border-green-200 bg-green-50">
+            <Alert className="mb-4 border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
                 <div className="mb-1 font-semibold">
-                  <span className="text-green-700">
+                  <span className="text-green-700 dark:text-green-400">
                     🌍 Published to Community
                   </span>
                 </div>
@@ -297,7 +303,12 @@ export function ShareWorkflowDialog({
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">
+                Title{" "}
+                <span className="text-red-500 text-xs dark:text-red-400">
+                  *
+                </span>
+              </Label>
               <Input
                 id="title"
                 value={title}
@@ -308,7 +319,12 @@ export function ShareWorkflowDialog({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">
+                Description{" "}
+                <span className="text-red-500 text-xs dark:text-red-400">
+                  *
+                </span>
+              </Label>
               <Textarea
                 id="description"
                 value={description}
@@ -320,8 +336,13 @@ export function ShareWorkflowDialog({
             </div>
 
             <div className="space-y-2">
-              <Label>Cover Image *</Label>
-              <div className="flex gap-2">
+              <Label>
+                Cover Image{" "}
+                <span className="text-red-500 text-xs dark:text-red-400">
+                  *
+                </span>
+              </Label>
+              <div className="flex gap-6">
                 {coverImage ? (
                   <div className="group relative h-24 w-24 overflow-hidden rounded-md border">
                     <FileURLRender
@@ -338,7 +359,7 @@ export function ShareWorkflowDialog({
                   </div>
                 ) : (
                   <div
-                    className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-md border-2 border-dashed border-gray-300 hover:border-gray-400"
+                    className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-md border-2 border-gray-300 border-dashed hover:border-gray-400"
                     onClick={() => setAssetBrowserOpen(true)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
@@ -362,8 +383,8 @@ export function ShareWorkflowDialog({
                     {coverImage ? "Change Image" : "Select Image"}
                   </Button>
                   {!coverImage && (
-                    <p className="text-muted-foreground text-xs">
-                      Cover image is required
+                    <p className="text-2xs text-muted-foreground">
+                      * Cover image is required
                     </p>
                   )}
                 </div>

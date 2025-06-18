@@ -520,6 +520,8 @@ function WorkflowPageComponent() {
         onOpenChange={setIsShareDialogOpen}
         workflowId={workflowId}
         workflowName={workflow?.name || "Untitled Workflow"}
+        workflowDescription={workflow?.description}
+        workflowCoverImage={workflow?.cover_image}
       />
       <DeploymentDrawer>
         {selectedDeployment === publicShareDeployment?.id && (

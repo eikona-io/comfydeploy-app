@@ -337,15 +337,13 @@ function PublicationStatusBadge({ workflowId }: { workflowId: string }) {
   if (!existingShare) return null;
 
   return (
-    <div className="absolute top-2 left-2">
-      <Badge
-        variant="default"
-        className="bg-green-600 hover:bg-green-700 text-white text-xs"
-      >
-        <Globe className="w-3 h-3 mr-1" />
-        Community
-      </Badge>
-    </div>
+    <Badge
+      variant="default"
+      className="bg-green-600/80 text-white text-xs backdrop-blur-sm hover:bg-green-700/80 dark:bg-green-500/80 dark:text-white dark:hover:bg-green-600/80"
+    >
+      <Globe className="h-3 w-3" />
+      Community
+    </Badge>
   );
 }
 
@@ -637,13 +635,12 @@ function WorkflowCard({
                 </AdminAndMember>
               </div>
 
-              {workflow.pinned && (
-                <div className="absolute top-4 left-4">
+              <div className="absolute top-4 left-4 flex items-center gap-2">
+                {workflow.pinned && (
                   <PinIcon className="rotate-45 text-white drop-shadow-md" />
-                </div>
-              )}
-
-              <PublicationStatusBadge workflowId={workflow.id} />
+                )}
+                <PublicationStatusBadge workflowId={workflow.id} />
+              </div>
             </Card>
             <div className="flex flex-col px-2 pt-2">
               <div className="flex w-full flex-row justify-between truncate font-medium text-gray-700 text-md dark:text-gray-300">
