@@ -34,6 +34,7 @@ import {
   PointerSensor,
   KeyboardSensor,
   closestCenter,
+  useDroppable,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -482,9 +483,15 @@ export function RunWorkflowInline({
     }),
   );
   const isDraggingRef = useRef(false);
+  const [activeIdState, setActiveIdState] = useState<string | null>(null);
+  const { setNodeRef: setUngroupedRef } = useDroppable({
+    id: "ungrouped-container",
+    data: { type: "ungrouped" },
+  });
 
-  const handleDragStart = () => {
+  const handleDragStart = (event: any) => {
     isDraggingRef.current = true;
+    setActiveIdState(event.active.id);
   };
 
   const handleDragEnd = useCallback(
@@ -493,6 +500,7 @@ export function RunWorkflowInline({
 
       // Always reset dragging state immediately
       isDraggingRef.current = false;
+      setActiveIdState(null);
 
       if (!over) {
         return;
@@ -608,6 +616,70 @@ export function RunWorkflowInline({
             return newOrder;
           });
         }
+        return;
+      }
+
+      // Move input out of a group into ungrouped items
+      if (!activeId.toString().startsWith("group-") && over) {
+        const oldIndex = reorderedInputs.findIndex(
+          (item) => item.input_id === activeId,
+        );
+        const newIndex = reorderedInputs.findIndex(
+          (item) => item.input_id === overId,
+        );
+        const activeItem = reorderedInputs[oldIndex];
+        const overItem = reorderedInputs[newIndex];
+
+        if (
+          activeItem?.groupId &&
+          (!overItem?.groupId || over.data?.current?.type === "ungrouped")
+        ) {
+          setReorderedInputs((prev) => {
+            const updated = prev.map((inp) =>
+              inp.input_id === activeId ? { ...inp, groupId: undefined } : inp,
+            );
+            if (oldIndex !== -1 && newIndex !== -1) {
+              return arrayMove(updated, oldIndex, newIndex);
+            }
+            return updated;
+          });
+
+          setLayoutOrder((prev) => {
+            const filtered = prev.filter((i) => i.id !== activeId);
+            const overLayoutIndex = prev.findIndex((i) => i.id === overId);
+            if (overLayoutIndex === -1) {
+              return [...filtered, { type: "input", id: activeId }];
+            }
+            const newOrder = [...filtered];
+            newOrder.splice(overLayoutIndex, 0, {
+              type: "input",
+              id: activeId,
+            });
+            return newOrder;
+          });
+
+          return;
+        }
+      }
+
+      // Position ungrouped input relative to a group
+      if (
+        !activeId.toString().startsWith("group-") &&
+        overId.toString().startsWith("group-") &&
+        activeId !== overId
+      ) {
+        setLayoutOrder((prevOrder) => {
+          const activeLayoutIndex = prevOrder.findIndex(
+            (item) => item.id === activeId,
+          );
+          const overLayoutIndex = prevOrder.findIndex(
+            (item) => item.id === overId,
+          );
+          if (activeLayoutIndex !== -1 && overLayoutIndex !== -1) {
+            return arrayMove(prevOrder, activeLayoutIndex, overLayoutIndex);
+          }
+          return prevOrder;
+        });
         return;
       }
 
@@ -1153,10 +1225,15 @@ export function RunWorkflowInline({
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={layoutOrder.map((item) => item.id)}
+                items={
+                  activeIdState &&
+                  !layoutOrder.some((i) => i.id === activeIdState)
+                    ? [...layoutOrder.map((item) => item.id), activeIdState]
+                    : layoutOrder.map((item) => item.id)
+                }
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-2">
+                <div ref={setUngroupedRef} className="space-y-2">
                   {/* Create Group Button */}
                   <Button
                     onClick={createGroup}
@@ -1180,8 +1257,12 @@ export function RunWorkflowInline({
                       const groupInputs = groupedInputsByGroup[group.id] || [];
                       const isEmpty = groupInputs.length === 0;
 
-                      // Skip rendering if group has been dissolved
-                      if (isDraggingRef.current && isEmpty) {
+                      // Hide the dragged group placeholder while moving it
+                      if (
+                        isDraggingRef.current &&
+                        isEmpty &&
+                        activeIdState === group.id
+                      ) {
                         return null;
                       }
 
@@ -1242,7 +1323,8 @@ export function RunWorkflowInline({
                             }}
                           >
                             {groupInputs.map((item, index) => {
-                              const stableKey = `${group.id}-${item.input_id || index}`;
+                              const stableKey =
+                                item.input_id || `item-${index}`;
                               return (
                                 <SortableItem
                                   key={stableKey}
