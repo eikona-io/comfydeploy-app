@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { FileURLRender } from "@/components/workflows/OutputRender";
 import { Link } from "@tanstack/react-router";
 import { Download, Eye, Grid2X2, LayoutList, Search, User } from "lucide-react";
 import * as React from "react";
@@ -228,10 +229,10 @@ function SharedWorkflowCard({
       >
         <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg bg-muted">
           {workflow.cover_image ? (
-            <img
-              src={workflow.cover_image}
-              alt={workflow.title}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            <FileURLRender
+              url={workflow.cover_image}
+              imgClasses="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+              isSmallView
             />
           ) : (
             <User className="h-6 w-6 text-muted-foreground" />
@@ -281,10 +282,10 @@ function SharedWorkflowCard({
     >
       <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-muted">
         {workflow.cover_image ? (
-          <img
-            src={workflow.cover_image}
-            alt={workflow.title}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+          <FileURLRender
+            url={workflow.cover_image}
+            imgClasses="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            isSmallView
           />
         ) : (
           <User className="h-8 w-8 text-muted-foreground" />
