@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { FileURLRender } from "@/components/workflows/OutputRender";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -240,10 +241,10 @@ function SharedWorkflowDetails() {
           <div className="w-full lg:w-1/3">
             <div className="flex aspect-video items-center justify-center overflow-hidden rounded-lg bg-muted">
               {sharedWorkflow.cover_image ? (
-                <img
-                  src={sharedWorkflow.cover_image}
-                  alt={sharedWorkflow.title}
-                  className="h-full w-full object-cover"
+                <FileURLRender
+                  url={sharedWorkflow.cover_image}
+                  imgClasses="h-full w-full object-cover"
+                  isSmallView
                 />
               ) : (
                 <Workflow className="h-16 w-16 text-muted-foreground" />
