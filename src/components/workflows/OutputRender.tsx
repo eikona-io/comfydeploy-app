@@ -160,7 +160,7 @@ function _FileURLRender({
           </div>
         )}
         <video
-          autoPlay={!isSmallView}
+          autoPlay
           loop
           muted
           playsInline
