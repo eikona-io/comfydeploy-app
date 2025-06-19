@@ -291,27 +291,29 @@ export function DiffView({
                           return (
                             <div
                               key={key}
-                              className="text-xs flex items-center gap-2 bg-gray-50 px-2 py-1 rounded"
+                              className="text-xs flex items-center gap-2 bg-gray-50 px-2 py-1 rounded dark:bg-zinc-900/20 dark:text-zinc-100"
                             >
-                              <span className="text-red-500 font-medium">
+                              <span className="text-red-500 font-medium dark:text-red-400">
                                 -
                               </span>
-                              <span className="text-red-600">
+                              <span className="text-red-600 dark:text-red-400">
                                 {isLinkTypeChange ? (
-                                  <span className="font-mono bg-red-100 px-1 rounded">
+                                  <span className="font-mono bg-red-100 px-1 rounded dark:bg-red-900/20 dark:text-red-400">
                                     {oldValue}
                                   </span>
                                 ) : (
                                   JSON.stringify(oldValue)
                                 )}
                               </span>
-                              <span className="text-gray-400 mx-1">→</span>
-                              <span className="text-green-500 font-medium">
+                              <span className="text-gray-400 mx-1 dark:text-zinc-400">
+                                →
+                              </span>
+                              <span className="text-green-500 font-medium dark:text-green-400">
                                 +
                               </span>
-                              <span className="text-green-600">
+                              <span className="text-green-600 dark:text-green-400">
                                 {isLinkTypeChange ? (
-                                  <span className="font-mono bg-green-100 px-1 rounded">
+                                  <span className="font-mono bg-green-100 px-1 rounded dark:bg-green-900/20 dark:text-green-400">
                                     {newValue}
                                   </span>
                                 ) : (
@@ -346,7 +348,7 @@ export function DiffView({
                     } ml-6`}
                   >
                     <h3
-                      className={`text-xs font-medium text-green-600 flex items-center cursor-pointer ${
+                      className={`text-xs font-medium text-green-600 flex items-center cursor-pointer dark:text-green-400 ${
                         isCollapsed ? "" : "mb-1"
                       }`}
                       onClick={() => toggleSection(sectionId)}
@@ -367,8 +369,10 @@ export function DiffView({
                       <Badge>{path}</Badge>
                     </h3>
                     {!isCollapsed && (
-                      <div className="bg-green-50 px-2 py-1 rounded text-xs">
-                        <span className="text-green-500 font-medium">+</span>{" "}
+                      <div className="bg-green-50 px-2 py-1 rounded text-xs dark:bg-green-900/20 dark:text-green-400">
+                        <span className="text-green-500 font-medium dark:text-green-400">
+                          +
+                        </span>{" "}
                         {JSON.stringify(value, null, 2)}
                       </div>
                     )}
@@ -395,7 +399,7 @@ export function DiffView({
                     } ml-6`}
                   >
                     <h3
-                      className={`text-xs font-medium text-red-600 flex items-center cursor-pointer ${
+                      className={`text-xs font-medium text-red-600 flex items-center cursor-pointer dark:text-red-400 ${
                         isCollapsed ? "" : "mb-1"
                       }`}
                       onClick={() => toggleSection(sectionId)}
@@ -416,8 +420,10 @@ export function DiffView({
                       <Badge>{path}</Badge>
                     </h3>
                     {!isCollapsed && (
-                      <div className="bg-red-50 px-2 py-1 rounded text-xs">
-                        <span className="text-red-500 font-medium">-</span>{" "}
+                      <div className="bg-red-50 px-2 py-1 rounded text-xs dark:bg-red-900/20 dark:text-red-400">
+                        <span className="text-red-500 font-medium dark:text-red-400">
+                          -
+                        </span>{" "}
                         {JSON.stringify(value, null, 2)}
                       </div>
                     )}
@@ -469,9 +475,9 @@ export function SnapshotDiffView({
   if (!differences || differences.length === 0 || !oldSnapshot) {
     return (
       <div className="flex flex-col items-center justify-center px-8 py-4 text-center">
-        <div className="mb-2 rounded-full bg-green-50 p-1">
+        <div className="mb-2 rounded-full bg-green-50 p-1 dark:bg-green-900/20 dark:text-green-400">
           <svg
-            className="h-6 w-6 text-green-500"
+            className="h-6 w-6 text-green-500 dark:text-green-400"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -484,10 +490,12 @@ export function SnapshotDiffView({
             />
           </svg>
         </div>
-        <h3 className="font-medium text-gray-900 text-sm">
+        <h3 className="font-medium text-gray-900 text-sm dark:text-zinc-100">
           No differences found
         </h3>
-        <p className="text-2xs text-gray-500">The snapshots are identical</p>
+        <p className="text-2xs text-gray-500 dark:text-zinc-400">
+          The snapshots are identical
+        </p>
       </div>
     );
   }
@@ -499,15 +507,15 @@ export function SnapshotDiffView({
           return (
             <div
               key="comfyui"
-              className="flex w-full items-center justify-between rounded-sm border bg-gray-50 p-2"
+              className="flex w-full items-center justify-between rounded-sm border bg-gray-50 p-2 dark:bg-zinc-900/20 dark:text-zinc-100"
             >
               <Badge className="!text-xs !py-0">ComfyUI Version</Badge>
               <div className="flex items-center gap-2 font-mono text-xs">
-                <span className="rounded-[4px] bg-red-50 px-2 py-0.5 text-2xs text-red-600">
+                <span className="rounded-[4px] bg-red-50 px-2 py-0.5 text-2xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
                   {change.oldValue?.slice(0, 7)}
                 </span>
-                <span className="text-gray-400">→</span>
-                <span className="rounded-[4px] bg-green-50 px-2 py-0.5 text-2xs text-green-600">
+                <span className="text-gray-400 dark:text-zinc-400">→</span>
+                <span className="rounded-[4px] bg-green-50 px-2 py-0.5 text-2xs text-green-600 dark:bg-green-900/20 dark:text-green-400">
                   {change.value?.slice(0, 7)}
                 </span>
               </div>
@@ -525,11 +533,15 @@ export function SnapshotDiffView({
                     return (
                       <div
                         key={nodeChange.key}
-                        className="flex w-full items-center gap-2 rounded-[4px] bg-red-50 px-2 py-0.5 text-xs"
+                        className="flex w-full items-center gap-2 rounded-[4px] bg-red-50 px-2 py-0.5 text-xs dark:bg-red-900/20 dark:text-red-400"
                       >
-                        <span className="font-medium text-red-600">-</span>
-                        <span className="font-medium">{nodeChange.key}</span>
-                        <span className="text-gray-600">
+                        <span className="font-medium text-red-600 dark:text-red-400">
+                          -
+                        </span>
+                        <span className="font-medium dark:text-zinc-100">
+                          {nodeChange.key}
+                        </span>
+                        <span className="text-gray-600 dark:text-zinc-400">
                           v{nodeChange.value}
                         </span>
                       </div>
@@ -540,10 +552,14 @@ export function SnapshotDiffView({
                     return (
                       <div
                         key={nodeChange.key}
-                        className="flex w-full items-center gap-2 rounded-[4px] bg-green-50 px-2 py-0.5 text-xs"
+                        className="flex w-full items-center gap-2 rounded-[4px] bg-green-50 px-2 py-0.5 text-xs dark:bg-green-900/20 dark:text-green-400"
                       >
-                        <span className="font-medium text-green-600">+</span>
-                        <span className="font-medium">{nodeChange.key}</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">
+                          +
+                        </span>
+                        <span className="font-medium dark:text-zinc-100">
+                          {nodeChange.key}
+                        </span>
                         <span className="text-gray-600">
                           v{nodeChange.value}
                         </span>
@@ -560,11 +576,13 @@ export function SnapshotDiffView({
                       >
                         <span className="font-medium">{nodeChange.key}</span>
                         <div className="flex items-center gap-2 font-mono text-xs">
-                          <span className="rounded-[4px] bg-red-50 px-2 py-0.5 text-2xs text-red-600">
+                          <span className="rounded-[4px] bg-red-50 px-2 py-0.5 text-2xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
                             v{nodeChange.oldValue}
                           </span>
-                          <span className="text-gray-400">→</span>
-                          <span className="rounded-[4px] bg-green-50 px-2 py-0.5 text-2xs text-green-600">
+                          <span className="text-gray-400 dark:text-zinc-400">
+                            →
+                          </span>
+                          <span className="rounded-[4px] bg-green-50 px-2 py-0.5 text-2xs text-green-600 dark:bg-green-900/20 dark:text-green-400">
                             v{nodeChange.value}
                           </span>
                         </div>
@@ -590,10 +608,14 @@ export function SnapshotDiffView({
                     return (
                       <div
                         key={nodeChange.key}
-                        className="flex w-full items-center gap-2 rounded-[4px] bg-red-50 px-2 py-0.5 text-xs"
+                        className="flex w-full items-center gap-2 rounded-[4px] bg-red-50 px-2 py-0.5 text-xs dark:bg-red-900/20 dark:text-red-400"
                       >
-                        <span className="font-medium text-red-600">-</span>
-                        <span className="text-gray-600">{author}/</span>
+                        <span className="font-medium text-red-600 dark:text-red-400">
+                          -
+                        </span>
+                        <span className="text-gray-600 dark:text-zinc-400">
+                          {author}/
+                        </span>
                         <span className="font-medium">{repo}</span>
                       </div>
                     );
@@ -603,10 +625,14 @@ export function SnapshotDiffView({
                     return (
                       <div
                         key={nodeChange.key}
-                        className="flex w-full items-center gap-2 rounded-[4px] bg-green-50 px-2 py-0.5 text-xs"
+                        className="flex w-full items-center gap-2 rounded-[4px] bg-green-50 px-2 py-0.5 text-xs dark:bg-green-900/20 dark:text-green-400"
                       >
-                        <span className="font-medium text-green-600">+</span>
-                        <span className="text-gray-600">{author}/</span>
+                        <span className="font-medium text-green-600 dark:text-green-400">
+                          +
+                        </span>
+                        <span className="text-gray-600 dark:text-zinc-400">
+                          {author}/
+                        </span>
                         <span className="font-medium">{repo}</span>
                       </div>
                     );
@@ -617,14 +643,18 @@ export function SnapshotDiffView({
                     <div key={nodeChange.key}>
                       <div className="flex w-full items-center justify-between px-2 py-0.5">
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="font-medium text-blue-600">↻</span>
-                          <span className="text-gray-600">{author}/</span>
+                          <span className="font-medium text-blue-600 dark:text-blue-400">
+                            ↻
+                          </span>
+                          <span className="text-gray-600 dark:text-zinc-400">
+                            {author}/
+                          </span>
                           <span className="font-medium">{repo}</span>
                         </div>
                         {nodeChange.changes?.some(
                           (c) => c.key === "disabled",
                         ) && (
-                          <div className="text-gray-600 text-xs">
+                          <div className="text-gray-600 text-xs dark:text-zinc-400">
                             {nodeChange.changes.map((subChange: any) => {
                               if (subChange.key === "disabled") {
                                 return (
@@ -654,10 +684,12 @@ export function SnapshotDiffView({
                                 className="ml-4 flex items-center gap-2 font-mono text-xs"
                                 key={subChange.key}
                               >
-                                <span className="rounded-[4px] bg-red-50 px-2 py-0.5 text-2xs text-red-600">
+                                <span className="rounded-[4px] bg-red-50 px-2 py-0.5 text-2xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
                                   {subChange.oldValue?.slice(0, 7)}
                                 </span>
-                                <span className="text-gray-400">→</span>
+                                <span className="text-gray-400 dark:text-zinc-400">
+                                  →
+                                </span>
                                 <span className="rounded-[4px] bg-green-50 px-2 py-0.5 text-2xs text-green-600">
                                   {subChange.value?.slice(0, 7)}
                                 </span>
