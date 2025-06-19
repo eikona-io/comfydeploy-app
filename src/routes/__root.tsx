@@ -34,6 +34,7 @@ import {
 import { Toaster } from "sonner";
 import { Providers, queryClient } from "../lib/providers";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer";
 
 export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
@@ -146,6 +147,7 @@ function RootComponent() {
         )}
         <ComfyCommand />
         <Toaster richColors closeButton={true} />
+        <AssetsBrowserPopup isPlayground />
       </div>
     </ThemeProvider>
   );

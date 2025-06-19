@@ -21,7 +21,6 @@ import {
 import { api } from "@/lib/api";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer";
 import { FileURLRender } from "@/components/workflows/OutputRender";
 import { useAssetsBrowserStore } from "@/components/workspace/Workspace";
 
@@ -50,7 +49,8 @@ export function ShareWorkflowDialog({
   );
 
   const queryClient = useQueryClient();
-  const { setOpen: setAssetBrowserOpen } = useAssetsBrowserStore();
+  const { setOpen: setAssetBrowserOpen, setOnAssetSelect } =
+    useAssetsBrowserStore();
 
   // Query to check for existing shared workflows
   const { data: existingShares } = useQuery({
@@ -170,6 +170,7 @@ export function ShareWorkflowDialog({
     id: string;
   }) => {
     setCoverImage(asset.url);
+    setOnAssetSelect(null);
     setAssetBrowserOpen(false);
   };
 
@@ -360,10 +361,14 @@ export function ShareWorkflowDialog({
                 ) : (
                   <div
                     className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-md border-2 border-gray-300 border-dashed hover:border-gray-400"
-                    onClick={() => setAssetBrowserOpen(true)}
+                    onClick={() => {
+                      setOnAssetSelect(handleAssetSelect);
+                      setAssetBrowserOpen(true);
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
+                        setOnAssetSelect(handleAssetSelect);
                         setAssetBrowserOpen(true);
                       }
                     }}
@@ -378,7 +383,10 @@ export function ShareWorkflowDialog({
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setAssetBrowserOpen(true)}
+                    onClick={() => {
+                      setOnAssetSelect(handleAssetSelect);
+                      setAssetBrowserOpen(true);
+                    }}
                   >
                     {coverImage ? "Change Image" : "Select Image"}
                   </Button>
@@ -418,8 +426,6 @@ export function ShareWorkflowDialog({
           </form>
         </DialogContent>
       </Dialog>
-
-      <AssetsBrowserPopup isPlayground={true} handleAsset={handleAssetSelect} />
     </>
   );
 }

@@ -11,15 +11,22 @@ export function AssetsBrowserPopup({
   handleAsset,
 }: {
   isPlayground?: boolean;
-  handleAsset: (asset: AssetType) => void;
+  handleAsset?: (asset: AssetType) => void;
 }) {
-  const { open, setOpen, targetNodeData } = useAssetsBrowserStore();
+  const { open, setOpen, targetNodeData, onAssetSelect, setOnAssetSelect } =
+    useAssetsBrowserStore();
+  const assetHandler = handleAsset ?? onAssetSelect;
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   return (
     <Drawer.Root
       open={open}
-      onOpenChange={(open) => setOpen(open)}
+      onOpenChange={(openState) => {
+        if (!openState) {
+          setOnAssetSelect(null);
+        }
+        setOpen(openState);
+      }}
       direction={isMobile ? "bottom" : "right"}
     >
       <Drawer.Portal>
@@ -47,8 +54,8 @@ export function AssetsBrowserPopup({
             </div>
             <AssetBrowser
               onItemClick={(asset) => {
-                if (isPlayground && handleAsset) {
-                  handleAsset(asset);
+                if (isPlayground && assetHandler) {
+                  assetHandler(asset);
                   return;
                 }
                 if (targetNodeData?.node) {
