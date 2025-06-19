@@ -1,9 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Image } from "lucide-react";
 import { buttonVariants } from "../ui/button";
-import { useState } from "react";
 import { ImageInputsTooltip } from "../image-inputs-tooltip";
-import { AssetsBrowserPopup } from "../workspace/assets-browser-drawer";
 import { useAssetsBrowserStore } from "../workspace/Workspace";
 import { useSessionIdInSessionView } from "@/hooks/hook";
 
@@ -18,23 +16,22 @@ export type AssetType = {
 };
 
 export const SDAssetInput = ({ onChange }: Props) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { setOpen, setSidebarMode } = useAssetsBrowserStore();
+  const { setOpen, setSidebarMode, setOnAssetSelect } = useAssetsBrowserStore();
+  const handleAsset = (asset: AssetType) => {
+    onChange(asset.url);
+    setOnAssetSelect(null);
+    setOpen(false);
+  };
+
   const sessionId = useSessionIdInSessionView();
 
   const handleClick = () => {
     if (sessionId) {
       setSidebarMode(true);
     } else {
+      setOnAssetSelect(handleAsset);
       setOpen(true);
-      setIsOpen(true);
     }
-  };
-
-  const handleAsset = (asset: AssetType) => {
-    onChange(asset.url);
-    setIsOpen(false);
-    setOpen(false);
   };
 
   return (
@@ -54,7 +51,6 @@ export const SDAssetInput = ({ onChange }: Props) => {
           <Image size={18} />
         </button>
       </ImageInputsTooltip>
-      {isOpen && <AssetsBrowserPopup isPlayground handleAsset={handleAsset} />}
     </>
   );
 };

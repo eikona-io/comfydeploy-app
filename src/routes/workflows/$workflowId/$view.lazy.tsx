@@ -58,7 +58,6 @@ import {
   useSelectedVersion,
 } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
-import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
@@ -249,8 +248,7 @@ function WorkflowPageComponent() {
   const router = useRouter();
 
   const [sessionId, setSessionId] = useQueryState("sessionId");
-  const { open: isAssetsOpen, setOpen: setIsAssetsOpen } =
-    useAssetsBrowserStore();
+  const { setOpen: setAssetsOpen, setOnAssetSelect } = useAssetsBrowserStore();
 
   // Find public share deployment if it exists
   const publicShareDeployment = deployments?.find(
@@ -275,7 +273,8 @@ function WorkflowPageComponent() {
     } catch (error) {
       toast.error("Failed to update cover image");
     } finally {
-      setIsAssetsOpen(false);
+      setOnAssetSelect(null);
+      setAssetsOpen(false);
     }
   };
 
@@ -469,7 +468,8 @@ function WorkflowPageComponent() {
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onSelect={() => {
-                    setIsAssetsOpen(true);
+                    setOnAssetSelect(handleAsset);
+                    setAssetsOpen(true);
                   }}
                 >
                   From Assets
@@ -480,9 +480,6 @@ function WorkflowPageComponent() {
               <p className="line-clamp-3 text-2xs text-gray-600 leading-snug dark:text-gray-400">
                 {workflow.description}
               </p>
-            )}
-            {isAssetsOpen && (
-              <AssetsBrowserPopup isPlayground handleAsset={handleAsset} />
             )}
           </div>
         )}

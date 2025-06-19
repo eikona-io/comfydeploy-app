@@ -70,8 +70,8 @@ import { parseAsBoolean, parseAsInteger, useQueryState } from "nuqs";
 import { create } from "zustand";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { AssetsBrowserPopup } from "./assets-browser-drawer";
 import { WorkspaceControls } from "./workspace-control";
+import type { AssetType } from "../SDInputs/sd-asset-input";
 
 interface WorkflowState {
   workflow: any;
@@ -513,26 +513,6 @@ export default function Workspace({
 
   return (
     <>
-      <AssetsBrowserPopup
-        handleAsset={(asset) => {
-          const { targetNodeData } = useAssetsBrowserStore.getState();
-          if (targetNodeData?.node) {
-            sendEventToCD("update_widget", {
-              nodeId: targetNodeData.node,
-              widgetName: targetNodeData.inputName,
-              value: asset.url,
-            });
-            useAssetsBrowserStore.getState().setTargetNodeData(null);
-          } else {
-            sendEventToCD("add_node", {
-              type: "ComfyUIDeployExternalImage",
-              widgets_values: ["input_image", "", "", asset.url],
-            });
-          }
-          useAssetsBrowserStore.getState().setOpen(false);
-        }}
-      />
-
       <WorkspaceControls
         endpoint={endpoint}
         machine_id={machine_id}
@@ -650,6 +630,8 @@ interface AssetsBrowserState {
   setTargetNodeData: (targetNodeData: any) => void;
   sidebarMode: boolean;
   setSidebarMode: (mode: boolean) => void;
+  onAssetSelect: ((asset: AssetType) => void) | null;
+  setOnAssetSelect: (cb: ((asset: AssetType) => void) | null) => void;
 }
 
 export const useAssetsBrowserStore = create<AssetsBrowserState>((set) => ({
@@ -659,4 +641,6 @@ export const useAssetsBrowserStore = create<AssetsBrowserState>((set) => ({
   setTargetNodeData: (targetNodeData) => set({ targetNodeData }),
   sidebarMode: false,
   setSidebarMode: (sidebarMode) => set({ sidebarMode }),
+  onAssetSelect: null,
+  setOnAssetSelect: (cb) => set({ onAssetSelect: cb }),
 }));
