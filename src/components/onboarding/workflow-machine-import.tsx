@@ -988,7 +988,7 @@ export function WorkflowImportCustomNodeSetup({
                 <div key={nodeName} className="rounded-sm border p-3">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="font-medium text-sm">{nodeName}</span>
-                    <span className="rounded-full bg-yellow-50 px-2 py-0.5 text-xs text-yellow-600">
+                    <span className="rounded-full bg-yellow-50 px-2 py-0.5 text-xs text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400">
                       {conflicts.length} implementation
                       {conflicts.length !== 1 ? "s" : ""}
                     </span>
@@ -1326,8 +1326,10 @@ function NodeListItem({
     <div
       className={cn(
         "flex flex-col rounded-sm border p-2",
-        !hasHash && "bg-red-50 ring-1 ring-red-500 ring-offset-2",
-        isUrlDuplicate && "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2",
+        !hasHash &&
+          "bg-red-50 ring-1 ring-red-500 ring-offset-2 dark:bg-red-900/20 dark:ring-red-500",
+        isUrlDuplicate &&
+          "bg-yellow-50 ring-1 ring-yellow-500 ring-offset-2 dark:bg-yellow-900/20 dark:ring-yellow-500",
       )}
     >
       <div className="group flex items-center gap-3">
