@@ -347,30 +347,6 @@ function PublicationStatusBadge({ workflowId }: { workflowId: string }) {
   );
 }
 
-// Inline publication status for list view
-function PublicationStatusInline({ workflowId }: { workflowId: string }) {
-  const { data: sharedWorkflows } = useQuery({
-    queryKey: ["workflow", workflowId, "shared-status"],
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
-
-  const existingShare = sharedWorkflows?.shared_workflows?.find(
-    (share: any) => share.workflow_id === workflowId,
-  );
-
-  if (!existingShare) return null;
-
-  return (
-    <Badge
-      variant="default"
-      className="bg-green-600 hover:bg-green-700 text-white text-[10px] h-5 px-1.5 shrink-0"
-    >
-      <Globe className="w-2.5 h-2.5 mr-1" />
-      Community
-    </Badge>
-  );
-}
-
 function WorkflowCard({
   workflow,
   mutate,
@@ -702,7 +678,7 @@ function WorkflowCard({
                   {workflow.pinned && (
                     <PinIcon className="h-3 w-3 rotate-45 text-muted-foreground shrink-0" />
                   )}
-                  <PublicationStatusInline workflowId={workflow.id} />
+                  <PublicationStatusBadge workflowId={workflow.id} />
                   {status && (
                     <Badge
                       variant={status === "success" ? "success" : "secondary"}
