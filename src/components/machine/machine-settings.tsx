@@ -402,15 +402,6 @@ function ServerlessSettings({
     return () => subscription.unsubscribe();
   }, [form, machine, onValueChange, disableUnsavedChangesWarning]);
 
-  useEffect(() => {
-    const errors = form.formState.errors;
-    for (const [field, error] of Object.entries(errors)) {
-      if (error?.message) {
-        toast.error(`${field}: ${error.message}`);
-      }
-    }
-  }, [form.formState.errors]);
-
   const handleSubmit = async (data: FormData) => {
     try {
       setIsLoading(true);
@@ -467,7 +458,63 @@ function ServerlessSettings({
   return (
     <>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} ref={formRef}>
+        <form
+          onSubmit={form.handleSubmit(
+            handleSubmit, // Success callback
+            (errors) => {
+              console.log("Form validation failed:", errors);
+
+              // Helper function to show error messages
+              const showError = (message: string, field?: string) => {
+                const displayField = field
+                  ? field
+                      .replace(/_/g, " ")
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())
+                      .trim()
+                  : "Form";
+                toast.error(`${displayField}: ${message}`);
+              };
+
+              // Handle top-level errors
+              for (const [field, error] of Object.entries(errors)) {
+                if (error?.message) {
+                  showError(error.message, field);
+                }
+
+                // Special handling for docker_command_steps
+                if (field === "docker_command_steps" && error?.steps) {
+                  const steps = error.steps;
+
+                  if (Array.isArray(steps)) {
+                    steps.forEach((step, index) => {
+                      if (step?.data?.hash?.message) {
+                        showError(
+                          step.data.hash.message,
+                          `Custom Node #${index + 1} Hash`,
+                        );
+                      }
+                      if (step?.data?.url?.message) {
+                        showError(
+                          step.data.url.message,
+                          `Custom Node #${index + 1} URL`,
+                        );
+                      }
+                      if (step?.data?.name?.message) {
+                        showError(
+                          step.data.name.message,
+                          `Custom Node #${index + 1} Name`,
+                        );
+                      }
+                      // Add more field checks as needed
+                    });
+                  }
+                }
+              }
+            },
+          )}
+          ref={formRef}
+        >
           {view === "environment" && (
             <div className="space-y-4 p-2 pt-4">
               <div
