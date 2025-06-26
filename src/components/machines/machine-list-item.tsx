@@ -407,7 +407,10 @@ export function MachineListItem({
                     setMachineActionDropdownOpen(false);
                     navigate({
                       to: "/machines",
-                      search: { view: "create" as const, action: undefined },
+                      search: {
+                        view: "create" as const,
+                        machineId: machine.id,
+                      },
                     });
                   }}
                 >
@@ -434,25 +437,28 @@ export function MachineListItem({
                   onClick={async (e) => {
                     e.preventDefault();
                     setMachineActionDropdownOpen(false);
-                    
+
                     try {
                       const response = await api({
                         url: `machine/${machine.id}/export`,
-                        init: { method: "GET" }
+                        init: { method: "GET" },
                       });
-                      
-                      const blob = new Blob([JSON.stringify(response, null, 2)], {
-                        type: "application/json",
-                      });
+
+                      const blob = new Blob(
+                        [JSON.stringify(response, null, 2)],
+                        {
+                          type: "application/json",
+                        },
+                      );
                       const url = URL.createObjectURL(blob);
                       const a = document.createElement("a");
                       a.href = url;
-                      a.download = `machine-${machine.name}-${new Date().toISOString().split('T')[0]}.json`;
+                      a.download = `machine-${machine.name}-${new Date().toISOString().split("T")[0]}.json`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);
                       URL.revokeObjectURL(url);
-                      
+
                       toast.success("Machine exported successfully");
                     } catch (error) {
                       toast.error("Failed to export machine");
