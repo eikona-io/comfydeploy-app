@@ -434,7 +434,7 @@ function WorkflowPageComponent() {
                         <div className="mb-2 h-36 w-36 overflow-hidden rounded-md">
                           <FileURLRender
                             url={workflow.cover_image}
-                            imgClasses="w-full h-full object-cover"
+                            imgClasses="w-full h-full object-cover aspect-square"
                           />
                         </div>
                       ) : (

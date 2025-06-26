@@ -485,7 +485,7 @@ function WorkflowCard({
                 {workflow.cover_image || latest_output?.images?.[0]?.url ? (
                   <FileURLRender
                     url={workflow.cover_image ?? latest_output.images[0].url}
-                    imgClasses="w-full h-full max-w-full max-h-full rounded-[8px] object-cover transition-all duration-300 ease-in-out group-hover:scale-105"
+                    imgClasses="w-full h-full max-w-[320px] aspect-square rounded-[8px] object-cover transition-all duration-300 ease-in-out group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center dark:bg-gradient-to-br dark:from-zinc-800/80 dark:to-zinc-700/80 dark:backdrop-blur-md">
@@ -656,7 +656,7 @@ function WorkflowCard({
                 {workflow.cover_image || latest_output?.images?.[0]?.url ? (
                   <FileURLRender
                     url={workflow.cover_image ?? latest_output.images[0].url}
-                    imgClasses="w-full h-full object-cover"
+                    imgClasses="w-full h-full object-cover aspect-square"
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900">
