@@ -1098,7 +1098,7 @@ export function RunWorkflowInline({
       `}</style>
       {/* Edit button */}
       {canEditOrder && inputs && inputs.length > 0 && (
-        <div className="absolute top-0 right-1 z-10 flex gap-2">
+        <div className="absolute top-0 right-1 z-[100] flex gap-2">
           {isEditMode ? (
             <>
               <Button
@@ -1233,13 +1233,14 @@ export function RunWorkflowInline({
                 }
                 strategy={verticalListSortingStrategy}
               >
+                <div className="absolute top-0 z-50 h-24 w-full bg-gradient-to-b from-white to-transparent dark:from-zinc-900" />
                 <div ref={setUngroupedRef} className="space-y-2">
                   {/* Create Group Button */}
                   <Button
                     onClick={createGroup}
                     variant="outline"
                     size="sm"
-                    className="sticky top-8 z-50 mb-8 w-full shadow-sm"
+                    className="sticky top-8 z-50 mb-8 w-full shadow-md"
                     type="button"
                   >
                     <Plus size={16} className="mr-1" />

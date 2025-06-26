@@ -68,7 +68,7 @@ export function SDInputGroup({
         isEditMode && "p-4",
         isEditMode &&
           cn(
-            "border-2 border-dashed",
+            "border-2 border-dashed bg-zinc-100/80 dark:bg-zinc-800/80",
             isOver
               ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
               : "border-gray-300 dark:border-gray-600",
