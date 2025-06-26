@@ -97,7 +97,10 @@ export function ExploreSharedWorkflows() {
         </div>
       </div>
 
-      <div ref={parentRef} className="flex-1 overflow-auto px-4 pb-4">
+      <div
+        ref={parentRef}
+        className="mx-auto max-w-screen-2xl flex-1 overflow-auto px-4 pb-4"
+      >
         {isLoading ? (
           <div
             className={cn(
@@ -232,7 +235,7 @@ function SharedWorkflowCard({
             <FileURLRender
               url={workflow.cover_image}
               imgClasses="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-              isSmallView
+              showFullResolution={true}
             />
           ) : (
             <User className="h-6 w-6 text-muted-foreground" />
@@ -284,8 +287,8 @@ function SharedWorkflowCard({
         {workflow.cover_image ? (
           <FileURLRender
             url={workflow.cover_image}
-            imgClasses="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            isSmallView
+            imgClasses="h-full w-full max-w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            showFullResolution={true}
           />
         ) : (
           <User className="h-8 w-8 text-muted-foreground" />

@@ -19,7 +19,7 @@ const TanStackRouterDevtools =
           // default: res.TanStackRouterDevtoolsPanel
         })),
       );
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar, GuestSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { Icon } from "@/components/icon-word";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -120,10 +120,14 @@ function RootComponent() {
         <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:bg-[radial-gradient(#333333_1px,transparent_1px)]" />
       </div>
 
-      {!isSessionPage && (
-        <SignedIn>
-          <AppSidebar />
-        </SignedIn>
+      {isAuthPage && !auth.isSignedIn ? (
+        <GuestSidebar />
+      ) : (
+        !isSessionPage && (
+          <SignedIn>
+            <AppSidebar />
+          </SignedIn>
+        )
       )}
       <div className="fixed top-0 z-50 flex h-[40px] w-full flex-row items-center gap-2 border-gray-200 border-b bg-transparent p-1 md:hidden dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-md">
         <SidebarTrigger className="h-8 w-8 rounded-none border-gray-200 border-r p-2 dark:border-zinc-700" />
@@ -140,8 +144,8 @@ function RootComponent() {
         {isAuthPage && <Outlet />}
         {!isAuthPage && (
           <SignedOut>
-            <div className="flex flex-col items-center justify-center h-full">
-              <p className="text-2xl font-bold">You are signed out</p>
+            <div className="flex h-full flex-col items-center justify-center">
+              <p className="font-bold text-2xl">You are signed out</p>
             </div>
           </SignedOut>
         )}
