@@ -161,30 +161,30 @@ export function ExploreSharedWorkflows() {
 function SharedWorkflowCardSkeleton({ view }: { view: "list" | "grid" }) {
   if (view === "list") {
     return (
-      <div className="flex items-center space-x-4 rounded-lg border p-4">
-        <Skeleton className="h-12 w-12 rounded" />
-        <div className="flex-1 space-y-2">
+      <div className="flex w-full items-center space-x-4 rounded-lg border p-4">
+        <Skeleton className="h-12 w-full rounded" />
+        <div className="flex space-y-2">
           <Skeleton className="h-4 w-[200px]" />
-          <Skeleton className="h-3 w-[150px]" />
+          <Skeleton className="h-3 w-[200px]" />
         </div>
         <div className="flex space-x-2">
-          <Skeleton className="h-6 w-12" />
-          <Skeleton className="h-6 w-12" />
+          <Skeleton className="h-6 w-[400px]" />
+          <Skeleton className="h-6 w-[400px]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border p-4 space-y-3">
+    <div className="w-full space-y-3 rounded-lg border p-4">
       <Skeleton className="h-32 w-full rounded" />
       <div className="space-y-2">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-1/2" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-3 w-full" />
       </div>
       <div className="flex justify-between">
-        <Skeleton className="h-6 w-16" />
-        <Skeleton className="h-6 w-16" />
+        <Skeleton className="h-6 w-[400px]" />
+        <Skeleton className="h-6 w-[400px]" />
       </div>
     </div>
   );

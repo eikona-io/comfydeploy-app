@@ -1341,12 +1341,12 @@ function NodeListItem({
           <span className="bold truncate whitespace-nowrap">{name}</span>
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-gray-400">by {author}</span>
-            {starCount && (
+            {starCount ? (
               <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                 <Star size={12} className="fill-yellow-400 text-yellow-400" />
                 <span>{starCount.toLocaleString()}</span>
               </div>
-            )}
+            ) : null}
           </div>
         </label>
         <Link
