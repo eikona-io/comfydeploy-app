@@ -190,6 +190,7 @@ export function WorkflowList() {
                 {sub && (
                   <Badge
                     className={cn(
+                      "hidden sm:block",
                       sub?.features.workflowLimited
                         ? "border-gray-400 text-gray-500"
                         : "",
@@ -485,7 +486,7 @@ function WorkflowCard({
                 {workflow.cover_image || latest_output?.images?.[0]?.url ? (
                   <FileURLRender
                     url={workflow.cover_image ?? latest_output.images[0].url}
-                    imgClasses="w-full h-full max-w-[320px] aspect-square rounded-[8px] object-cover transition-all duration-300 ease-in-out group-hover:scale-105"
+                    imgClasses="w-full h-full aspect-square rounded-[8px] object-cover transition-all duration-300 ease-in-out group-hover:scale-105"
                   />
                 ) : (
                   <div className="flex h-full flex-col items-center justify-center dark:bg-gradient-to-br dark:from-zinc-800/80 dark:to-zinc-700/80 dark:backdrop-blur-md">
