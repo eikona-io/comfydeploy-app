@@ -1,6 +1,27 @@
 {
-  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "name": "Bun DevContainer",
+  "image": "oven/bun:latest",
   "features": {
-    "ghcr.io/prulloac/devcontainer-features/bun:1": {}
-  }
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/zsh:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "bun install",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "extensions": [
+        "oven.bun-vscode",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  },
+  "mounts": [
+    "source=bun-cache,target=/home/node/.bun,type=volume",
+    "source=node-modules,target=/workspace/node_modules,type=volume"
+  ],
+  "remoteUser": "node"
 }
