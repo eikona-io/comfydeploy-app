@@ -231,7 +231,7 @@ function _FileURLRender({
       return (
         <div
           className={cn(
-            "@container flex aspect-square h-full w-full max-w-[200px] flex-col items-center justify-center gap-1 text-gray-600 dark:text-gray-400",
+            "@container flex aspect-square h-full w-full flex-col items-center justify-center gap-1 text-gray-600 dark:text-gray-400",
             mediaClasses,
           )}
         >
@@ -253,11 +253,7 @@ function _FileURLRender({
         )}
         <img
           onLoad={handleLoad}
-          className={cn(
-            "max-w-[200px]",
-            mediaClasses,
-            isLoading ? "opacity-0" : "opacity-100",
-          )}
+          className={cn(mediaClasses, isLoading ? "opacity-0" : "opacity-100")}
           src={
             showFullResolution
               ? url

@@ -429,7 +429,7 @@ export function AssetBrowser({
                       canFullScreen={!isPanel && !isSelectionMode}
                       isAssetBrowser={true}
                       url={asset.url || ""}
-                      imgClasses="max-w-[240px] w-full h-[240px] object-cover object-center rounded-[8px] transition-all duration-300 ease-in-out group-hover:scale-105"
+                      imgClasses="max-w-[240px] w-full h-full aspect-square object-cover object-center rounded-[8px] transition-all duration-300 ease-in-out group-hover:scale-105"
                     />
                   </div>
                 )}

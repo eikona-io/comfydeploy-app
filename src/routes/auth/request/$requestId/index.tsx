@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { api } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, notFound } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Shield,
@@ -25,8 +25,21 @@ import {
 import { useState, useEffect } from "react";
 import { useAuth, useOrganization, useUser } from "@clerk/clerk-react";
 
+// UUID validation function (reusing the pattern from the codebase)
+const isValidUuid = (value: string) => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+};
+
 export const Route = createFileRoute("/auth/request/$requestId/")({
   component: RouteComponent,
+  beforeLoad: ({ params }) => {
+    // Validate that requestId is a valid UUID
+    if (!isValidUuid(params.requestId)) {
+      throw notFound();
+    }
+  },
 });
 
 function RouteComponent() {
