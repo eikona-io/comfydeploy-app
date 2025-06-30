@@ -42,7 +42,7 @@ export function MyDrawer({
           className={cn(
             "z-50 rounded-[16px]",
             isMobile
-              ? "fixed right-0 bottom-0 left-0 mt-24 flex h-[96%] flex-col rounded-t-[10px] bg-white md:top-0 md:right-0 md:bottom-0 md:h-full md:w-[400px] md:rounded-l-[10px] md:rounded-tr-none"
+              ? "fixed right-0 bottom-0 left-0 mt-24 flex h-[96%] flex-col rounded-t-[16px] bg-white md:top-0 md:right-0 md:bottom-0 md:h-full md:w-[400px] md:rounded-l-[16px] md:rounded-tr-none"
               : "fixed top-2 bottom-2 flex h-[calc(100%-16px)] w-[500px] outline-none",
             !isMobile && desktopClassName,
           )}
