@@ -530,6 +530,18 @@ export function RunWorkflowInline({
           setInputGroups((prevGroups) =>
             arrayMove(prevGroups, oldIndex, newIndex),
           );
+
+          // keep layout order in sync when groups are reordered
+          setLayoutOrder((prevOrder) => {
+            const fromIndex = prevOrder.findIndex(
+              (item) => item.id === activeId,
+            );
+            const toIndex = prevOrder.findIndex((item) => item.id === overId);
+            if (fromIndex !== -1 && toIndex !== -1) {
+              return arrayMove(prevOrder, fromIndex, toIndex);
+            }
+            return prevOrder;
+          });
         }
         return;
       }
