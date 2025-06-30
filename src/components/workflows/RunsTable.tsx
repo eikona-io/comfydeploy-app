@@ -736,7 +736,7 @@ export function FilterDropdown({
   // Get environment names for the dropdown
   const environments = React.useMemo(() => {
     return Object.keys(deploymentsByEnvironment).filter((env) =>
-      ["production", "staging"].includes(env),
+      ["production", "staging", "public-share"].includes(env),
     );
   }, [deploymentsByEnvironment]);
 
