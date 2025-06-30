@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import { useDroppable } from "@dnd-kit/core";
+import { useDroppable, useDndContext } from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -18,7 +18,7 @@ interface SDInputGroupProps {
   onTitleChange: (id: string, title: string) => void;
   onDelete: (id: string) => void;
   isEmpty: boolean;
-  items: any[];
+  items: string[];
   isDraggable?: boolean;
   isEditMode?: boolean;
   defaultCollapsed?: boolean;
@@ -42,12 +42,16 @@ export function SDInputGroup({
   const [localTitle, setLocalTitle] = useState(title);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
 
+  const { active } = useDndContext();
+  const isGroupDrag = active?.id?.toString().startsWith("group-");
+
   const { isOver, setNodeRef } = useDroppable({
     id: `group-${id}`,
     data: {
       type: "group",
       groupId: id,
     },
+    disabled: isGroupDrag,
   });
 
   const handleTitleSubmit = () => {
@@ -131,7 +135,7 @@ export function SDInputGroup({
               autoFocus
             />
           ) : (
-            <h3
+            <button
               className={cn(
                 "select-none text-xs",
                 isEditMode &&
@@ -142,9 +146,19 @@ export function SDInputGroup({
               onClick={
                 isEditMode ? () => setIsEditing(true) : handleCollapseToggle
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  (isEditMode
+                    ? () => setIsEditing(true)
+                    : handleCollapseToggle)();
+                }
+              }}
+              type="button"
+              tabIndex={0}
             >
               {title}
-            </h3>
+            </button>
           )}
           {!isEditMode && <div className="h-px w-full max-w-64 bg-border/50" />}
           <Button
@@ -196,8 +210,8 @@ export function SDInputGroup({
               <div
                 ref={setNodeRef}
                 className={cn(
-                  "w-full h-4 -mb-2 z-20 relative",
-                  isOver && "bg-blue-500/20 rounded",
+                  "-mb-2 relative z-20 h-4 w-full",
+                  isOver && "rounded bg-blue-500/20",
                 )}
               />
             )}
@@ -205,14 +219,14 @@ export function SDInputGroup({
               items={items}
               strategy={verticalListSortingStrategy}
             >
-              <div className="space-y-2 pb-2 relative">
+              <div className="relative space-y-2 pb-2">
                 {children}
                 {isEditMode && (
                   <div
                     ref={setNodeRef}
                     className={cn(
-                      "w-full h-4 -mt-2 z-20 relative",
-                      isOver && "bg-blue-500/20 rounded",
+                      "-mt-2 relative z-20 h-4 w-full",
+                      isOver && "rounded bg-blue-500/20",
                     )}
                   />
                 )}
