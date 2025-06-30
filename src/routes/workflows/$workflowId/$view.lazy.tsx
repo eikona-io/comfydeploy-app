@@ -545,12 +545,12 @@ function WorkflowPageComponent() {
         workflowCoverImage={workflow?.cover_image}
       />
       <DeploymentDrawer>
-        {selectedDeployment === publicShareDeployment?.id && (
+        {(selectedDeployment === publicShareDeployment?.id ||
+          selectedDeployment === privateShareDeployment?.id) && (
           <div className="flex justify-end gap-2">
             <Button
-              // size="sm"
               variant="secondary"
-              className="transition-all hover:text-white hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600"
+              className="transition-all hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600 hover:text-white"
               confirm
               onClick={async () => {
                 await callServerPromise(
@@ -558,7 +558,7 @@ function WorkflowPageComponent() {
                     init: {
                       method: "DELETE",
                     },
-                    url: "deployment/" + publicShareDeployment?.id,
+                    url: `deployment/${selectedDeployment}`,
                   }),
                 );
                 setSelectedDeployment(null);
@@ -572,7 +572,6 @@ function WorkflowPageComponent() {
               Delete
             </Button>
             <Button
-              // size="sm"
               onClick={() => {
                 if (versions?.[0]) {
                   setSelectedDeployment(null);

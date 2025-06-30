@@ -1143,7 +1143,8 @@ export function DeploymentSettings({
         </div>
       </div>
 
-      {deployment.environment === "public-share" ? (
+      {deployment.environment === "public-share" ||
+      deployment.environment === "private-share" ? (
         <div className="my-4">
           <ShareLinkDisplay deployment={deployment} />
         </div>
@@ -1209,7 +1210,10 @@ export function DeploymentDrawer(props: {
     return <></>;
   }
 
-  if (deployment?.environment === "public-share") {
+  if (
+    deployment?.environment === "public-share" ||
+    deployment?.environment === "private-share"
+  ) {
     return (
       <MyDrawer
         open={!!selectedDeployment}
@@ -1302,9 +1306,14 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
           <h3 className="font-medium text-sm">Sharing Link</h3>
           <Badge
             variant="secondary"
-            className="bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+            className={cn(
+              getEnvColor(deployment.environment),
+              "whitespace-nowrap text-sm",
+            )}
           >
-            Public
+            {deployment.environment === "public-share"
+              ? "Link Access"
+              : "Internal"}
           </Badge>
         </div>
       </div>
