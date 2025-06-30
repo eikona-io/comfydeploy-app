@@ -1143,7 +1143,8 @@ export function DeploymentSettings({
         </div>
       </div>
 
-      {deployment.environment === "public-share" ? (
+      {deployment.environment === "public-share" ||
+      deployment.environment === "private-share" ? (
         <div className="my-4">
           <ShareLinkDisplay deployment={deployment} />
         </div>
@@ -1209,7 +1210,10 @@ export function DeploymentDrawer(props: {
     return <></>;
   }
 
-  if (deployment?.environment === "public-share") {
+  if (
+    deployment?.environment === "public-share" ||
+    deployment?.environment === "private-share"
+  ) {
     return (
       <MyDrawer
         open={!!selectedDeployment}
@@ -1286,7 +1290,7 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
   const [copying, setCopying] = useState(false);
 
   const [slug, workflow_name] = deployment.share_slug?.split("_") ?? [];
-  const shareLink = `${window.location.origin}/share/${slug}/${workflow_name}`;
+  const shareLink = `https://studio.comfydeploy.com/share/playground/${slug}/${workflow_name}`;
 
   const handleCopy = async () => {
     if (!deployment.id) return;
@@ -1302,9 +1306,14 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
           <h3 className="font-medium text-sm">Sharing Link</h3>
           <Badge
             variant="secondary"
-            className="bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+            className={cn(
+              getEnvColor(deployment.environment),
+              "whitespace-nowrap text-sm",
+            )}
           >
-            Public
+            {deployment.environment === "public-share"
+              ? "Link Access"
+              : "Internal"}
           </Badge>
         </div>
       </div>
@@ -1312,8 +1321,11 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
         <div className="flex gap-2">
           <Input
             readOnly
+            onClick={() => {
+              window.open(shareLink, "_blank");
+            }}
             value={shareLink}
-            className="border-zinc-200 bg-zinc-50 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-800"
+            className="cursor-pointer border-zinc-200 bg-zinc-50 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-800"
           />
           <Button
             variant="outline"

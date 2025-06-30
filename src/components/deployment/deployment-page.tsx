@@ -346,7 +346,7 @@ export function DeploymentDialog({
   publicLinkOnly = false,
 }: DeploymentDialogProps) {
   const [selectedEnvironment, setSelectedEnvironment] = useState<
-    "staging" | "production" | "public-share"
+    "staging" | "production" | "public-share" | "private-share"
   >(publicLinkOnly ? "public-share" : "staging");
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
     null,
@@ -415,17 +415,23 @@ export function DeploymentDialog({
           Deploy Version <Badge>v{selectedVersion.version}</Badge>
         </h3>
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">Environment</h3>
+          <h3 className="text-sm font-medium">
+            {publicLinkOnly ? "Visibility" : "Environment"}
+          </h3>
           <Tabs
             value={selectedEnvironment}
             onValueChange={(value) =>
               setSelectedEnvironment(
-                value as "staging" | "production" | "public-share",
+                value as
+                  | "staging"
+                  | "production"
+                  | "public-share"
+                  | "private-share",
               )
             }
           >
             <TabsList className="inline-flex h-fit items-center rounded-lg bg-white/95 ring-1 ring-gray-200/50 dark:bg-zinc-800 dark:ring-zinc-700/50">
-              {!publicLinkOnly && (
+              {!publicLinkOnly ? (
                 <>
                   <TabsTrigger
                     value="staging"
@@ -450,20 +456,43 @@ export function DeploymentDialog({
                     Production
                   </TabsTrigger>
                 </>
+              ) : (
+                <>
+                  <TabsTrigger
+                    value="public-share"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      selectedEnvironment === "public-share"
+                        ? "bg-gradient-to-b from-white to-green-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-green-900 dark:ring-green-900/50"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
+                    )}
+                  >
+                    Link Access
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="private-share"
+                    className={cn(
+                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                      selectedEnvironment === "private-share"
+                        ? "bg-gradient-to-b from-white to-purple-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-purple-900 dark:ring-purple-900/50"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
+                    )}
+                  >
+                    Internal
+                  </TabsTrigger>
+                </>
               )}
-              <TabsTrigger
-                value="public-share"
-                className={cn(
-                  "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                  selectedEnvironment === "public-share"
-                    ? "bg-gradient-to-b from-white to-green-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-green-900 dark:ring-green-900/50"
-                    : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
-                )}
-              >
-                Link Share
-              </TabsTrigger>
             </TabsList>
           </Tabs>
+          <div className="mt-1 ml-2 text-2xs text-muted-foreground">
+            {selectedEnvironment === "public-share" ? (
+              "This deployment will be accessible via a public link. Anyone with the link can access it."
+            ) : selectedEnvironment === "private-share" ? (
+              "This deployment will only be accessible within your organization."
+            ) : (
+              <></>
+            )}
+          </div>
         </div>
 
         <div className="space-y-2">

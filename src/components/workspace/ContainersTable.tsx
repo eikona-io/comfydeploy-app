@@ -21,6 +21,8 @@ export function getEnvColor(env: string) {
       return "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400";
     case "public-share":
       return "bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400";
+    case "private-share":
+      return "bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-400";
     default:
       return "bg-gray-100 text-gray-800 dark:bg-gray-900/50 dark:text-gray-400";
   }
