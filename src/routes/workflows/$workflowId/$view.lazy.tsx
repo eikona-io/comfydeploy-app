@@ -255,6 +255,10 @@ function WorkflowPageComponent() {
     (d: Deployment) => d.environment === "public-share",
   );
 
+  const privateShareDeployment = deployments?.find(
+    (d: Deployment) => d.environment === "private-share",
+  );
+
   const handleAsset = async (asset: AssetType) => {
     try {
       await callServerPromise(
@@ -338,23 +342,43 @@ function WorkflowPageComponent() {
                                 Shared
                               </Badge>
                             )}
-                            {!publicShareDeployment && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="opacity-0 transition-all hover:bg-gray-200 group-hover/my-nav-item:opacity-100 dark:hover:bg-zinc-600/40"
+                            {privateShareDeployment && (
+                              <Badge
+                                className={cn(
+                                  "!text-2xs w-fit cursor-pointer whitespace-nowrap rounded-md hover:shadow-sm",
+                                  getEnvColor(
+                                    privateShareDeployment.environment,
+                                  ),
+                                )}
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  if (versions?.[0]) {
-                                    setSelectedVersion(versions[0]);
-                                    setIsDrawerOpen(true);
-                                  }
+                                  setSelectedDeployment(
+                                    privateShareDeployment.id,
+                                  );
                                 }}
                               >
-                                <Share className="h-4 w-4" />
-                              </Button>
+                                Internal
+                              </Badge>
                             )}
+                            {!publicShareDeployment &&
+                              !privateShareDeployment && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="opacity-0 transition-all hover:bg-gray-200 group-hover/my-nav-item:opacity-100 dark:hover:bg-zinc-600/40"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (versions?.[0]) {
+                                      setSelectedVersion(versions[0]);
+                                      setIsDrawerOpen(true);
+                                    }
+                                  }}
+                                >
+                                  <Share className="h-4 w-4" />
+                                </Button>
+                              )}
                           </div>
                         )}
                       </SidebarMenuButton>
