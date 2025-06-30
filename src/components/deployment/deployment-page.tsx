@@ -847,10 +847,6 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
 
   const chartData = processDataForChart(runs);
 
-  // Check if there's any data for success and failed runs
-  const hasSuccessData = chartData.some((data) => data.success > 0);
-  const hasFailedData = chartData.some((data) => data.failed > 0);
-
   // Calculate the appropriate interval for x-axis labels based on time interval
   const getLabelInterval = () => {
     switch (timeInterval) {
@@ -991,28 +987,26 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
                     />
                   </linearGradient>
                 </defs>
-                {hasFailedData &&
-                  (!deploymentStatus || deploymentStatus === "failed") && (
-                    <Area
-                      dataKey="failed"
-                      type="linear"
-                      fill="url(#fillFailed)"
-                      fillOpacity={0.6}
-                      stroke="rgb(239, 68, 68)"
-                      stackId="1"
-                    />
-                  )}
-                {hasSuccessData &&
-                  (!deploymentStatus || deploymentStatus === "success") && (
-                    <Area
-                      dataKey="success"
-                      type="linear"
-                      fill="url(#fillSuccess)"
-                      fillOpacity={0.6}
-                      stroke="rgb(34, 197, 94)"
-                      stackId="1"
-                    />
-                  )}
+                {(!deploymentStatus || deploymentStatus === "failed") && (
+                  <Area
+                    dataKey="failed"
+                    type="linear"
+                    fill="url(#fillFailed)"
+                    fillOpacity={0.6}
+                    stroke="rgb(239, 68, 68)"
+                    stackId="1"
+                  />
+                )}
+                {(!deploymentStatus || deploymentStatus === "success") && (
+                  <Area
+                    dataKey="success"
+                    type="linear"
+                    fill="url(#fillSuccess)"
+                    fillOpacity={0.6}
+                    stroke="rgb(34, 197, 94)"
+                    stackId="1"
+                  />
+                )}
               </AreaChart>
             </ChartContainer>
           )}
