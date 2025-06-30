@@ -715,7 +715,7 @@ export function FileURLRenderDropdown({
               </div>
             </DropdownMenuItem>
           )}
-          {runId && outputId && (
+          {/* {runId && outputId && (
             <DropdownMenuItem
               onClick={async (event) => {
                 event.stopPropagation();
@@ -762,7 +762,7 @@ export function FileURLRenderDropdown({
                 )}
               </div>
             </DropdownMenuItem>
-          )}
+          )} */}
           {children && (
             <>
               {(canDownload || canAddToAssets) && <DropdownMenuSeparator />}
