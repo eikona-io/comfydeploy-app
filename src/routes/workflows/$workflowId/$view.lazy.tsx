@@ -255,6 +255,10 @@ function WorkflowPageComponent() {
     (d: Deployment) => d.environment === "public-share",
   );
 
+  const communityShareDeployment = deployments?.find(
+    (d: Deployment) => d.environment === "community-share",
+  );
+
   const privateShareDeployment = deployments?.find(
     (d: Deployment) => d.environment === "private-share",
   );
@@ -342,6 +346,25 @@ function WorkflowPageComponent() {
                                 Shared
                               </Badge>
                             )}
+                            {communityShareDeployment && (
+                              <Badge
+                                className={cn(
+                                  "!text-2xs w-fit cursor-pointer whitespace-nowrap rounded-md hover:shadow-sm",
+                                  getEnvColor(
+                                    communityShareDeployment.environment,
+                                  ),
+                                )}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setSelectedDeployment(
+                                    communityShareDeployment.id,
+                                  );
+                                }}
+                              >
+                                Community
+                              </Badge>
+                            )}
                             {privateShareDeployment && (
                               <Badge
                                 className={cn(
@@ -362,7 +385,8 @@ function WorkflowPageComponent() {
                               </Badge>
                             )}
                             {!publicShareDeployment &&
-                              !privateShareDeployment && (
+                              !privateShareDeployment &&
+                              !communityShareDeployment && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -546,7 +570,8 @@ function WorkflowPageComponent() {
       />
       <DeploymentDrawer>
         {(selectedDeployment === publicShareDeployment?.id ||
-          selectedDeployment === privateShareDeployment?.id) && (
+          selectedDeployment === privateShareDeployment?.id ||
+          selectedDeployment === communityShareDeployment?.id) && (
           <div className="flex justify-end gap-2">
             <Button
               variant="secondary"

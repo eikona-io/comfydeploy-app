@@ -347,7 +347,8 @@ export function DeploymentDisplay({
           <DialogDescription>Code for your deployment client</DialogDescription>
         </DialogHeader>
 
-        {deployment.environment === "public-share" ? (
+        {deployment.environment === "public-share" ||
+        deployment.environment === "community-share" ? (
           <>
             <Card className="mx-auto mb-4 flex w-fit flex-col items-center justify-center gap-4 px-4 py-4 font-semibold text-sm md:flex-row md:py-2">
               <span>
@@ -1144,7 +1145,8 @@ export function DeploymentSettings({
       </div>
 
       {deployment.environment === "public-share" ||
-      deployment.environment === "private-share" ? (
+      deployment.environment === "private-share" ||
+      deployment.environment === "community-share" ? (
         <div className="my-4">
           <ShareLinkDisplay deployment={deployment} />
         </div>
@@ -1212,7 +1214,8 @@ export function DeploymentDrawer(props: {
 
   if (
     deployment?.environment === "public-share" ||
-    deployment?.environment === "private-share"
+    deployment?.environment === "private-share" ||
+    deployment?.environment === "community-share"
   ) {
     return (
       <MyDrawer
@@ -1313,7 +1316,9 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
           >
             {deployment.environment === "public-share"
               ? "Link Access"
-              : "Internal"}
+              : deployment.environment === "community-share"
+                ? "Community"
+                : "Internal"}
           </Badge>
         </div>
       </div>

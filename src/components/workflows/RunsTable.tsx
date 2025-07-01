@@ -675,7 +675,9 @@ function DeploymentVersion(props: { deploymentId?: string }) {
   if (!deployment) return null;
 
   if (
-    !["staging", "production", "public-share"].includes(deployment.environment)
+    !["staging", "production", "public-share", "community-share"].includes(
+      deployment.environment,
+    )
   ) {
     return null;
   }
@@ -687,7 +689,8 @@ function DeploymentVersion(props: { deploymentId?: string }) {
         getEnvColor(deployment.environment),
       )}
     >
-      {deployment.environment === "public-share" ? (
+      {deployment.environment === "public-share" ||
+      deployment.environment === "community-share" ? (
         <div className="flex items-center gap-1">
           <Globe className="h-3 w-3" />
           {/* {deployment.environment} */}
