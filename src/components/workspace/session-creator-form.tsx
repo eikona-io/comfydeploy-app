@@ -418,9 +418,7 @@ export function SessionCreatorForm({
 
           {/* Compact Active Sessions List */}
           {workflow?.selected_machine_id && (
-            <CompactMachineSessionsList
-              machineId={workflow.selected_machine_id}
-            />
+            <MachineSessionsList machineId={workflow.selected_machine_id} />
           )}
         </div>
 
