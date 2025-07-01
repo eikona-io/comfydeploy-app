@@ -559,6 +559,7 @@ function WorkflowPageComponent() {
         workflowId={workflowId}
         onSuccess={setSelectedDeployment}
         publicLinkOnly={true}
+        existingDeployments={deployments}
       />
       <ShareWorkflowDialog
         open={isShareDialogOpen}
@@ -568,7 +569,7 @@ function WorkflowPageComponent() {
         workflowDescription={workflow?.description}
         workflowCoverImage={workflow?.cover_image}
       />
-      <DeploymentDrawer>
+      <DeploymentDrawer hideHeader={true}>
         {(selectedDeployment === publicShareDeployment?.id ||
           selectedDeployment === privateShareDeployment?.id ||
           selectedDeployment === communityShareDeployment?.id) && (
@@ -599,7 +600,7 @@ function WorkflowPageComponent() {
             <Button
               onClick={() => {
                 if (versions?.[0]) {
-                  setSelectedDeployment(null);
+                  // setSelectedDeployment(null);
                   setSelectedVersion(versions[0]);
                   setIsDrawerOpen(true);
                 }

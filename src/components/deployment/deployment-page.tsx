@@ -55,6 +55,7 @@ import {
 import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
 import { MachineSelect } from "../workspace/MachineSelect";
 import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
+import { queryClient } from "@/lib/providers";
 
 export interface Deployment {
   id: string;
@@ -101,8 +102,9 @@ interface SelectedDeploymentState {
 export const useSelectedDeploymentStore = create<SelectedDeploymentState>(
   (set) => ({
     selectedDeployment: null,
-    setSelectedDeployment: (deployment) =>
-      set({ selectedDeployment: deployment }),
+    setSelectedDeployment: (deployment) => {
+      set({ selectedDeployment: deployment });
+    },
   }),
 );
 
@@ -337,6 +339,7 @@ interface DeploymentDialogProps {
   workflowId: string;
   onSuccess?: (deploymentId: string) => void;
   publicLinkOnly?: boolean;
+  existingDeployments?: Deployment[];
 }
 
 export function DeploymentDialog({
@@ -346,7 +349,10 @@ export function DeploymentDialog({
   workflowId,
   onSuccess,
   publicLinkOnly = false,
+  existingDeployments = [],
 }: DeploymentDialogProps) {
+  const { selectedDeployment } = useSelectedDeploymentStore();
+
   const [selectedEnvironment, setSelectedEnvironment] = useState<
     | "staging"
     | "production"
@@ -354,6 +360,18 @@ export function DeploymentDialog({
     | "private-share"
     | "community-share"
   >(publicLinkOnly ? "public-share" : "staging");
+
+  useEffect(() => {
+    const deployment = existingDeployments.find(
+      (d: Deployment) => d.id === selectedDeployment,
+    );
+    console.log("deployment", deployment);
+
+    if (deployment) {
+      setSelectedEnvironment(deployment.environment as any);
+    }
+  }, [selectedDeployment]);
+
   const { organization } = useOrganization();
   const showCommunity = organization?.id === "org_2am4LjkQ5IaWGRYMHxGXfHdHcjA";
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
@@ -390,11 +408,15 @@ export function DeploymentDialog({
   const handlePromoteToEnv = async () => {
     try {
       setIsPromoting(true);
-      
-      const existingDeployment = deployments?.find(
-        (d: Deployment) => d.environment !== selectedEnvironment
+
+      const myDeployment = existingDeployments.find(
+        (d: Deployment) => d.id === selectedDeployment,
       );
-      
+
+      // Look for existing deployment to update:
+      // 1. First check if there's already a deployment in the target environment
+      // 2. If not, look for any deployment with this version (to support environment changes)
+
       const deployment = await callServerPromise(
         api({
           url: "deployment",
@@ -406,7 +428,9 @@ export function DeploymentDialog({
               machine_id: final_machine.data?.id,
               machine_version_id: final_machine.data?.machine_version_id,
               environment: selectedEnvironment,
-              ...(existingDeployment && { deployment_id: existingDeployment.id }),
+              ...(myDeployment && {
+                deployment_id: myDeployment.id,
+              }),
             }),
           },
         }),
@@ -415,6 +439,12 @@ export function DeploymentDialog({
       onSuccess?.(deployment.id);
       toast.success("Deployment promoted successfully");
       onClose();
+      queryClient.invalidateQueries({
+        queryKey: ["deployment", selectedDeployment],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["workflow", workflowId, "deployments"],
+      });
     } finally {
       setIsPromoting(false);
     }
@@ -425,11 +455,11 @@ export function DeploymentDialog({
   return (
     <MyDrawer open={open} onClose={onClose}>
       <div className="space-y-4">
-        <h3 className="text-lg font-medium">
+        <h3 className="font-medium text-lg">
           Deploy Version <Badge>v{selectedVersion.version}</Badge>
         </h3>
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">
+          <h3 className="font-medium text-sm">
             {publicLinkOnly ? "Visibility" : "Environment"}
           </h3>
           <Tabs
@@ -524,7 +554,7 @@ export function DeploymentDialog({
         </div>
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium">Machine</h3>
+          <h3 className="font-medium text-sm">Machine</h3>
           <MachineSelect
             workflow_id={workflowId}
             leaveEmpty
@@ -674,7 +704,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                         <Badge
                           key={deployment.id}
                           className={cn(
-                            "capitalize !text-2xs w-fit cursor-pointer whitespace-nowrap rounded-md hover:shadow-sm",
+                            "!text-2xs w-fit cursor-pointer whitespace-nowrap rounded-md capitalize hover:shadow-sm",
                             getEnvColor(deployment.environment),
                           )}
                           onClick={(e) => {
@@ -735,6 +765,7 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
         selectedVersion={selectedVersion}
         workflowId={workflowId}
         onSuccess={setSelectedDeployment}
+        existingDeployments={deployments || []}
       />
     </>
   );
@@ -775,11 +806,11 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
     if (deploymentId) {
       refetch();
     }
-  }, [deploymentId]);
+  }, [deploymentId, refetch]);
 
   // Determine the best time interval based on data distribution
   useEffect(() => {
-    if (!runs || runs.length === 0) {
+    if (!runs || !Array.isArray(runs) || runs.length === 0) {
       setTimeInterval(60); // Default to 60 minutes if no data
       return;
     }
@@ -790,7 +821,7 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
 
     // Filter runs from the last 24 hours
     const recentRuns = runs.filter(
-      (run) => new Date(run.created_at) >= twentyFourHoursAgo,
+      (run: any) => new Date(run.created_at) >= twentyFourHoursAgo,
     );
 
     if (recentRuns.length === 0) {
@@ -822,7 +853,12 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
   }, [runs]);
 
   // Process the data to group by the chosen interval from 24 hours ago until now
-  const processDataForChart = (runsData: any[] = []) => {
+  const processDataForChart = (
+    runsData: Array<{
+      created_at: string;
+      status: string;
+    }> = [],
+  ) => {
     if (!runsData || !runsData.length) return [];
 
     // Get current time and 24 hours ago
@@ -904,7 +940,7 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
     return timeSlotData;
   };
 
-  const chartData = processDataForChart(runs);
+  const chartData = processDataForChart(Array.isArray(runs) ? runs : []);
 
   // Calculate the appropriate interval for x-axis labels based on time interval
   const getLabelInterval = () => {
@@ -962,7 +998,7 @@ function DeploymentStatusGraph({ workflowId }: { workflowId: string }) {
         </div>
       ) : (
         <>
-          {!runs || runs.length === 0 ? (
+          {!runs || !Array.isArray(runs) || runs.length === 0 ? (
             <div className="flex h-[300px] items-center justify-center">
               <p className="text-muted-foreground text-xs">
                 No requests data in the last 24 hours

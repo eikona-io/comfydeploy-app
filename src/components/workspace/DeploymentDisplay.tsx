@@ -1069,9 +1069,11 @@ export function formatCode({
 export function DeploymentSettings({
   deployment,
   onClose,
+  hideHeader = false,
 }: {
   deployment: Deployment;
   onClose?: () => void;
+  hideHeader?: boolean;
 }) {
   const { data: deployments } = useWorkflowDeployments(deployment.workflow_id);
   const { setSelectedDeployment } = useSelectedDeploymentStore();
@@ -1086,61 +1088,70 @@ export function DeploymentSettings({
         <div className="flex w-full items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="font-medium text-md">Deployment</div>
-            <Select
-              value={deployment.id}
-              onValueChange={(value) => {
-                const newDeployment = deployments?.find((d) => d.id === value);
-                if (newDeployment) {
-                  setSelectedDeployment(newDeployment.id);
-                }
-              }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        getEnvColor(deployment.environment),
-                        "whitespace-nowrap text-sm",
-                      )}
-                    >
-                      {deployment.environment}
-                    </Badge>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {deployments
-                  ?.filter(
-                    (d) =>
-                      d.environment === "production" ||
-                      d.environment === "staging",
-                  )
-                  .map((d) => (
-                    <SelectItem
-                      key={d.id}
-                      value={d.id}
-                      className="flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            getEnvColor(d.environment),
-                            "whitespace-nowrap text-sm",
-                          )}
-                        >
-                          {d.environment}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+            {!hideHeader && (
+              <Select
+                value={deployment.id}
+                onValueChange={(value) => {
+                  const newDeployment = deployments?.find(
+                    (d) => d.id === value,
+                  );
+                  if (newDeployment) {
+                    setSelectedDeployment(newDeployment.id);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          getEnvColor(deployment.environment),
+                          "whitespace-nowrap text-sm",
+                        )}
+                      >
+                        {deployment.environment}
+                      </Badge>
+                    </div>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {deployments
+                    ?.filter(
+                      (d) =>
+                        d.environment === "production" ||
+                        d.environment === "staging",
+                    )
+                    .map((d) => (
+                      <SelectItem
+                        key={d.id}
+                        value={d.id}
+                        className="flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              getEnvColor(d.environment),
+                              "whitespace-nowrap text-sm",
+                            )}
+                          >
+                            {d.environment}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
-          <V0IntegrationButton deployment={deployment} inputs={workflowInput} />
+          {!hideHeader && (
+            <V0IntegrationButton
+              deployment={deployment}
+              inputs={workflowInput}
+            />
+          )}
         </div>
       </div>
 
@@ -1200,6 +1211,7 @@ export function DeploymentSettings({
 
 export function DeploymentDrawer(props: {
   children?: React.ReactNode;
+  hideHeader?: boolean;
 }) {
   const { selectedDeployment, setSelectedDeployment } =
     useSelectedDeploymentStore();
@@ -1223,6 +1235,7 @@ export function DeploymentDrawer(props: {
         onClose={() => setSelectedDeployment(null)}
       >
         <DeploymentSettings
+          hideHeader={props.hideHeader}
           key={deployment.id}
           deployment={deployment}
           onClose={() => setSelectedDeployment(null)}
