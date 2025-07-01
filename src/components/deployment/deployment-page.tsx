@@ -390,6 +390,11 @@ export function DeploymentDialog({
   const handlePromoteToEnv = async () => {
     try {
       setIsPromoting(true);
+      
+      const existingDeployment = deployments?.find(
+        (d: Deployment) => d.environment !== selectedEnvironment
+      );
+      
       const deployment = await callServerPromise(
         api({
           url: "deployment",
@@ -401,6 +406,7 @@ export function DeploymentDialog({
               machine_id: final_machine.data?.id,
               machine_version_id: final_machine.data?.machine_version_id,
               environment: selectedEnvironment,
+              ...(existingDeployment && { deployment_id: existingDeployment.id }),
             }),
           },
         }),
