@@ -15,6 +15,7 @@ import {
   Server,
 } from "lucide-react";
 import { useQueryState } from "nuqs";
+import { useOrganization } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import { Area } from "recharts";
 import { XAxis, YAxis } from "recharts";
@@ -274,7 +275,8 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
           </Tooltip>
         </TooltipProvider>
         <Badge className={cn("!text-2xs", getEnvColor(deployment.environment))}>
-          {deployment.environment === "public-share"
+          {deployment.environment === "public-share" ||
+          deployment.environment === "community-share"
             ? "Link Share"
             : deployment.environment}
         </Badge>
@@ -346,8 +348,14 @@ export function DeploymentDialog({
   publicLinkOnly = false,
 }: DeploymentDialogProps) {
   const [selectedEnvironment, setSelectedEnvironment] = useState<
-    "staging" | "production" | "public-share" | "private-share"
+    | "staging"
+    | "production"
+    | "public-share"
+    | "private-share"
+    | "community-share"
   >(publicLinkOnly ? "public-share" : "staging");
+  const { organization } = useOrganization();
+  const showCommunity = organization?.id === "org_2am4LjkQ5IaWGRYMHxGXfHdHcjA";
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
     null,
   );
@@ -426,7 +434,8 @@ export function DeploymentDialog({
                   | "staging"
                   | "production"
                   | "public-share"
-                  | "private-share",
+                  | "private-share"
+                  | "community-share",
               )
             }
           >
@@ -469,6 +478,19 @@ export function DeploymentDialog({
                   >
                     Link Access
                   </TabsTrigger>
+                  {showCommunity && (
+                    <TabsTrigger
+                      value="community-share"
+                      className={cn(
+                        "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                        selectedEnvironment === "community-share"
+                          ? "bg-gradient-to-b from-white to-orange-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-orange-900 dark:ring-orange-900/50"
+                          : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
+                      )}
+                    >
+                      Community
+                    </TabsTrigger>
+                  )}
                   <TabsTrigger
                     value="private-share"
                     className={cn(
@@ -485,13 +507,13 @@ export function DeploymentDialog({
             </TabsList>
           </Tabs>
           <div className="mt-1 ml-2 text-2xs text-muted-foreground">
-            {selectedEnvironment === "public-share" ? (
-              "This deployment will be accessible via a public link. Anyone with the link can access it."
-            ) : selectedEnvironment === "private-share" ? (
-              "This deployment will only be accessible within your organization."
-            ) : (
-              <></>
-            )}
+            {selectedEnvironment === "public-share"
+              ? "This deployment will be accessible via a public link. Anyone with the link can access it."
+              : selectedEnvironment === "private-share"
+                ? "This deployment will only be accessible within your organization."
+                : selectedEnvironment === "community-share"
+                  ? "This deployment will be visible in the community."
+                  : null}
           </div>
         </div>
 
@@ -639,7 +661,8 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                         (deployment: Deployment) =>
                           deployment.environment === "production" ||
                           deployment.environment === "staging" ||
-                          deployment.environment === "public-share",
+                          deployment.environment === "public-share" ||
+                          deployment.environment === "community-share",
                       )
                       .map((deployment: Deployment) => (
                         <Badge
@@ -657,7 +680,8 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                             setSelectedDeployment(deployment.id);
                           }}
                         >
-                          {deployment.environment === "public-share"
+                          {deployment.environment === "public-share" ||
+                          deployment.environment === "community-share"
                             ? "Link Share"
                             : deployment.environment}
                         </Badge>
