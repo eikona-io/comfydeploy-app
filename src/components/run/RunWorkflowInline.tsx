@@ -4,6 +4,13 @@ import {
   SDInputsRender,
 } from "@/components/SDInputs/SDInputsRender";
 import { Button } from "@/components/ui/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 // import { getFileDownloadUrlV2 } from "@/db/getFileDownloadUrl";
 import { useAuthStore } from "@/lib/auth-store";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -15,7 +22,15 @@ import {
 import { cn } from "@/lib/utils";
 // import { HandleFileUpload } from "@/server/uploadFile";
 import { useAuth, useClerk } from "@clerk/clerk-react";
-import { Edit, GripVertical, Play, Plus, Save, X } from "lucide-react";
+import {
+  Edit,
+  GripVertical,
+  Play,
+  Plus,
+  Save,
+  Settings,
+  X,
+} from "lucide-react";
 import { useQueryState } from "nuqs";
 import {
   type FormEvent,
@@ -300,6 +315,8 @@ export function RunWorkflowInline({
   const [currentRunId, setCurrentRunId] = useQueryState("run-id");
   const [currentWorkflowVersion, setCurrentWorkflowVersion] =
     useQueryState("version");
+  const [batchNumber, setBatchNumber] = useState(1);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [reorderedInputs, setReorderedInputs] = useState<typeof inputs>([]);
@@ -790,7 +807,7 @@ export function RunWorkflowInline({
             deployment_id: deployment_id,
             inputs: val,
             origin: runOrigin,
-            batch_number: 1,
+            batch_number: batchNumber,
           };
 
       if (model_id) {
@@ -1213,17 +1230,95 @@ export function RunWorkflowInline({
         onSubmit={onSubmit}
         actionArea={
           !hideRunButton && (
-            <Button
-              disabled={!inputs || isEditMode}
-              type="submit"
-              className="w-full"
-              isLoading={isLoading || loading}
-              variant="expandIcon"
-              iconPlacement="right"
-              Icon={Play}
-            >
-              Run
-            </Button>
+            <div className="space-y-2">
+              {/* Advanced Settings */}
+              <Collapsible
+                open={showAdvancedSettings}
+                onOpenChange={setShowAdvancedSettings}
+              >
+                <CollapsibleContent className="space-y-3 rounded-md bg-gray-100 p-2 dark:bg-zinc-700/80">
+                  {/* Batch Number Controls */}
+                  <div className="flex items-center justify-between gap-3">
+                    <Label
+                      htmlFor="batch-number"
+                      className="text-sm font-medium"
+                    >
+                      Batch Size
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() =>
+                          setBatchNumber(Math.max(1, batchNumber - 1))
+                        }
+                        disabled={batchNumber <= 1}
+                      >
+                        -
+                      </Button>
+                      <Input
+                        id="batch-number"
+                        type="number"
+                        min="1"
+                        max="99"
+                        value={batchNumber}
+                        onChange={(e) => {
+                          const value = Math.max(
+                            1,
+                            Math.min(99, Number.parseInt(e.target.value) || 1),
+                          );
+                          setBatchNumber(value);
+                        }}
+                        className="h-8 w-16 text-center text-sm"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() =>
+                          setBatchNumber(Math.min(99, batchNumber + 1))
+                        }
+                        disabled={batchNumber >= 99}
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Run Button Row */}
+              <div className="flex gap-2">
+                <Button
+                  disabled={!inputs || isEditMode}
+                  type="submit"
+                  className="flex-1"
+                  isLoading={isLoading || loading}
+                  variant="expandIcon"
+                  iconPlacement="right"
+                  Icon={Play}
+                >
+                  {batchNumber > 1 ? `Run (${batchNumber}x)` : "Run"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="default"
+                  className="h-10 w-10 p-0"
+                  onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+                >
+                  <Settings size={16} />
+                </Button>
+              </div>
+            </div>
           )
         }
         scrollAreaClassName={cn("h-full", scrollAreaClassName)}
