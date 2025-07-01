@@ -225,7 +225,12 @@ function ComfyUIFlowContent({ workflow, apiFormat }: ComfyUIFlowProps) {
       nodesConnectable={false}
       elementsSelectable={false}
       panOnScroll={true}
+      panOnDrag={true}
+      zoomOnPinch={true}
+      zoomOnDoubleClick={true}
+      preventScrolling={false}
       className="comfyui-flow"
+      style={{ touchAction: "auto" }}
     >
       <Background color="#555" gap={16} size={1} />
       <Controls />

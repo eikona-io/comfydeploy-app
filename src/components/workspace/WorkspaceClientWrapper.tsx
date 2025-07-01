@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { easeOut } from "framer-motion";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, ChevronLeft } from "lucide-react";
+import { ChevronRight, ChevronLeft, ChevronUp, Settings } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { lazy, useEffect, useState } from "react";
 import { MyDrawer } from "../drawer";
@@ -70,11 +70,9 @@ export function WorkspaceClientWrapper({
     machineVersionId: "",
   });
 
-  const [showPreview, setShowPreview] = useState(true);
-  const [isAnimating, setIsAnimating] = useState(false);
-
   const [cachedSessionId, setCachedSessionId] = useState<string | null>(null);
   const [hasActiveSession, setHasActiveSession] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
   const [sessionId, setSessionId] = useQueryState("sessionId");
   const { data: selectedSession } = useQuery({
@@ -166,8 +164,6 @@ export function WorkspaceClientWrapper({
   if (Number.parseInt(machineBuilderVersion) >= 4) {
     return (
       <>
-        {/* <div className="absolute inset-x-0 bottom-0 z-0 mx-auto max-w-xl">
-        </div> */}
         <MyDrawer
           desktopClassName="w-[600px]"
           open={sessionCreation.isOpen}
@@ -222,65 +218,13 @@ export function WorkspaceClientWrapper({
         </motion.div>
 
         {!sessionId ? (
-          <div className="flex h-full w-full items-center justify-center">
-            <motion.div
-              className="pt-20 mx-auto flex h-full w-full max-w-xl px-4 flex-col gap-4 z-30"
-              // layout
-            >
-              <div className="flex items-start justify-between gap-4">
-                <SessionCreatorForm
-                  workflowId={props.workflow_id}
-                  version={versions[0]?.version ?? 0}
-                  defaultMachineId={workflow?.selected_machine_id}
-                  defaultMachineVersionId={
-                    workflow?.selected_machine_version_id
-                  }
-                  onShareWorkflow={props.onShareWorkflow}
-                />
-              </div>
-              <MachineUpdateChecker machineId={machine.id} />
-            </motion.div>
-            <Button
-              variant="ghost"
-              onClick={() => setShowPreview(!showPreview)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-2 hidden md:block"
-            >
-              {showPreview ? (
-                <ChevronRight size={20} />
-              ) : (
-                <ChevronLeft size={20} />
-              )}
-            </Button>
+          <div className="relative h-full w-full">
+            {/* Full-screen ComfyUI Flow Background */}
             {versionData && (
-              <motion.div
-                className="relative my-2 hidden h-full w-full items-center justify-center overflow-hidden rounded-l-lg border border-1 bg-gray-50 shadow-lg md:flex dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950"
-                // layout={showPreview}
-                animate={{
-                  opacity: showPreview ? 1 : 0,
-                  x: showPreview ? 0 : +20,
-                }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-                onAnimationStart={() => setIsAnimating(true)}
-                onAnimationComplete={() => setIsAnimating(false)}
-                style={{
-                  pointerEvents: showPreview ? "auto" : "none",
-                  position: isAnimating
-                    ? "relative"
-                    : showPreview
-                      ? "relative"
-                      : "absolute",
-                }}
+              <div
+                className="absolute inset-0 h-full w-full bg-gray-50 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950"
+                style={{ touchAction: "auto" }}
               >
-                {showPreview && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowPreview(false)}
-                    className="absolute top-2 left-2 z-10 bg-white/80 shadow-sm hover:bg-white dark:bg-zinc-800/80 dark:hover:bg-zinc-800"
-                  >
-                    <ChevronRight size={20} />
-                  </Button>
-                )}
                 <ErrorBoundary
                   fallback={(error) => (
                     <div className="flex h-full w-full flex-col items-center justify-center rounded-lg border border-gray-200 bg-gray-50/50 p-4 text-center">
@@ -309,8 +253,143 @@ export function WorkspaceClientWrapper({
                     apiFormat={versionData.workflow_api}
                   />
                 </ErrorBoundary>
-              </motion.div>
+              </div>
             )}
+
+            {/* Floating Description - Top Left (Desktop Only) */}
+            <motion.div
+              className="absolute top-4 left-4 z-20 hidden w-full max-w-sm md:block"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+            >
+              <div className="rounded-lg bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-900/80">
+                <SessionCreatorForm
+                  workflowId={props.workflow_id}
+                  version={versions[0]?.version ?? 0}
+                  defaultMachineId={workflow?.selected_machine_id}
+                  defaultMachineVersionId={
+                    workflow?.selected_machine_version_id
+                  }
+                  onShareWorkflow={props.onShareWorkflow}
+                  mode="description-only"
+                />
+              </div>
+            </motion.div>
+
+            {/* Desktop Form - Bottom Center */}
+            <div className="pointer-events-none absolute right-0 bottom-2 left-0 z-20 hidden md:block">
+              <motion.div
+                className="pointer-events-auto mx-auto w-full max-w-lg"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.1, ease: "easeInOut" }}
+              >
+                <div className="rounded-xl bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-900/80">
+                  <SessionCreatorForm
+                    workflowId={props.workflow_id}
+                    version={versions[0]?.version ?? 0}
+                    defaultMachineId={workflow?.selected_machine_id}
+                    defaultMachineVersionId={
+                      workflow?.selected_machine_version_id
+                    }
+                    onShareWorkflow={props.onShareWorkflow}
+                    mode="compact"
+                  />
+                  <div className="mt-3">
+                    <MachineUpdateChecker machineId={machine.id} />
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Mobile Form - Bottom */}
+            <div className="absolute right-0 bottom-0 left-0 z-20 md:hidden">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.1, ease: "easeInOut" }}
+              >
+                {/* Single Expanding Mobile Form */}
+                <motion.div
+                  className="mx-2 rounded-t-xl border-white/20 border-t bg-white/95 shadow-2xl backdrop-blur-md dark:border-zinc-700/50 dark:bg-zinc-900/95"
+                  style={{
+                    boxShadow:
+                      "0 -10px 25px -5px rgba(0, 0, 0, 0.1), 0 -4px 6px -2px rgba(0, 0, 0, 0.05)",
+                  }}
+                  animate={{
+                    height: isMobileDrawerOpen ? "auto" : "auto",
+                  }}
+                  transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                  <div className="p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-sm">ComfyUI</h3>
+                        <Badge variant="outline" className="text-xs">
+                          v{versions[0]?.version ?? 0}
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() =>
+                          setIsMobileDrawerOpen(!isMobileDrawerOpen)
+                        }
+                      >
+                        <motion.div
+                          animate={{ rotate: isMobileDrawerOpen ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                        </motion.div>
+                      </Button>
+                    </div>
+
+                    {/* Always show the main form */}
+                    <SessionCreatorForm
+                      workflowId={props.workflow_id}
+                      version={versions[0]?.version ?? 0}
+                      defaultMachineId={workflow?.selected_machine_id}
+                      defaultMachineVersionId={
+                        workflow?.selected_machine_version_id
+                      }
+                      onShareWorkflow={props.onShareWorkflow}
+                      mode="mobile"
+                    />
+
+                    {/* Expandable content */}
+                    <AnimatePresence>
+                      {isMobileDrawerOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3, ease: "easeOut" }}
+                          style={{ overflow: "hidden" }}
+                        >
+                          <div className="mt-4 border-white/20 border-t pt-4 dark:border-zinc-700/50">
+                            <SessionCreatorForm
+                              workflowId={props.workflow_id}
+                              version={versions[0]?.version ?? 0}
+                              defaultMachineId={workflow?.selected_machine_id}
+                              defaultMachineVersionId={
+                                workflow?.selected_machine_version_id
+                              }
+                              onShareWorkflow={props.onShareWorkflow}
+                              mode="mobile-expanded"
+                            />
+                            <div className="mt-3">
+                              <MachineUpdateChecker machineId={machine.id} />
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </motion.div>
+              </motion.div>
+            </div>
           </div>
         ) : (
           <></>
