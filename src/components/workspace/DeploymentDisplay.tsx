@@ -1305,7 +1305,9 @@ export function DeploymentDrawer(props: {
 function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
   const [copying, setCopying] = useState(false);
 
-  const [slug, workflow_name] = deployment.share_slug?.split("_", 2) ?? [];
+  const match = deployment.share_slug?.match(/^([^_]+_[^_]+)_(.+)$/) ?? [];
+  const slug = match[1] || "";
+  const workflow_name = match[2] || "";
   const shareLink = `https://studio.comfydeploy.com/share/playground/${slug}/${workflow_name}`;
 
   const handleCopy = async () => {
