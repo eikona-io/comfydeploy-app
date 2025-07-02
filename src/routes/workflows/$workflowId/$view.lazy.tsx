@@ -320,7 +320,7 @@ function WorkflowPageComponent() {
                         )}
                       >
                         {tab === "workspace"
-                          ? "ComfyUI"
+                          ? "Workflow"
                           : tab === "machine"
                             ? "Environment"
                             : tab}

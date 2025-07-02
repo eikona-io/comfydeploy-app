@@ -374,23 +374,6 @@ export function SessionCreatorForm({
             </Button>
           )}
         </div>
-        <p className="flex items-center gap-2 text-muted-foreground text-sm">
-          Start and edit your workflow{" "}
-          <Badge
-            variant="outline"
-            className="gap-2 dark:outline dark:outline-gray-600/40"
-          >
-            {isFluidVersion && (
-              <div className="rounded-full bg-blue-100 p-0.5">
-                <Droplets
-                  strokeWidth={2}
-                  className="h-[12px] w-[12px] text-blue-600"
-                />
-              </div>
-            )}
-            v{version}
-          </Badge>
-        </p>
         <DescriptionForm
           workflowId={workflowId}
           description={workflow?.description}
@@ -405,7 +388,16 @@ export function SessionCreatorForm({
   if (mode === "compact") {
     return (
       <div className="space-y-4">
-        {/* Machine Section */}
+        {/* <p className="flex items-center gap-2 text-muted-foreground text-sm">
+          Start and edit your workflow{" "}
+          <Badge
+            variant="outline"
+            className="gap-2 dark:outline dark:outline-gray-600/40"
+          >
+            v{version}
+          </Badge>
+        </p> */}
+
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">Machine</span>
@@ -452,7 +444,6 @@ export function SessionCreatorForm({
                 name="gpu"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel className="text-xs">GPU</FormLabel>
                     <FormControl>
                       <GPUSelectBox
                         disabled={selectedMachine?.status !== "ready"}
@@ -471,7 +462,6 @@ export function SessionCreatorForm({
                 name="timeout"
                 render={({ field }) => (
                   <FormItem className="flex-1">
-                    <FormLabel className="text-xs">Timeout</FormLabel>
                     <Select
                       onValueChange={(value) => field.onChange(Number(value))}
                       value={field.value.toString()}
