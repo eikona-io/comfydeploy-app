@@ -72,6 +72,12 @@ interface SessionCreatorFormProps {
   showCancelButton?: boolean;
   onCancel?: () => void;
   onShareWorkflow?: () => void;
+  mode?:
+    | "default"
+    | "compact"
+    | "description-only"
+    | "mobile"
+    | "mobile-expanded";
 }
 
 export function MachineSessionsList({ machineId }: { machineId: string }) {
@@ -162,6 +168,105 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
   );
 }
 
+export function CompactMachineSessionsList({
+  machineId,
+}: { machineId: string }) {
+  const { listSession, deleteSession } = useSessionAPI(machineId);
+  const { data: sessions } = listSession;
+  const router = useRouter();
+  const params = useParams({ from: "/workflows/$workflowId/$view" });
+  const [sessionId, setSessionId] = useQueryState("sessionId");
+
+  if (!sessions || sessions.length === 0) {
+    return (
+      <div className="text-center text-muted-foreground text-xs py-1">
+        No active sessions
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-1">
+      <div className="text-xs text-muted-foreground">
+        Active Sessions ({sessions.length})
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {sessions.map((session) => (
+          <TooltipProvider key={session.session_id}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="group relative">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                  <div
+                    className="flex cursor-pointer items-center gap-1 rounded-md border bg-background px-2 py-1 text-xs transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-900/40"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSessionId(session.session_id);
+                      router.navigate({
+                        to: "/workflows/$workflowId/$view",
+                        params: {
+                          workflowId: params.workflowId,
+                          view: "workspace",
+                        },
+                        search: {
+                          isFirstTime: true,
+                          workflowId: params.workflowId,
+                        },
+                      });
+                    }}
+                  >
+                    <div className="relative flex h-3 w-3 items-center justify-center">
+                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                      <RotateCw className="absolute h-3 w-3 animate-spin text-green-500 opacity-50" />
+                    </div>
+                    <UserIcon user_id={session.user_id} className="h-4 w-4" />
+                    <span className="text-muted-foreground">
+                      {session.session_id.slice(0, 6)}
+                    </span>
+                    <Badge variant="outline" className="text-xs px-1 py-0 h-4">
+                      {session.gpu}
+                    </Badge>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    isLoading={deleteSession.isPending}
+                    className="absolute -right-1 -top-1 h-4 w-4 p-0 text-red-500 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-600 dark:text-red-400 dark:hover:text-red-500"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      try {
+                        await deleteSession.mutateAsync({
+                          sessionId: session.session_id,
+                          waitForShutdown: true,
+                        });
+                        await listSession.refetch();
+                        toast.success("Session stopped successfully");
+                      } catch (error) {
+                        toast.error("Failed to stop session");
+                      }
+                    }}
+                  >
+                    <StopCircle className="h-3 w-3" />
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="text-xs">
+                  <div>Session: {session.session_id.slice(0, 8)}</div>
+                  <div>GPU: {session.gpu}</div>
+                  <div>Click to join • Click X to stop</div>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function SessionCreatorForm({
   workflowId,
   version,
@@ -172,6 +277,7 @@ export function SessionCreatorForm({
   showCancelButton = false,
   onCancel,
   onShareWorkflow,
+  mode = "default",
 }: SessionCreatorFormProps) {
   const router = useRouter();
   const { createSession: createDynamicSession } = useSessionAPI();
@@ -239,13 +345,316 @@ export function SessionCreatorForm({
     }
   }, [selectedMachine, form]);
 
-  if (selectedMachine?.type !== "comfy-deploy-serverless") {
+  if (
+    selectedMachine?.type !== "comfy-deploy-serverless" &&
+    mode !== "description-only"
+  ) {
     return (
       <div className="flex w-full items-center justify-center text-muted-foreground text-sm">
         <div>Current machine does not support session. </div>
       </div>
     );
   }
+
+  // Description-only mode for top-left floating area
+  if (mode === "description-only") {
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="font-semibold text-lg">ComfyUI</h2>
+          {onShareWorkflow && (
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onShareWorkflow}
+              className="shrink-0"
+            >
+              <span className="sr-only">Share Workflow</span>
+              <Share className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        <p className="flex items-center gap-2 text-muted-foreground text-sm">
+          Start and edit your workflow{" "}
+          <Badge
+            variant="outline"
+            className="gap-2 dark:outline dark:outline-gray-600/40"
+          >
+            {isFluidVersion && (
+              <div className="rounded-full bg-blue-100 p-0.5">
+                <Droplets
+                  strokeWidth={2}
+                  className="h-[12px] w-[12px] text-blue-600"
+                />
+              </div>
+            )}
+            v{version}
+          </Badge>
+        </p>
+        <DescriptionForm
+          workflowId={workflowId}
+          description={workflow?.description}
+          workflowJson={workflow?.versions[0].workflow}
+          workflowName={workflow?.name}
+        />
+      </div>
+    );
+  }
+
+  // Compact mode for bottom form
+  if (mode === "compact") {
+    return (
+      <div className="space-y-4">
+        {/* Machine Section */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">Machine</span>
+          </div>
+          <MachineSelect
+            workflow_id={workflowId}
+            leaveEmpty
+            className="rounded-md border bg-background"
+          />
+
+          {/* Compact Active Sessions List */}
+          {workflow?.selected_machine_id && (
+            <MachineSessionsList machineId={workflow.selected_machine_id} />
+          )}
+        </div>
+
+        {/* Machine Status Alert */}
+        {selectedMachine?.status !== "ready" && (
+          <Alert
+            variant="destructive"
+            className="cursor-pointer bg-red-500/10 py-2 transition-colors hover:bg-red-500/20 dark:bg-red-900/30 dark:hover:bg-red-900/40"
+            onClick={() => {
+              router.navigate({
+                to: "/workflows/$workflowId/$view",
+                params: { workflowId, view: "machine" },
+              });
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircleIcon size={14} className="dark:text-red-500" />
+              <AlertTitle className="mb-0 text-xs dark:text-red-500">
+                Machine not ready - Click for details
+              </AlertTitle>
+            </div>
+          </Alert>
+        )}
+
+        {/* Compact Form Controls */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            <div className="flex items-end gap-3">
+              <FormField
+                control={form.control}
+                name="gpu"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel className="text-xs">GPU</FormLabel>
+                    <FormControl>
+                      <GPUSelectBox
+                        disabled={selectedMachine?.status !== "ready"}
+                        className="w-full"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="timeout"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormLabel className="text-xs">Timeout</FormLabel>
+                    <Select
+                      onValueChange={(value) => field.onChange(Number(value))}
+                      value={field.value.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger
+                          disabled={selectedMachine?.status !== "ready"}
+                        >
+                          <SelectValue placeholder="Select timeout">
+                            {field.value} mins
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="2">2 mins</SelectItem>
+                        <SelectItem value="15">15 mins</SelectItem>
+                        <SelectItem value="30">30 mins</SelectItem>
+                        <SelectItem value="60">1 hour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="gap-1"
+                disabled={
+                  createDynamicSession.isPending ||
+                  selectedMachine?.status !== "ready"
+                }
+                isLoading={createDynamicSession.isPending}
+                Icon={Rocket}
+                iconPlacement="right"
+              >
+                Start ComfyUI
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    );
+  }
+
+  // Mobile mode for bottom mobile form (minimal)
+  if (mode === "mobile") {
+    return (
+      <div className="space-y-3">
+        {/* Mobile Status Alert */}
+        {selectedMachine?.status !== "ready" && (
+          <Alert
+            variant="destructive"
+            className="cursor-pointer bg-red-500/10 py-2 transition-colors hover:bg-red-500/20 dark:bg-red-900/30 dark:hover:bg-red-900/40"
+            onClick={() => {
+              router.navigate({
+                to: "/workflows/$workflowId/$view",
+                params: { workflowId, view: "machine" },
+              });
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircleIcon size={14} className="dark:text-red-500" />
+              <AlertTitle className="mb-0 text-xs dark:text-red-500">
+                Machine not ready
+              </AlertTitle>
+            </div>
+          </Alert>
+        )}
+
+        {/* Mobile Form Controls */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
+            <div className="flex items-end gap-2">
+              <FormField
+                control={form.control}
+                name="gpu"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <FormControl>
+                      <GPUSelectBox
+                        disabled={selectedMachine?.status !== "ready"}
+                        className="w-full text-sm"
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="timeout"
+                render={({ field }) => (
+                  <FormItem className="flex-1">
+                    <Select
+                      onValueChange={(value) => field.onChange(Number(value))}
+                      value={field.value.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger
+                          disabled={selectedMachine?.status !== "ready"}
+                          className="text-sm"
+                        >
+                          <SelectValue placeholder="Select timeout">
+                            {field.value}m
+                          </SelectValue>
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="2">2 mins</SelectItem>
+                        <SelectItem value="15">15 mins</SelectItem>
+                        <SelectItem value="30">30 mins</SelectItem>
+                        <SelectItem value="60">1 hour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="gap-1 flex-1"
+                disabled={
+                  createDynamicSession.isPending ||
+                  selectedMachine?.status !== "ready"
+                }
+                isLoading={createDynamicSession.isPending}
+                Icon={Rocket}
+                iconPlacement="right"
+              >
+                Start
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
+    );
+  }
+
+  // Mobile expanded mode for mobile drawer (shows machine selection and sessions)
+  if (mode === "mobile-expanded") {
+    return (
+      <div className="space-y-4">
+        {/* Machine Section */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm">Machine</span>
+            <Badge variant="outline" className="text-xs">
+              {selectedMachine?.name || "None"}
+            </Badge>
+          </div>
+          <MachineSelect
+            workflow_id={workflowId}
+            leaveEmpty
+            className="rounded-md border bg-background"
+          />
+
+          {/* Mobile Active Sessions List */}
+          {workflow?.selected_machine_id && (
+            <CompactMachineSessionsList
+              machineId={workflow.selected_machine_id}
+            />
+          )}
+        </div>
+
+        {/* Description Section */}
+        <div className="space-y-2">
+          <DescriptionForm
+            workflowId={workflowId}
+            description={workflow?.description}
+            workflowJson={workflow?.versions[0].workflow}
+            workflowName={workflow?.name}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Default mode (original layout)
   return (
     <div className="flex w-full flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -308,7 +717,6 @@ export function SessionCreatorForm({
             </FormDescription>
             <FormMessage />
           </FormItem>
-          {/* <div className="flex flex-row gap-2"></div> */}
           {selectedMachine?.status !== "ready" && (
             <Alert
               variant="destructive"
@@ -337,7 +745,6 @@ export function SessionCreatorForm({
               name="gpu"
               render={({ field }) => (
                 <FormItem>
-                  {/* <FormLabel>GPU Type</FormLabel> */}
                   <FormControl>
                     <GPUSelectBox
                       disabled={selectedMachine?.status !== "ready"}
@@ -346,11 +753,6 @@ export function SessionCreatorForm({
                       onChange={field.onChange}
                     />
                   </FormControl>
-                  {/* <FormDescription>
-                    {isFluidVersion
-                      ? "GPU type is pre-configured for this fluid version"
-                      : "Select the GPU type for your session"}
-                  </FormDescription> */}
                   <FormMessage />
                 </FormItem>
               )}
@@ -361,7 +763,6 @@ export function SessionCreatorForm({
               name="timeout"
               render={({ field }) => (
                 <FormItem>
-                  {/* <FormLabel>Session Timeout</FormLabel> */}
                   <Select
                     onValueChange={(value) => field.onChange(Number(value))}
                     value={field.value.toString()}
@@ -382,10 +783,6 @@ export function SessionCreatorForm({
                       <SelectItem value="60">1 hour</SelectItem>
                     </SelectContent>
                   </Select>
-                  {/* <FormDescription>
-                    Choose how long the session should run before
-                    auto-termination
-                  </FormDescription> */}
                   <FormMessage />
                 </FormItem>
               )}
@@ -509,7 +906,7 @@ function DescriptionForm({
                 <div className="group relative">
                   <Textarea
                     {...field}
-                    className="-m-2 h-28 border-none text-muted-foreground focus-visible:bg-zinc-100/40 focus-visible:text-black focus-visible:ring-transparent dark:bg-transparent dark:focus-visible:bg-zinc-900/40 dark:focus-visible:text-white dark:focus-visible:ring-transparent"
+                    className="-mt-2 h-28 border-none text-muted-foreground focus-visible:bg-zinc-100/40 focus-visible:text-black focus-visible:ring-transparent dark:bg-transparent dark:focus-visible:bg-zinc-900/40 dark:focus-visible:text-white dark:focus-visible:ring-transparent"
                     placeholder="Describe your workflow"
                     onChange={(e) => {
                       field.onChange(e);
