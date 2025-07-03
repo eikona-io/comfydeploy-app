@@ -512,8 +512,7 @@ export function AssetBrowser({
                       <div className="h-6 w-6 overflow-hidden rounded-[4px] border">
                         <FileURLRender
                           url={asset.url || ""}
-                          imgClasses="w-full h-full object-cover object-center"
-                          canFullScreen={true}
+                          imgClasses="h-6 w-6 object-cover object-center"
                         />
                       </div>
                     )}
@@ -862,7 +861,6 @@ function AssetActions({
         itemUrl={asset.url || ""}
         itemFilename={asset.name}
         canAddToAssets={false}
-        canDownload={false}
       >
         {!asset.is_folder && (
           <DropdownMenuItem
