@@ -836,6 +836,8 @@ export function RunWorkflowInline({
     string,
     any,
   ]) => {
+    const CONCURRENT_LIMIT = 3; // Process 3 images at once
+
     try {
       setLoading2(true);
       setIsLoading(true);
@@ -864,10 +866,8 @@ export function RunWorkflowInline({
 
       toast.success(`Processing ${imageFiles.length} images from folder`);
 
-      // Process each image with delay
-      for (let i = 0; i < imageFiles.length; i++) {
-        const image = imageFiles[i];
-
+      // Helper function to process a single image
+      const processImage = async (image: any, index: number) => {
         const currentValues = {
           ...values,
           [inputKey]: image.url,
@@ -875,8 +875,8 @@ export function RunWorkflowInline({
 
         setStatus({
           state: "preparing",
-          live_status: `Processing image ${i + 1} of ${imageFiles.length}`,
-          progress: (i / imageFiles.length) * 100,
+          live_status: `Processing image ${index + 1} of ${imageFiles.length}`,
+          progress: ((index + 1) / imageFiles.length) * 100,
         });
 
         const valuesParsed = await parseFilesToImgURLs(currentValues);
@@ -908,22 +908,33 @@ export function RunWorkflowInline({
 
         if (!response.ok) {
           throw new Error(
-            `Failed to process image ${i + 1}: ${await response.text()}`,
+            `Failed to process image ${index + 1}: ${await response.text()}`,
           );
         }
 
-        const data = await response.json();
+        return response.json();
+      };
 
-        if (i === 0) {
+      // Process images in batches of CONCURRENT_LIMIT
+      for (let i = 0; i < imageFiles.length; i += CONCURRENT_LIMIT) {
+        const batch = imageFiles.slice(i, i + CONCURRENT_LIMIT);
+
+        // Process all images in this batch simultaneously
+        const batchPromises = batch.map((image: any, batchIndex: number) =>
+          processImage(image, i + batchIndex),
+        );
+
+        // Wait for ALL images in this batch to complete before moving to next batch
+        const batchResults = await Promise.all(batchPromises);
+
+        // Handle results (set run_id from first result, etc.)
+        if (i === 0 && batchResults[0]) {
+          const firstResult = batchResults[0];
           if (runOrigin === "public-share") {
-            setRunId(data.run_id);
+            setRunId(firstResult.run_id);
           } else {
-            setCurrentRunId(data.run_id);
+            setCurrentRunId(firstResult.run_id);
           }
-        }
-
-        if (i < imageFiles.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
 
