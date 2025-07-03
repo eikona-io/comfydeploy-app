@@ -790,6 +790,144 @@ export function RunWorkflowInline({
       return;
     }
 
+    // Check for folder inputs and validate
+    const folderInputs = Object.entries(values).filter(
+      ([key, value]) =>
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value) &&
+        !(value instanceof File) &&
+        "type" in value &&
+        (value as any).type === "folder",
+    );
+
+    if (folderInputs.length > 1) {
+      toast.error("Multiple folder selections are not supported");
+      return;
+    }
+
+    if (folderInputs.length > 0 && batchNumber > 1) {
+      toast.error("Batch runs are not supported with folder selection");
+      return;
+    }
+
+    if (folderInputs.length > 0) {
+      // Process folder sequentially
+      await processFolderSequentially(folderInputs[0]);
+    } else {
+      await runSingleWorkflow();
+    }
+  };
+
+  const processFolderSequentially = async ([inputKey, folderValue]: [
+    string,
+    any,
+  ]) => {
+    try {
+      setLoading2(true);
+      setIsLoading(true);
+
+      const folderContents = await api({
+        url: "assets",
+        params: { path: folderValue.path },
+      });
+
+      const imageFiles = folderContents.filter(
+        (item: any) =>
+          !item.is_folder &&
+          item.mime_type &&
+          item.mime_type.startsWith("image/"),
+      );
+
+      if (imageFiles.length === 0) {
+        toast.error("No image files found in the selected folder");
+        setIsLoading(false);
+        setLoading2(false);
+        return;
+      }
+
+      toast.success(`Processing ${imageFiles.length} images from folder`);
+
+      // Process each image with delay
+      for (let i = 0; i < imageFiles.length; i++) {
+        const image = imageFiles[i];
+
+        const currentValues = {
+          ...values,
+          [inputKey]: image.url,
+        };
+
+        setStatus({
+          state: "preparing",
+          live_status: `Processing image ${i + 1} of ${imageFiles.length}`,
+          progress: (i / imageFiles.length) * 100,
+        });
+
+        const valuesParsed = await parseFilesToImgURLs(currentValues);
+        const val = parseInputValues(valuesParsed);
+
+        const auth = await fetchToken();
+        const body = model_id
+          ? { model_id: model_id, inputs: val }
+          : {
+              workflow_version_id: workflow_version_id,
+              machine_id: machine_id,
+              deployment_id: deployment_id,
+              inputs: val,
+              origin: runOrigin,
+              batch_number: 1, // Always 1 for folder processing
+            };
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_CD_API_URL}/api/run${model_id ? "/sync" : ""}`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${auth}`,
+            },
+            body: JSON.stringify(body),
+          },
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to process image ${i + 1}: ${await response.text()}`,
+          );
+        }
+
+        const data = await response.json();
+
+        if (i === 0) {
+          if (runOrigin === "public-share") {
+            setRunId(data.run_id);
+          } else {
+            setCurrentRunId(data.run_id);
+          }
+        }
+
+        if (i < imageFiles.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+
+      toast.success(`Successfully processed all ${imageFiles.length} images`);
+      setIsLoading(false);
+      if (!blocking) {
+        setLoading2(false);
+      }
+    } catch (error) {
+      setIsLoading(false);
+      setLoading2(false);
+      toast.error(
+        `Failed to process folder: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
+    }
+  };
+
+  const runSingleWorkflow = async () => {
     setLoading2(true);
     setIsLoading(true);
     try {
@@ -1238,60 +1376,86 @@ export function RunWorkflowInline({
               >
                 <CollapsibleContent className="space-y-3 rounded-md bg-gray-100 p-2 dark:bg-zinc-700/80">
                   {/* Batch Number Controls */}
-                  <div className="flex items-center justify-between gap-3">
-                    <Label
-                      htmlFor="batch-number"
-                      className="text-sm font-medium"
-                    >
-                      Batch Size
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() =>
-                          setBatchNumber(Math.max(1, batchNumber - 1))
-                        }
-                        disabled={batchNumber <= 1}
-                      >
-                        -
-                      </Button>
-                      <Input
-                        id="batch-number"
-                        type="number"
-                        min="1"
-                        max="99"
-                        value={batchNumber}
-                        onChange={(e) => {
-                          const value = Math.max(
-                            1,
-                            Math.min(99, Number.parseInt(e.target.value) || 1),
-                          );
-                          setBatchNumber(value);
-                        }}
-                        className="h-8 w-16 text-center text-sm"
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault();
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() =>
-                          setBatchNumber(Math.min(99, batchNumber + 1))
-                        }
-                        disabled={batchNumber >= 99}
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
+                  {(() => {
+                    // Check if there's a folder selected
+                    const hasFolderInput = Object.values(values).some(
+                      (value) =>
+                        typeof value === "object" &&
+                        value !== null &&
+                        !Array.isArray(value) &&
+                        !(value instanceof File) &&
+                        "type" in value &&
+                        (value as any).type === "folder",
+                    );
+
+                    return (
+                      <div className="flex items-center justify-between gap-3">
+                        <Label
+                          htmlFor="batch-number"
+                          className="text-sm font-medium"
+                        >
+                          Batch Size
+                          {hasFolderInput && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              (Disabled with folder selection)
+                            </span>
+                          )}
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() =>
+                              setBatchNumber(Math.max(1, batchNumber - 1))
+                            }
+                            disabled={batchNumber <= 1 || hasFolderInput}
+                          >
+                            -
+                          </Button>
+                          <Input
+                            id="batch-number"
+                            type="number"
+                            min="1"
+                            max="99"
+                            value={batchNumber}
+                            onChange={(e) => {
+                              if (!hasFolderInput) {
+                                const value = Math.max(
+                                  1,
+                                  Math.min(
+                                    99,
+                                    Number.parseInt(e.target.value) || 1,
+                                  ),
+                                );
+                                setBatchNumber(value);
+                              }
+                            }}
+                            className="h-8 w-16 text-center text-sm"
+                            disabled={hasFolderInput}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() =>
+                              setBatchNumber(Math.min(99, batchNumber + 1))
+                            }
+                            disabled={batchNumber >= 99 || hasFolderInput}
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CollapsibleContent>
               </Collapsible>
 

@@ -6,19 +6,32 @@ import { useAssetsBrowserStore } from "../workspace/Workspace";
 import { useSessionIdInSessionView } from "@/hooks/hook";
 
 interface Props {
-  onChange: (file: File | string | undefined | FileList) => void;
+  onChange: (
+    file:
+      | File
+      | string
+      | undefined
+      | FileList
+      | { type: "folder"; path: string; name: string },
+  ) => void;
 }
 
 export type AssetType = {
   url: string;
   name: string;
   id: string;
+  type?: "file" | "folder";
+  path?: string;
 };
 
 export const SDAssetInput = ({ onChange }: Props) => {
   const { setOpen, setSidebarMode, setOnAssetSelect } = useAssetsBrowserStore();
   const handleAsset = (asset: AssetType) => {
-    onChange(asset.url);
+    if (asset.path && asset.name) {
+      onChange({ type: "folder", path: asset.path, name: asset.name });
+    } else {
+      onChange(asset.url);
+    }
     setOnAssetSelect(null);
     setOpen(false);
   };

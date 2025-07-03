@@ -298,12 +298,34 @@ export function SDInputsRender({
           inputClasses="mt-1"
           header={header(genericProps)}
           {...genericProps}
-          onChange={(file: File | string | undefined | FileList) => {
+          onChange={(
+            file:
+              | File
+              | string
+              | undefined
+              | FileList
+              | { type: "folder"; path: string; name: string },
+          ) => {
             if (file instanceof FileList) {
               updateInput(inputNode.input_id, file[0]);
               return;
             }
-            updateInput(inputNode.input_id, file);
+            if (
+              typeof file === "object" &&
+              file !== null &&
+              "type" in file &&
+              file.type === "folder"
+            ) {
+              updateInput(inputNode.input_id, JSON.stringify(file));
+              return;
+            }
+            if (
+              typeof file === "string" ||
+              file instanceof File ||
+              file === undefined
+            ) {
+              updateInput(inputNode.input_id, file);
+            }
           }}
         />
       );
@@ -316,7 +338,11 @@ export function SDInputsRender({
           header={header(genericProps)}
           isDisplayAssetInput={true}
           {...genericProps}
-          onChange={(file: File | string | undefined) => {
+          onChange={(file: File | string | undefined | FileList) => {
+            if (file instanceof FileList) {
+              updateInput(inputNode.input_id, file[0]);
+              return;
+            }
             updateInput(inputNode.input_id, file);
           }}
         />
@@ -330,12 +356,34 @@ export function SDInputsRender({
           header={header(genericProps)}
           accept=".exr"
           {...genericProps}
-          onChange={(file: File | string | undefined | FileList) => {
+          onChange={(
+            file:
+              | File
+              | string
+              | undefined
+              | FileList
+              | { type: "folder"; path: string; name: string },
+          ) => {
             if (file instanceof FileList) {
               updateInput(inputNode.input_id, file[0]);
               return;
             }
-            updateInput(inputNode.input_id, file);
+            if (
+              typeof file === "object" &&
+              file !== null &&
+              "type" in file &&
+              file.type === "folder"
+            ) {
+              updateInput(inputNode.input_id, JSON.stringify(file));
+              return;
+            }
+            if (
+              typeof file === "string" ||
+              file instanceof File ||
+              file === undefined
+            ) {
+              updateInput(inputNode.input_id, file);
+            }
           }}
         />
       );
@@ -347,7 +395,11 @@ export function SDInputsRender({
           inputClasses="mt-1 bg-gray-50"
           header={header(genericProps)}
           {...genericProps}
-          onChange={(file: File | string | undefined) => {
+          onChange={(file: File | string | undefined | FileList) => {
+            if (file instanceof FileList) {
+              updateInput(inputNode.input_id, file[0]);
+              return;
+            }
             updateInput(inputNode.input_id, file);
           }}
         />
@@ -418,7 +470,14 @@ export function SDInputsRender({
                   className="w-full flex-1"
                   multiple={true}
                   // {...genericProps}
-                  onChange={(file: File | string | undefined | FileList) => {
+                  onChange={(
+                    file:
+                      | File
+                      | string
+                      | undefined
+                      | FileList
+                      | { type: "folder"; path: string; name: string },
+                  ) => {
                     if (file instanceof FileList) {
                       updateInput(
                         inputNode.input_id,
