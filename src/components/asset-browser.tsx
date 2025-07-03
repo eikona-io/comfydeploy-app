@@ -861,6 +861,7 @@ function AssetActions({
         itemUrl={asset.url || ""}
         itemFilename={asset.name}
         canAddToAssets={false}
+        canDownload={!asset.is_folder}
       >
         {!asset.is_folder && (
           <DropdownMenuItem
