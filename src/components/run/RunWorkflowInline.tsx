@@ -792,13 +792,26 @@ export function RunWorkflowInline({
 
     // Check for folder inputs and validate
     const folderInputs = Object.entries(values).filter(
-      ([key, value]) =>
-        typeof value === "object" &&
-        value !== null &&
-        !Array.isArray(value) &&
-        !(value instanceof File) &&
-        "type" in value &&
-        (value as any).type === "folder",
+      ([key, value]) => {
+        // Handle folder stored as JSON string
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            return parsed && typeof parsed === "object" && parsed.type === "folder";
+          } catch {
+            return false;
+          }
+        }
+        // Handle folder stored as object
+        return (
+          typeof value === "object" &&
+          value !== null &&
+          !Array.isArray(value) &&
+          !(value instanceof File) &&
+          "type" in value &&
+          (value as any).type === "folder"
+        );
+      },
     );
 
     if (folderInputs.length > 1) {
@@ -827,9 +840,11 @@ export function RunWorkflowInline({
       setLoading2(true);
       setIsLoading(true);
 
+      const folderData = typeof folderValue === "string" ? JSON.parse(folderValue) : folderValue;
+
       const folderContents = await api({
         url: "assets",
-        params: { path: folderValue.path },
+        params: { path: folderData.path },
       });
 
       const imageFiles = folderContents.filter(
@@ -1379,13 +1394,26 @@ export function RunWorkflowInline({
                   {(() => {
                     // Check if there's a folder selected
                     const hasFolderInput = Object.values(values).some(
-                      (value) =>
-                        typeof value === "object" &&
-                        value !== null &&
-                        !Array.isArray(value) &&
-                        !(value instanceof File) &&
-                        "type" in value &&
-                        (value as any).type === "folder",
+                      (value) => {
+                        // Handle folder stored as JSON string
+                        if (typeof value === "string") {
+                          try {
+                            const parsed = JSON.parse(value);
+                            return parsed && typeof parsed === "object" && parsed.type === "folder";
+                          } catch {
+                            return false;
+                          }
+                        }
+                        // Handle folder stored as object
+                        return (
+                          typeof value === "object" &&
+                          value !== null &&
+                          !Array.isArray(value) &&
+                          !(value instanceof File) &&
+                          "type" in value &&
+                          (value as any).type === "folder"
+                        );
+                      },
                     );
 
                     return (
