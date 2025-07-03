@@ -791,28 +791,28 @@ export function RunWorkflowInline({
     }
 
     // Check for folder inputs and validate
-    const folderInputs = Object.entries(values).filter(
-      ([key, value]) => {
-        // Handle folder stored as JSON string
-        if (typeof value === "string") {
-          try {
-            const parsed = JSON.parse(value);
-            return parsed && typeof parsed === "object" && parsed.type === "folder";
-          } catch {
-            return false;
-          }
+    const folderInputs = Object.entries(values).filter(([key, value]) => {
+      // Handle folder stored as JSON string
+      if (typeof value === "string") {
+        try {
+          const parsed = JSON.parse(value);
+          return (
+            parsed && typeof parsed === "object" && parsed.type === "folder"
+          );
+        } catch {
+          return false;
         }
-        // Handle folder stored as object
-        return (
-          typeof value === "object" &&
-          value !== null &&
-          !Array.isArray(value) &&
-          !(value instanceof File) &&
-          "type" in value &&
-          (value as any).type === "folder"
-        );
-      },
-    );
+      }
+      // Handle folder stored as object
+      return (
+        typeof value === "object" &&
+        value !== null &&
+        !Array.isArray(value) &&
+        !(value instanceof File) &&
+        "type" in value &&
+        (value as any).type === "folder"
+      );
+    });
 
     if (folderInputs.length > 1) {
       toast.error("Multiple folder selections are not supported");
@@ -840,7 +840,8 @@ export function RunWorkflowInline({
       setLoading2(true);
       setIsLoading(true);
 
-      const folderData = typeof folderValue === "string" ? JSON.parse(folderValue) : folderValue;
+      const folderData =
+        typeof folderValue === "string" ? JSON.parse(folderValue) : folderValue;
 
       const folderContents = await api({
         url: "assets",
@@ -922,7 +923,7 @@ export function RunWorkflowInline({
         }
 
         if (i < imageFiles.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
 
@@ -1399,7 +1400,11 @@ export function RunWorkflowInline({
                         if (typeof value === "string") {
                           try {
                             const parsed = JSON.parse(value);
-                            return parsed && typeof parsed === "object" && parsed.type === "folder";
+                            return (
+                              parsed &&
+                              typeof parsed === "object" &&
+                              parsed.type === "folder"
+                            );
                           } catch {
                             return false;
                           }
@@ -1423,11 +1428,6 @@ export function RunWorkflowInline({
                           className="text-sm font-medium"
                         >
                           Batch Size
-                          {hasFolderInput && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              (Disabled with folder selection)
-                            </span>
-                          )}
                         </Label>
                         <div className="flex items-center gap-2">
                           <Button
