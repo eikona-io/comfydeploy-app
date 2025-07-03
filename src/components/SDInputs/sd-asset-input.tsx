@@ -22,13 +22,14 @@ export type AssetType = {
   id: string;
   type?: "file" | "folder";
   path?: string;
+  is_folder: boolean;
 };
 
 export const SDAssetInput = ({ onChange }: Props) => {
   const { setOpen, setSidebarMode, setOnAssetSelect } = useAssetsBrowserStore();
   const handleAsset = (asset: AssetType) => {
-    if (asset.path && asset.name) {
-      onChange({ type: "folder", path: asset.path, name: asset.name });
+    if (asset.is_folder) {
+      onChange({ type: "folder", path: asset.path || "", name: asset.name });
     } else {
       onChange(asset.url);
     }

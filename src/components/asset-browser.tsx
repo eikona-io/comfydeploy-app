@@ -59,7 +59,13 @@ import { useDebounce } from "@/hooks/use-debounce";
 interface AssetBrowserProps {
   className?: string;
   showNewFolderButton?: boolean;
-  onItemClick?: (asset: { url: string; name: string; id: string }) => void;
+  onItemClick?: (asset: {
+    url: string;
+    name: string;
+    id: string;
+    path?: string;
+    is_folder?: boolean;
+  }) => void;
   isPanel?: boolean;
 }
 
@@ -825,7 +831,13 @@ function AssetActions({
 }: {
   asset: Asset;
   isSelectionMode: boolean;
-  onItemClick?: (asset: { url: string; name: string; id: string }) => void;
+  onItemClick?: (asset: {
+    url: string;
+    name: string;
+    id: string;
+    path?: string;
+    is_folder?: boolean;
+  }) => void;
 }) {
   const { mutateAsync: deleteAsset } = useDeleteAsset();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -877,6 +889,8 @@ function AssetActions({
                   url: asset.url || "",
                   name: asset.name,
                   id: asset.id,
+                  path: asset.path,
+                  is_folder: true,
                 });
               }
             }}
