@@ -59,7 +59,13 @@ import { useDebounce } from "@/hooks/use-debounce";
 interface AssetBrowserProps {
   className?: string;
   showNewFolderButton?: boolean;
-  onItemClick?: (asset: { url: string; name: string; id: string }) => void;
+  onItemClick?: (asset: {
+    url: string;
+    name: string;
+    id: string;
+    path?: string;
+    is_folder?: boolean;
+  }) => void;
   isPanel?: boolean;
 }
 
@@ -448,6 +454,7 @@ export function AssetBrowser({
                   <AssetActions
                     asset={asset}
                     isSelectionMode={isSelectionMode}
+                    onItemClick={onItemClick}
                   />
                 </div>
               </div>
@@ -583,6 +590,7 @@ export function AssetBrowser({
                   <AssetActions
                     asset={asset}
                     isSelectionMode={isSelectionMode}
+                    onItemClick={onItemClick}
                   />
                 </div>
               </div>
@@ -819,7 +827,18 @@ export function SearchAssetsInputBox() {
 function AssetActions({
   asset,
   isSelectionMode,
-}: { asset: Asset; isSelectionMode: boolean }) {
+  onItemClick,
+}: {
+  asset: Asset;
+  isSelectionMode: boolean;
+  onItemClick?: (asset: {
+    url: string;
+    name: string;
+    id: string;
+    path?: string;
+    is_folder?: boolean;
+  }) => void;
+}) {
   const { mutateAsync: deleteAsset } = useDeleteAsset();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
@@ -862,6 +881,25 @@ function AssetActions({
         itemFilename={asset.name}
         canAddToAssets={false}
       >
+        {asset.is_folder && (
+          <DropdownMenuItem
+            onClick={() => {
+              if (onItemClick) {
+                onItemClick({
+                  url: asset.url || "",
+                  name: asset.name,
+                  id: asset.id,
+                  path: asset.path,
+                  is_folder: true,
+                });
+              }
+            }}
+            className="justify-between"
+          >
+            Select Folder
+            <FolderOpen className="h-4 w-4" />
+          </DropdownMenuItem>
+        )}
         {!asset.is_folder && (
           <DropdownMenuItem
             onClick={() => handleMoveAsset(asset)}

@@ -3,7 +3,7 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { Paperclip, Pencil, Trash } from "lucide-react";
+import { Paperclip, Pencil, Trash, Folder } from "lucide-react";
 import {
   type ChangeEvent,
   type DragEvent,
@@ -23,7 +23,14 @@ type SDImageInputProps = {
   inputClasses?: string;
   file: File | undefined;
   multiple?: boolean;
-  onChange: (file: File | string | undefined | FileList) => void;
+  onChange: (
+    file:
+      | File
+      | string
+      | undefined
+      | FileList
+      | { type: "folder"; path: string; name: string },
+  ) => void;
   header?: ReactNode;
 };
 
@@ -59,6 +66,15 @@ export function SDImageInput({
   // Check if there's text in the input (URL string)
   const hasTextInput =
     typeof file === "string" && String(file).trim().length > 0;
+
+  // Check if there's a folder selected
+  const hasFolderInput =
+    typeof file === "object" &&
+    file !== null &&
+    !Array.isArray(file) &&
+    !(file instanceof File) &&
+    "type" in file &&
+    (file as any).type === "folder";
 
   function onDeleteImg() {
     if (!file) {
@@ -97,7 +113,7 @@ export function SDImageInput({
     <div className={className} ref={dropRef}>
       {header}
       <div className={`${inputClasses} flex gap-1`}>
-        {!ImgView && (
+        {!ImgView && !hasFolderInput && (
           <>
             <Input
               className="rounded-[8px]"
@@ -186,6 +202,31 @@ export function SDImageInput({
                       onDeleteImg();
                     }
                   }}
+                >
+                  <Trash
+                    className="text-red-700 hover:text-red-600"
+                    size={16}
+                  />
+                </Button>
+              </ImageInputsTooltip>
+            </div>
+          </div>
+        )}
+        {hasFolderInput && (
+          <div className="flex w-full items-center justify-between rounded-[8px] border border-gray-200 px-2 py-1 dark:border-gray-700">
+            <div className="flex flex-auto items-center gap-2">
+              <Folder className="h-4 w-4 text-gray-400" />
+              <p className="line-clamp-1 font-medium text-xs">
+                Folder: {(file as any).name}
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
+              <ImageInputsTooltip tooltipText="Delete">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  onClick={onDeleteImg}
                 >
                   <Trash
                     className="text-red-700 hover:text-red-600"
