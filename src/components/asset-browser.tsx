@@ -55,6 +55,7 @@ import { Checkbox } from "./ui/checkbox";
 import { Progress } from "./ui/progress";
 import { Input } from "./ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
+import { Badge } from "./ui/badge";
 
 interface AssetBrowserProps {
   className?: string;
@@ -896,7 +897,12 @@ function AssetActions({
             }}
             className="justify-between"
           >
-            Select Folder
+            <div className="flex items-center gap-1.5">
+              Select Folder{" "}
+              <Badge variant="purple" className="py-0">
+                Beta
+              </Badge>
+            </div>
             <FolderOpen className="h-4 w-4" />
           </DropdownMenuItem>
         )}
