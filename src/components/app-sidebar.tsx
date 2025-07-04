@@ -108,7 +108,6 @@ import {
 } from "./ui/tooltip";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
-import { WorkflowCommitVersion } from "./workspace/WorkflowCommitVersion";
 import { useWorkflowStore } from "./workspace/Workspace";
 import {
   SessionIncrementDialog,
@@ -779,6 +778,7 @@ function WorkspaceConfigPopover({
   const machine_version_id = session?.machine_version_id;
   const session_url = session?.url;
   const endpoint = session?.url || session?.tunnel_url;
+  const { value: selectedVersion } = useSelectedVersion(workflowId || "");
 
   const {
     query,
@@ -866,6 +866,7 @@ function WorkspaceConfigPopover({
           comfyui_snapshot,
           comfyui_snapshot_loading,
           sessionId,
+          workflow_api: selectedVersion?.workflow_api,
         });
       }, +autoSaveInterval * 1000);
     }
