@@ -373,7 +373,8 @@ export function DeploymentDialog({
   }, [selectedDeployment]);
 
   const { organization } = useOrganization();
-  const showCommunity = organization?.id === "org_2am4LjkQ5IaWGRYMHxGXfHdHcjA";
+  const showCommunity = true;
+  // const showCommunity = organization?.id === "org_2am4LjkQ5IaWGRYMHxGXfHdHcjA";
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
     null,
   );
