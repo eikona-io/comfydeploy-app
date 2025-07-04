@@ -456,6 +456,7 @@ export function AssetBrowser({
                     asset={asset}
                     isSelectionMode={isSelectionMode}
                     onItemClick={onItemClick}
+                    isPanel={isPanel}
                   />
                 </div>
               </div>
@@ -592,6 +593,7 @@ export function AssetBrowser({
                     asset={asset}
                     isSelectionMode={isSelectionMode}
                     onItemClick={onItemClick}
+                    isPanel={isPanel}
                   />
                 </div>
               </div>
@@ -829,6 +831,7 @@ function AssetActions({
   asset,
   isSelectionMode,
   onItemClick,
+  isPanel,
 }: {
   asset: Asset;
   isSelectionMode: boolean;
@@ -839,6 +842,7 @@ function AssetActions({
     path?: string;
     is_folder?: boolean;
   }) => void;
+  isPanel?: boolean;
 }) {
   const { mutateAsync: deleteAsset } = useDeleteAsset();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -883,7 +887,7 @@ function AssetActions({
         canAddToAssets={false}
         canDownload={!asset.is_folder}
       >
-        {asset.is_folder && (
+        {asset.is_folder && isPanel && (
           <DropdownMenuItem
             onClick={() => {
               if (onItemClick) {
