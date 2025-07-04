@@ -15,7 +15,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, Diff, RefreshCcw, Save } from "lucide-react";
 import { use, useState } from "react";
 import { toast } from "sonner";
-import { WorkflowCommitVersion } from "./WorkflowCommitVersion";
 import { WorkflowDiff } from "./WorkflowDiff";
 
 type WorkspaceStatusBarProps = {
@@ -41,9 +40,9 @@ export function WorkspaceStatusBar({
 
   return (
     <>
-      {displayCommit && !readonly && (
+      {/* {displayCommit && !readonly && (
         <WorkflowCommitVersion setOpen={setDisplayCommit} endpoint={endpoint} />
-      )}
+      )} */}
 
       {displayDiff && !readonly && (
         <WorkflowDiff

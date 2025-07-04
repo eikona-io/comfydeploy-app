@@ -323,9 +323,11 @@ export function WorkspaceClientWrapper({
                   transition={{ duration: 0.3, ease: "easeOut" }}
                 >
                   <div className="p-4">
-                    <div className="mb-3 flex items-center justify-between">
+                    <div className="mb-3 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-sm">ComfyUI</h3>
+                        <h3 className="line-clamp-1 font-medium text-sm">
+                          {workflow?.name || "ComfyUI"}
+                        </h3>
                         <Badge variant="outline" className="text-xs">
                           v{versions[0]?.version ?? 0}
                         </Badge>

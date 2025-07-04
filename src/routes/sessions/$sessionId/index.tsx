@@ -15,7 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { useSelectedVersion } from "@/components/version-select";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
 import { SessionCreator } from "@/components/workspace/SessionView";
-import { WorkflowCommitVersion } from "@/components/workspace/WorkflowCommitVersion";
 import { WorkflowDiff } from "@/components/workspace/WorkflowDiff";
 import { useWorkflowStore } from "@/components/workspace/Workspace";
 import { sendWorkflow } from "@/components/workspace/sendEventToCD";
@@ -114,9 +113,9 @@ function WorkspaceStatusBar({
 
   return (
     <>
-      {displayCommit && !readonly && (
+      {/* {displayCommit && !readonly && (
         <WorkflowCommitVersion setOpen={setDisplayCommit} endpoint={endpoint} />
-      )}
+      )} */}
 
       {displayDiff && !readonly && (
         <WorkflowDiff

@@ -109,6 +109,7 @@ export function WorkflowCommitSidePanel({
                 comfyui_snapshot,
                 comfyui_snapshot_loading,
                 sessionId,
+                workflow_api: selectedVersion?.workflow_api,
               });
               setIsLoading(false);
               onClose();
