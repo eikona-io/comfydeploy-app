@@ -360,8 +360,18 @@ export function SessionCreatorForm({
   if (mode === "description-only") {
     return (
       <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg">ComfyUI</h2>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <h2 className="line-clamp-1 font-semibold text-lg">
+              {workflow?.name || "ComfyUI"}
+            </h2>
+            <Badge
+              variant="outline"
+              className="gap-2 dark:outline dark:outline-gray-600/40"
+            >
+              v{version}
+            </Badge>
+          </div>
           {onShareWorkflow && (
             <Button
               variant="outline"
@@ -388,16 +398,6 @@ export function SessionCreatorForm({
   if (mode === "compact") {
     return (
       <div className="space-y-4">
-        {/* <p className="flex items-center gap-2 text-muted-foreground text-sm">
-          Start and edit your workflow{" "}
-          <Badge
-            variant="outline"
-            className="gap-2 dark:outline dark:outline-gray-600/40"
-          >
-            v{version}
-          </Badge>
-        </p> */}
-
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className="font-medium text-sm">Machine</span>

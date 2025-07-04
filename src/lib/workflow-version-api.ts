@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { api } from "./api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import type { Options } from "nuqs";
+import { customInputNodes } from "./customInputNodes";
 
 const getPromptWithTimeout = async ({
   timeoutMs = 5000,
@@ -47,6 +48,101 @@ const getPromptWithTimeout = async ({
   });
   console.log("getPrompt", getPrompt);
   return Promise.race([getPrompt, timeoutPromise]);
+};
+
+// Create a Set for faster lookup of custom input node types
+const customInputNodeTypes = new Set(Object.keys(customInputNodes));
+
+/**
+ * Merges _meta data from current workflow_api into new workflow_api based on matching input_id values
+ * Only processes custom input nodes for better performance
+ * @param newWorkflowApi - The new workflow_api JSON string
+ * @param currentWorkflowApi - The current workflow_api JSON string to merge meta data from
+ * @returns The merged workflow_api JSON string
+ */
+const mergeMetaData = (newWorkflowApi: any, currentWorkflowApi?: any): any => {
+  if (!currentWorkflowApi) {
+    return newWorkflowApi;
+  }
+
+  try {
+    // Create a map of input_id to _meta data from current workflow_api
+    // Only process custom input nodes for better performance
+    const inputIdToMetaMap = new Map<string, any>();
+
+    for (const [nodeId, nodeData] of Object.entries(currentWorkflowApi)) {
+      if (
+        nodeData &&
+        typeof nodeData === "object" &&
+        "class_type" in nodeData &&
+        "inputs" in nodeData
+      ) {
+        const classType = (nodeData as any).class_type;
+
+        // Only process custom input nodes
+        if (!customInputNodeTypes.has(classType)) {
+          continue;
+        }
+
+        const inputId = (nodeData as any).inputs?.input_id;
+        if (inputId && (nodeData as any)._meta) {
+          // Extract only the specific _meta fields we want to preserve
+          const metaData: any = {};
+          const currentMeta = (nodeData as any)._meta;
+
+          if (currentMeta.cd_group_name !== undefined) {
+            metaData.cd_group_name = currentMeta.cd_group_name;
+          }
+          if (currentMeta.cd_input_order !== undefined) {
+            metaData.cd_input_order = currentMeta.cd_input_order;
+          }
+          if (currentMeta.cd_input_group_id !== undefined) {
+            metaData.cd_input_group_id = currentMeta.cd_input_group_id;
+          }
+          if (currentMeta.cd_group_collapsed !== undefined) {
+            metaData.cd_group_collapsed = currentMeta.cd_group_collapsed;
+          }
+
+          if (Object.keys(metaData).length > 0) {
+            inputIdToMetaMap.set(inputId, metaData);
+          }
+        }
+      }
+    }
+
+    // Merge _meta data into new workflow_api
+    // Only process custom input nodes for better performance
+    for (const [nodeId, nodeData] of Object.entries(newWorkflowApi)) {
+      if (
+        nodeData &&
+        typeof nodeData === "object" &&
+        "class_type" in nodeData &&
+        "inputs" in nodeData
+      ) {
+        const classType = (nodeData as any).class_type;
+
+        // Only process custom input nodes
+        if (!customInputNodeTypes.has(classType)) {
+          continue;
+        }
+
+        const inputId = (nodeData as any).inputs?.input_id;
+        if (inputId && inputIdToMetaMap.has(inputId)) {
+          const metaData = inputIdToMetaMap.get(inputId);
+          if (!(nodeData as any)._meta) {
+            (nodeData as any)._meta = {};
+          }
+          // Merge the specific _meta fields, preserving any existing ones
+          Object.assign((nodeData as any)._meta, metaData);
+        }
+      }
+    }
+
+    return newWorkflowApi;
+  } catch (error) {
+    console.error("Error merging meta data:", error);
+    return newWorkflowApi;
+  }
 };
 
 async function createNewWorkflowVersion(data: {
@@ -95,6 +191,7 @@ interface Props {
   comfyui_snapshot?: string;
   snapshotAction: "CREATE_AND_COMMIT" | "COMMIT_ONLY";
   setOpen: (b: boolean) => void;
+  workflow_api?: string;
 }
 
 export const serverAction = async ({
@@ -112,16 +209,15 @@ export const serverAction = async ({
   comfyui_snapshot,
   snapshotAction,
   setOpen,
+  workflow_api,
 }: Props) => {
-  console.log("PLEASE!!!");
   if (!userId) return;
   if (!workflowId) return;
   if (comfyui_snapshot_loading && is_fluid_machine) return;
 
-  console.log("RUN PLEASE!!!", endpoint);
   try {
     const prompt = await getPromptWithTimeout({ endpoint });
-    // console.log("prompt", prompt);
+    const mergedWorkflowApi = mergeMetaData(prompt.output, workflow_api);
 
     let new_machine_vesion_id: string | undefined = machine_version_id;
     if (snapshotAction === "CREATE_AND_COMMIT" && sessionId) {
@@ -144,6 +240,8 @@ export const serverAction = async ({
       return;
     }
 
+    console.log("mergedWorkflowApi", mergedWorkflowApi);
+
     const result = await callServerPromise(
       createNewWorkflowVersion({
         comment,
@@ -154,7 +252,7 @@ export const serverAction = async ({
         comfyui_snapshot: comfyui_snapshot,
         workflow_data: {
           workflow: prompt.workflow,
-          workflow_api: prompt.output,
+          workflow_api: mergedWorkflowApi, // Use merged workflow_api instead of prompt.output
         },
       }),
       {
