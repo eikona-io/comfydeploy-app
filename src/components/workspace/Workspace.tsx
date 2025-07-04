@@ -9,8 +9,6 @@ import {
 import { cn } from "@/lib/utils";
 import { useDrawerStore } from "@/stores/drawer-store";
 import { useAuth } from "@clerk/clerk-react";
-import { motion } from "framer-motion";
-import { AnimatePresence } from "framer-motion";
 import { diff } from "json-diff-ts";
 import { Download, Import, Link, Workflow } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -21,6 +19,16 @@ import {
   sendInetrnalEventToCD,
   sendWorkflow,
 } from "./sendEventToCD";
+import { useWorkflowIdInSessionView } from "@/hooks/hook";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
+import { useAuthStore } from "@/lib/auth-store";
+import { useQuery } from "@tanstack/react-query";
+import { parseAsBoolean, parseAsInteger, useQueryState } from "nuqs";
+import { create } from "zustand";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
+import type { AssetType } from "../SDInputs/sd-asset-input";
 
 export const useCDStore = create<{
   cdSetup: boolean;
@@ -55,23 +63,6 @@ export function useSelectedVersion(workflow_id: string | null) {
     isValidating: status === "pending",
   };
 }
-
-import {
-  useSessionIdInSessionView,
-  useWorkflowIdInSessionView,
-} from "@/hooks/hook";
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useMachine } from "@/hooks/use-machine";
-import { useAuthStore } from "@/lib/auth-store";
-import { useQuery } from "@tanstack/react-query";
-import { useSearch } from "@tanstack/react-router";
-// import { usePathname, useRouter } from "next/navigation";
-import { parseAsBoolean, parseAsInteger, useQueryState } from "nuqs";
-import { create } from "zustand";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { WorkspaceControls } from "./workspace-control";
-import type { AssetType } from "../SDInputs/sd-asset-input";
 
 interface WorkflowState {
   workflow: any;
@@ -253,47 +244,12 @@ export default function Workspace({
   const [isWorkflowLoaded, setIsWorkflowLoaded] = useState(false);
   const workflowToSend = useRef<any>(null);
 
-  const [startTime] = useState(() => Date.now());
-
   const setComfyUIWorkflow = (workflowJson: any) => {
     workflowToSend.current = workflowJson;
     setWorkflowSendAttempts(1); // Start first attempt
     currentWorkflowRef.current = workflowJson;
     sendWorkflow(workflowJson);
   };
-
-  // const sessionId = useSessionIdInSessionView();
-  // Temporary disabled
-  // useEffect(() => {
-  //   if (!workflowSendAttempts || isWorkflowLoaded) return;
-
-  //   const baseDelay = 200;
-  //   const exponentialDelay = Math.min(
-  //     baseDelay * 2 ** (workflowSendAttempts - 1),
-  //     4000,
-  //   );
-
-  //   const jitter = Math.random() * 100;
-  //   const delay = exponentialDelay + jitter;
-
-  //   const timeout = setTimeout(() => {
-  //     const timeElapsed = Date.now() - startTime;
-
-  //     if (!isWorkflowLoaded && timeElapsed < 60000) {
-  //       console.log(
-  //         `Retrying workflow send, attempt ${workflowSendAttempts + 1} (delay: ${delay.toFixed(0)}ms, total time: ${timeElapsed.toFixed(0)}ms)`,
-  //       );
-  //       setWorkflowSendAttempts((prev) => prev + 1);
-  //       sendWorkflow(workflowToSend.current);
-  //     } else {
-  //       console.log(
-  //         `Stopping retries: ${isWorkflowLoaded ? "Workflow loaded" : "Time limit reached"} (${timeElapsed.toFixed(0)}ms elapsed)`,
-  //       );
-  //     }
-  //   }, delay);
-
-  //   return () => clearTimeout(timeout);
-  // }, [workflowSendAttempts, isWorkflowLoaded, startTime]);
 
   useEffect(() => {
     if (!cdSetup) return;
@@ -400,19 +356,6 @@ export default function Workspace({
         if (data.type === "cd_plugin_setup") {
           setCDSetup(true);
           setProgress(100);
-
-          // configureWorkspaceButtons();
-          // sendEventToCD("configure_menu_right_buttons", [
-          //   {
-          //     id: "session",
-          //     icon: "pi-clock",
-          //     tooltip: "Increase the timeout of your current session",
-          //     label: "Increase Timeout",
-          //     btnClasses: "p-button-success",
-          //     event: "increase-session",
-          //     eventData: {},
-          //   },
-          // ]);
         } else if (data.type === "cd_plugin_onAfterChange") {
         } else if (data.type === "cd_plugin_onDeployChanges") {
           // console.log("current workflow", data.data.workflow);
@@ -513,12 +456,6 @@ export default function Workspace({
 
   return (
     <>
-      <WorkspaceControls
-        endpoint={endpoint}
-        machine_id={machine_id}
-        machine_version_id={machine_version_id}
-      />
-
       <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
         <DialogContent>
           <DialogHeader>
