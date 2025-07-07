@@ -45,6 +45,9 @@ export function SDImageInput({
 }: SDImageInputProps) {
   const dropRef: RefObject<HTMLDivElement> = useRef(null);
   const [openEditor, setOpenEditor] = useState(false);
+  const [urlImagePreview, setUrlImagePreview] = useState<string | null>(null);
+  const [urlImageLoading, setUrlImageLoading] = useState(false);
+
   const ImgView: ImgView | null = useMemo(() => {
     if (file && typeof file === "object") {
       const imgURL = URL.createObjectURL(file);
@@ -75,6 +78,58 @@ export function SDImageInput({
     !(file instanceof File) &&
     "type" in file &&
     (file as any).type === "folder";
+
+  // Function to check if URL is a valid image
+  const isValidImageUrl = (url: string): boolean => {
+    try {
+      const parsedUrl = new URL(url);
+      return parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  // Effect to validate and load image preview for URLs
+  useEffect(() => {
+    if (!hasTextInput || typeof file !== "string") {
+      setUrlImagePreview(null);
+      setUrlImageLoading(false);
+      return;
+    }
+
+    const url = String(file).trim();
+
+    if (!isValidImageUrl(url)) {
+      setUrlImagePreview(null);
+      setUrlImageLoading(false);
+      return;
+    }
+
+    setUrlImageLoading(true);
+    setUrlImagePreview(null);
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    const handleLoad = () => {
+      setUrlImagePreview(url);
+      setUrlImageLoading(false);
+    };
+
+    const handleError = () => {
+      setUrlImagePreview(null);
+      setUrlImageLoading(false);
+    };
+
+    img.onload = handleLoad;
+    img.onerror = handleError;
+    img.src = url;
+
+    return () => {
+      img.onload = null;
+      img.onerror = null;
+    };
+  }, [hasTextInput, file]);
 
   function onDeleteImg() {
     if (!file) {
@@ -115,55 +170,93 @@ export function SDImageInput({
       <div className={`${inputClasses} flex gap-1`}>
         {!ImgView && !hasFolderInput && (
           <>
-            <Input
-              className="rounded-[8px]"
-              placeholder="Type your URL or drop a file"
-              value={String(file || "")}
-              onChange={(e) => onChange(e.target.value)}
-            />
-
-            {hasTextInput ? (
-              <ImageInputsTooltip tooltipText="Edit">
-                <Button
-                  variant="outline"
-                  type="button"
-                  className="cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                  onClick={() => setOpenEditor(true)}
-                >
-                  <Pencil size={18} />
-                </Button>
-              </ImageInputsTooltip>
-            ) : (
-              <>
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex gap-1">
                 <Input
-                  id={`file-input-${label}`}
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                    if (!e?.target.files) {
-                      return;
-                    }
-                    onChange(e.target.files[0]);
-                  }}
-                  type="file"
+                  className="rounded-[8px]"
+                  placeholder="Type your URL or drop a file"
+                  value={String(file || "")}
+                  onChange={(e) => onChange(e.target.value)}
                 />
-                <Label
-                  htmlFor={`file-input-${label}`}
-                  className={cn(
-                    buttonVariants({
-                      variant: "outline",
-                      className:
-                        "cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50",
-                    }),
+
+                {hasTextInput ? (
+                  <ImageInputsTooltip tooltipText="Edit">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      className="cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      onClick={() => setOpenEditor(true)}
+                    >
+                      <Pencil size={18} />
+                    </Button>
+                  </ImageInputsTooltip>
+                ) : (
+                  <>
+                    <Input
+                      id={`file-input-${label}`}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
+                        if (!e?.target.files) {
+                          return;
+                        }
+                        onChange(e.target.files[0]);
+                      }}
+                      type="file"
+                    />
+                    <Label
+                      htmlFor={`file-input-${label}`}
+                      className={cn(
+                        buttonVariants({
+                          variant: "outline",
+                          className:
+                            "cursor-pointer rounded-[8px] transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50",
+                        }),
+                      )}
+                    >
+                      <Paperclip size={18} />
+                    </Label>
+                    <div className="flex items-center justify-center">
+                      <SDAssetInput onChange={onChange} />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* URL Image Preview */}
+              {hasTextInput && (urlImagePreview || urlImageLoading) && (
+                <div className="flex items-center gap-3 rounded-[8px] border border-gray-200 p-2 dark:border-gray-700">
+                  {urlImageLoading ? (
+                    <div className="h-12 w-12 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+                  ) : (
+                    <img
+                      src={urlImagePreview || ""}
+                      alt="Preview"
+                      className="h-12 w-12 rounded object-cover"
+                      onError={() => setUrlImagePreview(null)}
+                    />
                   )}
-                >
-                  <Paperclip size={18} />
-                </Label>
-                <div className="flex items-center justify-center">
-                  <SDAssetInput onChange={onChange} />
+                  <div className="flex flex-auto items-center justify-between">
+                    <p className="line-clamp-1 font-medium text-xs">
+                      {urlImageLoading ? "Loading preview..." : "Image preview"}
+                    </p>
+                    <ImageInputsTooltip tooltipText="Delete">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        type="button"
+                        onClick={onDeleteImg}
+                      >
+                        <Trash
+                          className="text-red-700 hover:text-red-600"
+                          size={16}
+                        />
+                      </Button>
+                    </ImageInputsTooltip>
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+            </div>
           </>
         )}
         {ImgView && (
