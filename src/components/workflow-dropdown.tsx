@@ -16,7 +16,7 @@ import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useWorkflowList } from "@/hooks/use-workflow-list";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { useMatch, useRouter } from "@tanstack/react-router";
+import { useMatch, useRouter, useSearch } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, ExternalLink, Search } from "lucide-react";
 import * as React from "react";
 import { useMemo, useState } from "react";
@@ -102,6 +102,7 @@ export function WorkflowDropdown({
   const [renameValue, setRenameValue] = useState("");
   const { workflow } = useCurrentWorkflow(workflow_id);
   const query = useWorkflowList("");
+  const { sessionId } = useSearch({ from: "/workflows/$workflowId/$view" });
 
   const openRenameDialog = () => {
     setRenameValue(workflow?.name || "");
@@ -111,20 +112,23 @@ export function WorkflowDropdown({
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
+        <PopoverTrigger asChild disabled={sessionId}>
           <button
             type="button"
             aria-expanded={open}
             className={cn(
-              "flex w-full items-center justify-between rounded-sm px-2 py-1 text-sm transition-colors hover:bg-gray-50 dark:hover:bg-zinc-700/40",
+              "flex w-full items-center justify-between rounded-sm px-2 py-1 text-sm",
               className,
             )}
             onDoubleClick={openRenameDialog}
           >
-            <span className="truncate text-ellipsis text-start">
+            <span className="truncate text-ellipsis text-start dark:text-zinc-100">
               {workflow?.name ?? "Select a workflow"}
             </span>
-            <ChevronsUpDown className="flex-shrink-0 opacity-50" size={16} />
+            <ChevronsUpDown
+              className="ml-2 flex-shrink-0 opacity-50 dark:text-zinc-400"
+              size={16}
+            />
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-[375px] overflow-hidden p-0" side="bottom">

@@ -42,6 +42,7 @@ import {
   Sparkles,
   StopCircle,
   Share,
+  ImageIcon,
 } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { useEffect, useState } from "react";
@@ -55,6 +56,16 @@ import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { Textarea } from "../ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { FileURLRender } from "../workflows/OutputRender";
+import { useAssetsBrowserStore } from "./Workspace";
+import type { AssetType } from "../SDInputs/sd-asset-input";
+import { callServerPromise } from "@/lib/call-server-promise";
 
 interface SessionForm {
   machineId: string;
@@ -287,6 +298,7 @@ export function SessionCreatorForm({
     defaultValue: version,
     ...parseAsInteger,
   });
+  const { setOpen: setAssetsOpen, setOnAssetSelect } = useAssetsBrowserStore();
 
   const [_, setSessionId] = useQueryState("sessionId");
 
@@ -304,6 +316,29 @@ export function SessionCreatorForm({
 
   const isFluidVersion =
     defaultIsFluidVersion ?? !!machineVersionData?.modal_image_id;
+
+  const handleAsset = async (asset: AssetType) => {
+    try {
+      await callServerPromise(
+        api({
+          url: `workflow/${workflowId}`,
+          init: {
+            method: "PATCH",
+            body: JSON.stringify({ cover_image: asset.url }),
+          },
+        }),
+      );
+      toast.success("Cover image updated!");
+      queryClient.invalidateQueries({
+        queryKey: ["workflow", workflowId],
+      });
+    } catch (error) {
+      toast.error("Failed to update cover image");
+    } finally {
+      setOnAssetSelect(null);
+      setAssetsOpen(false);
+    }
+  };
 
   const onSubmit = async (data: SessionForm) => {
     if (!workflow?.selected_machine_id) {
@@ -359,19 +394,12 @@ export function SessionCreatorForm({
   // Description-only mode for top-left floating area
   if (mode === "description-only") {
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <h2 className="line-clamp-1 font-semibold text-lg">
-              {workflow?.name || "ComfyUI"}
-            </h2>
-            <Badge
-              variant="outline"
-              className="gap-2 dark:outline dark:outline-gray-600/40"
-            >
-              v{version}
-            </Badge>
-          </div>
+      <div className="space-y-2">
+        {/* <div className="flex items-center justify-between gap-2">
+          <h2 className="line-clamp-1 font-semibold text-lg">
+            {workflow?.name || "ComfyUI"}
+          </h2>
+
           {onShareWorkflow && (
             <Button
               variant="outline"
@@ -383,13 +411,68 @@ export function SessionCreatorForm({
               <Share className="h-4 w-4" />
             </Button>
           )}
+        </div> */}
+        <div className="flex items-end justify-between gap-2">
+          <div className="w-full">
+            <DescriptionForm
+              workflowId={workflowId}
+              description={workflow?.description}
+              workflowJson={workflow?.versions[0].workflow}
+              workflowName={workflow?.name}
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger className="mx-auto flex items-center justify-center">
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    {workflow.cover_image ? (
+                      <div className="h-32 w-32 overflow-hidden rounded-md">
+                        <FileURLRender
+                          url={workflow.cover_image}
+                          imgClasses="w-full h-full object-cover aspect-square"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-32 w-32 items-center justify-center rounded-md border-2 border-gray-300 border-dashed hover:border-gray-400">
+                        <ImageIcon className="h-6 w-6 text-gray-400" />
+                      </div>
+                    )}
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Add Cover Image</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent side="right" className="w-40">
+              <DropdownMenuItem
+                onSelect={() => {
+                  router.navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: {
+                      workflowId,
+                      view: "gallery",
+                    },
+                    search: {
+                      action: true,
+                    },
+                  });
+                }}
+              >
+                From Gallery
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => {
+                  setOnAssetSelect(handleAsset);
+                  setAssetsOpen(true);
+                }}
+              >
+                From Assets
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        <DescriptionForm
-          workflowId={workflowId}
-          description={workflow?.description}
-          workflowJson={workflow?.versions[0].workflow}
-          workflowName={workflow?.name}
-        />
       </div>
     );
   }
@@ -896,7 +979,7 @@ function DescriptionForm({
                 <div className="group relative">
                   <Textarea
                     {...field}
-                    className="-mt-2 h-28 border-none text-muted-foreground focus-visible:bg-zinc-100/40 focus-visible:text-black focus-visible:ring-transparent dark:bg-transparent dark:focus-visible:bg-zinc-900/40 dark:focus-visible:text-white dark:focus-visible:ring-transparent"
+                    className="-mt-2 min-h-28 border-none text-muted-foreground focus-visible:bg-zinc-100/40 focus-visible:text-black focus-visible:ring-transparent dark:bg-transparent dark:focus-visible:bg-zinc-900/40 dark:focus-visible:text-white dark:focus-visible:ring-transparent"
                     placeholder="Describe your workflow"
                     onChange={(e) => {
                       field.onChange(e);
