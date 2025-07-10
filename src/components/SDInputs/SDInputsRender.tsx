@@ -229,7 +229,8 @@ export function SDInputsRender({
               step={0.01}
               value={[Number(inputValue)] || [inputNode.min_value]}
               onValueChange={(value) => {
-                updateInput(inputNode.input_id, value[0].toString());
+                const roundedValue = Number.parseFloat(value[0].toFixed(2));
+                updateInput(inputNode.input_id, roundedValue.toString());
               }}
             />
             <Input
@@ -243,9 +244,26 @@ export function SDInputsRender({
                   ? inputValue
                   : ""
               }
-              onChange={(e: any) => {
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const newValue = e.target.value;
-                updateInput(inputNode.input_id, newValue);
+                if (newValue !== "") {
+                  let parsedValue = Number.parseFloat(newValue);
+
+                  // Clamp value between min and max
+                  if (parsedValue > (inputNode.max_value ?? 0)) {
+                    parsedValue = inputNode.max_value ?? 0;
+                  }
+                  if (parsedValue < (inputNode.min_value ?? 0)) {
+                    parsedValue = inputNode.min_value ?? 0;
+                  }
+
+                  const roundedValue = Number.parseFloat(
+                    parsedValue.toFixed(2),
+                  );
+                  updateInput(inputNode.input_id, roundedValue.toString());
+                } else {
+                  updateInput(inputNode.input_id, newValue);
+                }
               }}
             />
           </div>
