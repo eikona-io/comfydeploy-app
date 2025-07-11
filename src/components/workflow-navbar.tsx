@@ -41,7 +41,6 @@ import { SessionTimer, useSessionTimer } from "./workspace/SessionTimer";
 import { parseAsString, useQueryState } from "nuqs";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { ShareWorkflowDialog } from "./share-workflow-dialog";
 import { useIsAdminAndMember } from "./permissions";
@@ -1143,7 +1142,6 @@ function SessionTimerButton({
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const queryClient = useQueryClient();
   const urlSessionId = useSessionIdInSessionView();
 
   // Get cached session ID if URL sessionId is null
