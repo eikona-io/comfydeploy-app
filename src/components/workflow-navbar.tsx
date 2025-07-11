@@ -1,14 +1,28 @@
 import { Link, useRouter, useSearch } from "@tanstack/react-router";
 import { WorkflowDropdown } from "./workflow-dropdown";
-import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInWorkflowPage,
+} from "@/hooks/hook";
 import { VersionSelectV2 } from "./version-select";
 import {
+  BookText,
+  Box,
   Database,
+  FileClock,
+  Folder,
   GitBranch,
+  History,
   ImageIcon,
+  Link2,
+  Loader2,
   Lock,
+  Menu,
   Play,
+  Plus,
+  Save,
   Server,
+  Settings,
   Share,
   Slash,
   TextSearch,
@@ -18,14 +32,13 @@ import {
 import { motion } from "framer-motion";
 import { AnimatePresence } from "framer-motion";
 import { useParams } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { ImageInputsTooltip } from "./image-inputs-tooltip";
 import { cn } from "@/lib/utils";
 import type { Session } from "./app-sidebar";
 import { useQuery } from "@tanstack/react-query";
-import { useSessionTimer } from "./workspace/SessionTimer";
+import { SessionTimer, useSessionTimer } from "./workspace/SessionTimer";
 import { parseAsString, useQueryState } from "nuqs";
-import { useEffect } from "react";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,14 +55,54 @@ import {
   useSelectedDeploymentStore,
 } from "@/components/deployment/deployment-page";
 import { getEnvColor } from "@/components/workspace/ContainersTable";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
+import { useWorkflowStore } from "./workspace/Workspace";
+import { useDrawerStore } from "@/stores/drawer-store";
+import { LogDisplay } from "./workspace/LogDisplay";
+import { AssetBrowserSidebar } from "./workspace/assets-browser-sidebar";
+import { ExternalNodeDocs } from "./workspace/external-node-docs";
+import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
+import { sendWorkflow } from "./workspace/sendEventToCD";
+import { CopyButton } from "./ui/copy-button";
+import { ScrollArea } from "./ui/scroll-area";
+import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { api } from "@/lib/api";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
+import { Button } from "./ui/button";
+import { Switch } from "./ui/switch";
+import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
+import { useAuth } from "@clerk/clerk-react";
+import { useSelectedVersion } from "./version-select";
+import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
+import { serverAction } from "@/lib/workflow-version-api";
 
 export function WorkflowNavbar() {
   const { sessionId } = useSearch({ from: "/workflows/$workflowId/$view" });
 
   return (
-    <div className={cn(sessionId && "dark")}>
+    <div>
       <div
-        className="pointer-events-none fixed top-0 right-0 left-0 z-40 h-14 bg-gradient-to-b from-white/80 to-transparent backdrop-blur-sm dark:from-zinc-900/80 dark:to-transparent"
+        className={cn(
+          "pointer-events-none fixed top-0 right-0 left-0 z-40 h-14 backdrop-blur-sm dark:from-zinc-900/80 dark:to-transparent",
+          sessionId
+            ? "from-zinc-900/80 to-transparent"
+            : "bg-gradient-to-b from-white/80 to-transparent ",
+        )}
         style={{
           maskImage:
             "linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%)",
@@ -57,15 +110,15 @@ export function WorkflowNavbar() {
             "linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)",
         }}
       />
-      <div
-        className={cn(
-          "pointer-events-none fixed top-0 right-0 left-0 z-50 flex h-14 items-center",
-          sessionId && "dark",
-        )}
-      >
+      <div className="pointer-events-none fixed top-0 right-0 left-0 z-50 flex h-14 items-center">
         <WorkflowNavbarLeft />
 
-        <div className="-translate-x-1/2 pointer-events-auto absolute left-1/2 flex transform items-center">
+        <div
+          className={cn(
+            "-translate-x-1/2 pointer-events-auto absolute left-1/2 flex transform items-center",
+            sessionId && "dark",
+          )}
+        >
           <CenterNavigation />
         </div>
 
@@ -85,8 +138,7 @@ function CenterNavigation() {
   const router = useRouter();
   const { view } = useParams({ from: "/workflows/$workflowId/$view" });
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
-  const { sessionId, restoreCachedSession, cacheSessionId } =
-    useSessionWithCache();
+  const { restoreCachedSession } = useSessionWithCache();
 
   const shouldHideDeploymentFeatures = !isPlanLoading && !isDeploymentAllowed;
 
@@ -140,10 +192,9 @@ function CenterNavigation() {
   );
 
   return (
-    <div className="mt-2 flex flex-row gap-2.5">
+    <div className="mt-2 flex flex-row gap-2">
       <SessionTimerButton
         workflowId={workflowId}
-        sessionId={sessionId}
         restoreCachedSession={restoreCachedSession}
       />
 
@@ -479,7 +530,7 @@ function WorkflowNavbarLeft() {
       className={cn(
         "pointer-events-auto flex items-center gap-2",
         sessionId
-          ? "ml-1 rounded-full bg-zinc-700/30 px-4 backdrop-blur-md"
+          ? "dark ml-2 rounded-full bg-zinc-700/30 pr-2 pl-4 shadow-md backdrop-blur-md"
           : "ml-4",
       )}
     >
@@ -503,7 +554,7 @@ function WorkflowNavbarLeft() {
           <Slash className="h-3 w-3 shrink-0 text-muted-foreground/50 drop-shadow-md" />
           <WorkflowDropdown
             workflow_id={workflowId}
-            className="max-w-36 drop-shadow-md"
+            className="max-w-32 drop-shadow-md"
           />
           <Slash className="h-3 w-3 shrink-0 text-muted-foreground/50 drop-shadow-md" />
           <VersionSelectV2
@@ -571,16 +622,14 @@ function WorkflowNavbarRight() {
             }}
             className="mt-2 flex items-center rounded-full border border-gray-200 bg-white/60 text-sm shadow-md backdrop-blur-sm dark:border-zinc-800/50 dark:bg-zinc-700/60"
           >
-            <ImageInputsTooltip tooltipText="Share" delayDuration={300}>
-              <button
-                type="button"
-                className="flex h-12 items-center gap-1.5 p-4 text-gray-600 transition-colors hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                onClick={() => setIsShareDialogOpen(true)}
-              >
-                <Share className="h-4 w-[18px]" />
-                Share
-              </button>
-            </ImageInputsTooltip>
+            <button
+              type="button"
+              className="flex h-12 items-center gap-1.5 p-4 text-gray-600 transition-colors hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              onClick={() => setIsShareDialogOpen(true)}
+            >
+              <Share className="h-4 w-[18px]" />
+              Share
+            </button>
           </motion.div>
         )}
         {(view === "playground" || view === "gallery") && (
@@ -651,6 +700,7 @@ function WorkflowNavbarRight() {
             </button>
           </motion.div>
         )}
+        {view === "workspace" && sessionId && <SessionBar />}
       </AnimatePresence>
 
       <ShareWorkflowDialog
@@ -680,18 +730,371 @@ function WorkflowNavbarRight() {
 
 // ============== utils ==============
 
+function SessionBar() {
+  const { hasChanged, workflow } = useWorkflowStore();
+  const { activeDrawer, toggleDrawer, closeDrawer } = useDrawerStore();
+  const [workflowUpdateTrigger, setWorkflowUpdateTrigger] = useState(0);
+  const [sessionId] = useQueryState("sessionId", parseAsString);
+
+  const { data: session } = useQuery<Session>({
+    enabled: !!sessionId,
+    queryKey: ["session", sessionId],
+    refetchInterval: (data) => (data ? 1000 : false),
+  });
+
+  const url = session?.url || session?.tunnel_url;
+
+  useEffect(() => {
+    if (workflow) {
+      setWorkflowUpdateTrigger((prev) => prev + 1);
+    }
+  }, [workflow]);
+
+  return (
+    <>
+      <div className="mt-2 flex items-center gap-2">
+        <motion.div
+          layout
+          key="session-bar-commit"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          whileHover={{ scale: hasChanged ? 1.03 : 1 }}
+          whileTap={{ scale: hasChanged ? 0.95 : 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 180,
+            damping: 15,
+            mass: 0.8,
+            opacity: { duration: 0.4 },
+          }}
+          className={cn(
+            "flex items-center rounded-full border text-sm shadow-md backdrop-blur-sm transition-colors duration-300",
+            hasChanged
+              ? "border-orange-400/20 bg-gradient-to-br from-orange-400/40 to-orange-600/40 shadow-orange-500/25 hover:from-orange-500/50 hover:to-orange-600/50 hover:shadow-orange-400/40"
+              : " border-zinc-800/30 bg-zinc-700/30 opacity-50 shadow-zinc-700/20",
+          )}
+        >
+          <button
+            type="button"
+            disabled={!hasChanged}
+            className={cn(
+              "flex h-12 items-center gap-1.5 p-4 transition-colors duration-200",
+              hasChanged
+                ? "text-orange-200 hover:text-white"
+                : " text-zinc-600",
+            )}
+            onClick={() => {
+              if (hasChanged) {
+                toggleDrawer("commit");
+              }
+            }}
+          >
+            <Save className="h-4 w-[18px]" />
+            Commit
+          </button>
+        </motion.div>
+
+        <BackgroundAutoUpdate />
+
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <motion.div
+              layout
+              key="session-bar-more"
+              initial={{ opacity: 0, scale: 0.3 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.3 }}
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{
+                type: "spring",
+                stiffness: 180,
+                damping: 15,
+                mass: 0.8,
+                opacity: { duration: 0.4 },
+              }}
+              className="flex items-center rounded-full border border-zinc-800/50 bg-zinc-700/60 text-sm shadow-md backdrop-blur-sm"
+            >
+              <ImageInputsTooltip tooltipText="Menu" delayDuration={300}>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 p-4 text-zinc-400 transition-colors hover:text-zinc-100"
+                >
+                  <span className="sr-only">More</span>
+                  <Menu className="h-4 w-[16px] shrink-0" />
+                </button>
+              </ImageInputsTooltip>
+            </motion.div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="dark w-44 rounded-2xl border-zinc-700/50 bg-zinc-800/70 text-gray-300 backdrop-blur-sm"
+          >
+            <DropdownMenuItem
+              className="px-3 py-2 focus:bg-zinc-700/40"
+              onClick={() => toggleDrawer("log")}
+            >
+              <FileClock size={16} className="mr-2" />
+              Log
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="px-3 py-2 focus:bg-zinc-700/40"
+              onClick={() => toggleDrawer("assets")}
+            >
+              <Folder size={16} className="mr-2" />
+              Assets
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="mx-4 my-2 bg-zinc-600/60" />
+            <DropdownMenuItem
+              className="px-3 py-2 focus:bg-zinc-700/40"
+              onClick={() => toggleDrawer("external-node")}
+            >
+              <BookText size={16} className="mr-2" />
+              API Nodes
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="px-3 py-2 focus:bg-zinc-700/40"
+              onClick={() => toggleDrawer("model")}
+            >
+              <Box size={16} className="mr-2" />
+              Model Check
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="px-3 py-2 focus:bg-zinc-700/40"
+              onClick={() => toggleDrawer("integration")}
+            >
+              <Link2 size={16} className="mr-2" />
+              Integration
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="px-3 py-2 focus:bg-zinc-700/40"
+              onClick={() => toggleDrawer("configuration")}
+            >
+              <Settings size={16} className="mr-2" />
+              Configuration
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Drawer Panel - Slides out from navbar */}
+      <AnimatePresence>
+        {activeDrawer && (
+          <motion.div
+            className="fixed top-16 right-4 z-40 h-[calc(100vh-80px)] w-[450px] rounded-xl bg-background shadow-2xl"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{
+              opacity: 1,
+              x: 0,
+              width: activeDrawer === "log" ? 575 : 450,
+            }}
+            exit={{
+              opacity: 0,
+              x: 50,
+            }}
+            transition={{
+              type: "spring",
+              stiffness: 400,
+              damping: 40,
+            }}
+          >
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={closeDrawer}
+              className="absolute top-2 right-2 z-10 rounded-full p-2 text-zinc-400 transition-colors hover:bg-zinc-700/50 hover:text-zinc-100"
+            >
+              <X className="h-4 w-4" />
+            </button>
+
+            <div className="flex h-full flex-col overflow-hidden">
+              <AnimatePresence mode="wait">
+                {activeDrawer === "log" && (
+                  <motion.div
+                    key="log"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex h-full flex-col p-4"
+                  >
+                    <div className="mb-4 flex items-center gap-2">
+                      <FileClock className="h-4 w-4" />
+                      <span className="font-medium">Log</span>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <LogDisplay
+                        className="!w-full h-full"
+                        containerClassName="min-h-full"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeDrawer === "assets" && (
+                  <motion.div
+                    key="assets"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex h-full flex-col p-4"
+                  >
+                    <div className="mb-4 flex items-center gap-2">
+                      <Folder className="h-4 w-4" />
+                      <span className="font-medium">Assets</span>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <AssetBrowserSidebar
+                        onItemClick={(asset) => {
+                          closeDrawer();
+                        }}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeDrawer === "external-node" && (
+                  <motion.div
+                    key="external-node"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex h-full flex-col gap-2 p-4"
+                  >
+                    <div className="mb-4 flex items-center gap-2">
+                      <BookText className="h-4 w-4" />
+                      <span className="font-medium">External API Nodes</span>
+                    </div>
+                    <span className="mb-4 text-xs leading-snug">
+                      External API Nodes are a way to connect to external APIs
+                      from within the workflow. Hover to see more details.
+                    </span>
+                    <ScrollArea className="flex-1">
+                      <ExternalNodeDocs />
+                    </ScrollArea>
+                  </motion.div>
+                )}
+
+                {activeDrawer === "model" && (
+                  <motion.div
+                    key="model"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex h-full flex-col p-4"
+                  >
+                    <div className="mb-4 flex items-center gap-2">
+                      <Box className="h-4 w-4" />
+                      <span className="font-medium">Model Check</span>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <WorkflowModelCheck
+                        workflow={JSON.stringify(workflow)}
+                        key={workflowUpdateTrigger}
+                        onWorkflowUpdate={sendWorkflow}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeDrawer === "integration" && (
+                  <motion.div
+                    key="integration"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex h-full flex-col p-4"
+                  >
+                    <div className="mb-4 flex items-center gap-2">
+                      <Link2 className="h-4 w-4" />
+                      <span className="font-medium">Integration</span>
+                    </div>
+                    <div className="flex-1">
+                      <IntegrationUrl />
+                    </div>
+                  </motion.div>
+                )}
+
+                {activeDrawer === "commit" && url && (
+                  <motion.div
+                    key="commit"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="h-full"
+                  >
+                    <WorkflowCommitSidePanel
+                      endpoint={url}
+                      machine_id={session?.machine_id}
+                      machine_version_id={session?.machine_version_id}
+                      onClose={() => closeDrawer()}
+                    />
+                  </motion.div>
+                )}
+
+                {activeDrawer === "configuration" && (
+                  <motion.div
+                    key="configuration"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex h-full flex-col p-4"
+                  >
+                    <div className="mb-4 flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span className="font-medium">
+                        Workspace Configuration
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <WorkspaceConfigurationPanel />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
+
+function IntegrationUrl() {
+  const sessionId = useSessionIdInSessionView();
+  const { data: session } = useQuery<Session>({
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId,
+  });
+
+  const url = useMemo(() => session?.url || session?.tunnel_url, [session]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/50 p-3">
+        <div className="truncate text-muted-foreground text-sm">
+          {url || "No session URL available"}
+        </div>
+        {url && (
+          <CopyButton text={url} variant="outline" className="shrink-0" />
+        )}
+      </div>
+    </div>
+  );
+}
+
 function SessionTimerButton({
   workflowId,
-  sessionId,
   restoreCachedSession,
 }: {
   workflowId: string | null;
-  sessionId: string | null;
   restoreCachedSession: () => void;
 }) {
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const queryClient = useQueryClient();
+  const urlSessionId = useSessionIdInSessionView();
 
   // Get cached session ID if URL sessionId is null
   const getCachedSessionId = () => {
@@ -702,9 +1105,9 @@ function SessionTimerButton({
   };
 
   // Use sessionId from URL or fallback to cached sessionId
-  const effectiveSessionId = sessionId || getCachedSessionId();
+  const effectiveSessionId = getCachedSessionId();
 
-  const { data: session } = useQuery<Session>({
+  const { data: session, refetch } = useQuery<Session>({
     enabled: !!effectiveSessionId,
     queryKey: ["session", effectiveSessionId],
     refetchInterval: (data) => {
@@ -730,9 +1133,12 @@ function SessionTimerButton({
     : false;
 
   const handleDeleteSession = async (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
+
     const sessionIdToDelete = effectiveSessionId;
     if (!sessionIdToDelete) return;
+    setIsPopoverOpen(false);
 
     try {
       router.navigate({
@@ -755,6 +1161,21 @@ function SessionTimerButton({
     }
   };
 
+  const handleTimerClick = (e: React.MouseEvent) => {
+    if (urlSessionId) {
+      setIsPopoverOpen(true);
+    } else {
+      e.preventDefault();
+      e.stopPropagation();
+      restoreCachedSession();
+    }
+  };
+
+  const handleRefetch = async () => {
+    await refetch();
+    return Promise.resolve();
+  };
+
   return (
     <AnimatePresence mode="popLayout">
       {activeSession && effectiveSessionId && (
@@ -773,130 +1194,299 @@ function SessionTimerButton({
           }}
           className="flex items-center"
         >
-          <div
-            className={`relative flex h-10 items-center justify-between overflow-hidden rounded-full shadow-lg transition-all duration-400 ${
-              isLowTime
-                ? "bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/25 hover:shadow-orange-500/40 dark:from-orange-500 dark:to-orange-700 dark:shadow-orange-600/25 dark:hover:shadow-orange-600/40"
-                : "border border-gray-200 bg-gradient-to-br from-white to-white shadow-md dark:border-zinc-800/50 dark:from-gray-700 dark:to-gray-800 dark:shadow-gray-700/25 dark:hover:shadow-gray-700/40"
-            }`}
-            style={{
-              width: isHovered ? "164px" : "42px",
-              paddingLeft: isHovered ? "12px" : "0px",
-              paddingRight: isHovered ? "12px" : "0px",
-              transitionTimingFunction: isHovered
-                ? "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
-                : "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-              transitionDuration: isHovered ? "400ms" : "200ms",
-            }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+          <TimerPopover
+            session={activeSession}
+            onRefetch={handleRefetch}
+            open={isPopoverOpen}
+            onOpenChange={setIsPopoverOpen}
           >
-            {/* Timer Icon */}
-            <button
-              type="button"
-              className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-105 active:scale-95"
-              onClick={restoreCachedSession}
-            >
-              {/* Progress ring */}
-              <div className="absolute inset-0.5">
-                <svg
-                  viewBox="0 0 32 32"
-                  className="-rotate-90 h-full w-full"
-                  role="img"
-                  aria-label="Session timer progress"
-                >
-                  {/* Background ring */}
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="10"
-                    fill="none"
-                    stroke={
-                      isLowTime
-                        ? "rgba(255, 255, 255, 0.2)"
-                        : "rgba(251, 146, 60, 0.2)"
-                    }
-                    strokeWidth="2"
-                  />
-                  {/* Progress ring */}
-                  <circle
-                    cx="16"
-                    cy="16"
-                    r="10"
-                    fill="none"
-                    stroke={
-                      isLowTime
-                        ? "rgba(255, 255, 255, 0.9)"
-                        : "rgba(251, 146, 60, 0.9)"
-                    }
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeDasharray={`${2 * Math.PI * 10}`}
-                    strokeDashoffset={`${2 * Math.PI * 10 * (1 - progressPercentage / 100)}`}
-                    className="transition-all duration-1000 ease-out"
-                  />
-
-                  {/* Clock hand */}
-                  <line
-                    x1="16"
-                    y1="16"
-                    x2="16"
-                    y2="9"
-                    stroke={
-                      isLowTime
-                        ? "rgba(255, 255, 255, 0.95)"
-                        : "rgba(251, 146, 60, 0.95)"
-                    }
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    transform={`rotate(${-270 + progressPercentage * 3.6} 16 16)`}
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
-              </div>
-            </button>
-
-            {/* Countdown Text and End Button */}
+            {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
             <div
-              className={`flex items-center gap-2 transition-all ${
-                isHovered
-                  ? "opacity-100 translate-x-0"
-                  : "opacity-0 translate-x-4"
+              className={`relative flex h-10 cursor-pointer items-center justify-between overflow-hidden rounded-full shadow-lg transition-all duration-400 ${
+                isLowTime
+                  ? "bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/25 hover:shadow-orange-500/40 dark:from-orange-500 dark:to-orange-700 dark:shadow-orange-600/25 dark:hover:shadow-orange-600/40"
+                  : "border border-gray-200 bg-gradient-to-br from-white to-white shadow-md dark:border-zinc-800/50 dark:from-gray-700 dark:to-gray-800 dark:shadow-gray-700/25 dark:hover:shadow-gray-700/40"
               }`}
               style={{
-                transitionDelay: isHovered ? "100ms" : "0ms",
-                transitionDuration: isHovered ? "300ms" : "150ms",
+                width: isHovered ? "134px" : "42px",
+                paddingLeft: isHovered ? "6px" : "0px",
+                paddingRight: isHovered ? "12px" : "0px",
                 transitionTimingFunction: isHovered
-                  ? "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
-                  : "ease-out",
+                  ? "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+                  : "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                transitionDuration: isHovered ? "400ms" : "200ms",
               }}
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+              onClick={handleTimerClick}
             >
-              <span
-                className={`text-sm font-medium whitespace-nowrap ${
-                  isLowTime ? "text-white" : "text-gray-900 dark:text-white"
-                }`}
-              >
-                {countdown || "00:00:00"}
-              </span>
+              {/* Timer Icon */}
+              {deleteSession.isPending ? (
+                <div className="relative flex h-10 w-10 flex-shrink-0 animate-pulse items-center justify-center rounded-full">
+                  <Loader2
+                    className={cn(
+                      "h-5 w-5 animate-spin",
+                      isLowTime ? "text-white" : "text-orange-500",
+                    )}
+                  />
+                </div>
+              ) : (
+                <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-transform duration-150 hover:scale-105 active:scale-95">
+                  {/* Progress ring */}
+                  <div className="absolute inset-0.5">
+                    <svg
+                      viewBox="0 0 32 32"
+                      className="-rotate-90 h-full w-full"
+                      role="img"
+                      aria-label="Session timer progress"
+                    >
+                      {/* Background ring */}
+                      <circle
+                        cx="16"
+                        cy="16"
+                        r="10"
+                        fill="none"
+                        stroke={
+                          isLowTime
+                            ? "rgba(255, 255, 255, 0.2)"
+                            : "rgba(251, 146, 60, 0.2)"
+                        }
+                        strokeWidth="2"
+                      />
+                      {/* Progress ring */}
+                      <circle
+                        cx="16"
+                        cy="16"
+                        r="10"
+                        fill="none"
+                        stroke={
+                          isLowTime
+                            ? "rgba(255, 255, 255, 0.9)"
+                            : "rgba(251, 146, 60, 0.9)"
+                        }
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeDasharray={`${2 * Math.PI * 10}`}
+                        strokeDashoffset={`${2 * Math.PI * 10 * (1 - progressPercentage / 100)}`}
+                        className="transition-all duration-1000 ease-out"
+                      />
 
-              <button
-                type="button"
-                onClick={handleDeleteSession}
-                disabled={deleteSession.isPending}
-                className={`p-1 rounded-full transition-colors duration-200 hover:bg-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isLowTime
-                    ? "text-white hover:text-white"
-                    : "text-gray-600 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400"
+                      {/* Clock hand */}
+                      <line
+                        x1="16"
+                        y1="16"
+                        x2="16"
+                        y2="9"
+                        stroke={
+                          isLowTime
+                            ? "rgba(255, 255, 255, 0.95)"
+                            : "rgba(251, 146, 60, 0.95)"
+                        }
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        transform={`rotate(${-270 + progressPercentage * 3.6} 16 16)`}
+                        className="transition-all duration-1000 ease-out"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              )}
+
+              {/* Countdown Text and End Button */}
+              <div
+                className={`flex items-center gap-2 transition-all ${
+                  isHovered
+                    ? "translate-x-0 opacity-100"
+                    : "translate-x-4 opacity-0"
                 }`}
-                title="End session"
+                style={{
+                  transitionDelay: isHovered ? "100ms" : "0ms",
+                  transitionDuration: isHovered ? "300ms" : "150ms",
+                  transitionTimingFunction: isHovered
+                    ? "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                    : "ease-out",
+                }}
               >
-                <X className="h-4 w-4" />
-              </button>
+                <span
+                  className={`whitespace-nowrap font-medium text-sm ${
+                    isLowTime ? "text-white" : "text-gray-900 dark:text-white"
+                  }`}
+                >
+                  {countdown
+                    ? countdown.split(":").slice(1).join(":")
+                    : "00:00"}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleDeleteSession}
+                  disabled={deleteSession.isPending}
+                  className={`rounded-full p-1 transition-colors duration-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${
+                    isLowTime
+                      ? "text-white hover:text-white"
+                      : "text-gray-600 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400"
+                  }`}
+                  title="End session"
+                >
+                  {deleteSession.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <X className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
+          </TimerPopover>
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+function TimerPopover({
+  session,
+  onRefetch,
+  open,
+  onOpenChange,
+  children,
+}: {
+  session: Session | undefined;
+  onRefetch: () => Promise<unknown>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+}) {
+  const [selectedIncrement, setSelectedIncrement] = useState("5");
+  const sessionId = useSessionIdInSessionView();
+  const { countdown } = useSessionTimer(session);
+
+  const [hours, minutes, seconds] = countdown.split(":").map(Number);
+  const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+  // Auto-open popover when less than 30 seconds remaining
+  useEffect(() => {
+    if (totalSeconds > 0 && totalSeconds < 30) {
+      onOpenChange(true);
+    }
+  }, [totalSeconds, onOpenChange]);
+
+  const timeIncrements = [
+    { value: "1", label: "1 minute" },
+    { value: "5", label: "5 minutes" },
+    { value: "10", label: "10 minutes" },
+    { value: "15", label: "15 minutes" },
+  ];
+
+  const incrementTime = async () => {
+    if (!session || !sessionId) {
+      toast.error("Session details not found");
+      return;
+    }
+
+    try {
+      await increaseSessionTimeout(sessionId, Number(selectedIncrement));
+      onRefetch();
+      // Only close the popover when time is increased
+      if (totalSeconds >= 30) {
+        onOpenChange(false);
+      }
+    } catch (error) {
+      // Error handling is already done in the utility function
+      console.error("Failed to increase session timeout:", error);
+    }
+  };
+
+  // Function to determine text color based on the time remaining
+  const getTimeWarningClass = () => {
+    if (totalSeconds < 30) {
+      return "text-yellow-600";
+    }
+    return "text-muted-foreground";
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(openState) => {
+        // Only allow closing the popover if time is >= 30 seconds
+        if (totalSeconds < 30 && !openState) {
+          return; // Prevent closing when time is < 30 seconds
+        }
+        onOpenChange(openState);
+      }}
+    >
+      <PopoverTrigger asChild>{children}</PopoverTrigger>
+      <PopoverContent className="w-[340px]">
+        <span className="font-medium text-sm">Increase Session Time</span>
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col space-y-3">
+            <div className="flex items-center text-muted-foreground text-sm">
+              <span className="flex items-center space-x-2">
+                Instance:{" "}
+                <span className="ml-1 font-medium">{session?.gpu}</span>
+              </span>
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between rounded-none bg-muted/50 px-2 py-3">
+                <div className="flex items-center gap-2">
+                  <History className={`h-4 w-4 ${getTimeWarningClass()}`} />
+                  <span
+                    className={`font-medium text-sm ${getTimeWarningClass()}`}
+                  >
+                    Time Remaining
+                  </span>
+                </div>
+                {session && (
+                  <SessionTimer
+                    session={session}
+                    size="sm"
+                    className={getTimeWarningClass()}
+                  />
+                )}
+              </div>
+              {session?.timeout_end && session?.created_at && (
+                <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className={`h-full transition-all ${
+                      totalSeconds < 30 ? "bg-yellow-500" : "bg-primary"
+                    }`}
+                    style={{
+                      width: `${
+                        ((new Date(session.timeout_end).getTime() -
+                          new Date().getTime()) /
+                          (new Date(session.timeout_end).getTime() -
+                            new Date(session.created_at).getTime())) *
+                        100
+                      }%`,
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Select
+              value={selectedIncrement}
+              onValueChange={setSelectedIncrement}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Minutes" />
+              </SelectTrigger>
+              <SelectContent>
+                {timeIncrements.map((increment) => (
+                  <SelectItem key={increment.value} value={increment.value}>
+                    {increment.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button onClick={incrementTime} className="flex-1">
+              <Plus className="mr-2 h-4 w-4" /> Add Time
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -949,7 +1539,7 @@ function useSessionWithCache() {
       router.navigate({
         to: "/workflows/$workflowId/$view",
         params: { workflowId: workflowId || "", view: "workspace" },
-        search: { sessionId: cachedId },
+        search: (prev) => ({ ...prev, sessionId: cachedId }),
       });
     }
   };
@@ -961,4 +1551,305 @@ function useSessionWithCache() {
     restoreCachedSession,
     cacheSessionId: clearSessionId, // Use the new clear function
   };
+}
+
+// Utility function to increase session timeout
+function increaseSessionTimeout(
+  sessionId: string | null,
+  minutes: number,
+): Promise<any> {
+  if (!sessionId) {
+    return Promise.reject("No session ID provided");
+  }
+
+  return callServerPromise(
+    api({
+      url: `session/${sessionId}/increase-timeout`,
+      init: {
+        method: "POST",
+        body: JSON.stringify({
+          minutes: minutes,
+        }),
+      },
+    }),
+    {
+      loadingText: "Increasing session time...",
+      successMessage: "Session time extended",
+    },
+  );
+}
+
+function BackgroundAutoUpdate() {
+  const { userId } = useAuth();
+  const { hasChanged } = useWorkflowStore();
+  const workflowId = useWorkflowIdInWorkflowPage();
+  const sessionId = useSessionIdInSessionView();
+
+  // Get all the values we need
+  const settings = JSON.parse(
+    localStorage.getItem("workspaceConfig") || "{}",
+  ) || {
+    autoSave: false,
+    autoSaveInterval: "60",
+    autoExpandSession: false,
+  };
+
+  const { data: session, refetch } = useQuery<Session>({
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId && settings.autoExpandSession,
+  });
+
+  const { countdown } = useSessionTimer(session);
+  const autoExtendInProgressRef = useRef(false);
+  const isLegacyMode = !session?.timeout_end;
+
+  // Auto-save related data
+  const machine_id = session?.machine_id;
+  const machine_version_id = session?.machine_version_id;
+  const session_url = session?.url;
+  const endpoint = session?.url || session?.tunnel_url;
+  const { value: selectedVersion } = useSelectedVersion(workflowId || "");
+
+  const {
+    query,
+    setVersion,
+    is_fluid_machine,
+    comfyui_snapshot,
+    comfyui_snapshot_loading,
+  } = useGetWorkflowVersionData({
+    machine_id,
+    machine_version_id,
+    session_url,
+    workflowId,
+  });
+
+  // Store the save function in a ref so it doesn't change
+  const saveFunction = useRef<() => Promise<void>>(undefined);
+
+  // Store the extend function in a ref so it doesn't change
+  const extendFunction = useRef<() => Promise<void>>(undefined);
+
+  // Update the save function whenever dependencies change
+  useEffect(() => {
+    saveFunction.current = async () => {
+      try {
+        await serverAction({
+          comment: "Auto Save",
+          endpoint,
+          machine_id,
+          machine_version_id,
+          userId,
+          workflowId,
+          is_fluid_machine,
+          query,
+          setVersion,
+          setOpen: () => {},
+          snapshotAction: "COMMIT_ONLY",
+          comfyui_snapshot,
+          comfyui_snapshot_loading,
+          sessionId,
+          workflow_api: selectedVersion?.workflow_api,
+        });
+      } catch (error) {}
+    };
+  }, [
+    endpoint,
+    machine_id,
+    machine_version_id,
+    userId,
+    workflowId,
+    is_fluid_machine,
+    query,
+    setVersion,
+    comfyui_snapshot,
+    comfyui_snapshot_loading,
+    sessionId,
+    selectedVersion?.workflow_api,
+  ]);
+
+  // Update the extend function whenever dependencies change
+  useEffect(() => {
+    extendFunction.current = async () => {
+      if (!sessionId) return;
+
+      try {
+        autoExtendInProgressRef.current = true;
+
+        await increaseSessionTimeout(sessionId, 5);
+        await refetch();
+      } catch (error) {
+        toast.error(`Failed to auto-extend session: ${error}`);
+      } finally {
+        // Add a small delay before allowing another auto-extension
+        setTimeout(() => {
+          autoExtendInProgressRef.current = false;
+        }, 10000);
+      }
+    };
+  }, [sessionId, refetch]);
+
+  // Separate effect for managing the auto-save interval - only depends on stable values
+  useEffect(() => {
+    let saveIntervalId: NodeJS.Timeout | undefined;
+
+    const { autoSave, autoSaveInterval } = settings;
+
+    if (hasChanged && autoSave && saveFunction.current) {
+      saveIntervalId = setInterval(() => {
+        if (saveFunction.current) {
+          saveFunction.current();
+        }
+      }, +autoSaveInterval * 1000);
+    }
+
+    return () => {
+      if (saveIntervalId) {
+        clearInterval(saveIntervalId);
+        saveIntervalId = undefined;
+      }
+    };
+  }, [settings.autoSave, settings.autoSaveInterval, hasChanged]); // Only stable dependencies
+
+  // Separate effect for monitoring countdown - runs every second but only checks conditions
+  useEffect(() => {
+    if (
+      !settings.autoExpandSession ||
+      !sessionId ||
+      !countdown ||
+      autoExtendInProgressRef.current ||
+      isLegacyMode ||
+      !extendFunction.current
+    ) {
+      return;
+    }
+
+    const [hours, minutes, seconds] = countdown.split(":").map(Number);
+    const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+    if (totalSeconds > 0 && totalSeconds < 60) {
+      extendFunction.current();
+    }
+  }, [countdown, settings.autoExpandSession, sessionId, isLegacyMode]);
+
+  return <></>;
+}
+
+// Workspace Configuration Panel Component
+function WorkspaceConfigurationPanel() {
+  const sessionId = useSessionIdInSessionView();
+  // Load settings from localStorage with defaults
+  const [settings, setSettings] = useState(() => {
+    const savedSettings = localStorage.getItem("workspaceConfig");
+    return savedSettings
+      ? JSON.parse(savedSettings)
+      : {
+          autoSave: false,
+          autoSaveInterval: "60",
+          autoExpandSession: false,
+        };
+  });
+  const { data: session } = useQuery<Session>({
+    queryKey: ["session", sessionId],
+    enabled: !!sessionId && settings.autoExpandSession,
+  });
+  const isLegacyMode = !session?.timeout_end;
+
+  // Update settings and save to localStorage
+  const updateSettings = useCallback((key: string, value: any) => {
+    setSettings((prev) => {
+      const newSettings = { ...prev, [key]: value };
+      localStorage.setItem("workspaceConfig", JSON.stringify(newSettings));
+      return newSettings;
+    });
+  }, []);
+  // Format interval text
+  const getIntervalText = () => {
+    if (!settings.autoSave) return "";
+    return settings.autoSaveInterval === "30"
+      ? "30s"
+      : settings.autoSaveInterval === "300"
+        ? "5m"
+        : "1m";
+  };
+
+  return (
+    <div className="space-y-3">
+      {/* Auto Save Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm">Auto Save</span>
+              {settings.autoSave && (
+                <Badge variant="outline" className="h-5 px-2 text-xs">
+                  {getIntervalText()}
+                </Badge>
+              )}
+            </div>
+            <p className="text-muted-foreground text-xs">
+              Automatically commit workflow changes
+            </p>
+          </div>
+          <Switch
+            checked={settings.autoSave}
+            onCheckedChange={(checked) => updateSettings("autoSave", checked)}
+          />
+        </div>
+
+        {settings.autoSave && (
+          <div className="ml-4 border-muted border-l-2 pl-4">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs">Interval:</span>
+              <Select
+                value={settings.autoSaveInterval}
+                onValueChange={(value) =>
+                  updateSettings("autoSaveInterval", value)
+                }
+              >
+                <SelectTrigger className="h-8 w-24 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30s</SelectItem>
+                  <SelectItem value="60">1m</SelectItem>
+                  <SelectItem value="300">5m</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <Separator />
+
+      {/* Session Management Section */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col">
+            <span className="font-medium text-sm">Auto Expand Session</span>
+            <p className="text-muted-foreground text-xs">
+              Automatically extend session time when about to expire
+            </p>
+          </div>
+          <Switch
+            checked={settings.autoExpandSession}
+            onCheckedChange={(checked) =>
+              updateSettings("autoExpandSession", checked)
+            }
+          />
+        </div>
+
+        {settings.autoExpandSession && session && (
+          <div className="ml-4 border-muted border-l-2 pl-4">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <span>Status:</span>
+              <span className="text-green-600">
+                {isLegacyMode ? "Not supported (legacy session)" : "Active"}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
