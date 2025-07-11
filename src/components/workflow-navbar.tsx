@@ -90,6 +90,8 @@ import { useAuth } from "@clerk/clerk-react";
 import { useSelectedVersion } from "./version-select";
 import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
 import { serverAction } from "@/lib/workflow-version-api";
+import { DeploymentDrawer } from "./workspace/DeploymentDisplay";
+import { queryClient } from "@/lib/providers";
 
 export function WorkflowNavbar() {
   const { sessionId } = useSearch({ from: "/workflows/$workflowId/$view" });
@@ -576,7 +578,8 @@ function WorkflowNavbarRight() {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<any>(null);
-  const { setSelectedDeployment } = useSelectedDeploymentStore();
+  const { selectedDeployment, setSelectedDeployment } =
+    useSelectedDeploymentStore();
 
   // Get deployments and versions for sharing
   const { data: deployments } = useWorkflowDeployments(workflowId || "");
@@ -724,6 +727,48 @@ function WorkflowNavbarRight() {
         publicLinkOnly={true}
         existingDeployments={deployments || []}
       />
+      <DeploymentDrawer hideHeader={true}>
+        {(selectedDeployment === publicShareDeployment?.id ||
+          selectedDeployment === privateShareDeployment?.id ||
+          selectedDeployment === communityShareDeployment?.id) && (
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              className="transition-all hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600 hover:text-white"
+              confirm
+              onClick={async () => {
+                await callServerPromise(
+                  api({
+                    init: {
+                      method: "DELETE",
+                    },
+                    url: `deployment/${selectedDeployment}`,
+                  }),
+                );
+                setSelectedDeployment(null);
+                setSelectedVersion(null);
+                setIsDrawerOpen(false);
+                await queryClient.invalidateQueries({
+                  queryKey: ["workflow", workflowId, "deployments"],
+                });
+              }}
+            >
+              Delete
+            </Button>
+            <Button
+              onClick={() => {
+                if (versions?.[0]) {
+                  // setSelectedDeployment(null);
+                  setSelectedVersion(versions[0]);
+                  setIsDrawerOpen(true);
+                }
+              }}
+            >
+              Update
+            </Button>
+          </div>
+        )}
+      </DeploymentDrawer>
     </>
   );
 }
