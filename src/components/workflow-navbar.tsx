@@ -820,24 +820,29 @@ function SessionBar() {
               : " border-zinc-800/30 bg-zinc-700/30 opacity-50 shadow-zinc-700/20",
           )}
         >
-          <button
-            type="button"
-            disabled={!hasChanged}
-            className={cn(
-              "flex h-12 items-center gap-1.5 p-4 transition-colors duration-200",
-              hasChanged
-                ? "text-orange-200 hover:text-white"
-                : " text-zinc-600",
-            )}
-            onClick={() => {
-              if (hasChanged) {
-                toggleDrawer("commit");
-              }
-            }}
+          <ImageInputsTooltip
+            tooltipText={hasChanged ? "Commit" : "No changes to commit"}
+            delayDuration={300}
           >
-            <Save className="h-4 w-[18px]" />
-            Commit
-          </button>
+            <button
+              type="button"
+              disabled={!hasChanged}
+              className={cn(
+                "flex h-12 items-center gap-1.5 p-4 transition-colors duration-200",
+                hasChanged
+                  ? "text-orange-200 hover:text-white"
+                  : " text-zinc-600",
+              )}
+              onClick={() => {
+                if (hasChanged) {
+                  toggleDrawer("commit");
+                }
+              }}
+            >
+              <Save className="h-4 w-[18px]" />
+              Commit
+            </button>
+          </ImageInputsTooltip>
         </motion.div>
 
         <BackgroundAutoUpdate />
