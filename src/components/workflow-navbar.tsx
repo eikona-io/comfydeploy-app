@@ -1244,6 +1244,7 @@ function SessionTimerButton({
         >
           <TimerPopover
             session={activeSession}
+            isDeleteSessionPending={deleteSession.isPending}
             onRefetch={handleRefetch}
             open={isPopoverOpen}
             onOpenChange={setIsPopoverOpen}
@@ -1393,12 +1394,14 @@ function SessionTimerButton({
 
 function TimerPopover({
   session,
+  isDeleteSessionPending,
   onRefetch,
   open,
   onOpenChange,
   children,
 }: {
   session: Session | undefined;
+  isDeleteSessionPending: boolean;
   onRefetch: () => Promise<unknown>;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -1413,10 +1416,10 @@ function TimerPopover({
 
   // Auto-open popover when less than 30 seconds remaining
   useEffect(() => {
-    if (totalSeconds > 0 && totalSeconds < 30) {
+    if (totalSeconds > 0 && totalSeconds < 30 && !isDeleteSessionPending) {
       onOpenChange(true);
     }
-  }, [totalSeconds, onOpenChange]);
+  }, [totalSeconds, onOpenChange, isDeleteSessionPending]);
 
   const timeIncrements = [
     { value: "1", label: "1 minute" },
