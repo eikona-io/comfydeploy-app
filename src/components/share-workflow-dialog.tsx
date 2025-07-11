@@ -205,7 +205,7 @@ export function ShareWorkflowDialog({
       });
 
       if (sharedWorkflow) {
-        const shareUrl = `${window.location.origin}/share/${sharedWorkflow.user_id}/${sharedWorkflow.share_slug}`;
+        const shareUrl = `${window.location.origin}/share/workflow/${sharedWorkflow.user_id}/${sharedWorkflow.share_slug}`;
 
         await navigator.clipboard.writeText(shareUrl);
 
