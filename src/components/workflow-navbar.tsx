@@ -707,7 +707,7 @@ function WorkflowNavbarRight() {
         )}
         {view === "workspace" && sessionId && <SessionBar />}
         {!sessionId && (
-          <div className="md:hidden">
+          <div className="mt-2 md:hidden">
             <WorkflowNavbarRightMobile />
           </div>
         )}
@@ -811,7 +811,7 @@ function WorkflowNavbarRightMobile() {
             mass: 0.8,
             opacity: { duration: 0.4 },
           }}
-          className="mt-2 flex items-center rounded-full border border-zinc-300/50 bg-white/80 text-sm shadow-md backdrop-blur-sm dark:border-zinc-700/50 dark:bg-zinc-700/60"
+          className="flex items-center rounded-full border border-zinc-300/50 bg-white/80 text-sm shadow-md backdrop-blur-sm dark:border-zinc-700/50 dark:bg-zinc-700/60"
         >
           <button
             type="button"
@@ -824,7 +824,7 @@ function WorkflowNavbarRightMobile() {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-44 rounded-2xl bg-white/80 text-gray-600 backdrop-blur-sm dark:border-zinc-700/50 dark:bg-zinc-800/70 dark:text-gray-300"
+        className="w-44 rounded-2xl bg-white/80 text-gray-600 backdrop-blur-sm md:hidden dark:border-zinc-700/50 dark:bg-zinc-800/70 dark:text-gray-300"
       >
         {/* Only show admin-only items for admins and members */}
         {isAdminAndMember && (
