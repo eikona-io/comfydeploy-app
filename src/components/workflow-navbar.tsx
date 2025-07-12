@@ -786,6 +786,13 @@ function WorkflowNavbarRightMobile() {
     from: "/workflows/$workflowId/$view",
   });
 
+  // Add permission hooks
+  const isAdminAndMember = useIsAdminAndMember();
+  const { isLoading: isPlanLoading } = useCurrentPlanQuery();
+  const isDeploymentAllowed = useIsDeploymentAllowed();
+
+  const shouldHideDeploymentFeatures = !isPlanLoading && !isDeploymentAllowed;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger>
@@ -819,52 +826,59 @@ function WorkflowNavbarRightMobile() {
         align="end"
         className="w-44 rounded-2xl bg-white/80 text-gray-600 backdrop-blur-sm dark:border-zinc-700/50 dark:bg-zinc-800/70 dark:text-gray-300"
       >
-        <DropdownMenuItem
-          className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-          onClick={() => {
-            router.navigate({
-              to: "/workflows/$workflowId/$view",
-              params: {
-                workflowId,
-                view: "workspace",
-              },
-            });
-          }}
-        >
-          <WorkflowIcon size={16} className="mr-2" />
-          Workflow
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-          onClick={() => {
-            router.navigate({
-              to: "/workflows/$workflowId/$view",
-              params: {
-                workflowId,
-                view: "machine",
-              },
-            });
-          }}
-        >
-          <Server size={16} className="mr-2" />
-          Machine
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-          onClick={() => {
-            router.navigate({
-              to: "/workflows/$workflowId/$view",
-              params: {
-                workflowId,
-                view: "model",
-              },
-            });
-          }}
-        >
-          <Database size={16} className="mr-2" />
-          Model
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="mx-4 my-2 bg-zinc-200/60 md:hidden dark:bg-zinc-600/60" />
+        {/* Only show admin-only items for admins and members */}
+        {isAdminAndMember && (
+          <>
+            <DropdownMenuItem
+              className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
+              onClick={() => {
+                router.navigate({
+                  to: "/workflows/$workflowId/$view",
+                  params: {
+                    workflowId,
+                    view: "workspace",
+                  },
+                });
+              }}
+            >
+              <WorkflowIcon size={16} className="mr-2" />
+              Workflow
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
+              onClick={() => {
+                router.navigate({
+                  to: "/workflows/$workflowId/$view",
+                  params: {
+                    workflowId,
+                    view: "machine",
+                  },
+                });
+              }}
+            >
+              <Server size={16} className="mr-2" />
+              Machine
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
+              onClick={() => {
+                router.navigate({
+                  to: "/workflows/$workflowId/$view",
+                  params: {
+                    workflowId,
+                    view: "model",
+                  },
+                });
+              }}
+            >
+              <Database size={16} className="mr-2" />
+              Model
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="mx-4 my-2 bg-zinc-200/60 md:hidden dark:bg-zinc-600/60" />
+          </>
+        )}
+
+        {/* Playground and Gallery are always available */}
         <DropdownMenuItem
           className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
           onClick={() => {
@@ -895,37 +909,59 @@ function WorkflowNavbarRightMobile() {
           <ImageIcon size={16} className="mr-2" />
           Gallery
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="mx-4 my-2 bg-zinc-200/60 md:hidden dark:bg-zinc-600/60" />
-        <DropdownMenuItem
-          className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-          onClick={() => {
-            router.navigate({
-              to: "/workflows/$workflowId/$view",
-              params: {
-                workflowId,
-                view: "deployment",
-              },
-            });
-          }}
-        >
-          <GitBranch size={16} className="mr-2" />
-          API
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-          onClick={() => {
-            router.navigate({
-              to: "/workflows/$workflowId/$view",
-              params: {
-                workflowId,
-                view: "requests",
-              },
-            });
-          }}
-        >
-          <TextSearch size={16} className="mr-2" />
-          Requests
-        </DropdownMenuItem>
+
+        {/* Only show deployment features for admins and members */}
+        {isAdminAndMember && (
+          <>
+            <DropdownMenuSeparator className="mx-4 my-2 bg-zinc-200/60 md:hidden dark:bg-zinc-600/60" />
+            <DropdownMenuItem
+              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${
+                shouldHideDeploymentFeatures
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+              onClick={() => {
+                if (!shouldHideDeploymentFeatures) {
+                  router.navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: {
+                      workflowId,
+                      view: "deployment",
+                    },
+                  });
+                }
+              }}
+            >
+              {shouldHideDeploymentFeatures ? (
+                <Lock size={16} className="mr-2" />
+              ) : (
+                <GitBranch size={16} className="mr-2" />
+              )}
+              API
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${
+                shouldHideDeploymentFeatures
+                  ? "opacity-50 cursor-not-allowed"
+                  : ""
+              }`}
+              onClick={() => {
+                if (!shouldHideDeploymentFeatures) {
+                  router.navigate({
+                    to: "/workflows/$workflowId/$view",
+                    params: {
+                      workflowId,
+                      view: "requests",
+                    },
+                  });
+                }
+              }}
+            >
+              <TextSearch size={16} className="mr-2" />
+              Requests
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
