@@ -838,8 +838,8 @@ function WorkspaceConfigPopover({
     return settings.autoSaveInterval === "30"
       ? "30 sec"
       : settings.autoSaveInterval === "300"
-      ? "5 min"
-      : "1 min";
+        ? "5 min"
+        : "1 min";
   };
 
   useEffect(() => {
@@ -1526,7 +1526,6 @@ export function AppSidebar() {
           </Badge>
         </div>
       )}
-      <GuideDialog guideType="machine" />
     </>
   );
 }
