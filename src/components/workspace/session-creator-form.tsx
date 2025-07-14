@@ -66,6 +66,7 @@ import { FileURLRender } from "../workflows/OutputRender";
 import { useAssetsBrowserStore } from "./Workspace";
 import type { AssetType } from "../SDInputs/sd-asset-input";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { useUser } from "@clerk/clerk-react";
 
 interface SessionForm {
   machineId: string;
@@ -91,14 +92,30 @@ interface SessionCreatorFormProps {
     | "mobile-expanded";
 }
 
+// Helper function to get user sessions count
+export function useUserSessionsCount(machineId: string) {
+  const { listSession } = useSessionAPI(machineId);
+  const { data: sessions } = listSession;
+  const { user: currentUser } = useUser();
+
+  const userSessions =
+    sessions?.filter((session) => session.user_id === currentUser?.id) || [];
+  return userSessions.length;
+}
+
 export function MachineSessionsList({ machineId }: { machineId: string }) {
   const { listSession, deleteSession } = useSessionAPI(machineId);
   const { data: sessions } = listSession;
   const router = useRouter();
   const params = useParams({ from: "/workflows/$workflowId/$view" });
   const [sessionId, setSessionId] = useQueryState("sessionId");
+  const { user: currentUser } = useUser();
 
-  if (!sessions || sessions.length === 0) {
+  // Filter sessions to only show current user's sessions
+  const userSessions =
+    sessions?.filter((session) => session.user_id === currentUser?.id) || [];
+
+  if (!userSessions || userSessions.length === 0) {
     return (
       <div className="p-4 text-center text-muted-foreground text-sm">
         No active sessions for this machine
@@ -108,7 +125,7 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
 
   return (
     <div className="space-y-1 py-1">
-      {sessions.map((session) => (
+      {userSessions.map((session) => (
         <div
           key={session.session_id}
           className="group flex items-center justify-between rounded-lg border bg-background p-2 transition-colors hover:bg-blue-50/50 dark:hover:bg-blue-900/40"
@@ -203,6 +220,11 @@ export function SessionCreatorForm({
 
   const [_, setSessionId] = useQueryState("sessionId");
 
+  // Get current user's session count for blocking
+  const userSessionCount = useUserSessionsCount(
+    workflow?.selected_machine_id || "",
+  );
+
   const form = useForm<SessionForm>({
     defaultValues: {
       gpu: selectedMachine?.gpu || "A10G",
@@ -244,6 +266,14 @@ export function SessionCreatorForm({
   const onSubmit = async (data: SessionForm) => {
     if (!workflow?.selected_machine_id) {
       toast.error("Please select a machine first");
+      return;
+    }
+
+    // Block session creation if user has more than 1 session
+    if (userSessionCount >= 1) {
+      toast.error(
+        "You can only have maximum 1 session running at a time. Please stop other sessions first.",
+      );
       return;
     }
 
@@ -571,7 +601,7 @@ export function SessionCreatorForm({
 
               <Button
                 type="submit"
-                className="gap-1 flex-1"
+                className="flex-1 gap-1"
                 disabled={
                   createDynamicSession.isPending ||
                   selectedMachine?.status !== "ready"
