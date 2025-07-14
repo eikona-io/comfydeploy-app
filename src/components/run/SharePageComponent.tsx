@@ -238,7 +238,7 @@ export function Playground(props: {
 
   return (
     <>
-      <div className="flex h-full w-full justify-between pt-4">
+      <div className="flex h-full w-full justify-between overflow-x-hidden pt-4 md:pt-12">
         <div className="hidden h-full w-[400px] flex-col xl:flex">
           <div
             className={cn(
@@ -338,7 +338,7 @@ export function Playground(props: {
           </div>
         </div>
 
-        <div className="w-full min-w-0 flex-1 lg:mx-4">
+        <div className="h-[calc(100vh-35px)] w-full min-w-0 flex-1 md:h-full lg:mx-4">
           <div className="relative h-full">
             {/* Useless Background */}
             <motion.div
@@ -708,7 +708,7 @@ function RunDisplay({ runId }: { runId?: string }) {
 
       {/* Details section for all cases */}
       {runId && (
-        <div className="relative z-10 flex min-h-screen w-full justify-center rounded-t-sm border border-gray-200 bg-white/80 p-8 pb-16 drop-shadow-lg backdrop-blur-lg dark:border-zinc-700 dark:bg-zinc-800/80">
+        <div className="relative z-10 flex min-h-screen w-full justify-center rounded-t-sm border border-gray-200 bg-white/80 px-2 pt-8 pb-16 drop-shadow-lg backdrop-blur-lg md:px-8 dark:border-zinc-700 dark:bg-zinc-800/80">
           <div className="w-full max-w-5xl px-4">
             <RunDetails run_id={runId} isPlayground={true} />
           </div>
