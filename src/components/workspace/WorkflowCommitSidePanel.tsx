@@ -234,12 +234,16 @@ function CommentInput({
         {showLabel && <AutoFormLabel label={label} isRequired={isRequired} />}
         <FormControl>
           <div className="relative">
-            <Input value={field.value || ""} onChange={field.onChange} />
+            <Input
+              value={field.value || ""}
+              onChange={field.onChange}
+              autoFocus
+            />
             <Button
               variant="ghost"
               size="icon"
               type="button"
-              className="absolute right-2 top-1/2 -translate-y-1/2"
+              className="-translate-y-1/2 absolute top-1/2 right-2"
               onClick={handleSparklesClick}
               disabled={isGenerating}
               hideLoading
