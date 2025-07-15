@@ -530,10 +530,8 @@ function WorkflowNavbarLeft() {
   return (
     <div
       className={cn(
-        "pointer-events-auto flex items-center gap-2",
-        sessionId
-          ? "dark ml-2 rounded-full bg-zinc-700/30 pr-2 pl-4 shadow-md backdrop-blur-md"
-          : "ml-4",
+        "pointer-events-auto ml-2 flex items-center gap-2 rounded-full pr-2 pl-4 backdrop-blur-md",
+        sessionId ? "dark bg-zinc-700/30 shadow-md" : "bg-white/50",
       )}
     >
       <Link
