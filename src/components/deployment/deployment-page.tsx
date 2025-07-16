@@ -305,11 +305,11 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
           }}
           variant="link"
           size="sm"
-          className="flex h-5 max-w-[150px] items-center gap-1 truncate text-2xs text-muted-foreground"
+          className="flex h-5 items-center gap-1"
           title={deployment.machine.name}
         >
           <Server size={13} className="shrink-0" />
-          {deployment.machine.name}
+          <span className="truncate">{deployment.machine.name}</span>
         </Button>
         {deployment.gpu && (
           <Badge variant="outline" className="!text-2xs font-normal">
