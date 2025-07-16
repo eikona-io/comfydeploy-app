@@ -740,7 +740,6 @@ export function AppSidebar() {
           </Badge>
         </div>
       )}
-      <GuideDialog guideType="machine" />
     </>
   );
 }
