@@ -143,7 +143,7 @@ export function SDInputsRender({
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="overflow-hidden rounded-md bg-muted/30 text-muted-foreground text-xs"
+              className="max-h-32 overflow-y-auto rounded-md bg-muted/30 text-muted-foreground text-xs"
               onMouseEnter={showDescription}
               onMouseLeave={hideDescription}
             >
