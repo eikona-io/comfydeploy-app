@@ -94,7 +94,7 @@ import { DeploymentDrawer } from "./workspace/DeploymentDisplay";
 import { queryClient } from "@/lib/providers";
 
 export function WorkflowNavbar() {
-  const { sessionId } = useSearch({ from: "/workflows/$workflowId/$view" });
+  const sessionId = useSessionIdInSessionView();
 
   return (
     <div>
