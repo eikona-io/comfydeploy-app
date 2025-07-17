@@ -1351,7 +1351,10 @@ function SessionTimerButton({
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const urlSessionId = useSessionIdInSessionView();
+  const [urlSessionId, setUrlSessionId] = useQueryState(
+    "sessionId",
+    parseAsString,
+  );
 
   // Get cached session ID if URL sessionId is null
   const getCachedSessionId = () => {
@@ -1406,6 +1409,7 @@ function SessionTimerButton({
         sessionId: sessionIdToDelete,
         waitForShutdown: true,
       });
+      setUrlSessionId(null);
 
       queryClient.invalidateQueries({ queryKey: ["sessions"] });
       queryClient.invalidateQueries({
