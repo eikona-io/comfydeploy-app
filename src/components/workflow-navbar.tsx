@@ -1,9 +1,4 @@
-import {
-  Link,
-  useRouter,
-  useSearch,
-  useNavigate,
-} from "@tanstack/react-router";
+import { Link, useRouter, useSearch } from "@tanstack/react-router";
 import { WorkflowDropdown } from "./workflow-dropdown";
 import {
   useSessionIdInSessionView,
@@ -143,7 +138,6 @@ function CenterNavigation() {
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
   const isDeploymentAllowed = useIsDeploymentAllowed();
   const router = useRouter();
-  const navigate = useNavigate({ from: "/workflows/$workflowId/$view" });
   const { view } = useParams({ from: "/workflows/$workflowId/$view" });
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const { restoreCachedSession } = useSessionWithCache();
@@ -270,7 +264,7 @@ function CenterNavigation() {
               : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           }`}
           onClick={() => {
-            navigate({
+            router.navigate({
               to: "/workflows/$workflowId/$view",
               params: { workflowId: workflowId || "", view: "playground" },
             });
@@ -293,7 +287,7 @@ function CenterNavigation() {
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
             onClick={() => {
-              navigate({
+              router.navigate({
                 to: "/workflows/$workflowId/$view",
                 params: { workflowId: workflowId || "", view: "deployment" },
               });
@@ -370,7 +364,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  navigate({
+                  router.navigate({
                     to: "/workflows/$workflowId/$view",
                     params: { workflowId: workflowId || "", view: "machine" },
                   });
@@ -416,7 +410,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  navigate({
+                  router.navigate({
                     to: "/workflows/$workflowId/$view",
                     params: { workflowId: workflowId || "", view: "model" },
                   });
@@ -461,7 +455,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  navigate({
+                  router.navigate({
                     to: "/workflows/$workflowId/$view",
                     params: { workflowId: workflowId || "", view: "gallery" },
                   });
@@ -506,7 +500,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  navigate({
+                  router.navigate({
                     to: "/workflows/$workflowId/$view",
                     params: { workflowId: workflowId || "", view: "requests" },
                   });
@@ -833,7 +827,7 @@ function WorkflowNavbarRightMobile() {
             <DropdownMenuItem
               className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
               onClick={() => {
-                navigate({
+                router.navigate({
                   to: "/workflows/$workflowId/$view",
                   params: {
                     workflowId,
@@ -848,7 +842,7 @@ function WorkflowNavbarRightMobile() {
             <DropdownMenuItem
               className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
               onClick={() => {
-                navigate({
+                router.navigate({
                   to: "/workflows/$workflowId/$view",
                   params: {
                     workflowId,
@@ -863,7 +857,7 @@ function WorkflowNavbarRightMobile() {
             <DropdownMenuItem
               className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
               onClick={() => {
-                navigate({
+                router.navigate({
                   to: "/workflows/$workflowId/$view",
                   params: {
                     workflowId,
@@ -883,7 +877,7 @@ function WorkflowNavbarRightMobile() {
         <DropdownMenuItem
           className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
           onClick={() => {
-            navigate({
+            router.navigate({
               to: "/workflows/$workflowId/$view",
               params: {
                 workflowId,
@@ -898,7 +892,7 @@ function WorkflowNavbarRightMobile() {
         <DropdownMenuItem
           className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
           onClick={() => {
-            navigate({
+            router.navigate({
               to: "/workflows/$workflowId/$view",
               params: {
                 workflowId,
@@ -923,7 +917,7 @@ function WorkflowNavbarRightMobile() {
               }`}
               onClick={() => {
                 if (!shouldHideDeploymentFeatures) {
-                  navigate({
+                  router.navigate({
                     to: "/workflows/$workflowId/$view",
                     params: {
                       workflowId,
@@ -948,7 +942,7 @@ function WorkflowNavbarRightMobile() {
               }`}
               onClick={() => {
                 if (!shouldHideDeploymentFeatures) {
-                  navigate({
+                  router.navigate({
                     to: "/workflows/$workflowId/$view",
                     params: {
                       workflowId,
@@ -1083,7 +1077,7 @@ function SessionBar() {
             <DropdownMenuItem
               className="px-3 py-2 focus:bg-zinc-700/40 md:hidden"
               onClick={() => {
-                navigate({
+                router.navigate({
                   to: "/workflows/$workflowId/$view",
                   params: {
                     workflowId,
@@ -1404,7 +1398,7 @@ function SessionTimerButton({
     setIsPopoverOpen(false);
 
     try {
-      navigate({
+      router.navigate({
         to: "/workflows/$workflowId/$view",
         params: { workflowId: workflowId || "", view: "workspace" },
       });
@@ -1761,7 +1755,6 @@ function useSessionWithCache() {
   const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
   const workflowId = useWorkflowIdInWorkflowPage();
   const router = useRouter();
-  const navigate = useNavigate({ from: "/workflows/$workflowId/$view" });
 
   // Get cached session ID from session storage
   const getCachedSessionId = () => {
@@ -1802,7 +1795,7 @@ function useSessionWithCache() {
   // Function to restore cached session
   const restoreCachedSession = () => {
     const cachedId = getCachedSessionId();
-    navigate({
+    router.navigate({
       to: "/workflows/$workflowId/$view",
       params: { workflowId: workflowId || "", view: "workspace" },
       search: cachedId
