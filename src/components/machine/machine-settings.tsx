@@ -321,7 +321,7 @@ function ServerlessSettings({
   readonly?: boolean;
 }) {
   const matchWorkflow = useMatch({
-    from: "/workflows/",
+    from: "/workflows/$workflowId/$view",
     shouldThrow: false,
   });
 
@@ -435,13 +435,15 @@ function ServerlessSettings({
         );
         if (!("error" in response)) setIsFormDirty(false);
         await new Promise((resolve) => setTimeout(resolve, 100));
-        navigate({
-          to: "/machines/$machineId/$machineVersionId",
-          params: {
-            machineId: machine.id,
-            machineVersionId: response.machine_version_id,
-          },
-        });
+        if (!isWorkflow) {
+          navigate({
+            to: "/machines/$machineId/$machineVersionId",
+            params: {
+              machineId: machine.id,
+              machineVersionId: response.machine_version_id,
+            },
+          });
+        }
       }
     } catch (error: any) {
       console.error("API Error:", error);
