@@ -109,8 +109,5 @@
     "uuid": "^11.0.3",
     "vaul": "^1.1.2",
     "zustand": "^5.0.2"
-  },
-  "overrides": {
-    "vite": "npm:rolldown-vite@latest"
   }
 }
