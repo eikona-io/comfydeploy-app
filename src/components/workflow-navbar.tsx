@@ -92,6 +92,7 @@ import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data
 import { serverAction } from "@/lib/workflow-version-api";
 import { DeploymentDrawer } from "./workspace/DeploymentDisplay";
 import { queryClient } from "@/lib/providers";
+import { useUserSessionsCount } from "./workspace/session-creator-form";
 
 export function WorkflowNavbar() {
   const sessionId = useSessionIdInSessionView();
@@ -1758,6 +1759,9 @@ function TimerPopover({
 function useSessionWithCache() {
   const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
   const workflowId = useWorkflowIdInWorkflowPage();
+  const { workflow } = useCurrentWorkflow(workflowId);
+  const { listSession } = useSessionAPI(workflow?.selected_machine_id || "");
+
   const router = useRouter();
 
   // Get cached session ID from session storage
@@ -1795,6 +1799,17 @@ function useSessionWithCache() {
     }
     // Don't automatically clear when sessionId becomes null
   }, [sessionId]);
+
+  useEffect(() => {
+    if (listSession?.data && sessionId) {
+      const sessionExists = listSession.data.some(
+        (session) => session.id === sessionId,
+      );
+      if (!sessionExists) {
+        clearSessionId();
+      }
+    }
+  }, [listSession?.data]);
 
   // Function to restore cached session
   const restoreCachedSession = () => {

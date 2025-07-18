@@ -28,8 +28,7 @@ export function SessionCreate({
   const { workflow } = useCurrentWorkflow(workflowId);
   const machineId = workflow?.selected_machine_id;
   const { data: machine, isLoading: machineLoading } = useMachine(machineId);
-  const { createSession, listSession, deleteSession } =
-    useSessionAPI(machineId);
+  const { createSession, listSession } = useSessionAPI(machineId);
   const { open, ui, setOpen } = useUpdateServerActionDialog({
     title: "Create Session",
     description: "Create a new session",
