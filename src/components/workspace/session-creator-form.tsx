@@ -103,6 +103,14 @@ export function useUserSessionsCount(machineId: string) {
   return userSessions.length;
 }
 
+export function getCurrentEffectiveSessionId(workflowId: string) {
+  const { workflow } = useCurrentWorkflow(workflowId);
+  const { listSession } = useSessionAPI(workflow?.selected_machine_id || "");
+  const { data: sessions } = listSession;
+  const { user: currentUser } = useUser();
+  return sessions?.find((session) => session.user_id === currentUser?.id)?.id;
+}
+
 export function MachineSessionsList({ machineId }: { machineId: string }) {
   const { listSession, deleteSession } = useSessionAPI(machineId);
   const { data: sessions } = listSession;

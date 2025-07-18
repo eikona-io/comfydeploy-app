@@ -65,13 +65,6 @@ export function useSessionAPI(machineId?: string | null) {
           },
         });
 
-        if (response.success === true) {
-          const lastSessionId = sessionStorage.getItem("lastSessionId");
-          if (lastSessionId === data.sessionId) {
-            sessionStorage.removeItem("lastSessionId");
-          }
-        }
-
         return response;
       },
     }),

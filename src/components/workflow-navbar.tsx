@@ -92,7 +92,10 @@ import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data
 import { serverAction } from "@/lib/workflow-version-api";
 import { DeploymentDrawer } from "./workspace/DeploymentDisplay";
 import { queryClient } from "@/lib/providers";
-import { useUserSessionsCount } from "./workspace/session-creator-form";
+import {
+  getCurrentEffectiveSessionId,
+  useUserSessionsCount,
+} from "./workspace/session-creator-form";
 
 export function WorkflowNavbar() {
   const sessionId = useSessionIdInSessionView();
@@ -141,7 +144,7 @@ function CenterNavigation() {
   const router = useRouter();
   const { view } = useParams({ from: "/workflows/$workflowId/$view" });
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
-  const { restoreCachedSession } = useSessionWithCache();
+  const effectiveSessionId = getCurrentEffectiveSessionId(workflowId || "");
 
   const shouldHideDeploymentFeatures = !isPlanLoading && !isDeploymentAllowed;
 
@@ -198,7 +201,15 @@ function CenterNavigation() {
     <div className="mt-2 flex flex-row gap-2">
       <SessionTimerButton
         workflowId={workflowId}
-        restoreCachedSession={restoreCachedSession}
+        restoreCachedSession={() => {
+          router.navigate({
+            to: "/workflows/$workflowId/$view",
+            params: { workflowId: workflowId || "", view: "workspace" },
+            search: {
+              sessionId: effectiveSessionId ? effectiveSessionId : undefined,
+            },
+          });
+        }}
       />
 
       {/* Main navbar with layout animation */}
@@ -249,7 +260,17 @@ function CenterNavigation() {
                 ? "font-medium text-gray-900 dark:text-zinc-100"
                 : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
-            onClick={restoreCachedSession}
+            onClick={() => {
+              router.navigate({
+                to: "/workflows/$workflowId/$view",
+                params: { workflowId: workflowId || "", view: "workspace" },
+                search: {
+                  sessionId: effectiveSessionId
+                    ? effectiveSessionId
+                    : undefined,
+                },
+              });
+            }}
             onMouseEnter={() => setHoveredButton("workspace")}
           >
             <WorkflowIcon className="h-4 w-4" />
@@ -1357,16 +1378,7 @@ function SessionTimerButton({
     parseAsString,
   );
 
-  // Get cached session ID if URL sessionId is null
-  const getCachedSessionId = () => {
-    if (typeof window !== "undefined") {
-      return sessionStorage.getItem("lastSessionId");
-    }
-    return null;
-  };
-
-  // Use sessionId from URL or fallback to cached sessionId
-  const effectiveSessionId = getCachedSessionId();
+  const effectiveSessionId = getCurrentEffectiveSessionId(workflowId || "");
 
   const { data: session, refetch } = useQuery<Session>({
     enabled: !!effectiveSessionId,
@@ -1753,83 +1765,6 @@ function TimerPopover({
       </PopoverContent>
     </Popover>
   );
-}
-
-// Create a custom hook for session management with caching
-function useSessionWithCache() {
-  const [sessionId, setSessionId] = useQueryState("sessionId", parseAsString);
-  const workflowId = useWorkflowIdInWorkflowPage();
-  const { workflow } = useCurrentWorkflow(workflowId);
-  const { listSession } = useSessionAPI(workflow?.selected_machine_id || "");
-
-  const router = useRouter();
-
-  // Get cached session ID from session storage
-  const getCachedSessionId = () => {
-    if (typeof window !== "undefined") {
-      return sessionStorage.getItem("lastSessionId");
-    }
-    return null;
-  };
-
-  // Cache session ID to session storage (separate from clearing)
-  const cacheSessionId = (id: string | null) => {
-    if (typeof window !== "undefined") {
-      if (id) {
-        sessionStorage.setItem("lastSessionId", id);
-      } else {
-        // Only remove from session storage when explicitly requested
-        sessionStorage.removeItem("lastSessionId");
-      }
-    }
-  };
-
-  // Clear session ID from both URL and session storage
-  const clearSessionId = () => {
-    setSessionId(null);
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("lastSessionId");
-    }
-  };
-
-  // Update cache ONLY when sessionId is present (not null)
-  useEffect(() => {
-    if (sessionId) {
-      cacheSessionId(sessionId);
-    }
-    // Don't automatically clear when sessionId becomes null
-  }, [sessionId]);
-
-  useEffect(() => {
-    if (listSession?.data && sessionId) {
-      const sessionExists = listSession.data.some(
-        (session) => session.id === sessionId,
-      );
-      if (!sessionExists) {
-        clearSessionId();
-      }
-    }
-  }, [listSession?.data]);
-
-  // Function to restore cached session
-  const restoreCachedSession = () => {
-    const cachedId = getCachedSessionId();
-    router.navigate({
-      to: "/workflows/$workflowId/$view",
-      params: { workflowId: workflowId || "", view: "workspace" },
-      search: cachedId
-        ? (prev) => ({ ...prev, sessionId: cachedId })
-        : undefined,
-    });
-  };
-
-  return {
-    sessionId,
-    setSessionId,
-    getCachedSessionId,
-    restoreCachedSession,
-    cacheSessionId: clearSessionId, // Use the new clear function
-  };
 }
 
 // Utility function to increase session timeout
