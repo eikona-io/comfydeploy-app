@@ -247,12 +247,10 @@ export function Playground(props: {
             )}
           >
             <div className="mb-1 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="h-7" />
-              </div>
+              <span className="ml-2 font-semibold text-sm">Edit</span>
               <a
                 target="_blank"
-                href="https://www.comfydeploy.com/docs/v2/deployments/inputs"
+                href="https://docs.comfydeploy.com/docs/api/inputs"
                 className="mr-2 text-2xs text-muted-foreground hover:underline"
                 rel="noreferrer"
               >
