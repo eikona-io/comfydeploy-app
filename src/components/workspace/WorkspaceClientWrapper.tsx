@@ -22,7 +22,7 @@ import { SessionCreationDialog } from "./session-creator-dialog";
 import { SessionCreatorForm } from "./session-creator-form";
 import { ErrorBoundary } from "../error-boundary";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { useSearch } from "@tanstack/react-router";
+import { useRouter, useSearch } from "@tanstack/react-router";
 
 const ComfyUIFlow = lazy(() =>
   import("../workflow-preview/comfyui-flow").then((mod) => ({
@@ -48,13 +48,18 @@ interface WorkflowVersion {
 }
 
 function MachineUpdateChecker({ machineId }: MachineUpdateCheckerProps) {
+  const router = useRouter();
+
   return (
     <VersionChecker
       machineId={machineId}
       variant="inline"
       onUpdate={() => {
-        const url = `/machines/${machineId}?action=update-custom-nodes`;
-        window.open(url, "_blank");
+        router.navigate({
+          to: "/machines/$machineId",
+          params: { machineId },
+          search: { action: "update-custom-nodes" },
+        });
       }}
     />
   );

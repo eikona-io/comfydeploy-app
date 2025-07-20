@@ -132,7 +132,7 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
   if (!userSessions || userSessions.length === 0) {
     return (
       <div className="p-4 text-center text-muted-foreground text-sm">
-        No active sessions for this machine
+        No active sessions for this workflow
       </div>
     );
   }
@@ -427,14 +427,14 @@ export function SessionCreatorForm({
     return (
       <div className="space-y-4">
         <div className="space-y-2">
-          <div className="flex items-center gap-2">
+          {/* <div className="flex items-center gap-2">
             <span className="font-medium text-sm">Machine</span>
           </div>
           <MachineSelect
             workflow_id={workflowId}
             leaveEmpty
             className="rounded-md border bg-background"
-          />
+          /> */}
 
           {/* Compact Active Sessions List */}
           {workflow?.selected_machine_id && (
@@ -647,7 +647,6 @@ export function SessionCreatorForm({
           </div>
           <MachineSelect
             workflow_id={workflowId}
-            leaveEmpty
             className="rounded-md border bg-background"
           />
 
@@ -720,7 +719,6 @@ export function SessionCreatorForm({
             <FormLabel>Machine</FormLabel>
             <MachineSelect
               workflow_id={workflowId}
-              leaveEmpty
               className="rounded-md border bg-background"
             />
             {workflow?.selected_machine_id && (

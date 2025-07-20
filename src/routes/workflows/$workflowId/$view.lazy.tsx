@@ -35,6 +35,7 @@ import { PricingPage } from "@/routes/pricing";
 import { useCurrentPlanQuery } from "@/hooks/use-current-plan";
 import { LoadingIcon } from "@/components/loading-icon";
 import { StoragePage } from "@/routes/models";
+import { MachineSelect } from "@/components/workspace/MachineSelect";
 
 export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
   component: WorkflowPageComponent,
@@ -157,7 +158,14 @@ function WorkflowPageComponent() {
       view = machine && (
         <>
           {/* <MachineTopStickyBar machine={machine} /> */}
-          <div className="mx-auto mt-14 w-full max-w-screen-lg">
+          <div className="mx-auto mt-12 w-full max-w-screen-lg">
+            <div className="my-4 flex flex-col gap-4">
+              <h1 className="font-semibold text-2xl">Machine</h1>
+              <MachineSelect
+                workflow_id={workflowId}
+                className="rounded-md border bg-background"
+              />
+            </div>
             <MachineVersionWrapper machine={machine} />
             <MachineSettingsWrapper
               title="Machine Settings"

@@ -558,7 +558,6 @@ export function DeploymentDialog({
           <h3 className="font-medium text-sm">Machine</h3>
           <MachineSelect
             workflow_id={workflowId}
-            leaveEmpty
             value={selectedMachineId ?? ""}
             onChange={(value) => setSelectedMachineId(value)}
             className="rounded-md border bg-background"

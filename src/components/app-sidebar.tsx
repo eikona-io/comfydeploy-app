@@ -544,7 +544,6 @@ export function AppSidebar() {
                   isAdminAndMember && (
                     <MachineSelect
                       workflow_id={workflow_id}
-                      leaveEmpty
                       onSettingsClick={(machineId) => {
                         router.navigate({
                           to: "/workflows/$workflowId/$view",

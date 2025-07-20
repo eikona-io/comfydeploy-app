@@ -1,7 +1,3 @@
-"use client";
-
-import { usePostHog } from "posthog-js/react";
-
 import { MachineStatus } from "@/components/machines/machine-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,19 +14,16 @@ import { useMachine, useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ChevronDown, ExternalLink, Search, Settings } from "lucide-react";
 import * as React from "react";
 import { useDebounce } from "use-debounce";
 import { UserIcon } from "../run/SharePageComponent";
 import { VirtualizedInfiniteList } from "../virtualized-infinite-list";
-import { MachineBuildSettingsDialog } from "./MachineBuildSettingsDialog";
-// import { MachineBuildSettingsDialog } from "./MachineBuildSettingsDialog";
+import { useUserSessionsCount } from "./session-creator-form";
 
 interface MachineSelectProps {
   workflow_id: string;
-  leaveEmpty?: boolean;
   className?: string;
   value?: string;
   onChange?: (value: string) => void;
@@ -39,7 +32,6 @@ interface MachineSelectProps {
 
 export function MachineSelect({
   workflow_id,
-  leaveEmpty = false,
   className,
   value,
   onChange,
@@ -57,10 +49,7 @@ export function MachineSelect({
 
   const query = useMachines(debouncedSearchValue);
 
-  const flatData = React.useMemo(
-    () => query.data?.pages.flat() ?? [],
-    [query.data],
-  );
+  const userSessionCount = useUserSessionsCount(machineId || "");
 
   React.useEffect(() => {
     query.refetch();
@@ -88,13 +77,11 @@ export function MachineSelect({
     setOpen(false);
   };
 
-  const posthog = usePostHog();
-
   return (
     <div className={cn("flex w-full items-center", className)}>
       <div className="min-w-0 flex-auto">
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
+          <PopoverTrigger asChild disabled={userSessionCount > 0}>
             <Button
               variant="outline"
               role="combobox"
