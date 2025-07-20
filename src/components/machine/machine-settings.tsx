@@ -26,7 +26,7 @@ import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { useCachedQuery } from "@/lib/use-cached-query";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@clerk/clerk-react";
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
 import { useBlocker, useMatch, useNavigate } from "@tanstack/react-router";
@@ -96,6 +96,8 @@ import {
 import { ExtraDockerCommands } from "./extra-docker-commands";
 import { SecretsSelector } from "./secrets-selector";
 import { VersionChecker } from "./version-checker";
+import { useSessionAPI } from "@/hooks/use-session-api";
+import { getCurrentEffectiveSessionIdFromMachineId } from "../workspace/session-creator-form";
 
 export function MachineSettingsWrapper({
   machine,
@@ -347,6 +349,16 @@ function ServerlessSettings({
     plan.includes("business"),
   );
 
+  // Session check hooks and data
+  const [showSessionDialog, setShowSessionDialog] = useState(false);
+  const [pendingFormData, setPendingFormData] = useState<FormData | null>(null);
+  const { deleteSession } = useSessionAPI();
+
+  // Get current effective session ID
+  const currentSessionId = getCurrentEffectiveSessionIdFromMachineId(
+    machine.id,
+  );
+
   const form = useForm<FormData>({
     resolver: zodResolver(serverlessFormSchema),
     mode: "onChange",
@@ -422,28 +434,19 @@ function ServerlessSettings({
         {} as Record<string, any>,
       );
 
-      // Only make API call if there are changes
+      // Only proceed if there are changes
       if (Object.keys(changedData).length > 0) {
-        const response = await callServerPromise(
-          api({
-            url: `machine/serverless/${machine.id}`,
-            init: {
-              method: "PATCH",
-              body: JSON.stringify(changedData),
-            },
-          }),
-        );
-        if (!("error" in response)) setIsFormDirty(false);
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        if (!isWorkflow) {
-          navigate({
-            to: "/machines/$machineId/$machineVersionId",
-            params: {
-              machineId: machine.id,
-              machineVersionId: response.machine_version_id,
-            },
-          });
+        // Check for active sessions before submitting
+        if (currentSessionId) {
+          // Store the form data for later submission
+          setPendingFormData(data);
+          setShowSessionDialog(true);
+          setIsLoading(false);
+          return;
         }
+
+        // Continue with normal submission if no active session
+        await performSubmission(changedData);
       }
     } catch (error: any) {
       console.error("API Error:", error);
@@ -455,6 +458,77 @@ function ServerlessSettings({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const performSubmission = async (changedData: Record<string, any>) => {
+    const response = await callServerPromise(
+      api({
+        url: `machine/serverless/${machine.id}`,
+        init: {
+          method: "PATCH",
+          body: JSON.stringify(changedData),
+        },
+      }),
+    );
+    if (!("error" in response)) setIsFormDirty(false);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    toast.success("Machine updated successfully");
+    if (!isWorkflow) {
+      navigate({
+        to: "/machines/$machineId/$machineVersionId",
+        params: {
+          machineId: machine.id,
+          machineVersionId: response.machine_version_id,
+        },
+      });
+    }
+  };
+
+  const handleSessionDeletion = async () => {
+    if (!pendingFormData) return;
+
+    try {
+      setIsLoading(true);
+      setShowSessionDialog(false);
+
+      if (currentSessionId) {
+        // Delete the session
+        await deleteSession.mutateAsync({
+          sessionId: currentSessionId,
+          waitForShutdown: true,
+        });
+
+        toast.success("Session deleted successfully");
+      }
+
+      // Now proceed with form submission
+      const { name, ...formData } = pendingFormData;
+      const changedData = Object.keys(formData).reduce(
+        (acc, key) => {
+          const formValue = formData[key as keyof typeof formData];
+          const originalValue = machine[key];
+
+          if (formValue !== originalValue) {
+            acc[key] = formValue;
+          }
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
+
+      await performSubmission(changedData);
+    } catch (error: any) {
+      console.error("Session deletion error:", error);
+      toast.error("Failed to delete session");
+    } finally {
+      setIsLoading(false);
+      setPendingFormData(null);
+    }
+  };
+
+  const handleSessionDialogCancel = () => {
+    setShowSessionDialog(false);
+    setIsFormDirty(true); // Keep form dirty to indicate unsaved changes
   };
 
   return (
@@ -1253,6 +1327,44 @@ function ServerlessSettings({
         controls={controls}
         disabled={disableUnsavedChangesWarning}
       />
+
+      <Dialog open={showSessionDialog} onOpenChange={setShowSessionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900/20">
+                <Wrench className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              </div>
+              Session Running
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Your machine has an active session{" "}
+              <span className="font-mono text-2xs text-amber-600">
+                #{currentSessionId?.slice(0, 7)}{" "}
+              </span>
+              that needs to be closed for the update.
+              <span className="mt-2 block text-muted-foreground text-sm">
+                💡 Save your workflow first to prevent any data loss
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              variant="outline"
+              onClick={handleSessionDialogCancel}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSessionDeletion}
+              className="w-full sm:w-auto"
+            >
+              Close Session & Update
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
