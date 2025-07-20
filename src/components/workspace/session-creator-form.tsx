@@ -131,7 +131,7 @@ export function MachineSessionsList({ machineId }: { machineId: string }) {
 
   if (!userSessions || userSessions.length === 0) {
     return (
-      <div className="p-4 text-center text-muted-foreground text-sm">
+      <div className="p-4 text-center text-muted-foreground text-xs">
         No active sessions for this workflow
       </div>
     );

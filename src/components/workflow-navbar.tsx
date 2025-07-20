@@ -92,10 +92,7 @@ import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data
 import { serverAction } from "@/lib/workflow-version-api";
 import { DeploymentDrawer } from "./workspace/DeploymentDisplay";
 import { queryClient } from "@/lib/providers";
-import {
-  getCurrentEffectiveSessionId,
-  useUserSessionsCount,
-} from "./workspace/session-creator-form";
+import { getCurrentEffectiveSessionId } from "./workspace/session-creator-form";
 
 export function WorkflowNavbar() {
   const sessionId = useSessionIdInSessionView();

@@ -152,7 +152,7 @@ export function VersionChecker({
             <HoverCardTrigger asChild>
               <div
                 className={cn(
-                  "flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 text-amber-600 text-sm cursor-pointer hover:bg-amber-500/20 transition-colors",
+                  "flex cursor-pointer items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 text-amber-500 text-sm backdrop-blur-md transition-colors hover:bg-amber-500/20 dark:text-amber-600",
                   className,
                 )}
               >

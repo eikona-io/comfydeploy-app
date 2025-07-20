@@ -279,7 +279,7 @@ export function WorkspaceClientWrapper({
 
             {/* Floating Description - Top Left (Desktop Only) */}
             <motion.div
-              className="absolute top-[52px] left-4 z-20 hidden w-full max-w-md md:block"
+              className="absolute top-[52px] left-2 z-20 hidden w-full max-w-md md:block"
               initial={{ opacity: 0, x: -200 }}
               animate={{
                 opacity: isDescriptionVisible ? 1 : 0.8,
@@ -309,14 +309,17 @@ export function WorkspaceClientWrapper({
             </motion.div>
 
             {/* Desktop Form - Bottom Center */}
-            <div className="pointer-events-none absolute right-0 bottom-2 left-0 z-20 hidden md:block">
+            <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-20 hidden md:block">
               <motion.div
                 className="pointer-events-auto mx-auto w-full max-w-lg"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.1, ease: "easeInOut" }}
               >
-                <div className="rounded-xl bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-800/40">
+                <div className="mb-2">
+                  <MachineUpdateChecker machineId={machine.id} />
+                </div>
+                <div className="rounded-t-xl bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-800/40">
                   <SessionCreatorForm
                     workflowId={props.workflow_id}
                     version={versions[0]?.version ?? 0}
@@ -327,9 +330,6 @@ export function WorkspaceClientWrapper({
                     onShareWorkflow={props.onShareWorkflow}
                     mode="compact"
                   />
-                  <div className="mt-3">
-                    <MachineUpdateChecker machineId={machine.id} />
-                  </div>
                 </div>
               </motion.div>
             </div>

@@ -640,7 +640,6 @@ function ServerlessSettings({
                 />
               </div>
               {machine.type === "comfy-deploy-serverless" &&
-                !isWorkflow &&
                 !isMachine &&
                 !readonly && (
                   <div className="mb-4 fixed bottom-8 inset-x-0 z-30">
