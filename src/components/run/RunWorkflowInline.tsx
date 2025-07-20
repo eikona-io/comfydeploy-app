@@ -1524,7 +1524,7 @@ export function RunWorkflowInline({
             </div>
           )
         }
-        scrollAreaClassName={cn("h-full", scrollAreaClassName)}
+        scrollAreaClassName={cn("h-full pt-2", scrollAreaClassName)}
       >
         {inputs ? (
           isEditMode ? (
