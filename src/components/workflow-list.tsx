@@ -37,6 +37,7 @@ import {
   Play,
   Share,
   Workflow,
+  Server,
 } from "lucide-react";
 import * as React from "react";
 import { getRelativeTime } from "../lib/get-relative-time";
@@ -71,6 +72,8 @@ import { UserIcon } from "./run/SharePageComponent";
 import { FileURLRender } from "./workflows/OutputRender";
 import { UserFilterSelect } from "./user-filter-select";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useMachine } from "@/hooks/use-machine";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 
 export function useWorkflowVersion(
   workflow_id?: string,
@@ -348,6 +351,137 @@ function PublicationStatusBadge({ workflowId }: { workflowId: string }) {
   );
 }
 
+// Shared actions dropdown component
+function WorkflowActionsDropdown({
+  workflow,
+  mutate,
+  setDeleteModalOpen,
+  openRenameDialog,
+  variant = "grid",
+}: {
+  workflow: any;
+  mutate: () => void;
+  setDeleteModalOpen: (open: boolean) => void;
+  openRenameDialog: (e: React.MouseEvent<HTMLDivElement>) => void;
+  variant?: "grid" | "list";
+}) {
+  const navigate = useNavigate();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className={cn(
+            "h-8 w-8 p-0",
+            variant === "grid"
+              ? "bg-black/30 text-white opacity-0 transition-all duration-300 group-hover:opacity-100 data-[state=open]:opacity-100"
+              : "rounded-full hover:bg-muted",
+          )}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Workflow Actions</DropdownMenuLabel>
+        <DropdownMenuItem onClick={(e) => openRenameDialog(e)}>
+          Rename
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={async (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const newWorkflow = await callServerPromise(
+              cloneWorkflow(workflow.id),
+              {
+                loadingText: "Cloning workflow",
+                successMessage: `${workflow.name} cloned successfully`,
+              },
+            );
+            mutate();
+            toast.info(`Redirecting to ${newWorkflow.name}...`);
+            navigate({
+              to: `/workflows/${newWorkflow.id}/workspace`,
+            });
+          }}
+        >
+          Clone
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={async (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            try {
+              const response = await fetch(
+                `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    workflow_id: workflow.id,
+                    title: workflow.name,
+                    description: `Shared workflow: ${workflow.name}`,
+                    is_public: true,
+                  }),
+                },
+              );
+
+              if (response.ok) {
+                const sharedWorkflow = await response.json();
+                const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
+                await navigator.clipboard.writeText(shareUrl);
+                toast.success("Share link copied to clipboard!");
+              } else {
+                toast.error("Failed to create share link");
+              }
+            } catch (error) {
+              toast.error("Failed to create share link");
+            }
+          }}
+        >
+          Share
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="text-destructive dark:text-red-400"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setDeleteModalOpen(true);
+          }}
+        >
+          Delete
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={async (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            const newPinnedState = !workflow.pinned;
+            await callServerPromise(pinWorkflow(workflow.id, newPinnedState), {
+              loadingText: newPinnedState
+                ? "Pinning workflow"
+                : "Unpinning workflow",
+              successMessage: `${workflow.name} ${newPinnedState ? "pinned" : "unpinned"} successfully`,
+            });
+            mutate();
+          }}
+        >
+          <div className="flex w-full items-center justify-between">
+            {workflow.pinned ? "Unpin" : "Pin"}
+            {workflow.pinned ? (
+              <PinOff className="h-4 w-4 rotate-45" />
+            ) : (
+              <PinIcon className="h-4 w-4 rotate-45" />
+            )}
+          </div>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function WorkflowCard({
   workflow,
   mutate,
@@ -363,6 +497,8 @@ function WorkflowCard({
   const [modalOpen, setModalOpen] = React.useState<string>();
   const [renameValue, setRenameValue] = React.useState("");
   const navigate = useNavigate();
+  const { workflow: workflowData } = useCurrentWorkflow(workflow.id);
+  const { data: machine } = useMachine(workflowData?.selected_machine_id);
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
 
@@ -500,115 +636,13 @@ function WorkflowCard({
               </div>
               <div className="absolute top-2 right-2">
                 <AdminAndMember>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="h-8 w-8 bg-black/30 p-0 text-white opacity-0 transition-all duration-300 group-hover:opacity-100 data-[state=open]:opacity-100"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Workflow Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={(e) => openRenameDialog(e)}>
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          const newWorkflow = await callServerPromise(
-                            cloneWorkflow(workflow.id),
-                            {
-                              loadingText: "Cloning workflow",
-                              successMessage: `${workflow.name} cloned successfully`,
-                            },
-                          );
-                          mutate();
-                          toast.info(`Redirecting to ${newWorkflow.name}...`);
-                          navigate({
-                            to: `/workflows/${newWorkflow.id}/workspace`,
-                          });
-                        }}
-                      >
-                        Clone
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          try {
-                            const response = await fetch(
-                              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
-                              {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                  workflow_id: workflow.id,
-                                  title: workflow.name,
-                                  description: `Shared workflow: ${workflow.name}`,
-                                  is_public: true,
-                                }),
-                              },
-                            );
-
-                            if (response.ok) {
-                              const sharedWorkflow = await response.json();
-                              const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
-                              await navigator.clipboard.writeText(shareUrl);
-                              toast.success("Share link copied to clipboard!");
-                            } else {
-                              toast.error("Failed to create share link");
-                            }
-                          } catch (error) {
-                            toast.error("Failed to create share link");
-                          }
-                        }}
-                      >
-                        Share
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive dark:text-red-400"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setDeleteModalOpen(true);
-                        }}
-                      >
-                        Delete
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          const newPinnedState = !workflow.pinned;
-                          await callServerPromise(
-                            pinWorkflow(workflow.id, newPinnedState),
-                            {
-                              loadingText: newPinnedState
-                                ? "Pinning workflow"
-                                : "Unpinning workflow",
-                              successMessage: `${workflow.name} ${newPinnedState ? "pinned" : "unpinned"} successfully`,
-                            },
-                          );
-                          mutate();
-                        }}
-                      >
-                        <div className="flex w-full items-center justify-between">
-                          {workflow.pinned ? "Unpin" : "Pin"}
-                          {workflow.pinned ? (
-                            <PinOff className="h-4 w-4 rotate-45" />
-                          ) : (
-                            <PinIcon className="h-4 w-4 rotate-45" />
-                          )}
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <WorkflowActionsDropdown
+                    workflow={workflow}
+                    mutate={mutate}
+                    setDeleteModalOpen={setDeleteModalOpen}
+                    openRenameDialog={openRenameDialog}
+                    variant="grid"
+                  />
                 </AdminAndMember>
               </div>
 
@@ -712,131 +746,25 @@ function WorkflowCard({
                 </div>
               </div>
 
+              {machine && (
+                <div className="flex items-center gap-2">
+                  <Server className="h-3.5 w-3.5" />
+                  <div className="line-clamp-1 text-muted-foreground text-xs">
+                    {machine.name}
+                  </div>
+                </div>
+              )}
+
               {/* Actions area */}
               <div className="shrink-0 flex items-center">
                 <AdminAndMember>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 p-0 rounded-full hover:bg-muted"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-44"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                      }}
-                    >
-                      <DropdownMenuLabel>Workflow Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={(e) => openRenameDialog(e)}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          const newWorkflow = await callServerPromise(
-                            cloneWorkflow(workflow.id),
-                            {
-                              loadingText: "Cloning workflow",
-                              successMessage: `${workflow.name} cloned successfully`,
-                            },
-                          );
-                          mutate();
-                          toast.info(`Redirecting to ${newWorkflow.name}...`);
-                          navigate({
-                            to: `/workflows/${newWorkflow.id}/workspace`,
-                          });
-                        }}
-                      >
-                        <Code className="h-4 w-4 mr-2" />
-                        Clone
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          try {
-                            const response = await fetch(
-                              `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
-                              {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                  workflow_id: workflow.id,
-                                  title: workflow.name,
-                                  description: `Shared workflow: ${workflow.name}`,
-                                  is_public: true,
-                                }),
-                              },
-                            );
-
-                            if (response.ok) {
-                              const sharedWorkflow = await response.json();
-                              const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
-                              await navigator.clipboard.writeText(shareUrl);
-                              toast.success("Share link copied to clipboard!");
-                            } else {
-                              toast.error("Failed to create share link");
-                            }
-                          } catch (error) {
-                            toast.error("Failed to create share link");
-                          }
-                        }}
-                      >
-                        <Share className="h-4 w-4 mr-2" />
-                        Share
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setDeleteModalOpen(true);
-                        }}
-                      >
-                        <AlertCircle className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          const newPinnedState = !workflow.pinned;
-                          await callServerPromise(
-                            pinWorkflow(workflow.id, newPinnedState),
-                            {
-                              loadingText: newPinnedState
-                                ? "Pinning workflow"
-                                : "Unpinning workflow",
-                              successMessage: `${workflow.name} ${newPinnedState ? "pinned" : "unpinned"} successfully`,
-                            },
-                          );
-                          mutate();
-                        }}
-                      >
-                        <div className="flex w-full items-center">
-                          {workflow.pinned ? (
-                            <PinOff className="h-4 w-4 mr-2" />
-                          ) : (
-                            <PinIcon className="h-4 w-4 mr-2" />
-                          )}
-                          {workflow.pinned ? "Unpin" : "Pin"}
-                        </div>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <WorkflowActionsDropdown
+                    workflow={workflow}
+                    mutate={mutate}
+                    setDeleteModalOpen={setDeleteModalOpen}
+                    openRenameDialog={openRenameDialog}
+                    variant="list"
+                  />
                 </AdminAndMember>
               </div>
             </div>
