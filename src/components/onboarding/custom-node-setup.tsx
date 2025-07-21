@@ -90,6 +90,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../ui/tooltip";
+import { BLACKLISTED_CUSTOM_NODES } from "./workflow-analyze";
 
 export type DefaultCustomNodeData = {
   title: string;
@@ -109,14 +110,6 @@ type DefaultCustomNodeStats = Record<
     author_account_age_days: number;
   }
 >;
-
-const BLACKLIST = [
-  "https://github.com/ltdrdata/ComfyUI-Manager",
-  "https://github.com/kulsisme/openart-comfyui-deploy",
-  // "https://github.com/BennyKok/comfyui-deploy",
-  // Add more blacklisted references here
-  "https://github.com/mrhan1993/ComfyUI-Fooocus",
-];
 
 function getRepoAuthor(repository: string) {
   if (!repository) return "";
@@ -360,7 +353,9 @@ function SearchNodeList({
   const nonBlacklistedNodes = useMemo(() => {
     if (!data) return [];
 
-    const lowerCaseBlacklist = new Set(BLACKLIST.map((x) => x.toLowerCase()));
+    const lowerCaseBlacklist = new Set(
+      BLACKLISTED_CUSTOM_NODES.map((x) => x.toLowerCase()),
+    );
 
     // Filter out blacklisted nodes and nodes with empty repositories
     return data.filter(
