@@ -104,7 +104,6 @@ export function useWorkflowVersion(
 }
 
 export function WorkflowList() {
-  const [modalType, setModalType] = React.useState<"json" | "new" | null>(null);
   const [view, setView] = useLocalStorage<"list" | "grid">(
     "workflow-view-mode",
     "grid",
@@ -253,9 +252,7 @@ export function WorkflowList() {
                 <h3 className="mb-2 font-semibold text-lg">
                   Welcome{" "}
                   {user.user?.username ??
-                    (user.user?.firstName ?? "") +
-                      " " +
-                      (user.user?.lastName ?? "")}
+                    `${user.user?.firstName ?? ""} ${user.user?.lastName ?? ""}`}
                 </h3>
                 <p className="mb-4 text-muted-foreground">
                   Click the + button in the bottom right to create your first
@@ -272,15 +269,14 @@ export function WorkflowList() {
                 : "mx-auto flex w-full max-w-screen-2xl flex-col px-4 pb-4",
             )}
           >
-            {flatData &&
-              flatData.map((workflow) => (
-                <WorkflowCard
-                  key={workflow.id}
-                  workflow={workflow}
-                  mutate={refetch}
-                  view={view}
-                />
-              ))}
+            {flatData?.map((workflow) => (
+              <WorkflowCard
+                key={workflow.id}
+                workflow={workflow}
+                mutate={refetch}
+                view={view}
+              />
+            ))}
             {isFetchingNextPage &&
               Array.from({ length: 4 }, (_, index) => (
                 <WorkflowCardSkeleton key={index} view={view} />
@@ -639,7 +635,7 @@ function WorkflowCard({
         </DialogContent>
       </Dialog>
       <Link
-        href={
+        to={
           isAdminAndMember
             ? `/workflows/${workflow.id}/workspace`
             : `/workflows/${workflow.id}/playground`
