@@ -1,11 +1,14 @@
 import { generateDependencyGraphJson } from "comfyui-json";
 
-const BLACKLISTED_CUSTOM_NODES = [
-  "https://github.com/bennykok/comfyui-deploy",
-  // Add more blacklisted nodes here
+export const BLACKLISTED_CUSTOM_NODES = [
   "https://github.com/audioscavenger/ComfyUI-Thumbnails",
   "https://github.com/mrhan1993/ComfyUI-Fooocus",
   "https://github.com/iacoposk8/ComfyUI-Fooocus-Inpaint-Wrapper",
+];
+
+const BLACKLISTED_CUSTOM_NODES_WITH_CD = [
+  "https://github.com/bennykok/comfyui-deploy",
+  ...BLACKLISTED_CUSTOM_NODES,
 ];
 
 export type CustomNodeInfo = {
@@ -61,7 +64,7 @@ export async function analyzeWorkflowJson(
   });
 
   // Create lowercase version of blacklist for comparison
-  const blacklistLower = BLACKLISTED_CUSTOM_NODES.map((url) =>
+  const blacklistLower = BLACKLISTED_CUSTOM_NODES_WITH_CD.map((url) =>
     url.toLowerCase(),
   );
 
