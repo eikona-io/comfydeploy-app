@@ -1,5 +1,3 @@
-"use client";
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,17 +23,12 @@ import { cn } from "@/lib/utils";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
-  Code,
-  Edit,
   Grid2X2,
   Globe,
-  Image,
   LayoutList,
   MoreHorizontal,
   PinIcon,
   PinOff,
-  Play,
-  Share,
   Workflow,
   Server,
 } from "lucide-react";
@@ -50,12 +43,12 @@ import {
 } from "@/components/workflow-api";
 
 import { DialogTemplate } from "@/components/dialog-template";
-// import { FileURLRender } from "@/components/output-render";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useUser } from "@clerk/clerk-react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useDebounce } from "use-debounce";
+import { useQueryState } from "nuqs";
 
 import { AdminAndMember, useIsAdminAndMember } from "@/components/permissions";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -70,10 +63,9 @@ import { toast } from "sonner";
 import { useWorkflowList } from "../hooks/use-workflow-list";
 import { UserIcon } from "./run/SharePageComponent";
 import { FileURLRender } from "./workflows/OutputRender";
-import { UserFilterSelect } from "./user-filter-select";
+import { UnifiedFilterSelect } from "./unified-filter-select";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useMachine } from "@/hooks/use-machine";
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 
 export function useWorkflowVersion(
   workflow_id?: string,
@@ -117,9 +109,15 @@ export function WorkflowList() {
   const user = useUser();
   const sub = useCurrentPlan();
 
-  const [searchValue, setSearchValue] = React.useState<string | null>(null);
+  // Convert to URL query parameters
+  const [searchValue, setSearchValue] = useQueryState("search");
   const [debouncedSearchValue] = useDebounce(searchValue, 250);
-  const [selectedUserIds, setSelectedUserIds] = React.useState<string>("");
+  const [selectedUserIds, setSelectedUserIds] = useQueryState("user", {
+    defaultValue: "",
+  });
+  const [selectedMachineId, setSelectedMachineId] = useQueryState("machine", {
+    defaultValue: "",
+  });
 
   const {
     data: workflowsFromPythonApi,
@@ -128,7 +126,11 @@ export function WorkflowList() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useWorkflowList(debouncedSearchValue ?? "", selectedUserIds);
+  } = useWorkflowList(
+    debouncedSearchValue ?? "",
+    selectedUserIds,
+    selectedMachineId,
+  );
 
   const parentRef = React.useRef<HTMLDivElement>(null);
   useInfiniteScroll(parentRef, fetchNextPage, hasNextPage, isFetchingNextPage);
@@ -164,11 +166,14 @@ export function WorkflowList() {
         </div>
 
         <div className="ml-auto flex gap-2">
-          {/* User filter component first */}
-          <UserFilterSelect onFilterChange={setSelectedUserIds} />
+          {/* Unified filter component */}
+          <UnifiedFilterSelect
+            onUserFilterChange={setSelectedUserIds}
+            onMachineFilterChange={setSelectedMachineId}
+          />
 
           {/* Grid/list toggle moved to the right */}
-          <div className="flex rounded-md border bg-background shadow-sm h-9">
+          <div className="flex h-9 rounded-md border bg-background shadow-sm">
             <Button
               variant={view === "grid" ? "secondary" : "ghost"}
               size="icon"
@@ -231,7 +236,7 @@ export function WorkflowList() {
           </div>
         ) : flatData?.length === 0 ? (
           <div className="absolute inset-0 flex h-full flex-col items-center justify-center p-4 text-center">
-            {debouncedSearchValue ? (
+            {debouncedSearchValue || selectedUserIds || selectedMachineId ? (
               <>
                 <h3 className="mb-2 font-semibold text-lg">No results found</h3>
                 <p className="mb-4 text-muted-foreground">
@@ -496,9 +501,7 @@ function WorkflowCard({
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState<string>();
   const [renameValue, setRenameValue] = React.useState("");
-  const navigate = useNavigate();
-  const { workflow: workflowData } = useCurrentWorkflow(workflow.id);
-  const { data: machine } = useMachine(workflowData?.selected_machine_id);
+  const { data: machine } = useMachine(workflow?.selected_machine_id);
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
 
