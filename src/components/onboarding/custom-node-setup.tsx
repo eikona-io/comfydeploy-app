@@ -181,7 +181,7 @@ export function CustomNodeSetup({
   return (
     <div>
       <div className="mb-2">
-        <span className="font-medium text-sm">Custom Nodes </span>
+        <div className="mb-1 font-medium text-sm">Custom Nodes </div>
         <div className="hidden lg:block">
           <DesktopLayout
             validation={validation}
@@ -624,7 +624,7 @@ function SearchNodeList({
                           <Button
                             type="button"
                             variant="ghost"
-                            className="hover:bg-gray-200"
+                            className="hover:bg-gray-200 dark:hover:bg-zinc-600/40"
                             onClick={async () => {
                               await handleAddNode(
                                 filteredNodes[virtualRow.index],
