@@ -1370,10 +1370,8 @@ function SessionTimerButton({
   const router = useRouter();
   const [isHovered, setIsHovered] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [urlSessionId, setUrlSessionId] = useQueryState(
-    "sessionId",
-    parseAsString,
-  );
+  const [_, setUrlSessionId] = useQueryState("sessionId", parseAsString);
+  const urlSessionId = useSessionIdInSessionView();
 
   const effectiveSessionId = getCurrentEffectiveSessionId(workflowId || "");
 
@@ -1480,13 +1478,15 @@ function SessionTimerButton({
                   : "border border-gray-200 bg-gradient-to-br from-white to-white shadow-md dark:border-zinc-800/50 dark:from-gray-700 dark:to-gray-800 dark:shadow-gray-700/25 dark:hover:shadow-gray-700/40"
               }`}
               style={{
-                width: isHovered ? "134px" : "42px",
-                paddingLeft: isHovered ? "6px" : "0px",
-                paddingRight: isHovered ? "12px" : "0px",
-                transitionTimingFunction: isHovered
-                  ? "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
-                  : "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
-                transitionDuration: isHovered ? "400ms" : "200ms",
+                width: isHovered || urlSessionId ? "134px" : "42px",
+                paddingLeft: isHovered || urlSessionId ? "6px" : "0px",
+                paddingRight: isHovered || urlSessionId ? "12px" : "0px",
+                transitionTimingFunction:
+                  isHovered || urlSessionId
+                    ? "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+                    : "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+                transitionDuration:
+                  isHovered || urlSessionId ? "400ms" : "200ms",
               }}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
@@ -1567,16 +1567,18 @@ function SessionTimerButton({
               {/* Countdown Text and End Button */}
               <div
                 className={`flex items-center gap-2 transition-all ${
-                  isHovered
+                  isHovered || urlSessionId
                     ? "translate-x-0 opacity-100"
                     : "translate-x-4 opacity-0"
                 }`}
                 style={{
-                  transitionDelay: isHovered ? "100ms" : "0ms",
-                  transitionDuration: isHovered ? "300ms" : "150ms",
-                  transitionTimingFunction: isHovered
-                    ? "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
-                    : "ease-out",
+                  transitionDelay: isHovered || urlSessionId ? "100ms" : "0ms",
+                  transitionDuration:
+                    isHovered || urlSessionId ? "300ms" : "150ms",
+                  transitionTimingFunction:
+                    isHovered || urlSessionId
+                      ? "cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                      : "ease-out",
                 }}
               >
                 <span

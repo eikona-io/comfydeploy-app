@@ -6,42 +6,25 @@ import {
   CreditCard,
   Database,
   ExternalLink,
-  FileClockIcon,
   Folder,
-  GitBranch,
   Github,
   History,
   Key,
-  LineChart,
   MessageCircle,
-  MessageSquare,
   Moon,
-  Plus,
   Receipt,
   Rss,
-  Save,
   Search,
   Server,
   Settings,
   Sun,
   Users,
   Workflow,
-  Link2,
-  BookText,
-  UserPlus,
   LogIn,
 } from "lucide-react";
 
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Sidebar,
   SidebarContent,
@@ -55,16 +38,10 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { VersionList, useSelectedVersion } from "@/components/version-select";
 import { WorkflowDropdown } from "@/components/workflow-dropdown";
-import {
-  SessionTimer,
-  useSessionTimer,
-} from "@/components/workspace/SessionTimer";
 import {
   useSessionIdInSessionView,
   useShareSlug,
-  useWorkflowIdInSessionView,
   useWorkflowIdInWorkflowPage,
 } from "@/hooks/hook";
 import {
@@ -83,50 +60,15 @@ import {
   useAuth,
   useClerk,
 } from "@clerk/clerk-react";
-import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
-// import { VersionSelectV2 } from "@/components/VersionSelectV2";
-// import { MachineSelect } from "@/components/MachineSelect";
-// import { useCurrentPlan } from "@/components/useCurrentPlan";
-import { motion, AnimatePresence } from "framer-motion";
-import { parseAsString } from "nuqs";
-import { useQueryState } from "nuqs";
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { toast } from "sonner";
-import { MyDrawer } from "./drawer";
-import { Chat } from "./master-comfy/chat";
-import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
+import { motion } from "framer-motion";
+import { useEffect, useRef, useMemo } from "react";
 import { Badge } from "./ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Separator } from "./ui/separator";
 import { Skeleton } from "./ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./ui/tooltip";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
-import { useWorkflowStore } from "./workspace/Workspace";
-import {
-  SessionIncrementDialog,
-  useSessionIncrementStore,
-} from "./workspace/increase-session";
-import { sendWorkflow } from "./workspace/sendEventToCD";
-import { Switch } from "./ui/switch";
-import { serverAction } from "@/lib/workflow-version-api";
-import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
-import { LogDisplay } from "./workspace/LogDisplay";
-import { CopyButton } from "@/components/ui/copy-button";
-import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
-import { ExternalNodeDocs } from "./workspace/external-node-docs";
-import { AssetBrowserSidebar } from "./workspace/assets-browser-sidebar";
-import { AssetType } from "./SDInputs/sd-asset-input";
-import { useDrawerStore } from "@/stores/drawer-store";
 import { useTheme } from "./theme-provider";
 import { dark } from "@clerk/themes";
-import { GuideDialog } from "./guide/GuideDialog";
 import { Icon } from "./icon-word";
 
 // Add Session type
@@ -432,29 +374,9 @@ export function AppSidebar() {
 
   const router = useRouter();
 
-  const { data: currentGitBranch } = useQuery({
-    queryKey: ["currentGitBranch"],
-    queryFn: async () => {
-      try {
-        const response = await fetch("/git-info.json");
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        return null;
-      }
-    },
-    refetchInterval: 3000,
-    enabled: window.location.hostname === "localhost",
-  });
-
   useEffect(() => {
     setOpen(!sessionId && !shareSlug);
   }, [sessionId, shareSlug]);
-
-  // If we're in a session, show the session-specific sidebar
-  if (sessionId) {
-    return <SessionSidebar />;
-  }
 
   // If we're in a share page, show the share-specific sidebar
   if (shareSlug) {
@@ -727,18 +649,6 @@ export function AppSidebar() {
           )}
         </SidebarFooter>
       </Sidebar>
-      {window.location.hostname === "localhost" && (
-        <div className="fixed top-2 right-2 z-[9999] flex items-center gap-2 opacity-65">
-          <Badge className="pointer-events-none bg-orange-300 text-orange-700 shadow-md dark:bg-orange-900/50 dark:text-orange-400">
-            Localhost
-          </Badge>
-
-          <Badge variant="emerald" className="pointer-events-none shadow-md">
-            <GitBranch className="h-4 w-4" />
-            {currentGitBranch?.branch || `Please run "bun githooks"`}
-          </Badge>
-        </div>
-      )}
     </>
   );
 }

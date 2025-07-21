@@ -37,6 +37,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer";
 import { WorkflowNavbar } from "@/components/workflow-navbar";
 import { cn } from "@/lib/utils";
+import { LocalGitDisplay } from "@/components/local-git-display";
 
 export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
@@ -155,6 +156,7 @@ function RootComponent() {
         )}
         <ComfyCommand />
         <Toaster richColors closeButton={true} />
+        <LocalGitDisplay />
         <AssetsBrowserPopup isPlayground />
       </div>
     </ThemeProvider>
