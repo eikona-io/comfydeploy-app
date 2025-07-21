@@ -66,6 +66,10 @@ import { FileURLRender } from "./workflows/OutputRender";
 import { UnifiedFilterSelect } from "./unified-filter-select";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useMachine } from "@/hooks/use-machine";
+import {
+  getEnvColor,
+  useWorkflowDeployments,
+} from "@/components/workspace/ContainersTable";
 
 export function useWorkflowVersion(
   workflow_id?: string,
@@ -353,6 +357,35 @@ function PublicationStatusBadge({ workflowId }: { workflowId: string }) {
       <Globe className="h-3 w-3" />
       Community
     </Badge>
+  );
+}
+
+// Component to display deployment status for production/staging
+function DeploymentStatusBadges({ workflowId }: { workflowId: string }) {
+  const { data: deployments } = useWorkflowDeployments(workflowId);
+
+  const productionDeployment = deployments?.find(
+    (d: any) => d.environment === "production",
+  );
+  const stagingDeployment = deployments?.find(
+    (d: any) => d.environment === "staging",
+  );
+
+  if (!productionDeployment && !stagingDeployment) return null;
+
+  return (
+    <div className="hidden gap-1 md:flex">
+      {productionDeployment && (
+        <Badge className={cn("!text-2xs", getEnvColor("production"))}>
+          Production
+        </Badge>
+      )}
+      {stagingDeployment && (
+        <Badge className={cn("!text-2xs", getEnvColor("staging"))}>
+          Staging
+        </Badge>
+      )}
+    </div>
   );
 }
 
@@ -750,13 +783,15 @@ function WorkflowCard({
               </div>
 
               {machine && (
-                <div className="flex items-center gap-2">
+                <div className="hidden items-center gap-2 md:flex">
                   <Server className="h-3.5 w-3.5" />
                   <div className="line-clamp-1 text-muted-foreground text-xs">
                     {machine.name}
                   </div>
                 </div>
               )}
+
+              <DeploymentStatusBadges workflowId={workflow.id} />
 
               {/* Actions area */}
               <div className="shrink-0 flex items-center">
