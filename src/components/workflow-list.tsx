@@ -36,11 +36,12 @@ import * as React from "react";
 import { getRelativeTime } from "../lib/get-relative-time";
 
 import {
-  cloneWorkflow,
   deleteWorkflow,
   pinWorkflow,
   renameWorkflow,
 } from "@/components/workflow-api";
+
+import { CloneWorkflowDialog } from "@/components/clone-workflow-dialog";
 
 import { DialogTemplate } from "@/components/dialog-template";
 import { Card } from "@/components/ui/card";
@@ -391,12 +392,14 @@ function WorkflowActionsDropdown({
   mutate,
   setDeleteModalOpen,
   openRenameDialog,
+  setCloneModalOpen,
   variant = "grid",
 }: {
   workflow: any;
   mutate: () => void;
   setDeleteModalOpen: (open: boolean) => void;
   openRenameDialog: (e: React.MouseEvent<HTMLDivElement>) => void;
+  setCloneModalOpen: (open: boolean) => void;
   variant?: "grid" | "list";
 }) {
   const navigate = useNavigate();
@@ -422,21 +425,10 @@ function WorkflowActionsDropdown({
           Rename
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={async (e) => {
+          onClick={(e) => {
             e.stopPropagation();
             e.preventDefault();
-            const newWorkflow = await callServerPromise(
-              cloneWorkflow(workflow.id),
-              {
-                loadingText: "Cloning workflow",
-                successMessage: `${workflow.name} cloned successfully`,
-              },
-            );
-            mutate();
-            toast.info(`Redirecting to ${newWorkflow.name}...`);
-            navigate({
-              to: `/workflows/${newWorkflow.id}/workspace`,
-            });
+            setCloneModalOpen(true);
           }}
         >
           Clone
@@ -528,11 +520,13 @@ function WorkflowCard({
   view?: "list" | "grid";
 }) {
   const [deleteModalOpen, setDeleteModalOpen] = React.useState(false);
+  const [cloneModalOpen, setCloneModalOpen] = React.useState(false);
   const [modalOpen, setModalOpen] = React.useState<string>();
   const [renameValue, setRenameValue] = React.useState("");
   const { data: machine } = useMachine(workflow?.selected_machine_id);
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
+  const navigate = useNavigate();
 
   const openRenameDialog = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -554,6 +548,18 @@ function WorkflowCard({
 
   return (
     <>
+      <CloneWorkflowDialog
+        workflow={workflow}
+        open={cloneModalOpen}
+        onOpenChange={setCloneModalOpen}
+        onSuccess={(newWorkflow) => {
+          mutate();
+          toast.info(`Redirecting to ${newWorkflow.name}...`);
+          navigate({
+            to: `/workflows/${newWorkflow.id}/workspace`,
+          });
+        }}
+      />
       <DialogTemplate
         open={modalOpen === "rename"}
         onOpenChange={(open) => {
@@ -673,6 +679,7 @@ function WorkflowCard({
                     mutate={mutate}
                     setDeleteModalOpen={setDeleteModalOpen}
                     openRenameDialog={openRenameDialog}
+                    setCloneModalOpen={setCloneModalOpen}
                     variant="grid"
                   />
                 </AdminAndMember>
@@ -797,6 +804,7 @@ function WorkflowCard({
                     mutate={mutate}
                     setDeleteModalOpen={setDeleteModalOpen}
                     openRenameDialog={openRenameDialog}
+                    setCloneModalOpen={setCloneModalOpen}
                     variant="list"
                   />
                 </AdminAndMember>

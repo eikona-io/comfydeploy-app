@@ -1,4 +1,3 @@
-"use client";
 import { api } from "@/lib/api";
 
 export async function renameWorkflow(workflow_id: string, new_name: string) {
@@ -13,11 +12,14 @@ export async function renameWorkflow(workflow_id: string, new_name: string) {
   });
 }
 
-export async function cloneWorkflow(workflow_id: string) {
+export async function cloneWorkflow(workflow_id: string, name: string) {
   const response = await api({
     url: `workflow/${workflow_id}/clone`,
     init: {
       method: "POST",
+      body: JSON.stringify({
+        name,
+      }),
     },
   });
   return response;
