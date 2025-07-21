@@ -1591,23 +1591,25 @@ function SessionTimerButton({
                     : "00:00"}
                 </span>
 
-                <button
-                  type="button"
-                  onClick={handleDeleteSession}
-                  disabled={deleteSession.isPending}
-                  className={`rounded-full p-1 transition-colors duration-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${
-                    isLowTime
-                      ? "text-white hover:text-white"
-                      : "text-gray-600 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400"
-                  }`}
-                  title="End session"
-                >
-                  {deleteSession.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <X className="h-4 w-4" />
-                  )}
-                </button>
+                <ImageInputsTooltip tooltipText="End session">
+                  <button
+                    type="button"
+                    onClick={handleDeleteSession}
+                    disabled={deleteSession.isPending}
+                    className={`rounded-full p-1 transition-colors duration-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${
+                      isLowTime
+                        ? "text-white hover:text-white"
+                        : "text-gray-600 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400"
+                    }`}
+                    title="End session"
+                  >
+                    {deleteSession.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                  </button>
+                </ImageInputsTooltip>
               </div>
             </div>
           </TimerPopover>
