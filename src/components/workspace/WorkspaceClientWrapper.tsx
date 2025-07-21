@@ -1,13 +1,9 @@
-"use client";
-
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useMachine } from "@/hooks/use-machine";
-import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { easeOut } from "framer-motion";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronRight, ChevronLeft, ChevronUp, Settings } from "lucide-react";
+import { ChevronUp, Server, TextSearch } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { lazy, useEffect, useState } from "react";
 import { MyDrawer } from "../drawer";
@@ -15,14 +11,14 @@ import { VersionChecker } from "../machine/version-checker";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { LoadingIcon } from "../ui/custom/loading-icon";
-import { useWorkflowVersion } from "../workflow-list";
 import { SessionCreator } from "./SessionView";
-import { WorkspaceLoading, WorkspaceMachineLoading } from "./WorkspaceLoading";
+import { WorkspaceMachineLoading } from "./WorkspaceLoading";
 import { SessionCreationDialog } from "./session-creator-dialog";
 import { SessionCreatorForm } from "./session-creator-form";
 import { ErrorBoundary } from "../error-boundary";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useRouter, useSearch } from "@tanstack/react-router";
+import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
 
 const ComfyUIFlow = lazy(() =>
   import("../workflow-preview/comfyui-flow").then((mod) => ({
@@ -62,6 +58,51 @@ function MachineUpdateChecker({ machineId }: MachineUpdateCheckerProps) {
         });
       }}
     />
+  );
+}
+
+interface NavigationBadgesProps {
+  workflowId: string;
+}
+
+function NavigationBadges({ workflowId }: NavigationBadgesProps) {
+  const router = useRouter();
+  const isDeploymentAllowed = useIsDeploymentAllowed();
+
+  return (
+    <div className="flex items-center justify-center gap-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          router.navigate({
+            to: "/workflows/$workflowId/$view",
+            params: { workflowId, view: "machine" },
+          });
+        }}
+        className="flex items-center gap-1.5 rounded-full border-gray-200 bg-white/60 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:bg-zinc-800/80"
+      >
+        <Server className="h-3.5 w-3.5" />
+        <span className="font-medium text-xs">Machine</span>
+      </Button>
+
+      {isDeploymentAllowed && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            router.navigate({
+              to: "/workflows/$workflowId/$view",
+              params: { workflowId, view: "requests" },
+            });
+          }}
+          className="flex items-center gap-1.5 rounded-full border-gray-200 bg-white/60 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all hover:bg-white/80 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:bg-zinc-800/80"
+        >
+          <TextSearch className="h-3.5 w-3.5" />
+          <span className="font-medium text-xs">Requests</span>
+        </Button>
+      )}
+    </div>
   );
 }
 
@@ -316,8 +357,9 @@ export function WorkspaceClientWrapper({
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.1, ease: "easeInOut" }}
               >
-                <div className="mb-2">
+                <div className="mb-2 flex flex-row items-center justify-center gap-4">
                   <MachineUpdateChecker machineId={machine.id} />
+                  <NavigationBadges workflowId={props.workflow_id} />
                 </div>
                 <div className="rounded-t-xl bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-800/40">
                   <SessionCreatorForm
