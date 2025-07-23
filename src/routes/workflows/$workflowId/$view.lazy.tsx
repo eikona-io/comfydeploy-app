@@ -8,7 +8,10 @@ import {
   useSelectedDeploymentStore,
 } from "@/components/deployment/deployment-page";
 import { ShareWorkflowDialog } from "@/components/share-workflow-dialog";
-import { MachineVersionWrapper } from "@/components/machine/machine-overview";
+import {
+  MachineAlert,
+  MachineVersionWrapper,
+} from "@/components/machine/machine-overview";
 import { MachineTopStickyBar } from "@/components/machine/machine-page";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
@@ -59,7 +62,7 @@ import {
 } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useMachine } from "@/hooks/use-machine";
+import { useMachine, useMachineVersionsAll } from "@/hooks/use-machine";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -70,12 +73,13 @@ import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { ImageIcon, Lock, Share } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
 import { PricingPage } from "@/routes/pricing";
 import { useCurrentPlanQuery } from "@/hooks/use-current-plan";
 import { LoadingIcon } from "@/components/loading-icon";
+import { isMachineDeprecated } from "@/components/machines/machine-list-item";
 
 interface Version {
   id: string;
@@ -172,6 +176,18 @@ function WorkflowPageComponent() {
   const isAdminAndMember = useIsAdminAndMember();
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
   const isDeploymentAllowed = useIsDeploymentAllowed();
+  const { data: machineVersionsAll, isLoading: isLoadingVersions } =
+    useMachineVersionsAll(machine?.id);
+  const isDeprecated = isMachineDeprecated(machine);
+
+  const isLatestVersion = useMemo(() => {
+    if (isLoadingVersions || !machineVersionsAll) return true;
+
+    return (
+      machine?.machine_version_id !== null &&
+      machineVersionsAll[0]?.id === machine.machine_version_id
+    );
+  }, [machine?.machine_version_id, machineVersionsAll, isLoadingVersions]);
 
   switch (currentView) {
     case "requests":
@@ -228,6 +244,13 @@ function WorkflowPageComponent() {
         <>
           <MachineTopStickyBar machine={machine} />
           <div className="mx-auto mt-4 w-full max-w-screen-lg">
+            <div className="pb-2">
+              <MachineAlert
+                machine={machine}
+                isDeprecated={isDeprecated}
+                isLatestVersion={isLatestVersion}
+              />
+            </div>
             <MachineVersionWrapper machine={machine} />
             <MachineSettingsWrapper
               title="Machine Settings"
