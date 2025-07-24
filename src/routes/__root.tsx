@@ -38,6 +38,7 @@ import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer
 import { WorkflowNavbar } from "@/components/workflow-navbar";
 import { cn } from "@/lib/utils";
 import { LocalGitDisplay } from "@/components/local-git-display";
+import { WorkspaceUpdate20250724 } from "@/components/guide/GuideDialog";
 
 export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
@@ -158,6 +159,7 @@ function RootComponent() {
         <Toaster richColors closeButton={true} />
         <LocalGitDisplay />
         <AssetsBrowserPopup isPlayground />
+        <WorkspaceUpdate20250724 />
       </div>
     </ThemeProvider>
   );

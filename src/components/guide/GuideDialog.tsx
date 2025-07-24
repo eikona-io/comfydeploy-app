@@ -338,3 +338,85 @@ export function GuideDialog({ guideType }: GuideDialogProps) {
     </AlertDialog>
   );
 }
+
+export function WorkspaceUpdate20250724() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const UPDATE_STORAGE_KEY = "workspace-update-20250724";
+  const UPDATE_DATE = new Date("2025-07-24");
+  const TWO_WEEKS_MS = 14 * 24 * 60 * 60 * 1000; // 2 weeks in milliseconds
+
+  const getUpdateState = () => {
+    if (typeof window === "undefined") return true; // Don't show on server
+
+    try {
+      const storedValue = window.localStorage.getItem(UPDATE_STORAGE_KEY);
+      return storedValue === "seen";
+    } catch (error) {
+      console.error("Error reading update state from localStorage:", error);
+      return true; // Don't show on error
+    }
+  };
+
+  const setUpdateSeen = () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      window.localStorage.setItem(UPDATE_STORAGE_KEY, "seen");
+    } catch (error) {
+      console.error("Error saving update state to localStorage:", error);
+    }
+  };
+
+  const shouldShowUpdate = () => {
+    const now = new Date();
+    const timeSinceUpdate = now.getTime() - UPDATE_DATE.getTime();
+
+    // Only show if within 2 weeks of the update date and hasn't been seen
+    return (
+      timeSinceUpdate >= 0 &&
+      timeSinceUpdate <= TWO_WEEKS_MS &&
+      !getUpdateState()
+    );
+  };
+
+  useEffect(() => {
+    if (shouldShowUpdate()) {
+      setIsOpen(true);
+    }
+  }, []);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    setUpdateSeen();
+  };
+
+  if (!shouldShowUpdate()) {
+    return null;
+  }
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+      <AlertDialogContent className="max-w-4xl overflow-hidden border-none bg-white p-0 dark:bg-zinc-900">
+        <div className="aspect-video w-full">
+          <iframe
+            width="100%"
+            height="100%"
+            src="https://www.youtube.com/embed/cF9xaZCQu5A?autoplay=0&rel=0&modestbranding=1"
+            title="Comfy Deploy Update"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        </div>
+
+        <AlertDialogFooter className="!justify-between mx-6 mb-4">
+          <div className="hidden items-center gap-2 font-medium sm:flex">
+            <Rocket className="h-5 w-5 text-blue-500" />
+            Workspace Update - July 2025
+          </div>
+          <Button onClick={handleClose}>Got it, thanks!</Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

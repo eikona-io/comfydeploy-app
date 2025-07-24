@@ -70,6 +70,16 @@ import { MachineSelect } from "./workspace/MachineSelect";
 import { useTheme } from "./theme-provider";
 import { dark } from "@clerk/themes";
 import { Icon } from "./icon-word";
+import {
+  InfoCard,
+  InfoCardContent,
+  InfoCardTitle,
+  InfoCardDescription,
+  InfoCardMedia,
+  InfoCardFooter,
+  InfoCardDismiss,
+  InfoCardAction,
+} from "@/kl-ui/info-card";
 
 // Add Session type
 export interface Session {
@@ -598,55 +608,58 @@ export function AppSidebar() {
             </>
           )}
         </SidebarContent>
-        <SidebarFooter className="flex w-full flex-col justify-center gap-2 pb-4">
-          {!(workflow_id && parentPath === "workflows") && (
-            <div className="grid grid-cols-2 gap-2 px-2">
-              {links.map((item, index) =>
-                item.internal ? (
-                  <Link
-                    key={index}
-                    to={item.url}
-                    className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground"
-                  >
-                    <item.icon size={16} className="w-3" />
-                    <span>{item.title}</span>
-                  </Link>
-                ) : (
-                  <a
-                    href={item.url}
-                    key={index}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
+        <SidebarFooter>
+          <WorkspaceUpdateInfoCard20250724 />
+          <div className="flex w-full flex-col justify-center gap-2 pb-4">
+            {!(workflow_id && parentPath === "workflows") && (
+              <div className="grid grid-cols-2 gap-2 px-2">
+                {links.map((item, index) =>
+                  item.internal ? (
+                    <Link
+                      key={index}
+                      to={item.url}
+                      className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground"
+                    >
                       <item.icon size={16} className="w-3" />
                       <span>{item.title}</span>
-                    </span>
-                  </a>
-                ),
-              )}
+                    </Link>
+                  ) : (
+                    <a
+                      href={item.url}
+                      key={index}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
+                        <item.icon size={16} className="w-3" />
+                        <span>{item.title}</span>
+                      </span>
+                    </a>
+                  ),
+                )}
 
-              {/* Theme Switch Item */}
-              {isBusinessAllowed && (
-                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                <div
-                  className="flex w-full cursor-pointer flex-row items-center justify-between gap-2 pr-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-                  onClick={() => {
-                    setTheme(isDarkTheme(theme) ? "light" : "dark");
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    {isDarkTheme(theme) ? (
-                      <Moon size={16} className="w-3" />
-                    ) : (
-                      <Sun size={16} className="w-3" />
-                    )}
-                    <span>Theme</span>
+                {/* Theme Switch Item */}
+                {isBusinessAllowed && (
+                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                  <div
+                    className="flex w-full cursor-pointer flex-row items-center justify-between gap-2 pr-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+                    onClick={() => {
+                      setTheme(isDarkTheme(theme) ? "light" : "dark");
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isDarkTheme(theme) ? (
+                        <Moon size={16} className="w-3" />
+                      ) : (
+                        <Sun size={16} className="w-3" />
+                      )}
+                      <span>Theme</span>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </SidebarFooter>
       </Sidebar>
     </>
@@ -842,5 +855,38 @@ export function GuestSidebar() {
         </div>
       </SidebarFooter>
     </Sidebar>
+  );
+}
+
+function WorkspaceUpdateInfoCard20250724() {
+  return (
+    <InfoCard>
+      <InfoCardContent>
+        <InfoCardTitle>Workspace Update</InfoCardTitle>
+        <InfoCardDescription className="text-2xs leading-4">
+          Discover the redesigned, enhanced ComfyUI workspace.
+        </InfoCardDescription>
+        <InfoCardMedia
+          media={[
+            {
+              src: "https://cd-misc.s3.us-east-2.amazonaws.com/sidebar/workspace_update_20250724.png",
+            },
+          ]}
+          expandHeight={120}
+        />
+        <InfoCardFooter>
+          <InfoCardDismiss>Dismiss</InfoCardDismiss>
+          <InfoCardAction>
+            <Link
+              to="https://docs.comfydeploy.com/docs/workspace/overview"
+              target="_blank"
+              className="flex flex-row items-center gap-1 underline"
+            >
+              Learn more <ExternalLink size={12} />
+            </Link>
+          </InfoCardAction>
+        </InfoCardFooter>
+      </InfoCardContent>
+    </InfoCard>
   );
 }
