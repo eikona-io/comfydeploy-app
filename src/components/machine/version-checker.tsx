@@ -1,4 +1,3 @@
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,11 +53,11 @@ export function VersionChecker({
 
   if (isLoading) {
     return (
-      <div className={"animate-in fade-in slide-in-from-bottom-4 duration-300"}>
+      <div className="fade-in slide-in-from-bottom-4 animate-in duration-300">
         <div className="flex items-center justify-center">
           <div
             className={cn(
-              "animate-pulse bg-muted h-6 rounded-full w-32",
+              "h-6 w-32 animate-pulse rounded-full bg-muted",
               className,
             )}
           />
@@ -77,13 +76,11 @@ export function VersionChecker({
 
     if (variant === "expanded") {
       return (
-        <div
-          className={"animate-in duration-300 fade-in slide-in-from-bottom-4"}
-        >
+        <div className="fade-in slide-in-from-bottom-4 animate-in duration-300">
           <div className="flex items-center justify-center">
             <div
               className={cn(
-                "flex flex-col gap-2 px-3 py-2 rounded-lg bg-amber-500/10 text-amber-600 text-sm w-full",
+                "flex w-full flex-col gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-amber-600 text-sm",
                 className,
               )}
             >
@@ -92,7 +89,7 @@ export function VersionChecker({
                 <span>Update Available</span>
                 {!hideUpdateButton && onUpdate && (
                   <Button
-                    className="h-6 hover:bg-amber-500/20 hover:text-amber-600 text-xs px-2"
+                    className="h-6 px-2 text-xs hover:bg-amber-500/20 hover:text-amber-600"
                     onClick={onUpdate}
                     size="sm"
                     variant="ghost"
@@ -105,26 +102,28 @@ export function VersionChecker({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-amber-500" />
-                    <div className="text-xs font-medium">Latest Version</div>
+                    <div className="font-medium text-xs">Latest Version</div>
                   </div>
                   <Badge
                     variant="secondary"
-                    className="text-xs bg-amber-500/10"
+                    className="bg-amber-500/10 text-xs"
                   >
                     {latestDate}
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-[10px] font-mono text-muted-foreground/70">
+                  <div className="font-mono text-[10px] text-muted-foreground/70">
                     {data?.latest_commit.hash?.slice(0, 7)}
                   </div>
-                  <div className="text-xs">{data?.latest_commit?.message}</div>
+                  <div className="line-clamp-6 text-xs">
+                    {data?.latest_commit?.message}
+                  </div>
                 </div>
                 <div className="h-px bg-border/50" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 rounded-full bg-muted" />
-                    <div className="text-xs font-medium text-muted-foreground">
+                    <div className="font-medium text-muted-foreground text-xs">
                       Current Version
                     </div>
                   </div>
@@ -133,7 +132,7 @@ export function VersionChecker({
                   </Badge>
                 </div>
                 <div className="space-y-1">
-                  <div className="text-[10px] font-mono text-muted-foreground/70">
+                  <div className="font-mono text-[10px] text-muted-foreground/70">
                     {data?.local_commit.hash?.slice(0, 7)}
                   </div>
                   <div className="text-xs">{data?.local_commit?.message}</div>
@@ -146,7 +145,7 @@ export function VersionChecker({
     }
 
     return (
-      <div className={"animate-in duration-300 fade-in slide-in-from-bottom-4"}>
+      <div className="fade-in slide-in-from-bottom-4 animate-in duration-300">
         <div className="flex items-center justify-center">
           <HoverCard>
             <HoverCardTrigger asChild>
@@ -160,7 +159,7 @@ export function VersionChecker({
                 <span>Update Available</span>
                 {!hideUpdateButton && onUpdate && (
                   <Button
-                    className="h-6 hover:bg-amber-500/20 hover:text-amber-600 text-xs px-2"
+                    className="h-6 px-2 text-xs hover:bg-amber-500/20 hover:text-amber-600"
                     onClick={onUpdate}
                     size="sm"
                     variant="ghost"
@@ -173,29 +172,29 @@ export function VersionChecker({
             <HoverCardContent className="w-80">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold">Version Details</h4>
+                  <h4 className="font-semibold text-sm">Version Details</h4>
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-amber-500" />
-                        <div className="text-xs font-medium text-amber-600">
+                        <div className="font-medium text-amber-600 text-xs">
                           Latest Version
                         </div>
                       </div>
                       <Badge
                         variant="secondary"
-                        className="text-xs bg-amber-500/10 text-amber-600"
+                        className="bg-amber-500/10 text-amber-600 text-xs"
                       >
                         {latestDate}
                       </Badge>
                     </div>
-                    <div className="pl-4 space-y-1">
-                      <div className="text-[10px] font-mono text-muted-foreground/70">
+                    <div className="space-y-1 pl-4">
+                      <div className="font-mono text-[10px] text-muted-foreground/70">
                         {data?.latest_commit.hash?.slice(0, 7)}
                       </div>
-                      <div className="text-xs">
+                      <div className="line-clamp-3 text-xs">
                         {data?.latest_commit?.message}
                       </div>
                     </div>
@@ -205,7 +204,7 @@ export function VersionChecker({
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <div className="h-2 w-2 rounded-full bg-muted" />
-                        <div className="text-xs font-medium text-muted-foreground">
+                        <div className="font-medium text-muted-foreground text-xs">
                           Current Version
                         </div>
                       </div>
@@ -213,11 +212,11 @@ export function VersionChecker({
                         {localDate}
                       </Badge>
                     </div>
-                    <div className="pl-4 space-y-1">
-                      <div className="text-[10px] font-mono text-muted-foreground/70">
+                    <div className="space-y-1 pl-4">
+                      <div className="font-mono text-[10px] text-muted-foreground/70">
                         {data?.local_commit.hash?.slice(0, 7)}
                       </div>
-                      <div className="text-xs">
+                      <div className="line-clamp-3 text-xs">
                         {data?.local_commit?.message}
                       </div>
                     </div>
@@ -233,9 +232,9 @@ export function VersionChecker({
 
   if (variant === "inline") {
     return (
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="fade-in slide-in-from-bottom-4 animate-in duration-300">
         <div className="flex items-center justify-center">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 text-sm">
+          <div className="flex items-center gap-2 rounded-full bg-green-500/10 px-3 py-1.5 text-green-600 text-sm">
             <Check className="h-4 w-4" />
             <span>Latest Plugin Version</span>
           </div>
