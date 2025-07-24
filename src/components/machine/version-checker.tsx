@@ -115,14 +115,18 @@ export function VersionChecker({
                   <div className="font-mono text-[10px] text-muted-foreground/70">
                     {data?.latest_commit.hash?.slice(0, 7)}
                   </div>
-                  <div className="line-clamp-6 text-xs">
-                    {data?.latest_commit?.message}
+                  <div className="line-clamp-6 whitespace-pre-wrap text-xs [&>*:first-child]:font-bold">
+                    {data?.latest_commit?.message
+                      ?.split("\n")
+                      .map((line, i) => (
+                        <div key={i}>{line}</div>
+                      ))}
                   </div>
                 </div>
                 <div className="h-px bg-border/50" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 rounded-full bg-muted" />
+                    <div className="h-2 w-2 rounded-full bg-gray-500/40" />
                     <div className="font-medium text-muted-foreground text-xs">
                       Current Version
                     </div>
@@ -135,7 +139,11 @@ export function VersionChecker({
                   <div className="font-mono text-[10px] text-muted-foreground/70">
                     {data?.local_commit.hash?.slice(0, 7)}
                   </div>
-                  <div className="text-xs">{data?.local_commit?.message}</div>
+                  <div className="line-clamp-2 whitespace-pre-wrap text-xs [&>*:first-child]:font-bold">
+                    {data?.local_commit?.message?.split("\n").map((line, i) => (
+                      <div key={i}>{line}</div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -151,7 +159,7 @@ export function VersionChecker({
             <HoverCardTrigger asChild>
               <div
                 className={cn(
-                  "flex cursor-pointer items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 text-amber-500 text-sm backdrop-blur-md transition-colors hover:bg-amber-500/20 dark:text-amber-600",
+                  "flex cursor-pointer items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 text-amber-600 text-sm transition-colors hover:bg-amber-500/20",
                   className,
                 )}
               >
@@ -169,7 +177,7 @@ export function VersionChecker({
                 )}
               </div>
             </HoverCardTrigger>
-            <HoverCardContent className="w-80">
+            <HoverCardContent className="w-[400px]">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-sm">Version Details</h4>
@@ -194,8 +202,8 @@ export function VersionChecker({
                       <div className="font-mono text-[10px] text-muted-foreground/70">
                         {data?.latest_commit.hash?.slice(0, 7)}
                       </div>
-                      <div className="line-clamp-3 text-xs">
-                        {data?.latest_commit?.message}
+                      <div className="line-clamp-3 whitespace-pre-wrap font-bold text-xs">
+                        {data?.latest_commit?.message?.split("\n")[0]}
                       </div>
                     </div>
                   </div>
@@ -216,8 +224,8 @@ export function VersionChecker({
                       <div className="font-mono text-[10px] text-muted-foreground/70">
                         {data?.local_commit.hash?.slice(0, 7)}
                       </div>
-                      <div className="line-clamp-3 text-xs">
-                        {data?.local_commit?.message}
+                      <div className="line-clamp-3 whitespace-pre-wrap font-bold text-xs">
+                        {data?.local_commit?.message?.split("\n")[0]}
                       </div>
                     </div>
                   </div>
