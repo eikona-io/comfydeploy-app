@@ -2,7 +2,10 @@ import { GalleryView } from "@/components/GalleryView";
 import { PaddingLayout } from "@/components/PaddingLayout";
 import { GuideDialog } from "@/components/guide/GuideDialog";
 import { DeploymentPage } from "@/components/deployment/deployment-page";
-import { MachineVersionWrapper } from "@/components/machine/machine-overview";
+import {
+  MachineAlert,
+  MachineVersionWrapper,
+} from "@/components/machine/machine-overview";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
@@ -24,18 +27,19 @@ import WorkflowComponent from "@/components/workflows/WorkflowComponent";
 import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useMachine } from "@/hooks/use-machine";
+import { useMachine, useMachineVersionsAll } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
 import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
 import { PricingPage } from "@/routes/pricing";
 import { useCurrentPlanQuery } from "@/hooks/use-current-plan";
 import { LoadingIcon } from "@/components/loading-icon";
 import { StoragePage } from "@/routes/models";
 import { MachineSelect } from "@/components/workspace/MachineSelect";
+import { isMachineDeprecated } from "@/components/machines/machine-list-item";
 
 export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
   component: WorkflowPageComponent,
@@ -56,6 +60,19 @@ function WorkflowPageComponent() {
   const isAdminAndMember = useIsAdminAndMember();
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
   const isDeploymentAllowed = useIsDeploymentAllowed();
+
+  const { data: machineVersionsAll, isLoading: isLoadingVersions } =
+    useMachineVersionsAll(machine?.id);
+  const isDeprecated = isMachineDeprecated(machine);
+
+  const isLatestVersion = useMemo(() => {
+    if (isLoadingVersions || !machineVersionsAll) return true;
+
+    return (
+      machine?.machine_version_id !== null &&
+      machineVersionsAll[0]?.id === machine.machine_version_id
+    );
+  }, [machine?.machine_version_id, machineVersionsAll, isLoadingVersions]);
 
   // Define allowed views based on permissions
   const allowedViews = isAdminAndMember
@@ -164,6 +181,13 @@ function WorkflowPageComponent() {
               <MachineSelect
                 workflow_id={workflowId}
                 className="rounded-md border bg-background"
+              />
+            </div>
+            <div className="pb-2">
+              <MachineAlert
+                machine={machine}
+                isDeprecated={isDeprecated}
+                isLatestVersion={isLatestVersion}
               />
             </div>
             <MachineVersionWrapper machine={machine} />
