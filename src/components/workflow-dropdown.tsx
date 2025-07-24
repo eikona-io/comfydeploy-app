@@ -1,5 +1,3 @@
-"use client";
-
 import { DialogTemplate } from "@/components/dialog-template";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -19,10 +17,12 @@ import { cn } from "@/lib/utils";
 import { useMatch, useRouter, useSearch } from "@tanstack/react-router";
 import { Check, ChevronsUpDown, ExternalLink, Search } from "lucide-react";
 import * as React from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useDebounce } from "use-debounce";
 import { VirtualizedInfiniteList } from "./virtualized-infinite-list";
 import { renameWorkflow } from "./workflow-api";
+import { useSessionIdInSessionView } from "@/hooks/hook";
+import { ImageInputsTooltip } from "./image-inputs-tooltip";
 
 interface WorkflowListProps {
   workflow_id: string;
@@ -102,7 +102,7 @@ export function WorkflowDropdown({
   const [renameValue, setRenameValue] = useState("");
   const { workflow } = useCurrentWorkflow(workflow_id);
   const query = useWorkflowList("");
-  const { sessionId } = useSearch({ from: "/workflows/$workflowId/$view" });
+  const sessionId = useSessionIdInSessionView();
 
   const openRenameDialog = () => {
     setRenameValue(workflow?.name || "");
@@ -112,7 +112,7 @@ export function WorkflowDropdown({
   return (
     <>
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild disabled={sessionId}>
+        <PopoverTrigger asChild disabled={!!sessionId}>
           <button
             type="button"
             aria-expanded={open}
@@ -122,9 +122,14 @@ export function WorkflowDropdown({
             )}
             onDoubleClick={openRenameDialog}
           >
-            <span className="truncate text-ellipsis text-start dark:text-zinc-100">
-              {workflow?.name ?? "Select a workflow"}
-            </span>
+            <ImageInputsTooltip
+              tooltipText={workflow?.name ?? ""}
+              delayDuration={300}
+            >
+              <span className="truncate text-ellipsis text-start dark:text-zinc-100">
+                {workflow?.name ?? "Select a workflow"}
+              </span>
+            </ImageInputsTooltip>
             {!sessionId && (
               <ChevronsUpDown
                 className="ml-2 flex-shrink-0 opacity-50 dark:text-zinc-400"
