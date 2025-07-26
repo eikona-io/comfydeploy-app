@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { DownloadingModel } from "@/types/models";
@@ -14,9 +14,11 @@ import {
   Folder,
   Clock,
   Trash2,
+  X,
+  Download,
+  CheckCircle,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,14 +32,8 @@ export function DownloadingModels() {
   const [showAllModels, setShowAllModels] = useState(false);
   const MAX_VISIBLE_MODELS = 3;
 
-  const { data: downloadingModels, isLoading } = useQuery({
+  const { data: downloadingModels, isLoading } = useQuery<DownloadingModel[]>({
     queryKey: ["volume", "downloading-models"],
-    queryFn: async ({ queryKey }) => {
-      const response = await api({
-        url: queryKey.join("/"),
-      });
-      return response as DownloadingModel[];
-    },
     refetchInterval: 5000, // Refetch every 5 seconds to update progress
   });
 
@@ -48,9 +44,6 @@ export function DownloadingModels() {
   if (!downloadingModels || downloadingModels.length === 0) {
     return null;
   }
-
-  // Determine if we need to use compact mode (many downloads)
-  const useCompactMode = downloadingModels.length > 5;
 
   // Determine which models to show based on showAllModels state
   const visibleModels = showAllModels
@@ -63,7 +56,7 @@ export function DownloadingModels() {
     <Collapsible
       open={isExpanded}
       onOpenChange={setIsExpanded}
-      className="rounded-md border bg-card"
+      className="mx-auto w-full max-w-screen-2xl rounded-lg border bg-card"
     >
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-2">
@@ -82,7 +75,7 @@ export function DownloadingModels() {
       </div>
 
       <CollapsibleContent>
-        <div className="space-y-2 p-3 pt-0">
+        <div className="space-y-1 px-3 pb-3">
           {visibleModels.map((model) => (
             <DownloadingModelItem key={model.id} model={model} />
           ))}
@@ -110,7 +103,7 @@ function DownloadingModelItem({
 }: {
   model: DownloadingModel;
 }) {
-  const [showDetails, setShowDetails] = useState(false);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
   const queryClient = useQueryClient();
 
   const getModelUrl = () => {
@@ -126,7 +119,7 @@ function DownloadingModelItem({
         return "Civitai";
       case "huggingface":
         return "Hugging Face";
-      case "link":
+      case "download-url":
         return "URL";
       default:
         return "Unknown";
@@ -143,24 +136,52 @@ function DownloadingModelItem({
     }
   };
 
+  const getStatusBadge = () => {
+    switch (model.status) {
+      case "failed":
+        return (
+          <Badge variant="destructive" className="h-5 text-xs">
+            <AlertCircle className="mr-1 h-3 w-3" />
+            Failed
+          </Badge>
+        );
+      case "success":
+        return (
+          <Badge variant="default" className="h-5 bg-green-500 text-xs">
+            <CheckCircle className="mr-1 h-3 w-3" />
+            Complete
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="secondary" className="h-5 text-xs">
+            <Download className="mr-1 h-3 w-3" />
+            {model.download_progress === 100 ? "Processing" : "Downloading"}
+          </Badge>
+        );
+    }
+  };
+
   const modelUrl = getModelUrl();
   const sourceName = getSourceName();
   const timeAgo = getTimeAgo();
 
-  const cancelMutation = useMutation({
+  const deleteMutation = useMutation({
     mutationFn: async () => {
       return api({
         url: `file/${model.id}/cancel`,
-        init: { method: "DELETE" }
+        init: { method: "DELETE" },
       });
     },
     onSuccess: () => {
-      toast.success("Download cancelled successfully");
-      queryClient.invalidateQueries({ queryKey: ["volume", "downloading-models"] });
+      toast.success("Download removed successfully");
+      queryClient.invalidateQueries({
+        queryKey: ["volume", "downloading-models"],
+      });
     },
     onError: (error) => {
-      toast.error("Failed to cancel download");
-    }
+      toast.error("Failed to remove download");
+    },
   });
 
   const copyModelUrl = () => {
@@ -171,87 +192,108 @@ function DownloadingModelItem({
   };
 
   return (
-    <div className="overflow-hidden rounded-md border bg-card">
-      <div className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="mr-2 flex-1 truncate">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <div className="truncate font-medium">{model.model_name}</div>
-                <div className="mx-2 h-3 w-[1px] bg-gray-800" />
-                <div className="flex items-center gap-1 text-muted-foreground text-xs">
+    <div className="overflow-hidden border border-x-0 border-t-0 bg-card/50">
+      <div className="p-2.5">
+        {/* Header row */}
+
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap truncate font-medium text-sm lg:gap-3">
+                {model.model_name}
+                {/* Metadata row */}
+                <div className="flex items-center gap-3 text-muted-foreground text-xs">
                   <span className="flex items-center gap-1">
                     <ImageIcon className="h-3 w-3" />
                     {sourceName}
                   </span>
-                  <span>•</span>
-                  <span className="flex max-w-[120px] items-center gap-1 truncate">
+                  <span className="flex items-center gap-1">
                     <Folder className="h-3 w-3" />
-                    {model.folder_path}
+                    <span className="max-w-[100px] truncate">
+                      {model.folder_path}
+                    </span>
                   </span>
                   <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
-                    Started {timeAgo}
+                    {timeAgo}
                   </span>
                 </div>
               </div>
             </div>
-
-            {/* Progress bar section - below the model name */}
-            <div className="mt-1 flex items-center gap-2">
-              <Progress
-                value={model.download_progress}
-                className={cn(
-                  "h-1.5 flex-1",
-                  model.status === "failed" && "bg-destructive/20",
-                )}
-              />
-              <span className="min-w-[2.5rem] text-right text-muted-foreground text-xs">
-                {model.status === "failed"
-                  ? "Failed"
-                  : `${model.download_progress}%`}
-              </span>
-              {model.status !== "failed" && (
-                <span className="min-w-[5rem] text-muted-foreground text-xs">
-                  {model.download_progress === 100
-                    ? "Processing..."
-                    : "Downloading"}
-                </span>
-              )}
-            </div>
+            {getStatusBadge()}
           </div>
 
           {/* Action buttons */}
           <div className="flex items-center gap-1">
-            {model.status === "failed" && (
-              <AlertCircle className="h-5 w-5 text-destructive" />
-            )}
-            {/* Only show cancel button if download has been in progress for more than 1 hour */}
-            {new Date().getTime() - new Date(model.created_at).getTime() > 60 * 60 * 1000 && (
+            {model.status !== "success" && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                onClick={() => cancelMutation.mutate()}
-                disabled={cancelMutation.isPending}
-                title="Cancel download"
+                className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => deleteMutation.mutate()}
+                disabled={deleteMutation.isPending}
+                title="Delete failed download"
               >
-                <Trash2 className="h-4 w-4" />
+                <X className="h-3.5 w-3.5" />
               </Button>
             )}
             {modelUrl && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                 onClick={copyModelUrl}
                 title="Copy download link"
               >
-                <Copy className="h-4 w-4" />
+                <Copy className="h-3.5 w-3.5" />
               </Button>
             )}
           </div>
         </div>
+
+        {/* Progress bar for non-failed downloads */}
+        {model.status !== "failed" && (
+          <div className="mt-2 flex items-center gap-2">
+            <Progress
+              value={model.download_progress}
+              className="h-1.5 flex-1"
+            />
+            <span className="min-w-[2.5rem] text-right text-muted-foreground text-xs">
+              {model.download_progress}%
+            </span>
+          </div>
+        )}
+
+        {/* Error section for failed downloads */}
+        {model.status === "failed" && model.error_log && (
+          <div className="mt-2">
+            <Collapsible
+              open={showErrorDetails}
+              onOpenChange={setShowErrorDetails}
+            >
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex h-6 flex-row items-center gap-1 px-0 text-destructive text-xs"
+                >
+                  {showErrorDetails ? (
+                    <ChevronDown className="h-3 w-3" />
+                  ) : (
+                    <ChevronRight className="h-3 w-3" />
+                  )}
+                  Show Error Details
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-1 rounded border bg-destructive/5 p-2">
+                  <pre className="whitespace-pre-wrap break-words text-destructive text-xs">
+                    {model.error_log}
+                  </pre>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        )}
       </div>
     </div>
   );

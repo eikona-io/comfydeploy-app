@@ -75,10 +75,10 @@ export interface DownloadingModel {
   id: string;
   model_name: string;
   download_progress: number;
-  status: "started" | "completed" | "failed";
+  status: "started" | "success" | "failed" | "cancelled";
   error_log: string | null;
   folder_path: string;
-  upload_type: "civitai" | "huggingface" | "link";
+  upload_type: "civitai" | "huggingface" | "download-url";
   civitai_url?: string;
   hf_url?: string;
   user_url?: string;
