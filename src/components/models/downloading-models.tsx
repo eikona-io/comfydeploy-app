@@ -30,7 +30,7 @@ import {
 export function DownloadingModels() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [showAllModels, setShowAllModels] = useState(false);
-  const MAX_VISIBLE_MODELS = 3;
+  const MAX_VISIBLE_MODELS = 2;
 
   const { data: downloadingModels, isLoading } = useQuery<DownloadingModel[]>({
     queryKey: ["volume", "downloading-models"],
