@@ -203,7 +203,7 @@ function _FileURLRender({
         {isLoading && (
           <div
             className={cn(
-              "absolute inset-0 flex items-center justify-center bg-gray-100/50",
+              "absolute inset-0 flex items-center justify-center",
               mediaClasses,
             )}
           >
@@ -226,7 +226,7 @@ function _FileURLRender({
             <track kind="captions" srcLang="en" label="No captions available" />
             Your browser does not support the audio element.
           </audio>
-          <div className="text-muted-foreground text-sm">{filename}</div>
+          <div className="text-muted-foreground text-xs">{filename}</div>
         </div>
       </div>
     );
