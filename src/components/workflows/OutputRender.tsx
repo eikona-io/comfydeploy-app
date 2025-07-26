@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -18,20 +17,18 @@ import {
   Minus,
   Loader2,
   CircleX,
-  Expand,
   Ellipsis,
   Search,
   FileText,
   FolderOpen,
-  Share,
   Clock,
 } from "lucide-react";
 import {
   useEffect,
   useState,
-  useCallback,
   lazy,
   Suspense,
+  useMemo,
   type ReactNode,
 } from "react";
 import { ShineBorder } from "../magicui/shine-border";
@@ -49,7 +46,31 @@ import { useAddAsset } from "@/hooks/hook";
 import { toast } from "sonner";
 import { MoveAssetDialog } from "../move-asset-dialog";
 import { useAuthStore } from "@/lib/auth-store";
-import { api } from "@/lib/api";
+
+// File type management utility
+const FILE_TYPES = {
+  VIDEO: [".mp4", ".webm", ".mov"],
+  AUDIO: [".mp3", ".wav", ".flac", ".opus"],
+  MODEL_3D: [".glb", ".gltf", ".obj"],
+  TEXT: [".txt", ".json", ".md"],
+  IMAGE: [".png", ".gif", ".jpg", ".jpeg", ".webp", ".avif", ".heic", ".heif"],
+} as const;
+
+type FileTypeCategory = keyof typeof FILE_TYPES;
+
+const isFileType = (filename: string, category: FileTypeCategory): boolean => {
+  const lowercaseFilename = filename.toLowerCase();
+  return FILE_TYPES[category].some((ext) => lowercaseFilename.endsWith(ext));
+};
+
+const getFileTypeCategory = (filename: string): FileTypeCategory | null => {
+  for (const [category, extensions] of Object.entries(FILE_TYPES)) {
+    if (isFileType(filename, category as FileTypeCategory)) {
+      return category as FileTypeCategory;
+    }
+  }
+  return null;
+};
 
 // Create a lazy-loaded version of the component
 const LazyModelRenderer = lazy(() =>
@@ -141,14 +162,10 @@ function _FileURLRender({
     return <div className="bg-slate-300">Not possible to render</div>;
   }
 
-  // Convert filename to lowercase once for all checks
-  const lowercaseFilename = filename.toLowerCase();
+  // Check file type using utility
+  const fileTypeCategory = getFileTypeCategory(filename);
 
-  if (
-    lowercaseFilename.endsWith(".mp4") ||
-    lowercaseFilename.endsWith(".webm") ||
-    lowercaseFilename.endsWith(".mov")
-  ) {
+  if (fileTypeCategory === "VIDEO") {
     return (
       <div className="relative">
         {isLoading && (
@@ -179,12 +196,44 @@ function _FileURLRender({
     );
   }
 
+  // For audio files
+  if (fileTypeCategory === "AUDIO") {
+    return (
+      <div className="relative">
+        {isLoading && (
+          <div
+            className={cn(
+              "absolute inset-0 flex items-center justify-center bg-gray-100/50",
+              mediaClasses,
+            )}
+          >
+            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+          </div>
+        )}
+        <div
+          className={cn("flex w-96 flex-col items-center gap-2", mediaClasses)}
+        >
+          <audio
+            controls
+            className="w-full max-w-md"
+            preload={isSmallView ? "metadata" : "auto"}
+            onLoadedData={handleLoad}
+          >
+            <source src={url} type="audio/mpeg" />
+            <source src={url} type="audio/wav" />
+            <source src={url} type="audio/flac" />
+            <source src={url} type="audio/opus" />
+            <track kind="captions" srcLang="en" label="No captions available" />
+            Your browser does not support the audio element.
+          </audio>
+          <div className="text-muted-foreground text-sm">{filename}</div>
+        </div>
+      </div>
+    );
+  }
+
   // For 3D models, use the separate component
-  if (
-    lowercaseFilename.endsWith(".glb") ||
-    lowercaseFilename.endsWith(".gltf") ||
-    lowercaseFilename.endsWith(".obj")
-  ) {
+  if (fileTypeCategory === "MODEL_3D") {
     return (
       <ModelRenderer
         url={url}
@@ -196,8 +245,7 @@ function _FileURLRender({
   }
 
   // For text-based files
-  const textExtensions = [".txt", ".json", ".md"];
-  if (textExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
+  if (fileTypeCategory === "TEXT") {
     if (isSmallView) {
       return (
         <div className="flex h-full w-full items-center justify-center">
@@ -215,18 +263,7 @@ function _FileURLRender({
     );
   }
 
-  const imageExtensions = [
-    ".png",
-    ".gif",
-    ".jpg",
-    ".jpeg",
-    ".webp",
-    ".avif",
-    ".heic",
-    ".heif",
-  ];
-
-  if (imageExtensions.some((ext) => lowercaseFilename.endsWith(ext))) {
+  if (fileTypeCategory === "IMAGE") {
     if (imageError) {
       return (
         <div
@@ -379,6 +416,13 @@ function TextFileRenderer({
 export function FileURLRender(props: fileURLRenderProps) {
   const [open, setOpen] = useState(false);
 
+  // Memoize the file type check to avoid recalculation on every render
+  const shouldShowDownloadButton = useMemo(() => {
+    if (!props.canDownload) return false;
+    const filename = new URL(props.url).pathname.split("/").pop();
+    return !(filename && isFileType(filename, "AUDIO"));
+  }, [props.canDownload, props.url]);
+
   return (
     <ErrorBoundary
       fallback={(e) => (
@@ -422,7 +466,7 @@ export function FileURLRender(props: fileURLRenderProps) {
       ) : (
         <div className={cn("group !shadow-none relative", props.imgClasses)}>
           <_FileURLRender {...props} />
-          {props.canDownload && (
+          {shouldShowDownloadButton && (
             <div className="absolute top-2 right-2">
               <Button
                 size="icon"
