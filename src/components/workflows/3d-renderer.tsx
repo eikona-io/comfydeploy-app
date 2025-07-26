@@ -345,7 +345,7 @@ function ModelRendererComponent({
       return (
         <div
           className={cn(
-            "!shadow-none relative h-[70vh] w-[70vh]",
+            "!drop-shadow-none relative h-[70vh] w-[70vh]",
             mediaClasses,
           )}
         >
@@ -361,7 +361,10 @@ function ModelRendererComponent({
 
     return (
       <div
-        className={cn("!shadow-none relative h-[70vh] w-[70vh]", mediaClasses)}
+        className={cn(
+          "!drop-shadow-none relative h-[70vh] w-[70vh]",
+          mediaClasses,
+        )}
       >
         <div className="flex h-full w-full items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800">
           <div className="flex flex-col items-center gap-2 text-gray-500">
@@ -413,7 +416,10 @@ function ModelRendererComponent({
 
   return (
     <div
-      className={cn("!shadow-none relative h-[70vh] w-[70vh]", mediaClasses)}
+      className={cn(
+        "!drop-shadow-none relative h-[70vh] w-[70vh]",
+        mediaClasses,
+      )}
     >
       <Canvas
         shadows

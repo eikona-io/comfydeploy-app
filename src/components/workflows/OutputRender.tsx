@@ -455,7 +455,7 @@ export function FileURLRender(props: fileURLRenderProps) {
                 <_FileURLRender
                   isAssetBrowser={props.isAssetBrowser}
                   url={props.url}
-                  imgClasses="shadow-md max-w-[90vw] max-h-[90vh] object-contain"
+                  imgClasses="drop-shadow-md max-w-[90vw] max-h-[90vh] object-contain"
                   lazyLoading={props.lazyLoading}
                   showFullResolution={true}
                 />
@@ -464,7 +464,9 @@ export function FileURLRender(props: fileURLRenderProps) {
           </Dialog>
         </>
       ) : (
-        <div className={cn("group !shadow-none relative", props.imgClasses)}>
+        <div
+          className={cn("group !drop-shadow-none relative", props.imgClasses)}
+        >
           <_FileURLRender {...props} />
           {shouldShowDownloadButton && (
             <div className="absolute top-2 right-2">
