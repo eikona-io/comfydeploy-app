@@ -56,6 +56,7 @@ import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
 import { MachineSelect } from "../workspace/MachineSelect";
 import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
 import { queryClient } from "@/lib/providers";
+import { ImageInputsTooltip } from "../image-inputs-tooltip";
 
 export interface Deployment {
   id: string;
@@ -249,7 +250,7 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
     >
       {/* Left column */}
       <div className="flex items-center gap-3">
-        <span className="shrink-0 font-mono text-2xs text-muted-foreground">
+        <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
           #{deployment.id.slice(0, 8)}
         </span>
         <TooltipProvider>
@@ -292,25 +293,32 @@ function DeploymentHistory({ deployment }: { deployment: Deployment }) {
 
       {/* Center column - Machine info */}
       <div className="flex items-center justify-start overflow-hidden">
-        <Button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            e.nativeEvent.preventDefault();
-            e.nativeEvent.stopPropagation();
-            navigate({
-              to: "/machines/$machineId",
-              params: { machineId: deployment.machine_id },
-            });
-          }}
-          variant="link"
-          size="sm"
-          className="flex h-5 items-center gap-1"
-          title={deployment.machine.name}
+        <ImageInputsTooltip
+          tooltipText={deployment.machine.name}
+          delayDuration={300}
         >
-          <Server size={13} className="shrink-0" />
-          <span className="truncate">{deployment.machine.name}</span>
-        </Button>
+          <Button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              e.nativeEvent.preventDefault();
+              e.nativeEvent.stopPropagation();
+              navigate({
+                to: "/machines/$machineId",
+                params: { machineId: deployment.machine_id },
+              });
+            }}
+            variant="link"
+            size="sm"
+            className="flex h-5 items-center gap-1.5"
+            title={deployment.machine.name}
+          >
+            <Server size={13} className="shrink-0" />
+            <span className="max-w-[200px] truncate text-2xs">
+              {deployment.machine.name}
+            </span>
+          </Button>
+        </ImageInputsTooltip>
         {deployment.gpu && (
           <Badge variant="outline" className="!text-2xs font-normal">
             {deployment.gpu}

@@ -516,6 +516,7 @@ function InstantRollback({
               navigate({
                 to: "/machines/$machineId/$machineVersionId",
                 params: {
+                  machineId: machine.id,
                   machineVersionId: rollbackMachineVersion?.id,
                 },
               });
