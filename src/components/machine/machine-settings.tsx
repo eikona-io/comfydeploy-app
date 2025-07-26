@@ -98,6 +98,7 @@ import { SecretsSelector } from "./secrets-selector";
 import { VersionChecker } from "./version-checker";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { getCurrentEffectiveSessionIdFromMachineId } from "../workspace/session-creator-form";
+import { queryClient } from "@/lib/providers";
 
 export function MachineSettingsWrapper({
   machine,
@@ -472,6 +473,11 @@ function ServerlessSettings({
     );
     if (!("error" in response)) setIsFormDirty(false);
     await new Promise((resolve) => setTimeout(resolve, 100));
+    queryClient.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey.includes("machine") &&
+        query.queryKey.includes(machine.id),
+    });
     toast.success("Machine updated successfully");
     if (!isWorkflow) {
       navigate({
