@@ -75,24 +75,14 @@ export function useSessionAPI(machineId?: string | null) {
       },
       refetchInterval: 2000,
       meta: {
-        params: machineId
-          ? {
-              machine_id: machineId,
-            }
-          : {},
+        params:
+          machineId && machineId !== "new"
+            ? {
+                machine_id: machineId,
+              }
+            : {},
       },
-      enabled: true,
-      // queryFn: async () => {
-      //   return await api({
-      //     url: "session",
-      //     init:
-
-      //       body: JSON.stringify({
-      //         machine_id: machineId,
-      //       }),
-      //     ,
-      //   });
-      // },
+      enabled: !!machineId && machineId !== "new",
     }),
   };
 }
