@@ -27,6 +27,7 @@ import {
   Archive,
   CheckCircle,
   ChevronDown,
+  Expand,
   ExternalLink,
   Info,
   LinkIcon,
@@ -1164,6 +1165,7 @@ function FinishedRunLogDisplay({
   });
 
   const [showRawLogs, setShowRawLogs] = useState(false);
+  const [isLogDialogOpen, setIsLogDialogOpen] = useState(false);
 
   // Add check for logs older than 30 days
   const isLogsExpired = useMemo(() => {
@@ -1220,7 +1222,92 @@ function FinishedRunLogDisplay({
     );
   }
 
-  // Function to try parsing JSON in log entries
+  return (
+    <div className="overflow-hidden rounded-[10px] border">
+      <div className="flex items-center justify-between border-b bg-muted/50 px-3 py-1.5 font-medium text-xs">
+        <span>Logs</span>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="xs"
+            className={cn(
+              "h-6 rounded-none text-[10px]",
+              !showRawLogs
+                ? "-mb-[2px] border-primary border-b-2 bg-muted/80"
+                : "text-muted-foreground",
+            )}
+            onClick={() => setShowRawLogs(false)}
+          >
+            Grouped
+          </Button>
+          <Button
+            variant="ghost"
+            size="xs"
+            className={cn(
+              "h-6 rounded-none text-[10px]",
+              showRawLogs
+                ? "-mb-[2px] border-primary border-b-2 bg-muted/80"
+                : "text-muted-foreground",
+            )}
+            onClick={() => setShowRawLogs(true)}
+          >
+            Raw
+          </Button>
+        </div>
+      </div>
+
+      {showRawLogs ? (
+        <div>
+          {modalFnCallId ? (
+            <LogsTab runId={runId} />
+          ) : (
+            <Alert
+              variant="default"
+              className="w-auto max-w-md border-muted bg-muted/50"
+            >
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-muted-foreground text-sm">
+                We're unable to display logs for runs from the workspace.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      ) : (
+        <>
+          <div className="group relative">
+            <Button
+              className="absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
+              onClick={() => setIsLogDialogOpen(true)}
+            >
+              <Expand className="h-4 w-4" />
+            </Button>
+            <ScrollArea>
+              <div className="h-[calc(100vh-550px)]">
+                <FormattedRunLogs runLogs={runLogs} />
+              </div>
+            </ScrollArea>
+          </div>
+          <Dialog open={isLogDialogOpen} onOpenChange={setIsLogDialogOpen}>
+            <DialogContent className="max-h-[80vh] max-w-screen-2xl">
+              <DialogHeader>
+                <DialogTitle>Grouped Logs</DialogTitle>
+                <DialogDescription>
+                  <span className="font-mono text-2xs">#{runId}</span>
+                </DialogDescription>
+              </DialogHeader>
+
+              <ScrollArea className="h-[calc(80vh-100px)]">
+                <FormattedRunLogs runLogs={runLogs} />
+              </ScrollArea>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
+    </div>
+  );
+}
+
+function FormattedRunLogs({ runLogs }: { runLogs: RunLog[] }) {
   const formatLogContent = (logText: string) => {
     if (!logText) return;
 
@@ -1297,98 +1384,39 @@ function FinishedRunLogDisplay({
   };
 
   return (
-    <div className="overflow-hidden rounded-[10px] border">
-      <div className="flex items-center justify-between border-b bg-muted/50 px-3 py-1.5 font-medium text-xs">
-        <span>Logs</span>
-        <div className="flex items-center">
-          <Button
-            variant="ghost"
-            size="xs"
-            className={cn(
-              "h-6 rounded-none text-[10px]",
-              !showRawLogs
-                ? "-mb-[2px] border-primary border-b-2 bg-muted/80"
-                : "text-muted-foreground",
-            )}
-            onClick={() => setShowRawLogs(false)}
-          >
-            Grouped
-          </Button>
-          <Button
-            variant="ghost"
-            size="xs"
-            className={cn(
-              "h-6 rounded-none text-[10px]",
-              showRawLogs
-                ? "-mb-[2px] border-primary border-b-2 bg-muted/80"
-                : "text-muted-foreground",
-            )}
-            onClick={() => setShowRawLogs(true)}
-          >
-            Raw
-          </Button>
-        </div>
-      </div>
-
-      {showRawLogs ? (
-        <div>
-          {modalFnCallId ? (
-            <LogsTab runId={runId} />
-          ) : (
-            <Alert
-              variant="default"
-              className="w-auto max-w-md border-muted bg-muted/50"
-            >
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription className="text-muted-foreground text-sm">
-                We're unable to display logs for runs from the workspace.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      ) : (
-        <ScrollArea>
-          <div className="h-[calc(100vh-550px)]">
-            {runLogs.map((entry, index) => {
-              return (
-                <div
-                  key={index}
-                  className="border-b px-3 py-1 hover:bg-muted/50"
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="flex w-20 flex-shrink-0 justify-end">
-                      <TooltipProvider>
-                        <Tooltip delayDuration={0}>
-                          <TooltipTrigger>
-                            <div className="mt-[3px] font-mono text-[10px] text-muted-foreground">
-                              {new Date(entry.timestamp).toLocaleTimeString()}
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent side="left">
-                            <div className="font-mono text-[11px]">
-                              <div className="grid grid-cols-[70px_auto]">
-                                <div>Date</div>
-                                <div>
-                                  {new Date(entry.timestamp).toLocaleString()}
-                                </div>
-                                <div>Timestamp</div>
-                                <div>{Number(entry.timestamp)}</div>
-                              </div>
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <div className="flex-grow">
-                      {formatLogContent(entry.log)}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+    <>
+      {runLogs.map((entry, index) => {
+        return (
+          <div key={index} className="border-b px-3 py-1 hover:bg-muted/50">
+            <div className="flex items-start gap-3">
+              <div className="flex w-20 flex-shrink-0 justify-end">
+                <TooltipProvider>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger>
+                      <div className="mt-[3px] font-mono text-[10px] text-muted-foreground">
+                        {new Date(entry.timestamp).toLocaleTimeString()}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      <div className="font-mono text-[11px]">
+                        <div className="grid grid-cols-[70px_auto]">
+                          <div>Date</div>
+                          <div>
+                            {new Date(entry.timestamp).toLocaleString()}
+                          </div>
+                          <div>Timestamp</div>
+                          <div>{Number(entry.timestamp)}</div>
+                        </div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <div className="flex-grow">{formatLogContent(entry.log)}</div>
+            </div>
           </div>
-        </ScrollArea>
-      )}
-    </div>
+        );
+      })}
+    </>
   );
 }
