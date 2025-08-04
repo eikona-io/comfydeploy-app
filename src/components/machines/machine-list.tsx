@@ -48,6 +48,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { queryClient } from "@/lib/providers";
 
 interface Machine {
   id: string;
@@ -917,6 +918,11 @@ export function RebuildMachineDialog({
                     },
                   );
                   await new Promise((resolve) => setTimeout(resolve, 1000));
+                  queryClient.invalidateQueries({
+                    predicate: (query) =>
+                      query.queryKey.includes("machine") &&
+                      query.queryKey.includes(machine.id),
+                  });
                 } catch {
                   toast.error("Failed to rebuild machine");
                 }

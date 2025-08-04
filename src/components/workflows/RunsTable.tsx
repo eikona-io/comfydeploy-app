@@ -1021,13 +1021,15 @@ export function FilterDropdown({
 
               {activeTab === "time" && (
                 <div>
-                  <DropdownMenuItem
-                    className="w-full justify-between"
-                    onClick={(e) => handleTimeFilterChange(null, e)}
-                  >
-                    All time
-                    {!filterFromTime && <Check className="h-4 w-4" />}
-                  </DropdownMenuItem>
+                  {!isDeploymentPage && (
+                    <DropdownMenuItem
+                      className="w-full justify-between"
+                      onClick={(e) => handleTimeFilterChange(null, e)}
+                    >
+                      All time
+                      {!filterFromTime && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                  )}
                   {[
                     { label: "Last 30 mins", value: 30 },
                     { label: "Last 1 hour", value: 60 },
@@ -1102,13 +1104,15 @@ export function FilterDropdown({
 
               {activeTab === "env" && environments.length > 0 && (
                 <div>
-                  <DropdownMenuItem
-                    className="w-full justify-between"
-                    onClick={(e) => handleEnvironmentFilterChange(null, e)}
-                  >
-                    All
-                    {!deploymentIdFilter && <Check className="h-4 w-4" />}
-                  </DropdownMenuItem>
+                  {!isDeploymentPage && (
+                    <DropdownMenuItem
+                      className="w-full justify-between"
+                      onClick={(e) => handleEnvironmentFilterChange(null, e)}
+                    >
+                      All
+                      {!deploymentIdFilter && <Check className="h-4 w-4" />}
+                    </DropdownMenuItem>
+                  )}
                   {environments.map((env) => (
                     <DropdownMenuItem
                       key={env}

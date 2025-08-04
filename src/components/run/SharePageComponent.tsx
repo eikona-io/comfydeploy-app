@@ -606,7 +606,7 @@ function RunDisplay({ runId }: { runId?: string }) {
 
                     <FileURLRender
                       url={urlList[viewingImageIndex].url}
-                      imgClasses="max-h-[60vh] object-contain shadow-md max-w-full"
+                      imgClasses="max-h-[60vh] object-contain drop-shadow-md max-w-full"
                       lazyLoading={false}
                       isMainView={true}
                       canDownload={true}
@@ -618,7 +618,7 @@ function RunDisplay({ runId }: { runId?: string }) {
                     <OutputRenderRun
                       run={run}
                       imgClasses={cn(
-                        "shadow-md max-w-full mx-auto",
+                        "drop-shadow-md max-w-full mx-auto",
                         totalUrlCount > 1
                           ? "max-h-[30vh]"
                           : "max-h-[80vh] object-contain",
