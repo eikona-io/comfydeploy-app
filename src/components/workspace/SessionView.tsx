@@ -285,7 +285,7 @@ function useLogListener({ sessionId }: { sessionId?: string }) {
       if (unmounted) return;
 
       const url = new URL(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/stream-logs`,
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/v2/stream-logs`,
       );
       url.searchParams.append("session_id", sessionId);
       url.searchParams.append("log_level", "info");
