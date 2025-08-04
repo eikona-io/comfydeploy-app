@@ -1,26 +1,9 @@
 import { api } from "@/lib/api";
 import { queryClient } from "@/lib/providers";
-import { QueryClient, useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-
-// const githubQueryClient = new QueryClient({
-//   defaultOptions: {
-//     queries: {
-//       staleTime: 1000 * 60 * 60, // 1 hour
-//       gcTime: 1000 * 60 * 60 * 24, // 24 hours
-//       retry: 2,
-//     },
-//   },
-// });
-
-// function fetchBranchInfo(gitUrl: string) {
-//   return api({
-//     url: "branch-info",
-//     params: { git_url: gitUrl },
-//   });
-// }
 
 // Helper function for non-hook usage with the dedicated client
 export async function getBranchInfo(gitUrl: string): Promise<BranchInfoData> {
@@ -147,3 +130,60 @@ export function useBranchInfo<T extends string | string[]>({
     isLoading,
   };
 }
+
+/**
+ * Hook to check if a hash is older than another hash
+ * @param currentHash - The hash to check
+ * @param targetHash - The hash to compare against
+ * @param enabled - Whether to run the query
+ */
+export function useIsHashOlder(
+  currentHash?: string,
+  targetHash?: string,
+  enabled = true,
+) {
+  return useQuery({
+    queryKey: ["is-hash-older", currentHash, targetHash],
+    queryFn: () => isHashOlder(currentHash!, targetHash!),
+    enabled: enabled && !!currentHash && !!targetHash,
+    staleTime: 1000 * 60 * 60, // 1 hour
+    gcTime: 1000 * 60 * 60 * 24, // 24 hours
+  });
+}
+
+/**
+ * Check if a commit hash is older than another hash using GitHub API
+ * @param currentHash - The hash to check
+ * @param targetHash - The hash to compare against
+ * @returns Promise<boolean> - true if currentHash is older than targetHash
+ */
+export async function isHashOlder(
+  currentHash: string,
+  targetHash: string,
+): Promise<boolean> {
+  try {
+    const compareUrl = `https://api.github.com/repos/comfyanonymous/ComfyUI/compare/${targetHash}...${currentHash}`;
+
+    const response = await fetch(compareUrl, {
+      headers: {
+        Accept: "application/vnd.github.v3+json",
+        "User-Agent": "ComfyDeploy-App",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`GitHub API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.status === "behind" || data.behind_by > 0;
+  } catch (error) {
+    console.error("Error comparing git hashes:", error);
+    return false; // Default to false on error
+  }
+}
+
+// ComfyUI version hashes
+export const COMFYUI_VERSION_HASHES = {
+  "0.3.45": "9a470e073e2742d4edd6e7ea1ce28d861a77d9c4",
+} as const;

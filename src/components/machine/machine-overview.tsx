@@ -45,21 +45,10 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { VersionChecker } from "./version-checker";
 import { useCachedQuery } from "@/lib/use-cached-query";
-
-// Utility function to compare semantic versions
-function compareVersions(version1: string, version2: string): number {
-  const v1parts = version1.replace(/^v/, "").split(".").map(Number);
-  const v2parts = version2.replace(/^v/, "").split(".").map(Number);
-
-  for (let i = 0; i < Math.max(v1parts.length, v2parts.length); i++) {
-    const v1part = v1parts[i] || 0;
-    const v2part = v2parts[i] || 0;
-
-    if (v1part < v2part) return -1;
-    if (v1part > v2part) return 1;
-  }
-  return 0;
-}
+import {
+  COMFYUI_VERSION_HASHES,
+  useIsHashOlder,
+} from "@/hooks/use-github-branch-info";
 
 // Utility function to get ComfyUI version from hash
 function useComfyUIVersionFromHash(comfyuiHash?: string) {
@@ -272,12 +261,17 @@ export function MachineAlert({
   const comfyuiVersion = useComfyUIVersionFromHash(machine.comfyui_version);
 
   // Check if optimized runner is enabled but ComfyUI version is too old
-  const shouldShowOptimizedRunnerWarning = useMemo(() => {
-    if (!machine.optimized_runner || !comfyuiVersion) return false;
+  const { data: isOlderThan345, isLoading: isVersionCheckLoading } =
+    useIsHashOlder(
+      machine.comfyui_version,
+      COMFYUI_VERSION_HASHES["0.3.45"],
+      !!machine.optimized_runner && !!machine.comfyui_version,
+    );
 
-    // Compare with v0.3.45 - if current version is less than 0.3.45, show warning
-    return compareVersions(comfyuiVersion, "0.3.45") < 0;
-  }, [machine.optimized_runner, comfyuiVersion]);
+  const shouldShowOptimizedRunnerWarning = useMemo(() => {
+    if (!machine.optimized_runner || isVersionCheckLoading) return false;
+    return isOlderThan345;
+  }, [machine.optimized_runner, isOlderThan345, isVersionCheckLoading]);
 
   const renderAlert = (
     show: boolean,
