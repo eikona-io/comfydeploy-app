@@ -19,6 +19,7 @@ import { ErrorBoundary } from "../error-boundary";
 import { RefreshCw } from "lucide-react";
 import { useRouter, useSearch } from "@tanstack/react-router";
 import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
+import { MachineSelect } from "./MachineSelect";
 
 const ComfyUIFlow = lazy(() =>
   import("../workflow-preview/comfyui-flow").then((mod) => ({
@@ -202,11 +203,17 @@ export function WorkspaceClientWrapper({
     return (
       <div
         className={cn(
-          "flex h-full w-full items-center justify-center",
+          "flex h-full w-full flex-col items-center justify-center gap-4",
           props.className,
         )}
       >
-        No machine selected, please select a machine at the bottom left.
+        <span className="text-muted-foreground text-sm">
+          No machine selected, please select a machine.
+        </span>
+        <MachineSelect
+          workflow_id={props.workflow_id}
+          className="max-w-md rounded-md border bg-background"
+        />
       </div>
     );
 
