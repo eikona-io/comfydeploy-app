@@ -1425,7 +1425,9 @@ function FormattedRunLogs({ runLogs }: { runLogs: RunLog[] }) {
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger>
                       <div className="mt-[3px] font-mono text-[10px] text-muted-foreground">
-                        {new Date(entry.timestamp).toLocaleTimeString()}
+                        {parseTimestampSafely(
+                          entry.timestamp,
+                        ).toLocaleTimeString()}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="left">
@@ -1433,7 +1435,9 @@ function FormattedRunLogs({ runLogs }: { runLogs: RunLog[] }) {
                         <div className="grid grid-cols-[70px_auto]">
                           <div>Date</div>
                           <div>
-                            {new Date(entry.timestamp).toLocaleString()}
+                            {parseTimestampSafely(
+                              entry.timestamp,
+                            ).toLocaleString()}
                           </div>
                           <div>Timestamp</div>
                           <div>{Number(entry.timestamp)}</div>
