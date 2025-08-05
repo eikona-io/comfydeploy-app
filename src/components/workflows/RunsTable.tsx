@@ -101,6 +101,7 @@ export function RunsTable(props: {
           filterWorkspace={props.filterWorkspace}
           loadingIndicatorClassName={props.loadingIndicatorClassName}
           arrowNavigateRequests={true}
+          className="h-[calc(100vh-200px)]"
         />
       </ErrorBoundary>
       <Dialog

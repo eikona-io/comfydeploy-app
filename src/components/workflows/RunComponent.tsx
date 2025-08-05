@@ -44,7 +44,7 @@ export default function RunComponent(props: {
           runId && "xl:w-[calc(100%-594px)]",
         )}
       >
-        <CardContent className="px-0 pt-6">
+        <CardContent className="px-0 pt-14">
           <div className="flex items-center justify-between px-2 pb-4">
             <h2 className="font-bold text-2xl">Requests</h2>
             <div className="flex items-center gap-2">
