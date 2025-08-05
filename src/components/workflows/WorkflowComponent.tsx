@@ -59,7 +59,38 @@ import {
 import { useMachine } from "@/hooks/use-machine";
 import { UserIcon } from "../run/SharePageComponent";
 
+const parseTimestampSafely = (timestamp: string | number): Date => {
+  try {
+    if (typeof timestamp === "string") {
+      // Handle microseconds by truncating to milliseconds
+      const truncated = timestamp.replace(/(\.\d{3})\d*/, "$1");
+      const date = new Date(truncated);
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid timestamp format:", timestamp);
+        return new Date(); // fallback to current time
+      }
+      return date;
+    }
+    // Handle numeric timestamps
+    if (typeof timestamp === "number") {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid numeric timestamp:", timestamp);
+        return new Date(); // fallback to current time
+      }
+      return date;
+    }
+    console.warn("Unknown timestamp type:", typeof timestamp, timestamp);
+    return new Date(); // fallback to current time
+  } catch (error) {
+    console.warn("Error parsing timestamp:", timestamp, error);
+    return new Date(); // fallback to current time
+  }
+};
+
 export default function WorkflowComponent() {
+  // Utility function for parsing timestamps with microsecond precision
+
   const [runId, setRunId] = useQueryState("run-id");
   const [tab, setTab] = useQueryState("tab", parseAsString);
 
@@ -810,7 +841,7 @@ export function LogsTab({ runId }: { runId: string }) {
       if (unmounted) return;
 
       const url = new URL(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/stream-logs`,
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/v2/stream-logs`,
       );
       url.searchParams.append("run_id", runId);
       url.searchParams.append("log_level", "info");
@@ -834,9 +865,11 @@ export function LogsTab({ runId }: { runId: string }) {
             try {
               parsedLogs = JSON.parse(data.message);
             } catch (error) {
+              console.log(parseTimestampSafely(data.timestamp));
               parsedLogs = [
                 {
-                  timestamp: new Date(data.timestamp).getTime() / 1000,
+                  timestamp:
+                    parseTimestampSafely(data.timestamp).getTime() / 1000,
                   logs: data.message,
                 },
               ];
@@ -920,7 +953,7 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
       if (unmounted) return;
 
       const url = new URL(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/stream-logs`,
+        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/v2/stream-logs`,
       );
       url.searchParams.append("run_id", run.id);
       url.searchParams.append("log_level", "webhook");
@@ -970,13 +1003,11 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
   };
 
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString();
+    return parseTimestampSafely(timestamp).toLocaleTimeString();
   };
 
   const formatDateTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleString();
+    return parseTimestampSafely(timestamp).toLocaleString();
   };
 
   const formatLatency = (ms: number) => {
@@ -1160,7 +1191,7 @@ function FinishedRunLogDisplay({
   runUpdatedAt,
 }: { runId: string; modalFnCallId: string; runUpdatedAt: string }) {
   const { data: runLogs, isLoading } = useQuery<RunLog[]>({
-    queryKey: ["clickhouse-run-logs", runId],
+    queryKey: ["v2", "clickhouse-run-logs", runId],
     enabled: !!runId,
   });
 
@@ -1394,7 +1425,9 @@ function FormattedRunLogs({ runLogs }: { runLogs: RunLog[] }) {
                   <Tooltip delayDuration={0}>
                     <TooltipTrigger>
                       <div className="mt-[3px] font-mono text-[10px] text-muted-foreground">
-                        {new Date(entry.timestamp).toLocaleTimeString()}
+                        {parseTimestampSafely(
+                          entry.timestamp,
+                        ).toLocaleTimeString()}
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="left">
@@ -1402,7 +1435,9 @@ function FormattedRunLogs({ runLogs }: { runLogs: RunLog[] }) {
                         <div className="grid grid-cols-[70px_auto]">
                           <div>Date</div>
                           <div>
-                            {new Date(entry.timestamp).toLocaleString()}
+                            {parseTimestampSafely(
+                              entry.timestamp,
+                            ).toLocaleString()}
                           </div>
                           <div>Timestamp</div>
                           <div>{Number(entry.timestamp)}</div>

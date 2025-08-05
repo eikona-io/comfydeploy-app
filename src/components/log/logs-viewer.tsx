@@ -63,6 +63,8 @@ function LogContent({
     };
   }, []);
 
+  // console.log("logs", logs);
+
   return (
     <div className={cn("relative h-full w-full rounded")}>
       <Button
