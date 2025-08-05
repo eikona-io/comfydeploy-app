@@ -80,6 +80,10 @@ import {
   InfoCardDismiss,
   InfoCardAction,
 } from "@/kl-ui/info-card";
+import {
+  BellIcon,
+  type BellIconHandle,
+} from "@/components/ui/custom/bell-icon";
 
 // Add Session type
 export interface Session {
@@ -859,28 +863,48 @@ export function GuestSidebar() {
 }
 
 function WorkspaceUpdateInfoCard20250724() {
+  const bellRef = useRef<BellIconHandle>(null);
+
+  const handleMouseEnter = () => {
+    bellRef.current?.startAnimation();
+  };
+
+  const handleMouseLeave = () => {
+    bellRef.current?.stopAnimation();
+  };
+
   return (
     <InfoCard>
-      <InfoCardContent>
-        <InfoCardTitle>Workspace Update</InfoCardTitle>
-        <InfoCardDescription className="text-2xs leading-4">
-          Discover the redesigned, enhanced ComfyUI workspace.
-        </InfoCardDescription>
-        <InfoCardMedia
-          media={[
-            {
-              src: "https://cd-misc.s3.us-east-2.amazonaws.com/sidebar/workspace_update_20250724.png",
-            },
-          ]}
-          expandHeight={120}
+      <InfoCardContent
+        className="relative"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className="-top-4 -right-4 absolute h-[14px] w-[14px] animate-ping rounded-full bg-orange-500" />
+        <motion.div
+          className="-top-4 -right-4 absolute h-[14px] w-[14px] rounded-full bg-orange-500"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 10,
+          }}
         />
+        <InfoCardTitle className="flex flex-row items-center gap-1.5">
+          <BellIcon ref={bellRef} size={15} /> v0.3.1 Update
+        </InfoCardTitle>
+        <InfoCardDescription className="text-2xs leading-4">
+          ComfyUI v0.3.48 is now available. Check out the release notes for more
+          details.
+        </InfoCardDescription>
         <InfoCardFooter>
-          <InfoCardDismiss>Dismiss</InfoCardDismiss>
+          <InfoCardDismiss className="text-2xs">Dismiss</InfoCardDismiss>
           <InfoCardAction>
             <Link
-              to="https://docs.comfydeploy.com/docs/workspace/overview"
+              to="https://docs.comfydeploy.com/docs/upgrade/changelog"
               target="_blank"
-              className="flex flex-row items-center gap-1 underline"
+              className="flex flex-row items-center gap-1 text-2xs underline"
             >
               Learn more <ExternalLink size={12} />
             </Link>
