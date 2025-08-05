@@ -909,7 +909,7 @@ export function FilterDropdown({
               {currentEnvironment.charAt(0).toUpperCase() +
                 currentEnvironment.slice(1)}
             </span>
-            <X className="h-2.5 w-2.5" />
+            {!isDeploymentPage && <X className="h-2.5 w-2.5" />}
           </Badge>
         )}
 
@@ -924,7 +924,7 @@ export function FilterDropdown({
           >
             <Clock className="h-3 w-3" />
             <span>{getTimeFilterDisplay(filterFromTime)}</span>
-            <X className="h-2.5 w-2.5" />
+            {!isDeploymentPage && <X className="h-2.5 w-2.5" />}
           </Badge>
         )}
       </div>
