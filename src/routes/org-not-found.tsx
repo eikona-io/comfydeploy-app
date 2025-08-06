@@ -32,7 +32,7 @@ function RouteComponent() {
 
   const handleAdminRedirect = () => {
     const baseUrl = "https://admin.comfydeploy.com";
-    window.location.href = `${baseUrl}/?search=${org}`;
+    window.location.href = `${baseUrl}/?tab=users&q=${org}`;
   };
 
   return (
