@@ -1,17 +1,18 @@
 import type { LogsType } from "@/components/log/logs-viewer";
 import { useAuth } from "@clerk/clerk-react";
-import { useEffect, useMemo, useState } from "react";
-import useWebSocket from "react-use-websocket";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ReadyState } from "react-use-websocket";
+import { EventSourcePolyfill } from "event-source-polyfill";
 
 interface UseBuildProgressProps {
-  machine_id: string;
+  machine_version_id: string;
   endpoint: string;
   instance_id: string;
   auth_token: string | null;
 }
 
 export function useMachineBuildProgress({
-  machine_id,
+  machine_version_id,
   endpoint,
   instance_id,
   auth_token,
@@ -19,36 +20,159 @@ export function useMachineBuildProgress({
   const [logs, setLogs] = useState<LogsType>([]);
   const [finished, setFinished] = useState(false);
   const [status, setStatus] = useState<"failed" | "success">();
-
-  let wsEndpoint = endpoint?.replace(/^http/, "ws");
-  if (wsEndpoint?.includes("modal_builder")) {
-    wsEndpoint = wsEndpoint.replace("modal_builder", "localhost");
-  }
-
-  const { lastMessage, readyState } = useWebSocket(
-    auth_token ? `${wsEndpoint}/ws/${machine_id}` : null,
-    {
-      shouldReconnect: () => !finished,
-      reconnectAttempts: 20,
-      reconnectInterval: 1000,
-      queryParams: {
-        fly_instance_id: instance_id,
-        cd_token: auth_token ?? "",
-      },
-    },
+  const [readyState, setReadyState] = useState<ReadyState>(
+    ReadyState.UNINSTANTIATED,
   );
 
-  useEffect(() => {
-    if (!lastMessage?.data) return;
+  // Keep a ref to the EventSource for cleanup
+  const esRef = useRef<EventSource | null>(null);
 
-    const message = JSON.parse(lastMessage.data);
-    if (message?.event === "LOGS") {
-      setLogs((logs) => [...(logs ?? []), message.data]);
-    } else if (message?.event === "FINISHED") {
-      setFinished(true);
-      setStatus(message.data.status);
-    }
-  }, [lastMessage]);
+  useEffect(() => {
+    // Only start when we have a token and not finished
+    if (!auth_token || !machine_version_id || finished) return;
+
+    setReadyState(ReadyState.CONNECTING);
+
+    const url = new URL(
+      `${process.env.NEXT_PUBLIC_CD_API_URL}/api/v2/stream-logs`,
+    );
+    // Treat machine_id as run_id for the v2 log stream
+    url.searchParams.append("machine_id_version", machine_version_id);
+    // Do not filter by log level so we receive builder/webhook/info logs uniformly
+
+    const es = new EventSourcePolyfill(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${auth_token}`,
+      },
+    }) as unknown as EventSource;
+
+    esRef.current = es;
+
+    es.onopen = () => setReadyState(ReadyState.OPEN);
+
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        // Handle control messages
+        if (
+          data?.type === "stream_cancelled" ||
+          data?.type === "stream_complete"
+        ) {
+          setFinished(true);
+          return;
+        }
+
+        // Expect normalized log entries: { message, level, timestamp }
+        const { message, timestamp } = data as {
+          message: unknown;
+          level?: string;
+          timestamp?: string;
+        };
+
+        let parsedLogs: Array<{ timestamp: number; logs: string }> | undefined;
+
+        if (typeof message === "string") {
+          // Some producers send JSON string arrays or objects in message
+          try {
+            const maybeJson = JSON.parse(message);
+            if (Array.isArray(maybeJson)) {
+              parsedLogs = maybeJson.map((entry) => ({
+                timestamp:
+                  typeof entry.timestamp === "number"
+                    ? entry.timestamp
+                    : entry.timestamp
+                      ? Math.floor(new Date(entry.timestamp).getTime() / 1000)
+                      : timestamp
+                        ? Math.floor(new Date(timestamp).getTime() / 1000)
+                        : Math.floor(Date.now() / 1000),
+                logs:
+                  typeof entry.logs === "string"
+                    ? entry.logs
+                    : String(entry.logs),
+              }));
+            } else {
+              // Fallback: JSON object string -> show as plain string
+              parsedLogs = [
+                {
+                  timestamp: timestamp
+                    ? Math.floor(new Date(timestamp).getTime() / 1000)
+                    : Math.floor(Date.now() / 1000),
+                  logs: message,
+                },
+              ];
+            }
+          } catch {
+            // treat as plain string
+            parsedLogs = [
+              {
+                timestamp: timestamp
+                  ? Math.floor(new Date(timestamp).getTime() / 1000)
+                  : Math.floor(Date.now() / 1000),
+                logs: message,
+              },
+            ];
+          }
+        } else if (Array.isArray(message)) {
+          parsedLogs = (
+            message as Array<{
+              timestamp?: number | string;
+              logs?: unknown;
+            }>
+          ).map((entry) => ({
+            timestamp:
+              typeof entry.timestamp === "number"
+                ? entry.timestamp
+                : entry.timestamp
+                  ? Math.floor(new Date(entry.timestamp).getTime() / 1000)
+                  : timestamp
+                    ? Math.floor(new Date(timestamp).getTime() / 1000)
+                    : Math.floor(Date.now() / 1000),
+            logs:
+              typeof entry.logs === "string" ? entry.logs : String(entry.logs),
+          }));
+        } else if (message != null) {
+          parsedLogs = [
+            {
+              timestamp: timestamp
+                ? Math.floor(new Date(timestamp).getTime() / 1000)
+                : Math.floor(Date.now() / 1000),
+              logs: JSON.stringify(message),
+            },
+          ];
+        }
+
+        if (parsedLogs && parsedLogs.length > 0) {
+          setLogs((prev) => [...prev, ...parsedLogs]);
+
+          // Opportunistic success/failure detection
+          const lastLog = parsedLogs[parsedLogs.length - 1]?.logs || "";
+          if (/✓ Created objects\./.test(lastLog)) {
+            setStatus("success");
+          } else if (/error|failed|traceback/i.test(lastLog)) {
+            setStatus("failed");
+          }
+        }
+      } catch (e) {
+        // ignore malformed events
+      }
+    };
+
+    es.onerror = () => {
+      setReadyState(ReadyState.CLOSED);
+      try {
+        es.close();
+      } catch {}
+    };
+
+    return () => {
+      setReadyState(ReadyState.CLOSING);
+      try {
+        es.close();
+      } catch {}
+      setReadyState(ReadyState.CLOSED);
+    };
+  }, [auth_token, machine_version_id, finished]);
 
   return {
     logs,
@@ -59,14 +183,19 @@ export function useMachineBuildProgress({
 }
 
 interface BuildProgressBarProps {
-  machine_id: string;
+  machine_version_id: string;
   endpoint: string;
   instance_id: string;
-  machine: any;
+  machine: {
+    type: string;
+    status: string;
+    docker_command_steps?: { steps: unknown[] } | null;
+    updated_at?: string;
+  };
 }
 
 export function getMachineBuildProgress({
-  machine_id,
+  machine_version_id,
   endpoint,
   instance_id,
   machine,
@@ -86,7 +215,7 @@ export function getMachineBuildProgress({
   }, [getToken]);
 
   const { logs, finished } = useMachineBuildProgress({
-    machine_id,
+    machine_version_id,
     endpoint,
     instance_id,
     auth_token: authToken,

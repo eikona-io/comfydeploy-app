@@ -172,7 +172,7 @@ function MachineVersionBuildLog({
           <MachineBuildLog
             machine={machine}
             instance_id={machine.build_machine_instance_id!}
-            machine_id={machine.id}
+            machine_version_id={machineVersion.id}
             endpoint={machineEndpoint}
           />
         ) : machineVersion.build_log ? (

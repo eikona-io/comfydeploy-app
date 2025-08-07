@@ -221,7 +221,7 @@ export function WorkspaceMachineLoading({
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const progress = getMachineBuildProgress({
-    machine_id: machine.id,
+    machine_version_id: machine.machine_version_id!,
     endpoint,
     instance_id: machine.build_machine_instance_id!,
     machine,

@@ -271,12 +271,12 @@ function StepsUI(props: { logs: LogsType; machine: any }) {
 }
 
 export function MachineBuildLog({
-  machine_id,
+  machine_version_id,
   endpoint,
   instance_id,
   machine,
 }: {
-  machine_id: string;
+  machine_version_id: string;
   endpoint: string;
   instance_id: string;
   machine: any;
@@ -293,7 +293,7 @@ export function MachineBuildLog({
 
   // Replace all the websocket logic with the hook
   const { logs, finished, status, readyState } = useMachineBuildProgress({
-    machine_id,
+    machine_version_id,
     endpoint,
     instance_id,
     auth_token,
