@@ -1,5 +1,3 @@
-"use client";
-
 import { api } from "@/lib/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
@@ -82,7 +80,6 @@ export function useSessionAPI(machineId?: string | null) {
               }
             : {},
       },
-      enabled: !!machineId && machineId !== "new",
     }),
   };
 }
