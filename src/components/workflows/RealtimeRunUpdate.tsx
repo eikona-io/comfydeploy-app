@@ -3,7 +3,10 @@
 import React from "react";
 
 import { useRunsTableStore } from "@/components/workflows/RunsTable";
-import { useProgressUpdates } from "@/hooks/use-progress-update";
+import {
+  useProgressUpdates,
+  useProgressUpdatesV2,
+} from "@/hooks/use-progress-update";
 import { useQueryClient } from "@tanstack/react-query";
 
 export function useRealtimeWorkflowUpdate2(
@@ -86,6 +89,81 @@ export function useRealtimeWorkflowUpdate2(
   // }, [progressUpdates]);
 
   return { connectionStatus };
+}
+
+// Enhanced version using Redis pub/sub v2 endpoint with better error handling
+export function useRealtimeWorkflowUpdateV2(
+  workflow_id: string,
+  status?: string,
+  deploymentId?: string,
+) {
+  const queryClient = useQueryClient();
+
+  const { progressUpdates, connectionStatus, isConnected, hasError } =
+    useProgressUpdatesV2({
+      workflowId: workflow_id,
+      returnRun: true,
+      reconnect: true,
+      status,
+      deploymentId,
+      onUpdate: (update) => {
+        const data = update as any;
+
+        queryClient.setQueryData(
+          ["v2", "workflow", workflow_id, "runs"],
+          (oldData: any) => {
+            if (!oldData) return oldData;
+            let exist = false;
+            let newRunNumber = 1;
+            if (oldData.pages.length > 0 && oldData.pages[0].length > 0) {
+              const highestRunNumber = Math.max(
+                ...oldData.pages[0].map((run: any) => run.number || 0),
+              );
+              newRunNumber = highestRunNumber + 1;
+            }
+
+            const updatedPages = oldData.pages.map((page: any[]) => {
+              const index = page.findIndex((run) => run.id === data.id);
+              if (index !== -1) {
+                exist = true;
+                // Update existing run
+                const updatedRuns = [...page];
+                const updatedRun = { ...data, number: newRunNumber };
+                updatedRuns[index] = updatedRun;
+
+                // Update the selected cell if it's the current run
+                if (useRunsTableStore.getState().selectedCell?.id === data.id) {
+                  useRunsTableStore.setState({ selectedCell: updatedRun });
+                }
+                return updatedRuns;
+              }
+              return page;
+            });
+
+            // If the run doesn't exist, add it to the first page
+            if (!exist) {
+              const newRun = { ...data, number: newRunNumber };
+              updatedPages[0] = [newRun, ...updatedPages[0]];
+            }
+
+            return {
+              ...oldData,
+              pages: updatedPages,
+            };
+          },
+        );
+      },
+      onConnectionChange: (status) => {
+        console.log("Redis pub/sub connection status:", status);
+      },
+    });
+
+  return {
+    connectionStatus,
+    isConnected,
+    hasError,
+    progressCount: progressUpdates.length,
+  };
 }
 
 // Create a context for the realtime workflow
