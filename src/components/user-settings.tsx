@@ -67,6 +67,16 @@ export function UserSettings() {
             .optional()
             .describe("AWS Role to Assume (ARN)")
             .nullable(),
+          use_cloudfront: z
+            .boolean()
+            .default(false)
+            .optional()
+            .describe("CloudFront (CDN)"),
+          cloudfront_domain: z
+            .string()
+            .optional()
+            .describe("CloudFront Domain")
+            .nullable(),
           // spend_limit: z.coerce
           //   .number()
           //   .default(5.0)
@@ -107,8 +117,17 @@ export function UserSettings() {
               "s3_bucket_name",
               "s3_region",
               "s3_secret_access_key",
+              "use_cloudfront",
               "assumed_role_arn",
             ],
+            when(sourceFieldValue, targetFieldValue) {
+              return !sourceFieldValue;
+            },
+          },
+          {
+            type: DependencyType.HIDES,
+            sourceField: "use_cloudfront",
+            targetField: ["cloudfront_domain"],
             when(sourceFieldValue, targetFieldValue) {
               return !sourceFieldValue;
             },
@@ -128,6 +147,22 @@ export function UserSettings() {
                   {props.children}
                 </div>
               );
+            },
+          },
+          use_cloudfront: {
+            fieldType: "switch",
+            group: "Storage Settings [Business]",
+            description: (
+              <p className="text-muted-foreground text-xs">
+                Enable CloudFront (CDN) for faster content delivery from your S3
+                bucket. Only for <strong>public</strong> outputs.
+              </p>
+            ),
+          },
+          cloudfront_domain: {
+            group: "Storage Settings [Business]",
+            inputProps: {
+              placeholder: "d1234567890.cloudfront.net",
             },
           },
           assumed_role_arn: {
