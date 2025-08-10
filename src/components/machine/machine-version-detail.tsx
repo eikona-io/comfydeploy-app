@@ -139,7 +139,7 @@ export function MachineVersionDetail({
         </div>
         {selectedTab === "version-detail" && (
           <MachineSettingsWrapper
-            machine={machine}
+            machine={machineVersion}
             title={
               <div className="ml-2 font-medium text-xl">Version Details</div>
             }

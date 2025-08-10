@@ -115,7 +115,7 @@ export function MachineSettingsWrapper({
   readonly?: boolean;
   className?: string;
 }) {
-  const isServerless = machine.type === "comfy-deploy-serverless";
+  const isServerless = machine.type === "comfy-deploy-serverless" || readonly;
   const formRef = useRef<HTMLFormElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
