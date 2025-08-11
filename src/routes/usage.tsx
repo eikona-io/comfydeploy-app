@@ -540,7 +540,9 @@ export function UsageTable(props: {
               {usage.usage.length > 0 ? (
                 <>
                   {usage.usage.map((x) => (
-                    <TableRow key={x.machine_id}>
+                    <TableRow
+                      key={`${x.machine_id}-${x.cost_item_title ?? x.gpu ?? x.ws_gpu ?? "usage"}`}
+                    >
                       <TableCell>
                         <Tooltip>
                           <TooltipTrigger>
