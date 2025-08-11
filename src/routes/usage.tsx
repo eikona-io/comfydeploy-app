@@ -504,12 +504,13 @@ export function UsageTable(props: {
   endTimeOverride?: Date;
 }) {
   const { data: usage } = useSuspenseQuery<any>({
-    queryKey: ["platform", "usage", props.invoice?.id],
+    queryKey: ["platform", "usage"],
     queryKeyHashFn: (queryKey) =>
       [
         ...queryKey,
-        props.startTimeOverride?.toISOString(),
-        props.endTimeOverride?.toISOString(),
+        // props.startTimeOverride?.toISOString(),
+        // props.endTimeOverride?.toISOString(),
+        props.invoice?.id,
       ].toString(),
     meta: {
       params: {
@@ -535,7 +536,7 @@ export function UsageTable(props: {
                 <TableHead>Cost</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody key={props.invoice?.id}>
               {usage.usage.length > 0 ? (
                 <>
                   {usage.usage.map((x) => (
