@@ -408,6 +408,7 @@ function RouteComponent() {
               />
             ) : (
               <UsageTable
+                invoice={selectedInvoice}
                 startTimeOverride={
                   selectedInvoice
                     ? new Date(selectedInvoice.period_start_timestamp * 1000)
@@ -498,11 +499,12 @@ export function DevelopmentOnly(props: { children: ReactNode }) {
 }
 
 export function UsageTable(props: {
+  invoice?: Invoice;
   startTimeOverride?: Date;
   endTimeOverride?: Date;
 }) {
   const { data: usage } = useSuspenseQuery<any>({
-    queryKey: ["platform", "usage"],
+    queryKey: ["platform", "usage", props.invoice?.id],
     queryKeyHashFn: (queryKey) =>
       [
         ...queryKey,
@@ -546,7 +548,7 @@ export function UsageTable(props: {
                             ) : (
                               <Link
                                 className="hover:underline"
-                                href={"/machines/" + x.machine_id}
+                                href={`/machines/${x.machine_id}`}
                               >
                                 {x.machine_name}{" "}
                                 {x.ws_gpu && <Badge>Workspace</Badge>}
