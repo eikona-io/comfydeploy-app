@@ -161,7 +161,26 @@ export async function isHashOlder(
   currentHash: string,
   targetHash: string,
 ): Promise<boolean> {
+  if (currentHash === targetHash) {
+    return false;
+  }
+
+  const comparisonKey = `${targetHash}-${currentHash}`;
+  const CACHE_KEY = "github-hash-comparisons";
+  const oneHour = 1000 * 60 * 60;
+  const now = Date.now();
+
   try {
+    // Get all comparisons from single localStorage item
+    const allComparisons = JSON.parse(localStorage.getItem(CACHE_KEY) || "{}");
+
+    // Check if this comparison is cached and not expired
+    const cached = allComparisons[comparisonKey];
+    if (cached && now - cached.timestamp < oneHour) {
+      return cached.result;
+    }
+
+    // Make API call
     const compareUrl = `https://api.github.com/repos/comfyanonymous/ComfyUI/compare/${targetHash}...${currentHash}`;
 
     const response = await fetch(compareUrl, {
@@ -176,10 +195,33 @@ export async function isHashOlder(
     }
 
     const data = await response.json();
-    return data.status === "behind" || data.behind_by > 0;
+    const result = data.status === "behind" || data.behind_by > 0;
+
+    // Clean up expired entries and add new one
+    const cleanComparisons: Record<
+      string,
+      { result: boolean; timestamp: number }
+    > = {};
+    for (const [key, value] of Object.entries(allComparisons)) {
+      const entry = value as { result: boolean; timestamp: number };
+      if (now - entry.timestamp < oneHour) {
+        cleanComparisons[key] = entry;
+      }
+    }
+
+    // Add new result
+    cleanComparisons[comparisonKey] = {
+      result,
+      timestamp: now,
+    };
+
+    // Save back to localStorage
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cleanComparisons));
+
+    return result;
   } catch (error) {
     console.error("Error comparing git hashes:", error);
-    return false; // Default to false on error
+    return false;
   }
 }
 
