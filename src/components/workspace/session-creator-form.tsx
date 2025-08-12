@@ -45,7 +45,7 @@ import {
   ImageIcon,
 } from "lucide-react";
 import { parseAsInteger, useQueryState } from "nuqs";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { UserIcon } from "../run/SharePageComponent";
@@ -56,6 +56,10 @@ import { useMutation } from "@tanstack/react-query";
 import { z } from "zod";
 import { Textarea } from "../ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
+import {
+  COMFYUI_VERSION_HASHES,
+  useIsHashOlder,
+} from "@/hooks/use-github-branch-info";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -318,6 +322,24 @@ export function SessionCreatorForm({
     }
   };
 
+  // Check if optimized runner is enabled but ComfyUI version is too old
+  const { data: isOlderThan345, isLoading: isVersionCheckLoading } =
+    useIsHashOlder(
+      selectedMachine?.comfyui_version,
+      COMFYUI_VERSION_HASHES["0.3.45"],
+      !!selectedMachine?.optimized_runner && !!selectedMachine?.comfyui_version,
+    );
+
+  const shouldShowOptimizedRunnerWarning = useMemo(() => {
+    if (!selectedMachine?.optimized_runner || isVersionCheckLoading)
+      return false;
+    return isOlderThan345;
+  }, [
+    selectedMachine?.optimized_runner,
+    isOlderThan345,
+    isVersionCheckLoading,
+  ]);
+
   // Update GPU when machine changes
   useEffect(() => {
     if (selectedMachine?.gpu) {
@@ -427,15 +449,6 @@ export function SessionCreatorForm({
     return (
       <div className="space-y-4">
         <div className="space-y-2">
-          {/* <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">Machine</span>
-          </div>
-          <MachineSelect
-            workflow_id={workflowId}
-            leaveEmpty
-            className="rounded-md border bg-background"
-          /> */}
-
           {/* Compact Active Sessions List */}
           {workflow?.selected_machine_id && (
             <MachineSessionsList machineId={workflow.selected_machine_id} />
@@ -458,6 +471,26 @@ export function SessionCreatorForm({
               <AlertCircleIcon size={14} className="dark:text-red-500" />
               <AlertTitle className="mb-0 text-xs dark:text-red-500">
                 Machine not ready - Click for details
+              </AlertTitle>
+            </div>
+          </Alert>
+        )}
+
+        {shouldShowOptimizedRunnerWarning && (
+          <Alert
+            variant="warning"
+            className="cursor-pointer border-yellow-500/20 bg-yellow-500/10 py-2 transition-colors hover:bg-yellow-500/20 dark:border-yellow-500/20 dark:bg-yellow-500/10 dark:hover:bg-yellow-500/20"
+            onClick={() => {
+              router.navigate({
+                to: "/workflows/$workflowId/$view",
+                params: { workflowId, view: "machine" },
+              });
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircleIcon size={14} className="dark:text-yellow-500" />
+              <AlertTitle className="mb-0 text-xs dark:text-yellow-500">
+                ComfyUI Version Too Old - Click to update
               </AlertTitle>
             </div>
           </Alert>
@@ -520,7 +553,8 @@ export function SessionCreatorForm({
                 className="gap-1"
                 disabled={
                   createDynamicSession.isPending ||
-                  selectedMachine?.status !== "ready"
+                  selectedMachine?.status !== "ready" ||
+                  shouldShowOptimizedRunnerWarning
                 }
                 isLoading={createDynamicSession.isPending}
                 Icon={Rocket}
@@ -560,6 +594,25 @@ export function SessionCreatorForm({
           </Alert>
         )}
 
+        {shouldShowOptimizedRunnerWarning && (
+          <Alert
+            variant="warning"
+            className="cursor-pointer border-yellow-500/20 bg-yellow-500/10 py-2 transition-colors hover:bg-yellow-500/20 dark:border-yellow-500/20 dark:bg-yellow-500/10 dark:hover:bg-yellow-500/20"
+            onClick={() => {
+              router.navigate({
+                to: "/workflows/$workflowId/$view",
+                params: { workflowId, view: "machine" },
+              });
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircleIcon size={14} className="dark:text-yellow-500" />
+              <AlertTitle className="mb-0 text-xs dark:text-yellow-500">
+                ComfyUI Version Too Old - Click to update
+              </AlertTitle>
+            </div>
+          </Alert>
+        )}
         {/* Mobile Form Controls */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
@@ -618,7 +671,8 @@ export function SessionCreatorForm({
                 className="flex-1 gap-1"
                 disabled={
                   createDynamicSession.isPending ||
-                  selectedMachine?.status !== "ready"
+                  selectedMachine?.status !== "ready" ||
+                  shouldShowOptimizedRunnerWarning
                 }
                 isLoading={createDynamicSession.isPending}
                 Icon={Rocket}
@@ -811,7 +865,8 @@ export function SessionCreatorForm({
               className="gap-1"
               disabled={
                 createDynamicSession.isPending ||
-                selectedMachine?.status !== "ready"
+                selectedMachine?.status !== "ready" ||
+                shouldShowOptimizedRunnerWarning
               }
               isLoading={createDynamicSession.isPending}
               Icon={Rocket}

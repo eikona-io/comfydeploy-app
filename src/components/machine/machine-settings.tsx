@@ -2211,8 +2211,8 @@ function OptimizedRunnerDialog({
           <DialogTitle>Enable Optimized Cold Start</DialogTitle>
           <DialogDescription>
             This feature requires:
-            <ul className="list-disc pl-6 mt-2 space-y-1">
-              <li>ComfyUI version &gt;= 0.3.26</li>
+            <ul className="mt-2 list-disc space-y-1 pl-6">
+              <li>ComfyUI version &gt;= 0.3.45</li>
               <li>Latest Comfy Deploy custom nodes</li>
             </ul>
             Please make sure your environment meets these requirements before
