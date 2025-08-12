@@ -377,12 +377,9 @@ export function MachineAlert({
             </span>
             .
             <br />
-            Current version:{" "}
-            <span className="font-mono text-xs">{comfyuiVersion}</span>
-            <br />
             <div className="mt-2 space-x-2">
               <span>Please either:</span>
-              <ul className="list-disc space-y-1 pl-4 mt-1">
+              <ul className="mt-1 list-disc space-y-1 pl-4">
                 <li>Upgrade ComfyUI to version 0.3.45 or above, or</li>
                 <li>Disable Optimized Cold Start in machine settings</li>
               </ul>
