@@ -4,10 +4,9 @@ import {
   createRootRouteWithContext,
   redirect,
   useLocation,
-  useMatchRoute,
   useRouter,
 } from "@tanstack/react-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
     ? () => null // Render nothing in production
@@ -22,23 +21,16 @@ const TanStackRouterDevtools =
 import { AppSidebar, GuestSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { Icon } from "@/components/icon-word";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { orgPrefixPaths } from "@/orgPrefixPaths";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { SignedIn, type useClerk } from "@clerk/clerk-react";
-import {
-  RedirectToSignIn,
-  SignedOut,
-  useAuth,
-  useOrganizationList,
-} from "@clerk/clerk-react";
+import { SignedOut, useAuth } from "@clerk/clerk-react";
 import { Toaster } from "sonner";
-import { Providers, queryClient } from "../lib/providers";
+import { queryClient } from "../lib/providers";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer";
 import { WorkflowNavbar } from "@/components/workflow-navbar";
 import { cn } from "@/lib/utils";
 import { LocalGitDisplay } from "@/components/local-git-display";
-import { WorkspaceUpdate20250724 } from "@/components/guide/GuideDialog";
 
 export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
@@ -159,7 +151,6 @@ function RootComponent() {
         <Toaster richColors closeButton={true} />
         <LocalGitDisplay />
         <AssetsBrowserPopup isPlayground />
-        <WorkspaceUpdate20250724 />
       </div>
     </ThemeProvider>
   );
