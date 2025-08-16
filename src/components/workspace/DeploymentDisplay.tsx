@@ -1089,60 +1089,65 @@ export function DeploymentSettings({
           <div className="flex items-center gap-2">
             <div className="font-medium text-md">Deployment</div>
             {!hideHeader && (
-              <Select
-                value={deployment.id}
-                onValueChange={(value) => {
-                  const newDeployment = deployments?.find(
-                    (d) => d.id === value,
-                  );
-                  if (newDeployment) {
-                    setSelectedDeployment(newDeployment.id);
-                  }
-                }}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue>
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant="outline"
-                        className={cn(
-                          getEnvColor(deployment.environment),
-                          "whitespace-nowrap text-sm",
-                        )}
-                      >
-                        {deployment.environment}
-                      </Badge>
-                    </div>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  {deployments
-                    ?.filter(
-                      (d) =>
-                        d.environment === "production" ||
-                        d.environment === "staging",
-                    )
-                    .map((d) => (
-                      <SelectItem
-                        key={d.id}
-                        value={d.id}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              getEnvColor(d.environment),
-                              "whitespace-nowrap text-sm",
-                            )}
-                          >
-                            {d.environment}
-                          </Badge>
-                        </div>
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <>
+                <Select
+                  value={deployment.id}
+                  onValueChange={(value) => {
+                    const newDeployment = deployments?.find(
+                      (d) => d.id === value,
+                    );
+                    if (newDeployment) {
+                      setSelectedDeployment(newDeployment.id);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            getEnvColor(deployment.environment),
+                            "whitespace-nowrap text-sm",
+                          )}
+                        >
+                          {deployment.environment}
+                        </Badge>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {deployments
+                      ?.filter(
+                        (d) =>
+                          d.environment === "production" ||
+                          d.environment === "staging",
+                      )
+                      .map((d) => (
+                        <SelectItem
+                          key={d.id}
+                          value={d.id}
+                          className="flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                getEnvColor(d.environment),
+                                "whitespace-nowrap text-sm",
+                              )}
+                            >
+                              {d.environment}
+                            </Badge>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Badge className="whitespace-nowrap text-sm">
+                  v{deployment.version?.version}
+                </Badge>
+              </>
             )}
           </div>
 

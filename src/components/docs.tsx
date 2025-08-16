@@ -89,6 +89,16 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
   const [paramValues, setParamValues] =
     useState<Record<string, string>>(defaultPathParams);
 
+  useEffect(() => {
+    if (defaultRequestBody) {
+      setRequestBody(
+        typeof defaultRequestBody === "string"
+          ? defaultRequestBody
+          : JSON.stringify(defaultRequestBody, null, 2),
+      );
+    }
+  }, [defaultRequestBody]);
+
   // Add effect to update apiKey when defaultApiKey changes
   useEffect(() => {
     const updateApiKey = async () => {
