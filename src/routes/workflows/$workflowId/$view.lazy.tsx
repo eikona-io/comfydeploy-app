@@ -181,6 +181,7 @@ function WorkflowPageComponent() {
               <MachineSelect
                 workflow_id={workflowId}
                 className="rounded-md border bg-background"
+                showSettings={false}
               />
             </div>
             <div className="pb-2">

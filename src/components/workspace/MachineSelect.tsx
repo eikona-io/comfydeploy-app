@@ -27,6 +27,7 @@ interface MachineSelectProps {
   className?: string;
   value?: string;
   onChange?: (value: string) => void;
+  showSettings?: boolean;
   onSettingsClick?: (machineId: string) => void;
 }
 
@@ -35,6 +36,7 @@ export function MachineSelect({
   className,
   value,
   onChange,
+  showSettings = true,
   onSettingsClick,
 }: MachineSelectProps) {
   const { workflow, mutateWorkflow } = useCurrentWorkflow(workflow_id);
@@ -146,30 +148,38 @@ export function MachineSelect({
           </PopoverContent>
         </Popover>
       </div>
-      <Separator orientation="vertical" className="z-10 h-[40px] flex-none" />
-      {onSettingsClick ? (
-        <Button
-          variant={"ghost"}
-          className="flex-none border-none hover:bg-transparent"
-          onClick={() => valueData?.id && onSettingsClick(valueData.id)}
-        >
-          <Settings size={14} />
-        </Button>
-      ) : (
-        <Link
-          to="/workflows/$workflowId/$view"
-          params={{
-            workflowId: workflow_id,
-            view: "machine",
-          }}
-        >
-          <Button
-            variant={"ghost"}
-            className="flex-none border-none hover:bg-transparent"
-          >
-            <Settings size={14} />
-          </Button>
-        </Link>
+      {showSettings && (
+        <>
+          <Separator
+            orientation="vertical"
+            className="z-10 h-[40px] flex-none"
+          />
+
+          {onSettingsClick ? (
+            <Button
+              variant={"ghost"}
+              className="flex-none border-none hover:bg-transparent"
+              onClick={() => valueData?.id && onSettingsClick(valueData.id)}
+            >
+              <Settings size={14} />
+            </Button>
+          ) : (
+            <Link
+              to="/workflows/$workflowId/$view"
+              params={{
+                workflowId: workflow_id,
+                view: "machine",
+              }}
+            >
+              <Button
+                variant={"ghost"}
+                className="flex-none border-none hover:bg-transparent"
+              >
+                <Settings size={14} />
+              </Button>
+            </Link>
+          )}
+        </>
       )}
     </div>
   );
