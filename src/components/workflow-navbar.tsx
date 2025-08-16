@@ -94,6 +94,47 @@ import { DeploymentDrawer } from "./workspace/DeploymentDisplay";
 import { queryClient } from "@/lib/providers";
 import { getCurrentEffectiveSessionId } from "./workspace/session-creator-form";
 
+// Navigation helper hook
+function useWorkflowNavigation() {
+  const router = useRouter();
+  const { workflowId } = useParams({ from: "/workflows/$workflowId/$view" });
+  const search = useSearch({ from: "/workflows/$workflowId/$view" });
+
+  return useCallback(
+    (
+      view: string,
+      options?: { sessionId?: string; preserveSearch?: boolean }
+    ) => {
+      const currentSearch = search as any;
+
+      // Build search params, preserving isFirstTime if it exists
+      const searchParams: any = {};
+
+      // Always preserve isFirstTime if it exists
+      if (currentSearch?.isFirstTime) {
+        searchParams.isFirstTime = currentSearch.isFirstTime;
+      }
+
+      // Add sessionId if provided
+      if (options?.sessionId) {
+        searchParams.sessionId = options.sessionId;
+      }
+
+      // If preserveSearch is true, keep all existing search params
+      if (options?.preserveSearch) {
+        Object.assign(searchParams, currentSearch);
+      }
+
+      router.navigate({
+        to: "/workflows/$workflowId/$view",
+        params: { workflowId, view },
+        search: Object.keys(searchParams).length > 0 ? searchParams : undefined,
+      });
+    },
+    [router, workflowId, search]
+  );
+}
+
 export function WorkflowNavbar() {
   const sessionId = useSessionIdInSessionView();
 
@@ -138,10 +179,10 @@ function CenterNavigation() {
   const isAdminAndMember = useIsAdminAndMember();
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
   const isDeploymentAllowed = useIsDeploymentAllowed();
-  const router = useRouter();
   const { view } = useParams({ from: "/workflows/$workflowId/$view" });
   const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const effectiveSessionId = getCurrentEffectiveSessionId(workflowId || "");
+  const navigateToView = useWorkflowNavigation();
 
   const shouldHideDeploymentFeatures = !isPlanLoading && !isDeploymentAllowed;
 
@@ -199,12 +240,8 @@ function CenterNavigation() {
       <SessionTimerButton
         workflowId={workflowId}
         restoreCachedSession={() => {
-          router.navigate({
-            to: "/workflows/$workflowId/$view",
-            params: { workflowId: workflowId || "", view: "workspace" },
-            search: {
-              sessionId: effectiveSessionId ? effectiveSessionId : undefined,
-            },
+          navigateToView("workspace", {
+            sessionId: effectiveSessionId || undefined,
           });
         }}
       />
@@ -258,14 +295,8 @@ function CenterNavigation() {
                 : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
             onClick={() => {
-              router.navigate({
-                to: "/workflows/$workflowId/$view",
-                params: { workflowId: workflowId || "", view: "workspace" },
-                search: {
-                  sessionId: effectiveSessionId
-                    ? effectiveSessionId
-                    : undefined,
-                },
+              navigateToView("workspace", {
+                sessionId: effectiveSessionId || undefined,
               });
             }}
             onMouseEnter={() => setHoveredButton("workspace")}
@@ -283,10 +314,7 @@ function CenterNavigation() {
               : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
           }`}
           onClick={() => {
-            router.navigate({
-              to: "/workflows/$workflowId/$view",
-              params: { workflowId: workflowId || "", view: "playground" },
-            });
+            navigateToView("playground");
           }}
           onMouseEnter={() => setHoveredButton("playground")}
         >
@@ -306,10 +334,7 @@ function CenterNavigation() {
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
             onClick={() => {
-              router.navigate({
-                to: "/workflows/$workflowId/$view",
-                params: { workflowId: workflowId || "", view: "deployment" },
-              });
+              navigateToView("deployment");
             }}
             onMouseEnter={() => setHoveredButton("deployment")}
           >
@@ -338,7 +363,7 @@ function CenterNavigation() {
                 ? "workspace"
                 : view === "playground"
                   ? "playground"
-                  : "deployment",
+                  : "deployment"
             ),
           }}
           transition={{
@@ -383,10 +408,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  router.navigate({
-                    to: "/workflows/$workflowId/$view",
-                    params: { workflowId: workflowId || "", view: "machine" },
-                  });
+                  navigateToView("machine");
                 }}
               >
                 <span className="sr-only">Machine</span>
@@ -429,10 +451,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  router.navigate({
-                    to: "/workflows/$workflowId/$view",
-                    params: { workflowId: workflowId || "", view: "model" },
-                  });
+                  navigateToView("model");
                 }}
               >
                 <span className="sr-only">Model</span>
@@ -474,10 +493,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  router.navigate({
-                    to: "/workflows/$workflowId/$view",
-                    params: { workflowId: workflowId || "", view: "gallery" },
-                  });
+                  navigateToView("gallery");
                 }}
               >
                 <span className="sr-only">Gallery</span>
@@ -519,10 +535,7 @@ function CenterNavigation() {
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
                 }`}
                 onClick={() => {
-                  router.navigate({
-                    to: "/workflows/$workflowId/$view",
-                    params: { workflowId: workflowId || "", view: "requests" },
-                  });
+                  navigateToView("requests");
                 }}
               >
                 <span className="sr-only">Requests</span>
@@ -587,7 +600,8 @@ function WorkflowNavbarLeft() {
 }
 
 function WorkflowNavbarRight() {
-  const { sessionId } = useSearch({ from: "/workflows/$workflowId/$view" });
+  const search = useSearch({ from: "/workflows/$workflowId/$view" });
+  const sessionId = (search as any)?.sessionId;
   const { workflowId, view } = useParams({
     from: "/workflows/$workflowId/$view",
   });
@@ -991,7 +1005,7 @@ function SessionBar() {
   const { workflowId } = useParams({
     from: "/workflows/$workflowId/$view",
   });
-  const router = useRouter();
+  const navigateToView = useWorkflowNavigation();
 
   const { data: session } = useQuery<Session>({
     enabled: !!sessionId,
@@ -1096,13 +1110,7 @@ function SessionBar() {
             <DropdownMenuItem
               className="px-3 py-2 focus:bg-zinc-700/40 md:hidden"
               onClick={() => {
-                router.navigate({
-                  to: "/workflows/$workflowId/$view",
-                  params: {
-                    workflowId,
-                    view: "workspace",
-                  },
-                });
+                navigateToView("workspace");
               }}
             >
               <ArrowLeft size={16} className="mr-2" />
@@ -1367,7 +1375,7 @@ function SessionTimerButton({
   workflowId: string | null;
   restoreCachedSession: () => void;
 }) {
-  const router = useRouter();
+  const navigateToView = useWorkflowNavigation();
   const [isHovered, setIsHovered] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [_, setUrlSessionId] = useQueryState("sessionId", parseAsString);
@@ -1378,9 +1386,9 @@ function SessionTimerButton({
   const { data: session, refetch } = useQuery<Session>({
     enabled: !!effectiveSessionId,
     queryKey: ["session", effectiveSessionId],
-    refetchInterval: (data) => {
-      if (!data) return false;
-      if (data.timeout_end !== null) return false;
+    refetchInterval: (query) => {
+      if (!query.state.data) return false;
+      if ((query.state.data as Session).timeout_end !== null) return false;
       return 1000;
     },
   });
@@ -1409,10 +1417,7 @@ function SessionTimerButton({
     setIsPopoverOpen(false);
 
     try {
-      router.navigate({
-        to: "/workflows/$workflowId/$view",
-        params: { workflowId: workflowId || "", view: "workspace" },
-      });
+      navigateToView("workspace");
       await deleteSession.mutateAsync({
         sessionId: sessionIdToDelete,
         // waitForShutdown: true,
@@ -1971,7 +1976,7 @@ function WorkspaceConfigurationPanel() {
 
   // Update settings and save to localStorage
   const updateSettings = useCallback((key: string, value: any) => {
-    setSettings((prev) => {
+    setSettings((prev: any) => {
       const newSettings = { ...prev, [key]: value };
       localStorage.setItem("workspaceConfig", JSON.stringify(newSettings));
       return newSettings;

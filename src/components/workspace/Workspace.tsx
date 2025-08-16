@@ -19,7 +19,10 @@ import {
   sendInetrnalEventToCD,
   sendWorkflow,
 } from "./sendEventToCD";
-import { useWorkflowIdInSessionView } from "@/hooks/hook";
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInSessionView,
+} from "@/hooks/hook";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine } from "@/hooks/use-machine";
 import { useAuthStore } from "@/lib/auth-store";
@@ -115,13 +118,10 @@ export default function Workspace({
   machine_version_id?: string;
   gpu?: string;
 }) {
-  // const { workflowId, workflowLink, version, isFirstTime } = useSearch({
-  //   from: "/sessions/$sessionId/",
-  // });
+  const sessionId = useSessionIdInSessionView();
   const workflowId = useWorkflowIdInSessionView();
   const workflowLink = undefined; //useWorkflowLinkInSessionView();
   const [version] = useQueryState("version", parseAsInteger);
-  // const [isFirstTime] = useQueryState("isFirstTime", parseAsBoolean);
   const [isFirstTime, setIsFirstTime] = useQueryState(
     "isFirstTime",
     parseAsBoolean,
@@ -253,7 +253,7 @@ export default function Workspace({
 
   useEffect(() => {
     if (!cdSetup) return;
-    if (isFirstTime) {
+    if (isFirstTime && sessionId) {
       setIsFirstTime(null);
       if (!workflowId && !workflowLink) {
         console.log("no workflow, setting empty");
@@ -272,6 +272,7 @@ export default function Workspace({
     isLoadingVersion,
     isLoadingWorkflowLink,
     isFirstTime,
+    sessionId,
   ]);
 
   const { fetchToken } = useAuthStore();
