@@ -459,7 +459,7 @@ function InstantRollback({
   machineVersionId: string;
   machine: any;
   isBusinessOrEnterprise: boolean;
-  onVersionClick?: (machineId: string, machineVersionId: string) => void;
+  onVersionClick?: (machineVersionId: string) => void;
 }) {
   const [rollbackAlertOpen, setRollbackAlertOpen] = useState(false);
   const [rebuildAlertOpen, setRebuildAlertOpen] = useState(false);
@@ -554,7 +554,7 @@ function InstantRollback({
               e.preventDefault();
               e.stopPropagation();
               if (onVersionClick && rollbackMachineVersion?.id) {
-                onVersionClick(machine.id, rollbackMachineVersion.id);
+                onVersionClick(rollbackMachineVersion.id);
               } else {
                 navigate({
                   to: "/machines/$machineId/$machineVersionId",
