@@ -12,7 +12,7 @@
     "githooks": "./setup-githooks.sh"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.9.4",
+    "@biomejs/biome": "^2.0.0",
     "@rsbuild/core": "^1.0.2",
     "@rsbuild/plugin-babel": "^1.0.3",
     "@rsbuild/plugin-react": "^1.1.0",
