@@ -1,3 +1,8 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { motion } from "framer-motion";
+import { ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
   BuildStepsUI,
   MachineBuildLog,
@@ -5,40 +10,27 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useMachineVersion } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
-import { useEffect, useState } from "react";
-import { LastActiveEvent, MachineCostEstimate } from "./machine-overview";
-import { MachineVersionBadge } from "./machine-version-badge";
-import { MachineSettingsWrapper } from "./machine-settings";
-import { motion } from "framer-motion";
+import { LoadingIcon } from "../ui/custom/loading-icon";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
+import { LastActiveEvent, MachineCostEstimate } from "./machine-overview";
+import { MachineSettingsWrapper } from "./machine-settings";
+import { MachineVersionBadge } from "./machine-version-badge";
 
-export function MachineVersionDetail({
+export function MachineVersionDetailPage({
   machineId,
   machineVersionId,
-}: { machineId: string; machineVersionId: string }) {
-  const { data: machine, isLoading } = useQuery<any>({
+}: {
+  machineId: string;
+  machineVersionId: string;
+}) {
+  const { data: machine } = useQuery<any>({
     queryKey: ["machine", machineId],
     refetchInterval: 5000,
   });
-  const { data: machineVersion, isLoading: machineVersionLoading } =
-    useMachineVersion(machineId, machineVersionId);
-  const [init, setInit] = useState(false);
-
-  const [selectedTab, setSelectedTab] = useState<
-    "build-log" | "version-detail"
-  >("build-log");
-
-  useEffect(() => {
-    if (machineVersion?.status === "ready" && !init) {
-      setSelectedTab("version-detail");
-      setInit(true);
-    }
-  }, [machineVersion, init]);
-
-  if (isLoading || machineVersionLoading) return <div>Loading...</div>;
+  const { data: machineVersion } = useMachineVersion(
+    machineId,
+    machineVersionId,
+  );
 
   return (
     <div className="mx-auto w-full">
@@ -97,63 +89,104 @@ export function MachineVersionDetail({
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1200px]">
-        <div className="mt-4 mb-2 flex justify-end">
-          <Tabs
-            value={selectedTab}
-            onValueChange={(value) =>
-              setSelectedTab(value as "build-log" | "version-detail")
-            }
-          >
-            <motion.div className="inline-flex items-center rounded-lg bg-white/95 py-0.5 ring-1 ring-gray-200/50 dark:bg-zinc-800 dark:ring-zinc-700/50">
-              <TabsList className="relative flex w-fit gap-1 bg-transparent">
-                <motion.div layout className="relative">
-                  <TabsTrigger
-                    value="version-detail"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      selectedTab === "version-detail"
-                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-700",
-                    )}
-                  >
-                    Version Details
-                  </TabsTrigger>
-                </motion.div>
-                <motion.div layout className="relative">
-                  <TabsTrigger
-                    value="build-log"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      selectedTab === "build-log"
-                        ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-700",
-                    )}
-                  >
-                    Build Log
-                  </TabsTrigger>
-                </motion.div>
-              </TabsList>
-            </motion.div>
-          </Tabs>
-        </div>
-        {selectedTab === "version-detail" && (
-          <MachineSettingsWrapper
-            machine={machineVersion}
-            title={
-              <div className="ml-2 font-medium text-xl">Version Details</div>
-            }
-            disableUnsavedChangesWarningServerless={true}
-            readonly
-          />
-        )}
-        {selectedTab === "build-log" && (
-          <MachineVersionBuildLog
-            machine={machine}
-            machineVersion={machineVersion}
-          />
-        )}
+      <MachineVersionDetail
+        machineId={machineId}
+        machineVersionId={machineVersionId}
+      />
+    </div>
+  );
+}
+
+export function MachineVersionDetail({
+  machineId,
+  machineVersionId,
+}: {
+  machineId: string;
+  machineVersionId: string;
+}) {
+  const { data: machine, isLoading } = useQuery<any>({
+    queryKey: ["machine", machineId],
+    refetchInterval: 5000,
+  });
+  const { data: machineVersion, isLoading: machineVersionLoading } =
+    useMachineVersion(machineId, machineVersionId);
+  const [init, setInit] = useState(false);
+
+  const [selectedTab, setSelectedTab] = useState<
+    "build-log" | "version-detail"
+  >("build-log");
+
+  useEffect(() => {
+    if (machineVersion?.status === "ready" && !init) {
+      setSelectedTab("version-detail");
+      setInit(true);
+    }
+  }, [machineVersion, init]);
+
+  if (isLoading || machineVersionLoading)
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <LoadingIcon />
       </div>
+    );
+
+  return (
+    <div className="mx-auto max-w-[1200px]">
+      <div className="mt-4 mb-2 flex justify-end">
+        <Tabs
+          value={selectedTab}
+          onValueChange={(value) =>
+            setSelectedTab(value as "build-log" | "version-detail")
+          }
+        >
+          <motion.div className="inline-flex items-center rounded-lg bg-white/95 py-0.5 ring-1 ring-gray-200/50 dark:bg-zinc-800 dark:ring-zinc-700/50">
+            <TabsList className="relative flex w-fit gap-1 bg-transparent">
+              <motion.div layout className="relative">
+                <TabsTrigger
+                  value="version-detail"
+                  className={cn(
+                    "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                    selectedTab === "version-detail"
+                      ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-700",
+                  )}
+                >
+                  Version Details
+                </TabsTrigger>
+              </motion.div>
+              <motion.div layout className="relative">
+                <TabsTrigger
+                  value="build-log"
+                  className={cn(
+                    "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
+                    selectedTab === "build-log"
+                      ? "bg-gradient-to-b from-white to-gray-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-zinc-400 dark:hover:bg-zinc-700",
+                  )}
+                >
+                  Build Log
+                </TabsTrigger>
+              </motion.div>
+            </TabsList>
+          </motion.div>
+        </Tabs>
+      </div>
+      {selectedTab === "version-detail" && (
+        <MachineSettingsWrapper
+          machine={machineVersion}
+          title={
+            <div className="ml-2 font-medium text-xl">Version Details</div>
+          }
+          disableUnsavedChangesWarningServerless={true}
+          readonly
+        />
+      )}
+      {selectedTab === "build-log" && (
+        <MachineVersionBuildLog
+          machine={machine}
+          machineVersion={machineVersion}
+        />
+      )}
     </div>
   );
 }
@@ -161,7 +194,10 @@ export function MachineVersionDetail({
 function MachineVersionBuildLog({
   machine,
   machineVersion,
-}: { machine: any; machineVersion: any }) {
+}: {
+  machine: any;
+  machineVersion: any;
+}) {
   const machineEndpoint = `${process.env.NEXT_PUBLIC_CD_API_URL}/api/machine`;
 
   return (

@@ -1,3 +1,21 @@
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+// import { machineRoute } from "@/routes/machines/$machineId";
+import {
+  AlertCircle,
+  DollarSign,
+  ExternalLink,
+  GitBranch,
+  Loader2,
+  X,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { MachineVersionListItem } from "@/components/machine/machine-deployment";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
 import {
@@ -18,37 +36,19 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  COMFYUI_VERSION_HASHES,
+  useIsHashOlder,
+} from "@/hooks/use-github-branch-info";
+import {
   useMachineEvents,
   useMachineVersion,
   useMachineVersions,
   useMachineVersionsAll,
 } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
-import { cn } from "@/lib/utils";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-  useSuspenseQuery,
-} from "@tanstack/react-query";
-import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-// import { machineRoute } from "@/routes/machines/$machineId";
-import {
-  AlertCircle,
-  DollarSign,
-  ExternalLink,
-  GitBranch,
-  Loader2,
-  X,
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { VersionChecker } from "./version-checker";
 import { useCachedQuery } from "@/lib/use-cached-query";
-import {
-  COMFYUI_VERSION_HASHES,
-  useIsHashOlder,
-} from "@/hooks/use-github-branch-info";
+import { cn } from "@/lib/utils";
+import { VersionChecker } from "./version-checker";
 
 // Utility function to get ComfyUI version from hash
 function useComfyUIVersionFromHash(comfyuiHash?: string) {
@@ -417,9 +417,17 @@ const MachineVersionSkeleton = () => {
   );
 };
 
-export function MachineVersionWrapper({ machine }: { machine: any }) {
-  const { data: machineVersion, isLoading: isLoadingMachineVersion } =
-    useMachineVersion(machine.id, machine.machine_version_id);
+export function MachineVersionWrapper({
+  machine,
+  onVersionClick,
+}: {
+  machine: any;
+  onVersionClick?: (machineId: string, machineVersionId: string) => void;
+}) {
+  const { data: machineVersion } = useMachineVersion(
+    machine.id,
+    machine.machine_version_id,
+  );
   const { data: machineVersions, isLoading: isLoadingMachineVersions } =
     useMachineVersions(machine.id);
 
@@ -441,6 +449,7 @@ export function MachineVersionWrapper({ machine }: { machine: any }) {
         <MachineVersionListItem
           machineVersion={machineVersion}
           machine={machine}
+          onVersionClick={onVersionClick}
         />
         {isLoadingMachineVersions ? (
           machineVersion.version === 1 ? (
@@ -462,6 +471,7 @@ export function MachineVersionWrapper({ machine }: { machine: any }) {
                 key={version.id}
                 machineVersion={version}
                 machine={machine}
+                onVersionClick={onVersionClick}
               />
             ))
         )}

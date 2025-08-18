@@ -1,3 +1,22 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { differenceInSeconds } from "date-fns";
+import {
+  CheckCircle,
+  ChevronDown,
+  ChevronRight,
+  CircleArrowUp,
+  CircleX,
+  Ellipsis,
+  ExternalLink,
+  HardDrive,
+  Library,
+  Lock,
+  Puzzle,
+  RotateCcw,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { BuildStepsUI } from "@/components/machine/machine-build-log";
 import {
   type Change,
@@ -37,25 +56,6 @@ import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { useMachineVersion, useMachineVersions } from "@/hooks/use-machine";
 import { useUserInfo } from "@/hooks/use-user-info";
 import { api } from "@/lib/api";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { differenceInSeconds } from "date-fns";
-import {
-  CheckCircle,
-  ChevronDown,
-  ChevronRight,
-  CircleArrowUp,
-  CircleX,
-  Ellipsis,
-  ExternalLink,
-  HardDrive,
-  Library,
-  Lock,
-  Puzzle,
-  RotateCcw,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import { RebuildMachineDialog } from "../machines/machine-list";
 
 export function formatExactTime(seconds: number): string {
@@ -270,16 +270,96 @@ export function MachineDeployment(props: { machine: any }) {
   );
 }
 
-export function MachineVersionListItem({
+function MachineVersionContent({
   machineVersion,
   machine,
+  buildStartTime,
 }: {
   machineVersion: any;
   machine: any;
+  buildStartTime: Date | null;
 }) {
-  const navigate = useNavigate({
-    from: "/machines/$machineId",
-  });
+  return (
+    <>
+      {/* ID and Version */}
+      <div className="grid min-w-0 cursor-pointer grid-cols-1 gap-y-1">
+        <div className="flex flex-row items-center gap-x-2">
+          <div className="w-fit rounded-md bg-gray-100 px-2 py-0 text-gray-500 text-xs leading-snug dark:bg-zinc-700 dark:text-zinc-400">
+            v{machineVersion.version}
+          </div>
+          {machineVersion.id === machine.machine_version_id && (
+            <Badge
+              variant="green"
+              className="!text-2xs flex items-center gap-x-1"
+            >
+              <CircleArrowUp className="h-3 w-3" />
+              <span>Current</span>
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Status and Time */}
+      <div className="flex flex-row gap-4">
+        <div className="flex min-w-0 items-center gap-x-1.5">
+          <MachineStatusBadge
+            status={machineVersion.status}
+            createdAt={machineVersion.created_at}
+          />
+          {machineVersion.status === "building" ? (
+            <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600 dark:text-zinc-400" />
+          ) : (
+            <div className="w-[14px] shrink-0" />
+          )}
+        </div>
+
+        <span className="truncate text-gray-500 text-sm dark:text-zinc-400">
+          {machineVersion.status === "building"
+            ? differenceInSeconds(
+                new Date(),
+                new Date(machineVersion.created_at),
+              ) > 3600
+              ? "-"
+              : formatExactTime(
+                  buildStartTime
+                    ? differenceInSeconds(new Date(), buildStartTime)
+                    : 0,
+                )
+            : machineVersion.created_at === machineVersion.updated_at
+              ? "-"
+              : `${formatExactTime(
+                  differenceInSeconds(
+                    new Date(machineVersion.updated_at),
+                    new Date(machineVersion.created_at),
+                  ),
+                )} (${formatShortDistanceToNow(
+                  new Date(machineVersion.updated_at),
+                )})`}
+        </span>
+      </div>
+
+      {/* GPU and Nodes */}
+      <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
+        <HardDrive className="h-[14px] w-[14px] shrink-0" />
+        <div className="flex items-center">
+          <span className="text-gray-600 text-xs dark:text-zinc-400">
+            {machineVersion.gpu}
+          </span>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export function MachineVersionListItem({
+  machineVersion,
+  machine,
+  onVersionClick,
+}: {
+  machineVersion: any;
+  machine: any;
+  onVersionClick?: (machineId: string, machineVersionId: string) => void;
+}) {
   const sub = useCurrentPlan();
   const isBusinessOrEnterpriseOrDeployment = Boolean(
     sub?.plans?.plans[0] &&
@@ -321,82 +401,39 @@ export function MachineVersionListItem({
     setBuildStartTime(null);
   }, [machineVersion.status, buildStartTime, machineVersion.created_at]);
 
+  const handleVersionClick = () => {
+    if (onVersionClick) {
+      onVersionClick(machine.id, machineVersion.id);
+    }
+  };
+
   return (
     <div className="border-b px-4 hover:bg-gray-100 dark:border-zinc-700/50 dark:hover:bg-zinc-700/50">
       <div className="grid grid-cols-[minmax(120px,1fr)_minmax(150px,1fr)_minmax(100px,1fr)_minmax(250px,auto)] items-center gap-x-4">
-        {/* Wrap only the content that should be clickable in Link */}
-        <Link
-          key={machineVersion.id}
-          className="contents"
-          to={`/machines/${machine.id}/${machineVersion.id}`}
-        >
-          {/* ID and Version */}
-          <div className="grid min-w-0 cursor-pointer grid-cols-1 gap-y-1">
-            <div className="flex flex-row items-center gap-x-2">
-              <div className="w-fit rounded-md bg-gray-100 px-2 py-0 text-gray-500 text-xs leading-snug dark:bg-zinc-700 dark:text-zinc-400">
-                v{machineVersion.version}
-              </div>
-              {machineVersion.id === machine.machine_version_id && (
-                <Badge
-                  variant="green"
-                  className="!text-2xs flex items-center gap-x-1"
-                >
-                  <CircleArrowUp className="h-3 w-3" />
-                  <span>Current</span>
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Status and Time */}
-          <div className="flex flex-row gap-4">
-            <div className="flex min-w-0 items-center gap-x-1.5">
-              <MachineStatusBadge
-                status={machineVersion.status}
-                createdAt={machineVersion.created_at}
-              />
-              {machineVersion.status === "building" ? (
-                <LoadingIcon className="h-[14px] w-[14px] shrink-0 text-gray-600 dark:text-zinc-400" />
-              ) : (
-                <div className="w-[14px] shrink-0" />
-              )}
-            </div>
-
-            <span className="truncate text-gray-500 text-sm dark:text-zinc-400">
-              {machineVersion.status === "building"
-                ? differenceInSeconds(
-                    new Date(),
-                    new Date(machineVersion.created_at),
-                  ) > 3600
-                  ? "-"
-                  : formatExactTime(
-                      buildStartTime
-                        ? differenceInSeconds(new Date(), buildStartTime)
-                        : 0,
-                    )
-                : machineVersion.created_at === machineVersion.updated_at
-                  ? "-"
-                  : `${formatExactTime(
-                      differenceInSeconds(
-                        new Date(machineVersion.updated_at),
-                        new Date(machineVersion.created_at),
-                      ),
-                    )} (${formatShortDistanceToNow(
-                      new Date(machineVersion.updated_at),
-                    )})`}
-            </span>
-          </div>
-
-          {/* GPU and Nodes */}
-          <div className="grid grid-cols-[auto,1fr] items-center gap-x-2">
-            <HardDrive className="h-[14px] w-[14px] shrink-0" />
-            <div className="flex items-center">
-              <span className="text-gray-600 text-xs dark:text-zinc-400">
-                {machineVersion.gpu}
-              </span>
-            </div>
-          </div>
-        </Link>
+        {onVersionClick ? (
+          <button
+            type="button"
+            className="contents cursor-pointer"
+            onClick={handleVersionClick}
+          >
+            <MachineVersionContent
+              machineVersion={machineVersion}
+              machine={machine}
+              buildStartTime={buildStartTime}
+            />
+          </button>
+        ) : (
+          <Link
+            className="contents"
+            to={`/machines/${machine.id}/${machineVersion.id}`}
+          >
+            <MachineVersionContent
+              machineVersion={machineVersion}
+              machine={machine}
+              buildStartTime={buildStartTime}
+            />
+          </Link>
+        )}
 
         {/* Keep interactive elements outside of Link */}
         <div className="flex flex-row items-center gap-x-2 justify-self-end">
@@ -405,6 +442,7 @@ export function MachineVersionListItem({
             machineVersionId={machineVersion.id}
             machine={machine}
             isBusinessOrEnterprise={isBusinessOrEnterpriseOrDeployment}
+            onVersionClick={onVersionClick}
           />
         </div>
       </div>
@@ -416,10 +454,12 @@ function InstantRollback({
   machineVersionId,
   machine,
   isBusinessOrEnterprise,
+  onVersionClick,
 }: {
   machineVersionId: string;
   machine: any;
   isBusinessOrEnterprise: boolean;
+  onVersionClick?: (machineId: string, machineVersionId: string) => void;
 }) {
   const [rollbackAlertOpen, setRollbackAlertOpen] = useState(false);
   const [rebuildAlertOpen, setRebuildAlertOpen] = useState(false);
@@ -513,13 +553,17 @@ function InstantRollback({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              navigate({
-                to: "/machines/$machineId/$machineVersionId",
-                params: {
-                  machineId: machine.id,
-                  machineVersionId: rollbackMachineVersion?.id,
-                },
-              });
+              if (onVersionClick && rollbackMachineVersion?.id) {
+                onVersionClick(machine.id, rollbackMachineVersion.id);
+              } else {
+                navigate({
+                  to: "/machines/$machineId/$machineVersionId",
+                  params: {
+                    machineId: machine.id,
+                    machineVersionId: rollbackMachineVersion?.id,
+                  },
+                });
+              }
             }}
           >
             <span>Details</span>

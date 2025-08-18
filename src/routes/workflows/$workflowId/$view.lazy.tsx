@@ -1,7 +1,7 @@
 /** biome-ignore-all lint/nursery/useSortedClasses: <explanation> */
 import { createLazyFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { Copy } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import {
   MachineVersionWrapper,
 } from "@/components/machine/machine-overview";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
+import { MachineVersionDetail } from "@/components/machine/machine-version-detail";
 import { isMachineDeprecated } from "@/components/machines/machine-list-item";
 import { PaddingLayout } from "@/components/PaddingLayout";
 import { useIsAdminAndMember } from "@/components/permissions";
@@ -58,6 +59,10 @@ function WorkflowPageComponent() {
   const [mountedViews, setMountedViews] = useState<Set<string>>(
     new Set([currentView]),
   );
+  const [machineVersionView, setMachineVersionView] = useState<{
+    machineId: string;
+    machineVersionId: string;
+  } | null>(null);
 
   // Call all hooks first before any conditional logic
   const { workflow } = useCurrentWorkflow(workflowId);
@@ -179,50 +184,15 @@ function WorkflowPageComponent() {
       break;
     case "machine":
       view = machine && (
-        <div className="mx-auto mt-12 w-full max-w-screen-lg">
-          <div className="my-4 flex flex-col gap-4">
-            <div className="flex flex-row items-center gap-2 ml-1">
-              <h1 className="font-semibold text-2xl">Machine</h1>
-              {machine?.id && (
-                <div className="flex gap-2 items-center text-muted-foreground text-2xs font-mono mt-1">
-                  <span>·</span>
-                  <span>{machine.id.slice(0, 8)}</span>
-                  <Button
-                    onClick={() => {
-                      navigator.clipboard.writeText(machine.id);
-                      toast.success("Machine ID copied to clipboard");
-                    }}
-                    size="icon"
-                    type="button"
-                    variant="ghost"
-                    className="h-8 w-8"
-                  >
-                    <Copy className="h-3 w-3 shrink-0" />
-                  </Button>
-                </div>
-              )}
-            </div>
-            <MachineSelect
-              workflow_id={workflowId}
-              className="rounded-md border bg-background"
-              showSettings={false}
-            />
-          </div>
-          <div className="pb-2">
-            <MachineAlert
-              machine={machine}
-              isDeprecated={isDeprecated}
-              isLatestVersion={isLatestVersion}
-            />
-          </div>
-          <MachineVersionWrapper machine={machine} />
-          <MachineSettingsWrapper
-            title="Machine Settings"
-            machine={machine}
-            readonly={!isAdminAndMember}
-            className="top-0"
-          />
-        </div>
+        <MachineView
+          machine={machine}
+          workflowId={workflowId}
+          isDeprecated={isDeprecated}
+          isLatestVersion={isLatestVersion}
+          isAdminAndMember={isAdminAndMember}
+          machineVersionView={machineVersionView}
+          setMachineVersionView={setMachineVersionView}
+        />
       );
       break;
     case "model":
@@ -267,6 +237,103 @@ function RequestPage() {
         <WorkflowComponent />
       </RealtimeWorkflowProvider>
     </motion.div>
+  );
+}
+
+function MachineView({
+  machine,
+  workflowId,
+  isDeprecated,
+  isLatestVersion,
+  isAdminAndMember,
+  machineVersionView,
+  setMachineVersionView,
+}: {
+  machine: any;
+  workflowId: string;
+  isDeprecated: boolean;
+  isLatestVersion: boolean;
+  isAdminAndMember: boolean;
+  machineVersionView: { machineId: string; machineVersionId: string } | null;
+  setMachineVersionView: (
+    view: { machineId: string; machineVersionId: string } | null,
+  ) => void;
+}) {
+  if (machineVersionView) {
+    return (
+      <div className="mx-auto pt-20 w-full max-w-screen-lg">
+        <Button
+          variant="link"
+          onClick={() => setMachineVersionView(null)}
+          className="mb-4 flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Machine
+        </Button>
+        <MachineVersionDetail
+          machineId={machineVersionView.machineId}
+          machineVersionId={machineVersionView.machineVersionId}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto mt-12 w-full max-w-screen-lg">
+      <MachineHeader machine={machine} />
+      <MachineSelect
+        workflow_id={workflowId}
+        className="rounded-md border bg-background mb-4"
+        showSettings={false}
+      />
+      <div className="pb-2">
+        <MachineAlert
+          machine={machine}
+          isDeprecated={isDeprecated}
+          isLatestVersion={isLatestVersion}
+        />
+      </div>
+      <MachineVersionWrapper
+        machine={machine}
+        onVersionClick={(machineId, machineVersionId) =>
+          setMachineVersionView({ machineId, machineVersionId })
+        }
+      />
+      <MachineSettingsWrapper
+        title="Machine Settings"
+        machine={machine}
+        readonly={!isAdminAndMember}
+        className="top-0"
+      />
+    </div>
+  );
+}
+
+function MachineHeader({ machine }: { machine: any }) {
+  return (
+    <div className="my-4 flex flex-col gap-4">
+      <div className="flex flex-row items-center gap-2 ml-1">
+        <h1 className="font-semibold text-2xl">Machine</h1>
+        {machine?.id && (
+          <div className="flex gap-2 items-center text-muted-foreground text-2xs font-mono mt-1">
+            <span>·</span>
+            <span>{machine.id.slice(0, 8)}</span>
+            <Button
+              onClick={() => {
+                navigator.clipboard.writeText(machine.id);
+                toast.success("Machine ID copied to clipboard");
+              }}
+              size="icon"
+              type="button"
+              variant="ghost"
+              className="h-8 w-8"
+            >
+              <Copy className="h-3 w-3 shrink-0" />
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
