@@ -358,7 +358,7 @@ export function MachineVersionListItem({
 }: {
   machineVersion: any;
   machine: any;
-  onVersionClick?: (machineId: string, machineVersionId: string) => void;
+  onVersionClick?: (machineVersionId: string) => void;
 }) {
   const sub = useCurrentPlan();
   const isBusinessOrEnterpriseOrDeployment = Boolean(
@@ -403,7 +403,7 @@ export function MachineVersionListItem({
 
   const handleVersionClick = () => {
     if (onVersionClick) {
-      onVersionClick(machine.id, machineVersion.id);
+      onVersionClick(machineVersion.id);
     }
   };
 

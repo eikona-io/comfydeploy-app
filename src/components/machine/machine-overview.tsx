@@ -422,7 +422,7 @@ export function MachineVersionWrapper({
   onVersionClick,
 }: {
   machine: any;
-  onVersionClick?: (machineId: string, machineVersionId: string) => void;
+  onVersionClick?: (machineVersionId: string) => void;
 }) {
   const { data: machineVersion } = useMachineVersion(
     machine.id,
@@ -492,7 +492,7 @@ export function MachineVersionWrapper({
 }
 
 export function LastActiveEvent({ machineId }: { machineId: string }) {
-  const { data: events, isLoading } = useMachineEvents(machineId);
+  const { data: events } = useMachineEvents(machineId);
   const { hasActiveEvents } = useHasActiveEvents(machineId);
   const navigate = useNavigate();
 

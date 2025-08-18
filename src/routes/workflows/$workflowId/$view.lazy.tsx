@@ -2,7 +2,7 @@
 import { createLazyFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowLeft, Copy } from "lucide-react";
-import { useQueryState } from "nuqs";
+import { parseAsString, useQueryState } from "nuqs";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DeploymentPage } from "@/components/deployment/deployment-page";
@@ -59,10 +59,6 @@ function WorkflowPageComponent() {
   const [mountedViews, setMountedViews] = useState<Set<string>>(
     new Set([currentView]),
   );
-  const [machineVersionView, setMachineVersionView] = useState<{
-    machineId: string;
-    machineVersionId: string;
-  } | null>(null);
 
   // Call all hooks first before any conditional logic
   const { workflow } = useCurrentWorkflow(workflowId);
@@ -190,8 +186,6 @@ function WorkflowPageComponent() {
           isDeprecated={isDeprecated}
           isLatestVersion={isLatestVersion}
           isAdminAndMember={isAdminAndMember}
-          machineVersionView={machineVersionView}
-          setMachineVersionView={setMachineVersionView}
         />
       );
       break;
@@ -246,33 +240,32 @@ function MachineView({
   isDeprecated,
   isLatestVersion,
   isAdminAndMember,
-  machineVersionView,
-  setMachineVersionView,
 }: {
   machine: any;
   workflowId: string;
   isDeprecated: boolean;
   isLatestVersion: boolean;
   isAdminAndMember: boolean;
-  machineVersionView: { machineId: string; machineVersionId: string } | null;
-  setMachineVersionView: (
-    view: { machineId: string; machineVersionId: string } | null,
-  ) => void;
 }) {
-  if (machineVersionView) {
+  const [machineVersionId, setMachineVersionId] = useQueryState(
+    "machineVersionId",
+    parseAsString,
+  );
+
+  if (machineVersionId) {
     return (
       <div className="mx-auto pt-20 w-full max-w-screen-lg">
         <Button
           variant="link"
-          onClick={() => setMachineVersionView(null)}
+          onClick={() => setMachineVersionId(null)}
           className="mb-4 flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Machine
         </Button>
         <MachineVersionDetail
-          machineId={machineVersionView.machineId}
-          machineVersionId={machineVersionView.machineVersionId}
+          machineId={machine.id}
+          machineVersionId={machineVersionId}
         />
       </div>
     );
@@ -295,8 +288,8 @@ function MachineView({
       </div>
       <MachineVersionWrapper
         machine={machine}
-        onVersionClick={(machineId, machineVersionId) =>
-          setMachineVersionView({ machineId, machineVersionId })
+        onVersionClick={(machineVersionId) =>
+          setMachineVersionId(machineVersionId)
         }
       />
       <MachineSettingsWrapper
