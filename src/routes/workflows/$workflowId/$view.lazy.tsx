@@ -1,12 +1,21 @@
-import { GalleryView } from "@/components/GalleryView";
-import { PaddingLayout } from "@/components/PaddingLayout";
-import { GuideDialog } from "@/components/guide/GuideDialog";
+/** biome-ignore-all lint/nursery/useSortedClasses: <explanation> */
+import { createLazyFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { motion } from "framer-motion";
+import { Copy } from "lucide-react";
+import { useQueryState } from "nuqs";
+import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { DeploymentPage } from "@/components/deployment/deployment-page";
+import { GalleryView } from "@/components/GalleryView";
+import { GuideDialog } from "@/components/guide/GuideDialog";
+import { LoadingIcon } from "@/components/loading-icon";
 import {
   MachineAlert,
   MachineVersionWrapper,
 } from "@/components/machine/machine-overview";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
+import { isMachineDeprecated } from "@/components/machines/machine-list-item";
+import { PaddingLayout } from "@/components/PaddingLayout";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { Playground } from "@/components/run/SharePageComponent";
 import {
@@ -15,6 +24,7 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,22 +34,18 @@ import {
 import { RealtimeWorkflowProvider } from "@/components/workflows/RealtimeRunUpdate";
 import RunComponent from "@/components/workflows/RunComponent";
 import WorkflowComponent from "@/components/workflows/WorkflowComponent";
+import { MachineSelect } from "@/components/workspace/MachineSelect";
 import { useSelectedVersion } from "@/components/workspace/Workspace";
 import { WorkspaceClientWrapper } from "@/components/workspace/WorkspaceClientWrapper";
+import {
+  useCurrentPlanQuery,
+  useIsDeploymentAllowed,
+} from "@/hooks/use-current-plan";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine, useMachineVersionsAll } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
-import { Link, createLazyFileRoute, useRouter } from "@tanstack/react-router";
-import { motion } from "framer-motion";
-import { useQueryState } from "nuqs";
-import { useEffect, useMemo, useState } from "react";
-import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
-import { PricingPage } from "@/routes/pricing";
-import { useCurrentPlanQuery } from "@/hooks/use-current-plan";
-import { LoadingIcon } from "@/components/loading-icon";
 import { StoragePage } from "@/routes/models";
-import { MachineSelect } from "@/components/workspace/MachineSelect";
-import { isMachineDeprecated } from "@/components/machines/machine-list-item";
+import { PricingPage } from "@/routes/pricing";
 
 export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
   component: WorkflowPageComponent,
@@ -173,33 +179,50 @@ function WorkflowPageComponent() {
       break;
     case "machine":
       view = machine && (
-        <>
-          {/* <MachineTopStickyBar machine={machine} /> */}
-          <div className="mx-auto mt-12 w-full max-w-screen-lg">
-            <div className="my-4 flex flex-col gap-4">
+        <div className="mx-auto mt-12 w-full max-w-screen-lg">
+          <div className="my-4 flex flex-col gap-4">
+            <div className="flex flex-row items-center gap-2 ml-1">
               <h1 className="font-semibold text-2xl">Machine</h1>
-              <MachineSelect
-                workflow_id={workflowId}
-                className="rounded-md border bg-background"
-                showSettings={false}
-              />
+              {machine?.id && (
+                <div className="flex gap-2 items-center text-muted-foreground text-2xs font-mono mt-1">
+                  <span>·</span>
+                  <span>{machine.id.slice(0, 8)}</span>
+                  <Button
+                    onClick={() => {
+                      navigator.clipboard.writeText(machine.id);
+                      toast.success("Machine ID copied to clipboard");
+                    }}
+                    size="icon"
+                    type="button"
+                    variant="ghost"
+                    className="h-8 w-8"
+                  >
+                    <Copy className="h-3 w-3 shrink-0" />
+                  </Button>
+                </div>
+              )}
             </div>
-            <div className="pb-2">
-              <MachineAlert
-                machine={machine}
-                isDeprecated={isDeprecated}
-                isLatestVersion={isLatestVersion}
-              />
-            </div>
-            <MachineVersionWrapper machine={machine} />
-            <MachineSettingsWrapper
-              title="Machine Settings"
-              machine={machine}
-              readonly={!isAdminAndMember}
-              className="top-0"
+            <MachineSelect
+              workflow_id={workflowId}
+              className="rounded-md border bg-background"
+              showSettings={false}
             />
           </div>
-        </>
+          <div className="pb-2">
+            <MachineAlert
+              machine={machine}
+              isDeprecated={isDeprecated}
+              isLatestVersion={isLatestVersion}
+            />
+          </div>
+          <MachineVersionWrapper machine={machine} />
+          <MachineSettingsWrapper
+            title="Machine Settings"
+            machine={machine}
+            readonly={!isAdminAndMember}
+            className="top-0"
+          />
+        </div>
       );
       break;
     case "model":
@@ -227,25 +250,23 @@ function WorkflowPageComponent() {
 
 function RequestPage() {
   const { workflowId } = Route.useParams();
-  const [deploymentId, setDeploymentId] = useQueryState("filter-deployment-id");
-  const [status, setStatus] = useQueryState("filter-status");
+  const [deploymentId] = useQueryState("filter-deployment-id");
+  const [status] = useQueryState("filter-status");
 
   return (
-    <>
-      <motion.div
-        layout
-        className={cn("flex h-full w-full flex-col gap-4 pt-4 lg:flex-row")}
+    <motion.div
+      layout
+      className={cn("flex h-full w-full flex-col gap-4 pt-4 lg:flex-row")}
+    >
+      <RealtimeWorkflowProvider
+        workflowId={workflowId}
+        status={status ?? undefined}
+        deploymentId={deploymentId ?? undefined}
       >
-        <RealtimeWorkflowProvider
-          workflowId={workflowId}
-          status={status ?? undefined}
-          deploymentId={deploymentId ?? undefined}
-        >
-          <RunComponent />
-          <WorkflowComponent />
-        </RealtimeWorkflowProvider>
-      </motion.div>
-    </>
+        <RunComponent />
+        <WorkflowComponent />
+      </RealtimeWorkflowProvider>
+    </motion.div>
   );
 }
 
