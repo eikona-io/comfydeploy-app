@@ -23,14 +23,20 @@ export function MachineVersionDetailPage({
   machineId: string;
   machineVersionId: string;
 }) {
-  const { data: machine } = useQuery<any>({
+  const { data: machine, isLoading: machineLoading } = useQuery<any>({
     queryKey: ["machine", machineId],
     refetchInterval: 5000,
   });
-  const { data: machineVersion } = useMachineVersion(
-    machineId,
-    machineVersionId,
-  );
+  const { data: machineVersion, isLoading: machineVersionLoading } =
+    useMachineVersion(machineId, machineVersionId);
+
+  if (machineLoading || machineVersionLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <LoadingIcon />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto w-full">
