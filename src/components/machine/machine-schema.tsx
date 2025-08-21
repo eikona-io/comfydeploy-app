@@ -1,8 +1,8 @@
-import type { FieldConfig } from "@/components/auto-form/types";
-import { FALLBACK_COMFYUI_HASH_CONSTANT } from "@/utils/comfydeploy-hash";
 import { Link } from "@tanstack/react-router";
 import { ExternalLinkIcon } from "lucide-react";
 import { z } from "zod";
+import type { FieldConfig } from "@/components/auto-form/types";
+import { FALLBACK_COMFYUI_HASH_CONSTANT } from "@/utils/comfydeploy-hash";
 import { useGPUPricing } from "../pricing/GPUPriceSimulator";
 
 export const customFormSchema = z.object({
@@ -61,6 +61,14 @@ const dockerCommandStep = z.discriminatedUnion("type", [
     id: z.string(),
     type: z.literal("commands"),
     data: z.string(),
+  }),
+  z.object({
+    id: z.string(),
+    type: z.literal("custom-node-manager"),
+    data: z.object({
+      node_id: z.string(),
+      version: z.string(),
+    }),
   }),
 ]);
 

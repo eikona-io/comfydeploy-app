@@ -1,27 +1,9 @@
-import type {
-  CustomNodeData,
-  DockerCommandStep,
-  MachineStepValidation,
-} from "@/components/machines/machine-create";
-import type { StepComponentProps } from "@/components/step-form";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import { getBranchInfo } from "@/hooks/use-github-branch-info";
-import type { BranchInfoData } from "@/hooks/use-github-branch-info";
-import { cn } from "@/lib/utils";
-import {
+  closestCenter,
   DndContext,
   type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
-  closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -38,9 +20,7 @@ import { Link } from "@tanstack/react-router";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   AlertTriangle,
-  ChevronRight,
   CircleHelp,
-  Download,
   ExternalLink,
   Minus,
   Pencil,
@@ -55,25 +35,24 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import type {
+  CustomNodeData,
+  DockerCommandStep,
+  MachineStepValidation,
+} from "@/components/machines/machine-create";
+import type { StepComponentProps } from "@/components/step-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from "../ui/drawer";
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { Separator } from "@/components/ui/separator";
+import { Textarea } from "@/components/ui/textarea";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { getBranchInfo } from "@/hooks/use-github-branch-info";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -83,6 +62,21 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "../ui/dialog";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+} from "../ui/drawer";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 import { Label } from "../ui/label";
 import {
   Tooltip,
@@ -1347,6 +1341,58 @@ function CustomNodeCard({
               <Minus size={12} />
             </button>
           </div>
+        )}
+      </div>
+    );
+  }
+
+  // Handle custom-node-manager type
+  if (node.type === "custom-node-manager") {
+    return (
+      <div
+        key={node.id}
+        className="relative flex items-center justify-between gap-2 rounded-[6px] border border-gray-200 bg-blue-50 px-2 py-1 text-sm dark:border-zinc-700 dark:bg-blue-900/20"
+      >
+        <div className="group flex w-full flex-col">
+          <div className="flex items-center justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <span className="flex-[2] truncate font-medium text-xs">
+                {node.data.node_id}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex w-full items-center gap-2 text-2xs text-gray-500 leading-snug">
+              <span className="whitespace-nowrap font-medium">Version:</span>
+              <div className="flex min-w-0 flex-1 items-center gap-1">
+                <code className="shrink-0 rounded bg-gray-100 px-1 py-0.5 text-[10px] dark:bg-zinc-700">
+                  <span className="text-gray-500 dark:text-zinc-400">
+                    {node.data.version}
+                  </span>
+                </code>
+              </div>
+            </div>
+          </div>
+        </div>
+        {!readonly && (
+          <>
+            {/* <Button
+              type="button"
+              variant="ghost"
+              className="shrink-0 text-gray-500 opacity-0 transition-opacity duration-200 hover:text-gray-700 group-hover:opacity-100"
+            >
+              <Pencil size={12} />
+            </Button> */}
+            <div className="-top-2 -right-2 absolute">
+              <button
+                type="button"
+                onClick={() => handleRemoveNode(node)}
+                className="shrink-0 rounded-full bg-red-500 p-1 text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+              >
+                <Minus size={12} />
+              </button>
+            </div>
+          </>
         )}
       </div>
     );
