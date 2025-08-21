@@ -1,28 +1,5 @@
 "use client";
 
-import { CodeBlock } from "@/components/ui/code-blocks";
-
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 // import type { findAllDeployments } from "@/server/findAllRuns";
 import { Link } from "@tanstack/react-router";
 import {
@@ -35,11 +12,40 @@ import {
   Server,
   Settings,
 } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { CodeBlock } from "@/components/ui/code-blocks";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getInputsFromWorkflow } from "@/lib/getInputsFromWorkflow";
 import { DeploymentRow } from "./DeploymentRow";
 // import { SharePageSettings } from "@/components/SharePageSettings";
 import Steps from "./Steps";
+
 // import { Docs } from "./Docs";
 
+import { useAuth } from "@clerk/clerk-react";
+import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { Settings as SettingsIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { useSelectedDeploymentStore } from "@/components/deployment/deployment-page";
 // import type { ModelListComponent } from "@/components/modelFal/ModelsList";
 import {
@@ -52,13 +58,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMachine } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
+import { useAuthStore } from "@/lib/auth-store";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
-import { Settings as SettingsIcon } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import ApiPlaygroundDemo from "../api-playground-demo";
 import { MyDrawer } from "../drawer";
 import { useGPUConfig } from "../machine/machine-schema";
 import {
@@ -76,14 +79,10 @@ import { Input } from "../ui/input";
 //   CreateDeploymentButton,
 //   CreateDeploymentButtonV2,
 // } from "./VersionSelect";
-import { getEnvColor } from "./ContainersTable";
-import { useWorkflowDeployments } from "./ContainersTable";
+import { getEnvColor, useWorkflowDeployments } from "./ContainersTable";
 // import { useFeatureFlags } from "@/components/FeatureFlagsProvider";
 import { NewStepper } from "./StaticStepper";
 import { VersionDetails } from "./VersionDetails";
-import ApiPlaygroundDemo from "../api-playground-demo";
-import { useAuthStore } from "@/lib/auth-store";
-import { useAuth } from "@clerk/clerk-react";
 
 const curlTemplate = `
 curl --request POST \
@@ -1308,6 +1307,11 @@ export function DeploymentDrawer(props: {
 }
 
 function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
+  const { data: versionData } = useQuery<any>({
+    queryKey: ["workflow-version", deployment.workflow_version_id],
+    enabled: !!deployment.workflow_version_id,
+  });
+
   const [copying, setCopying] = useState(false);
 
   const parts = deployment.share_slug?.split("_") ?? [];
@@ -1340,6 +1344,7 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
                 ? "Community"
                 : "Internal"}
           </Badge>
+          {versionData && <Badge>v{versionData.version}</Badge>}
         </div>
       </div>
       {deployment.id ? (
@@ -1406,7 +1411,7 @@ function V0IntegrationButton({
           schemaSnippet = `${schemaSnippet.slice(0, 210)}\n...`;
         }
 
-        const promptBase = `Build a minimal integration page for a ComfyDeploy deployment.\n\nRequirements:\n1. Ask the user to paste their ComfyDeploy API token and store it in client state.\n2. Render input fields based on the schema below.\n${schemaSnippet}\n3. On submit call the \"queueRun\" server action defined in the backend.\n4. Poll \"getRun\" every 2 seconds until status === success and display outputs (images / JSON).`;
+        const promptBase = `Build a minimal integration page for a ComfyDeploy deployment.\n\nRequirements:\n1. Ask the user to paste their ComfyDeploy API token and store it in client state.\n2. Render input fields based on the schema below.\n${schemaSnippet}\n3. On submit call the "queueRun" server action defined in the backend.\n4. Poll "getRun" every 2 seconds until status === success and display outputs (images / JSON).`;
 
         const prompt =
           promptBase.length > 500

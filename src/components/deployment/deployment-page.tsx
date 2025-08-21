@@ -1,9 +1,4 @@
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { useMachine } from "@/hooks/use-machine";
-import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { getRelativeTime } from "@/lib/get-relative-time";
-import { cn } from "@/lib/utils";
+import { useOrganization } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import {
@@ -15,22 +10,31 @@ import {
   Server,
 } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { useOrganization } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
-import { Area } from "recharts";
-import { XAxis, YAxis } from "recharts";
-import { AreaChart, CartesianGrid } from "recharts";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { toast } from "sonner";
 import { create } from "zustand";
+import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useMachine } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { getRelativeTime } from "@/lib/get-relative-time";
+import { queryClient } from "@/lib/providers";
+import { cn } from "@/lib/utils";
 import { MyDrawer } from "../drawer";
 import { ErrorBoundary } from "../error-boundary";
+import { ImageInputsTooltip } from "../image-inputs-tooltip";
 import type { GpuTypes } from "../onboarding/workflow-machine-import";
 import { UserIcon } from "../run/SharePageComponent";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import { ChartTooltipContent } from "../ui/chart";
-import { ChartTooltip } from "../ui/chart";
-import { type ChartConfig, ChartContainer } from "../ui/chart";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "../ui/chart";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,9 +58,6 @@ import {
 } from "../workspace/ContainersTable";
 import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
 import { MachineSelect } from "../workspace/MachineSelect";
-import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
-import { queryClient } from "@/lib/providers";
-import { ImageInputsTooltip } from "../image-inputs-tooltip";
 
 export interface Deployment {
   id: string;
@@ -464,9 +465,10 @@ export function DeploymentDialog({
   return (
     <MyDrawer open={open} onClose={onClose}>
       <div className="space-y-4">
-        <h3 className="font-medium text-lg">
-          Deploy Version <Badge>v{selectedVersion.version}</Badge>
-        </h3>
+        <div className="flex items-center gap-2">
+          <h3 className="font-medium text-lg">Deploy Version</h3>
+          <Badge>v{selectedVersion.version}</Badge>
+        </div>
         <div className="space-y-2">
           <h3 className="font-medium text-sm">
             {publicLinkOnly ? "Visibility" : "Environment"}
