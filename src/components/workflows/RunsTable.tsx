@@ -569,7 +569,7 @@ function RunRow({
           <OutputPreview runId={run.id} />
         </div>
         <div className="col-span-2 flex items-center justify-end gap-2">
-          <LiveStatus run={run} refetch={refetch} />
+          <LiveStatus run={run} refetch={refetch} hideProgressAndStatus={true} />
         </div>
       </div>
     </div>
