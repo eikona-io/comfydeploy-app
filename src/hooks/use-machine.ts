@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import type { Machine, MachineListItem } from "@/types/machine";
 
 const BATCH_SIZE = 20;
 
@@ -13,7 +14,7 @@ export function useMachines(
   is_docker = false,
   include_docker_command_steps = false,
 ) {
-  return useInfiniteQuery<any[]>({
+  return useInfiniteQuery<MachineListItem[]>({
     queryKey: ["machines"],
     meta: {
       limit: limit ?? batchSize,
@@ -48,14 +49,14 @@ export function useMachines(
 }
 
 export function useMachinesAll() {
-  return useQuery<any[]>({
+  return useQuery<MachineListItem[]>({
     queryKey: ["machines", "all"],
     refetchInterval: 5000,
   });
 }
 
 export function useMachine(machine_id?: string) {
-  return useQuery<any>({
+  return useQuery<Machine>({
     enabled: !!machine_id,
     queryKey: ["machine", machine_id],
   });

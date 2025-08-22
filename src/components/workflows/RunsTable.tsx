@@ -555,7 +555,12 @@ function RunRow({
         </span>
         <span className="col-span-1 @2xl/run-row:block hidden">
           {run.gpu && (
-            <Badge className="!text-2xs w-fit" variant="outline">
+            <Badge
+              className="!text-2xs w-fit truncate"
+              variant="outline"
+              title={run.gpu}
+              style={{ maxWidth: "8rem" }}
+            >
               {run.gpu}
             </Badge>
           )}

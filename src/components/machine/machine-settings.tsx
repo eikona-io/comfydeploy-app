@@ -96,6 +96,7 @@ import {
 import { ExtraDockerCommands } from "./extra-docker-commands";
 import { SecretsSelector } from "./secrets-selector";
 import { VersionChecker } from "./version-checker";
+import { ModelPathSelector } from "./model-path-selector";
 import { useSessionAPI } from "@/hooks/use-session-api";
 import { getCurrentEffectiveSessionIdFromMachineId } from "../workspace/session-creator-form";
 import { queryClient } from "@/lib/providers";
@@ -390,6 +391,8 @@ function ServerlessSettings({
       prestart_command: machine.prestart_command,
 
       optimized_runner: machine.optimized_runner,
+      models_to_cache: machine.models_to_cache || [],
+      enable_gpu_memory_snapshot: machine.enable_gpu_memory_snapshot ?? false,
 
       cpu_request: machine.cpu_request,
       cpu_limit: machine.cpu_limit,
@@ -1240,6 +1243,55 @@ function ServerlessSettings({
                             </FormItem>
                           );
                         }}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="enable_gpu_memory_snapshot"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center gap-4 space-y-0">
+                            <FormControl>
+                              <Switch
+                                id="enable_gpu_memory_snapshot"
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                            <div>
+                              <FormLabel>Enable GPU Memory Snapshot</FormLabel>
+                              <FormDescription>
+                                Enables GPU memory snapshots for faster startup
+                                times. This may increase GPU memory usage.
+                              </FormDescription>
+                            </div>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="models_to_cache"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center gap-2">
+                              <FormLabel>Models to Cache</FormLabel>
+                              <FormDescription>
+                                Select models to cache for faster loading
+                                (requires GPU memory snapshot)
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <ModelPathSelector
+                                value={field.value || []}
+                                onChange={field.onChange}
+                                disabled={
+                                  !form.watch("enable_gpu_memory_snapshot")
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
                     </div>
                   </AccordionContent>
