@@ -1,10 +1,7 @@
-import { Link, useRouter, useSearch } from "@tanstack/react-router";
-import { WorkflowDropdown } from "./workflow-dropdown";
-import {
-  useSessionIdInSessionView,
-  useWorkflowIdInWorkflowPage,
-} from "@/hooks/hook";
-import { VersionSelectV2 } from "./version-select";
+import { useAuth } from "@clerk/clerk-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useParams, useRouter, useSearch } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
   BookText,
@@ -30,31 +27,42 @@ import {
   WorkflowIcon,
   X,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import { AnimatePresence } from "framer-motion";
-import { useParams } from "@tanstack/react-router";
-import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { ImageInputsTooltip } from "./image-inputs-tooltip";
-import { cn } from "@/lib/utils";
-import type { Session } from "./app-sidebar";
-import { useQuery } from "@tanstack/react-query";
-import { SessionTimer, useSessionTimer } from "./workspace/SessionTimer";
 import { parseAsString, useQueryState } from "nuqs";
-import { useSessionAPI } from "@/hooks/use-session-api";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { ShareWorkflowDialog } from "./share-workflow-dialog";
-import { useIsAdminAndMember } from "./permissions";
-import {
-  useCurrentPlanQuery,
-  useIsDeploymentAllowed,
-} from "@/hooks/use-current-plan";
-import { useWorkflowDeployments } from "@/components/workspace/ContainersTable";
 import {
   DeploymentDialog,
   useSelectedDeploymentStore,
 } from "@/components/deployment/deployment-page";
-import { getEnvColor } from "@/components/workspace/ContainersTable";
+import {
+  getEnvColor,
+  useWorkflowDeployments,
+} from "@/components/workspace/ContainersTable";
+import {
+  useSessionIdInSessionView,
+  useWorkflowIdInWorkflowPage,
+} from "@/hooks/hook";
+import {
+  useCurrentPlanQuery,
+  useIsDeploymentAllowed,
+} from "@/hooks/use-current-plan";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
+import { useSessionAPI } from "@/hooks/use-session-api";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { queryClient } from "@/lib/providers";
+import { cn } from "@/lib/utils";
+import { serverAction } from "@/lib/workflow-version-api";
+import { useDrawerStore } from "@/stores/drawer-store";
+import type { Session } from "./app-sidebar";
+import { ImageInputsTooltip } from "./image-inputs-tooltip";
+import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
+import { useIsAdminAndMember } from "./permissions";
+import { ShareWorkflowDialog } from "./share-workflow-dialog";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import { CopyButton } from "./ui/copy-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,19 +70,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { useWorkflowStore } from "./workspace/Workspace";
-import { useDrawerStore } from "@/stores/drawer-store";
-import { LogDisplay } from "./workspace/LogDisplay";
-import { AssetBrowserSidebar } from "./workspace/assets-browser-sidebar";
-import { ExternalNodeDocs } from "./workspace/external-node-docs";
-import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
-import { sendWorkflow } from "./workspace/sendEventToCD";
-import { CopyButton } from "./ui/copy-button";
-import { ScrollArea } from "./ui/scroll-area";
-import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { api } from "@/lib/api";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { ScrollArea } from "./ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -82,17 +79,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Button } from "./ui/button";
-import { Switch } from "./ui/switch";
-import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import { useAuth } from "@clerk/clerk-react";
-import { useSelectedVersion } from "./version-select";
-import { useGetWorkflowVersionData } from "@/hooks/use-get-workflow-version-data";
-import { serverAction } from "@/lib/workflow-version-api";
+import { Switch } from "./ui/switch";
+import { useSelectedVersion, VersionSelectV2 } from "./version-select";
+import { WorkflowDropdown } from "./workflow-dropdown";
+import { AssetBrowserSidebar } from "./workspace/assets-browser-sidebar";
 import { DeploymentDrawer } from "./workspace/DeploymentDisplay";
-import { queryClient } from "@/lib/providers";
+import { ExternalNodeDocs } from "./workspace/external-node-docs";
+import { LogDisplay } from "./workspace/LogDisplay";
+import { SessionTimer, useSessionTimer } from "./workspace/SessionTimer";
+import { sendWorkflow } from "./workspace/sendEventToCD";
 import { getCurrentEffectiveSessionId } from "./workspace/session-creator-form";
+import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
+import { useWorkflowStore } from "./workspace/Workspace";
 
 // Navigation helper hook
 function useWorkflowNavigation() {
@@ -103,7 +102,7 @@ function useWorkflowNavigation() {
   return useCallback(
     (
       view: string,
-      options?: { sessionId?: string; preserveSearch?: boolean }
+      options?: { sessionId?: string; preserveSearch?: boolean },
     ) => {
       const currentSearch = search as any;
 
@@ -131,7 +130,7 @@ function useWorkflowNavigation() {
         search: Object.keys(searchParams).length > 0 ? searchParams : undefined,
       });
     },
-    [router, workflowId, search]
+    [router, workflowId, search],
   );
 }
 
@@ -363,7 +362,7 @@ function CenterNavigation() {
                 ? "workspace"
                 : view === "playground"
                   ? "playground"
-                  : "deployment"
+                  : "deployment",
             ),
           }}
           transition={{
@@ -614,16 +613,7 @@ function WorkflowNavbarRight() {
 
   // Get deployments and versions for sharing
   const { data: deployments } = useWorkflowDeployments(workflowId || "");
-  const { data: versions } = useQuery<any[]>({
-    queryKey: ["workflow", workflowId, "versions"],
-    enabled: !!workflowId,
-    meta: {
-      params: {
-        limit: 1,
-        offset: 0,
-      },
-    },
-  });
+  const { value: version } = useSelectedVersion(workflowId || "");
 
   const publicShareDeployment = deployments?.find(
     (d: any) => d.environment === "public-share",
@@ -714,8 +704,8 @@ function WorkflowNavbarRight() {
                   setSelectedDeployment(communityShareDeployment.id);
                 } else if (privateShareDeployment) {
                   setSelectedDeployment(privateShareDeployment.id);
-                } else if (versions?.[0]) {
-                  setSelectedVersion(versions[0]);
+                } else if (version) {
+                  setSelectedVersion(version);
                   setIsDrawerOpen(true);
                 }
               }}
@@ -789,17 +779,6 @@ function WorkflowNavbarRight() {
               }}
             >
               Delete
-            </Button>
-            <Button
-              onClick={() => {
-                if (versions?.[0]) {
-                  // setSelectedDeployment(null);
-                  setSelectedVersion(versions[0]);
-                  setIsDrawerOpen(true);
-                }
-              }}
-            >
-              Update
             </Button>
           </div>
         )}
