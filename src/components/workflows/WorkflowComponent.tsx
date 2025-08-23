@@ -58,6 +58,10 @@ import {
 } from "../workspace/ContainersTable";
 import { useMachine } from "@/hooks/use-machine";
 import { UserIcon } from "../run/SharePageComponent";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { UserIcon } from "../user/UserIcon";
+import { LiveStatus } from "./LiveStatus";
 
 const parseTimestampSafely = (timestamp: string | number): Date => {
   try {
@@ -131,6 +135,7 @@ export function RunDetails(props: {
   const [selectedTab, setSelectedTab] = useQueryState("tab", parseAsString);
   const [tweakRunId, setTweakRunId] = useQueryState("runID");
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: run, isLoading } = useQuery<any>({
     queryKey: ["run", run_id],
@@ -298,6 +303,16 @@ export function RunDetails(props: {
             />
           )}
         </div>
+
+        {/* Live Status for active runs */}
+        {(run.status === "running" || run.status === "uploading" || run.status === "not-started" || run.status === "queued") && (
+          <div className="mt-3">
+            <LiveStatus run={run} isForRunPage={true} refetch={() => {
+              // Trigger refetch of the run data
+              queryClient.invalidateQueries({ queryKey: ["run", run_id] });
+            }} />
+          </div>
+        )}
 
         <Tabs
           defaultValue="outputs"

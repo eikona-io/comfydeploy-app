@@ -88,19 +88,25 @@ export function LiveStatus({
 
   if (isForRunPage) {
     return (
-      <div className="flex w-full flex-col p-4">
-        <div className="col-span-2 flex-col items-start gap-2 text-2xs">
+      <div className="flex w-full flex-col gap-1">
+        {/* Reserve space for live status to prevent layout shift */}
+        <div className="min-h-[20px] flex items-center">
           {!ended && realtimeStatus && (
-            <>
-              <p className="flex justify-center whitespace-nowrap">
-                {liveStatus}
-              </p>
-              <Progress value={run.progress * 100} className="w-full" />
-            </>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Live Status</span>
+              <span className="text-sm text-muted-foreground">{liveStatus}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Reserve space for progress bar to prevent layout shift */}
+        <div className="min-h-[8px]">
+          {!ended && realtimeStatus && (
+            <Progress value={run.progress * 100} className="w-full h-2" />
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 mt-1">
           <ErrorBoundary fallback={(error) => <div>{error.message}</div>}>
             <RunDuration
               run={run}
