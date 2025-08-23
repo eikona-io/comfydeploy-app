@@ -4,6 +4,7 @@ export const BLACKLISTED_CUSTOM_NODES = [
   "https://github.com/audioscavenger/ComfyUI-Thumbnails",
   "https://github.com/mrhan1993/ComfyUI-Fooocus",
   "https://github.com/iacoposk8/ComfyUI-Fooocus-Inpaint-Wrapper",
+  "https://github.com/brucew4yn3rp/ComfyUI_SelectiveMetadata",
 ];
 
 const BLACKLISTED_CUSTOM_NODES_WITH_CD = [

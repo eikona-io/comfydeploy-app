@@ -2,6 +2,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { LogsViewer } from "@/components/log/logs-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -275,6 +276,20 @@ export function RunDetails(props: {
             label="Status"
             value={<StatusBadge status={run.status} />}
           />
+          {/* Live Status Display */}
+          {!["success", "failed", "timeout", "cancelled"].includes(run.status) && run.live_status && (
+            <InfoItem
+              label="Live Status"
+              value={
+                <div className="flex flex-col gap-1 w-full">
+                  <div className="text-sm">{run.live_status}</div>
+                  {run.progress !== undefined && (
+                    <Progress value={run.progress * 100} className="w-full" />
+                  )}
+                </div>
+              }
+            />
+          )}
           <RunVersionAndDeployment run={run} />
           {run.machine_id && <RunMachine machineId={run.machine_id} />}
           {!props.isShare && (
