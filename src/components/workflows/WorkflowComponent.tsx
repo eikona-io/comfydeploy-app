@@ -59,8 +59,6 @@ import {
 import { useMachine } from "@/hooks/use-machine";
 import { UserIcon } from "../run/SharePageComponent";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { UserIcon } from "../user/UserIcon";
 import { LiveStatus } from "./LiveStatus";
 
 const parseTimestampSafely = (timestamp: string | number): Date => {
