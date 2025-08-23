@@ -28,6 +28,7 @@ import {
   Server,
   Settings,
   Sun,
+  Telescope,
   Users,
   Workflow,
 } from "lucide-react";
@@ -134,7 +135,7 @@ function UserMenu() {
               }}
             />
           )}
-          {/* 
+          {/*
           {isAdminAndMember && (
             <UserButton.Link
               label="API Keys"
@@ -294,6 +295,11 @@ const links = [
     url: "/pricing",
     icon: CreditCard,
     internal: true,
+  },
+  {
+    title: "Studio",
+    url: "https://studio.comfydeploy.com",
+    icon: Telescope,
   },
 ];
 
