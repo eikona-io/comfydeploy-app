@@ -23,11 +23,13 @@ export function LiveStatus({
   run,
   minimal = false,
   isForRunPage = false,
+  hideProgressAndStatus = false,
   refetch,
 }: {
   run: any;
   minimal?: boolean;
   isForRunPage?: boolean;
+  hideProgressAndStatus?: boolean;
   refetch?: () => void;
 }) {
   const { workflow_api, workflow_inputs, run_log, ...rest } = run;
@@ -149,7 +151,7 @@ export function LiveStatus({
 
   return (
     <>
-      {!ended && realtimeStatus && (
+      {!ended && realtimeStatus && !hideProgressAndStatus && (
         <div className="col-span-2 w-full max-w-[260px] flex-col items-start gap-1 text-2xs">
           <div className="whitespace-nowrap">{liveStatus}</div>
           <Progress

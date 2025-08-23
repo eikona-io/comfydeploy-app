@@ -170,6 +170,16 @@ export const serverlessFormSchema = z.object({
   cpu_limit: z.number().describe("CPU limit").nullable().optional(),
   memory_request: z.number().describe("Memory request").nullable().optional(),
   memory_limit: z.number().describe("Memory limit").nullable().optional(),
+  models_to_cache: z
+    .array(z.string())
+    .default([])
+    .optional()
+    .describe("Models to cache"),
+  enable_gpu_memory_snapshot: z
+    .boolean()
+    .default(false)
+    .optional()
+    .describe("Enable GPU memory snapshot"),
 });
 
 interface GPUConfig {

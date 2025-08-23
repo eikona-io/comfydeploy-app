@@ -18,7 +18,8 @@ const createNewMachine = (latestHashes: any) => ({
   id: "new",
   type: "comfy-deploy-serverless",
   gpu: "A10G",
-  comfyui_version: latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
+  comfyui_version:
+    latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
   docker_command_steps: {
     steps: [
       {
@@ -29,7 +30,9 @@ const createNewMachine = (latestHashes: any) => ({
           url: "https://github.com/BennyKok/comfyui-deploy",
           files: ["https://github.com/BennyKok/comfyui-deploy"],
           install_type: "git-clone",
-          hash: latestHashes?.comfydeploy_hash || "c47865ec266daf924cc7ef19223e9cf70122eb41",
+          hash:
+            latestHashes?.comfydeploy_hash ||
+            "c47865ec266daf924cc7ef19223e9cf70122eb41",
         },
       },
     ],
@@ -43,6 +46,8 @@ const createNewMachine = (latestHashes: any) => ({
   idle_timeout: 60,
   ws_timeout: 2,
   python_version: "3.11",
+  models_to_cache: [],
+  enable_gpu_memory_snapshot: false,
 });
 
 export function filterMachineConfig(machine: any) {
@@ -68,6 +73,8 @@ export function filterMachineConfig(machine: any) {
     extra_args: machine.extra_args,
     disable_metadata: machine.disable_metadata,
     prestart_command: machine.prestart_command,
+    models_to_cache: machine.models_to_cache,
+    enable_gpu_memory_snapshot: machine.enable_gpu_memory_snapshot,
   };
 }
 
@@ -131,7 +138,9 @@ export function MachineCreate() {
                   value={formValues?.name}
                   onChange={(e) =>
                     setFormValues((prev) =>
-                      prev ? { ...prev, name: e.target.value } : createNewMachine(latestHashes),
+                      prev
+                        ? { ...prev, name: e.target.value }
+                        : createNewMachine(latestHashes),
                     )
                   }
                 />
@@ -141,7 +150,9 @@ export function MachineCreate() {
                 machine={formValues}
                 onValueChange={(key, value) => {
                   setFormValues((prev) =>
-                    prev ? { ...prev, [key]: value } : createNewMachine(latestHashes),
+                    prev
+                      ? { ...prev, [key]: value }
+                      : createNewMachine(latestHashes),
                   );
                 }}
                 disableUnsavedChangesWarningServerless={true}
