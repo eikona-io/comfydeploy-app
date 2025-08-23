@@ -184,55 +184,43 @@ function CenterNavigation() {
   const navigateToView = useWorkflowNavigation();
 
   const shouldHideDeploymentFeatures = !isPlanLoading && !isDeploymentAllowed;
+  const [buttonPositions, setButtonPositions] = useState<Record<string, { left: number; width: number }>>({});
+  const navRef = useRef<HTMLDivElement>(null);
 
-  const visibleButtons = useMemo(() => {
-    if (!isAdminAndMember) {
-      // When user is not admin and member, only show gallery
-      return {
-        machine: false,
-        model: false,
-        gallery: view === "playground" || view === "gallery",
-        requests: false,
-      };
-    }
+  // Calculate button positions after mount
+  useEffect(() => {
+    if (!navRef.current) return;
 
-    // Original logic for admin and members
-    const buttonConfig = {
-      machine: view === "workspace" || view === "machine" || view === "model",
-      model: view === "workspace" || view === "model" || view === "machine",
-      gallery: view === "playground" || view === "gallery",
-      requests: view === "deployment" || view === "requests",
+    const updatePositions = () => {
+      const nav = navRef.current;
+      if (!nav) return;
+
+      const positions: Record<string, { left: number; width: number }> = {};
+      const navRect = nav.getBoundingClientRect();
+
+      nav.querySelectorAll('[data-button-id]').forEach((button) => {
+        const id = button.getAttribute('data-button-id');
+        if (!id) return;
+
+        const rect = button.getBoundingClientRect();
+        positions[id] = {
+          left: rect.left - navRect.left,
+          width: rect.width,
+        };
+      });
+
+      setButtonPositions(positions);
     };
-    return buttonConfig;
-  }, [view, isAdminAndMember]);
 
-  // Calculate hover background position
-  const getHoverPosition = (buttonId: string) => {
-    if (!isAdminAndMember) {
-      // When only playground is shown, center it
-      const positions = {
-        playground: { left: "6px", width: "calc(100% - 12px)" },
-      } as const;
-      return (
-        positions[buttonId as keyof typeof positions] || positions.playground
-      );
-    }
-
-    const positions = {
-      workspace: { left: "8px", width: "35%" },
-      playground: { left: "37%", width: "38%" },
-      deployment: { left: "75%", width: "23%" },
-    } as const;
-    return positions[buttonId as keyof typeof positions] || positions.workspace;
-  };
-
-  const hoverPosition = useMemo(
-    () =>
-      getHoverPosition(
-        hoveredButton || (isAdminAndMember ? "workspace" : "playground"),
-      ),
-    [hoveredButton, isAdminAndMember],
-  );
+    // Small delay to ensure DOM is ready
+    const timer = setTimeout(updatePositions, 50);
+    window.addEventListener('resize', updatePositions);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('resize', updatePositions);
+    };
+  }, [isAdminAndMember, view]);
 
   return (
     <div className="mt-2 flex flex-row gap-2">
@@ -257,38 +245,39 @@ function CenterNavigation() {
           mass: 0.6,
           opacity: { duration: 0.3 },
         }}
-        className="relative z-10 flex items-center rounded-full border border-gray-200 bg-white/60 px-1.5 text-sm shadow-md backdrop-blur-sm dark:border-zinc-800/50 dark:bg-zinc-700/60"
+        ref={navRef}
+        className="relative z-10 flex items-center gap-0.5 rounded-full border border-gray-200 bg-white/60 px-1.5 text-sm shadow-md backdrop-blur-sm dark:border-zinc-800/50 dark:bg-zinc-700/60"
         onMouseLeave={() => setHoveredButton(null)}
       >
         {/* Floating hover background */}
         <AnimatePresence>
-          {hoveredButton && (
+          {hoveredButton && buttonPositions[hoveredButton] && (
             <motion.div
               layoutId="hover-background"
-              className="absolute inset-y-1 rounded-full bg-gray-100/60 backdrop-blur-sm dark:bg-zinc-600/5"
-              initial={{ opacity: 0, scaleX: 0.8, scaleY: 0.4 }}
+              className="absolute inset-y-1 rounded-full bg-gray-100/60 backdrop-blur-sm dark:bg-zinc-600/20"
+              initial={{ opacity: 0 }}
               animate={{
                 opacity: 1,
-                scaleX: 1.05,
-                scaleY: 1.05,
-                ...hoverPosition,
+                left: buttonPositions[hoveredButton].left,
+                width: buttonPositions[hoveredButton].width,
               }}
-              exit={{ opacity: 0, scaleX: 0.8, scaleY: 0.4 }}
+              exit={{ opacity: 0 }}
               transition={{
                 type: "spring",
-                stiffness: 400,
-                damping: 30,
-                mass: 0.3,
+                stiffness: 350,
+                damping: 25,
+                mass: 0.5,
               }}
             />
           )}
         </AnimatePresence>
 
-        {/* Conditionally render workspace button */}
+        {/* Workspace button with text - admin only */}
         {isAdminAndMember && (
           <button
             type="button"
-            className={`relative z-10 flex items-center gap-1.5 px-4 py-3 transition-colors ${
+            data-button-id="workspace"
+            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${
               view === "workspace"
                 ? "font-medium text-gray-900 dark:text-zinc-100"
                 : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -301,13 +290,15 @@ function CenterNavigation() {
             onMouseEnter={() => setHoveredButton("workspace")}
           >
             <WorkflowIcon className="h-4 w-4" />
-            Workflow
+            <span>Workflow</span>
           </button>
         )}
 
+        {/* Playground button with text - always visible */}
         <button
           type="button"
-          className={`relative z-10 flex items-center gap-1.5 px-4 py-3 transition-colors ${
+          data-button-id="playground"
+          className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${
             view === "playground"
               ? "font-medium text-gray-900 dark:text-zinc-100"
               : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
@@ -318,14 +309,81 @@ function CenterNavigation() {
           onMouseEnter={() => setHoveredButton("playground")}
         >
           <Play className="h-4 w-4" />
-          Playground
+          <span>Playground</span>
         </button>
 
-        {/* Conditionally render deployment button */}
+        {/* Machine button - icon only, admin only */}
+        {isAdminAndMember && (
+          <ImageInputsTooltip tooltipText="Machine" delayDuration={300}>
+            <button
+              type="button"
+              data-button-id="machine"
+              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
+                view === "machine"
+                  ? "text-gray-900 dark:text-zinc-100"
+                  : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              }`}
+              onClick={() => {
+                navigateToView("machine");
+              }}
+              onMouseEnter={() => setHoveredButton("machine")}
+            >
+              <Server className="h-4 w-4" />
+            </button>
+          </ImageInputsTooltip>
+        )}
+
+        {/* Model button - icon only, admin only */}
+        {isAdminAndMember && (
+          <ImageInputsTooltip tooltipText="Model" delayDuration={300}>
+            <button
+              type="button"
+              data-button-id="model"
+              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
+                view === "model"
+                  ? "text-gray-900 dark:text-zinc-100"
+                  : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+              }`}
+              onClick={() => {
+                navigateToView("model");
+              }}
+              onMouseEnter={() => setHoveredButton("model")}
+            >
+              <Database className="h-4 w-4" />
+            </button>
+          </ImageInputsTooltip>
+        )}
+
+        {/* Gallery button - icon only, always visible */}
+        <ImageInputsTooltip tooltipText="Gallery" delayDuration={300}>
+          <button
+            type="button"
+            data-button-id="gallery"
+            className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
+              view === "gallery"
+                ? "text-gray-900 dark:text-zinc-100"
+                : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            }`}
+            onClick={() => {
+              navigateToView("gallery");
+            }}
+            onMouseEnter={() => setHoveredButton("gallery")}
+          >
+            <ImageIcon className="h-4 w-4" />
+          </button>
+        </ImageInputsTooltip>
+
+        {/* Divider between icon buttons and API section */}
+        {isAdminAndMember && (
+          <div className="mx-1 h-6 w-px bg-gray-300 dark:bg-zinc-600" />
+        )}
+
+        {/* API button with text - admin only */}
         {isAdminAndMember && (
           <button
             type="button"
-            className={`relative z-10 flex items-center gap-1.5 px-4 py-3 transition-colors ${
+            data-button-id="deployment"
+            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${
               shouldHideDeploymentFeatures
                 ? "text-purple-600 opacity-50 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100"
                 : view === "deployment"
@@ -342,208 +400,71 @@ function CenterNavigation() {
             ) : (
               <GitBranch className="h-4 w-4" />
             )}
-            API
+            <span>API</span>
           </button>
         )}
 
-        {/* Active state background */}
-        <motion.div
-          className="absolute inset-y-1 rounded-full bg-gradient-to-br from-gray-100/60 via-gray-200/60 to-gray-300/60 backdrop-blur-sm dark:from-zinc-500/40 dark:via-zinc-600/40 dark:to-zinc-700/40"
-          initial={false}
-          animate={{
-            opacity:
-              (isAdminAndMember &&
-                (view === "workspace" || view === "deployment")) ||
-              view === "playground"
-                ? 1
-                : 0,
-            ...getHoverPosition(
-              view === "workspace"
-                ? "workspace"
-                : view === "playground"
-                  ? "playground"
-                  : "deployment",
-            ),
-          }}
-          transition={{
-            type: "spring",
-            stiffness: 300,
-            damping: 30,
-            mass: 0.5,
-          }}
-        />
-      </motion.div>
-
-      <AnimatePresence mode="popLayout">
-        {/* Machine button */}
-        {visibleButtons.machine && (
-          <motion.div
-            layout
-            key="machine"
-            initial={{ opacity: 0, scale: 0.3, x: -120, rotateZ: -5 }}
-            animate={{ opacity: 1, scale: 1, x: 0, rotateZ: 0 }}
-            exit={{ opacity: 0, scale: 0.3, x: -120, rotateZ: 5 }}
-            whileHover={{ scale: 1.08, rotateZ: 1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{
-              type: "spring",
-              stiffness: 180,
-              damping: 15,
-              mass: 0.8,
-              opacity: { duration: 0.4 },
-            }}
-            className={`flex items-center rounded-full border text-sm shadow-md backdrop-blur-sm ${
-              view === "machine"
-                ? "border-gray-300 bg-gray-200/60 shadow-gray-200 dark:border-zinc-800/50 dark:bg-zinc-400/60 dark:shadow-zinc-600/40"
-                : "border-gray-200 bg-white/60 dark:border-zinc-800/50 dark:bg-zinc-700/60"
-            }`}
-          >
-            <ImageInputsTooltip tooltipText="Machine" delayDuration={300}>
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 px-4 py-3 transition-colors ${
-                  view === "machine"
+        {/* Requests button - icon only, admin only */}
+        {isAdminAndMember && (
+          <ImageInputsTooltip tooltipText="Requests" delayDuration={300}>
+            <button
+              type="button"
+              data-button-id="requests"
+              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
+                shouldHideDeploymentFeatures
+                  ? "text-purple-600 opacity-50 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100"
+                  : view === "requests"
                     ? "text-gray-900 dark:text-zinc-100"
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-                onClick={() => {
-                  navigateToView("machine");
-                }}
-              >
-                <span className="sr-only">Machine</span>
-                <Server className="h-4 w-[18px]" />
-              </button>
-            </ImageInputsTooltip>
-          </motion.div>
-        )}
-
-        {/* Model button */}
-        {visibleButtons.model && (
-          <motion.div
-            layout
-            key="model"
-            initial={{ opacity: 0, scale: 0.3, x: -120, rotateZ: -5 }}
-            animate={{ opacity: 1, scale: 1, x: 0, rotateZ: 0 }}
-            exit={{ opacity: 0, scale: 0.3, x: -120, rotateZ: 5 }}
-            whileHover={{ scale: 1.08, rotateZ: -1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{
-              type: "spring",
-              stiffness: 180,
-              damping: 15,
-              mass: 0.8,
-              opacity: { duration: 0.4 },
-              delay: 0.1,
-            }}
-            className={`flex items-center rounded-full border text-sm shadow-md backdrop-blur-sm ${
-              view === "model"
-                ? "border-gray-300 bg-gray-200/60 shadow-gray-200 dark:border-zinc-800/50 dark:bg-zinc-400/60 dark:shadow-zinc-600/40"
-                : "border-gray-200 bg-white/60 dark:border-zinc-800/50 dark:bg-zinc-700/60"
-            }`}
-          >
-            <ImageInputsTooltip tooltipText="Model" delayDuration={300}>
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 px-4 py-3 transition-colors ${
-                  view === "model"
-                    ? "text-gray-900 dark:text-zinc-100"
-                    : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-                onClick={() => {
-                  navigateToView("model");
-                }}
-              >
-                <span className="sr-only">Model</span>
-                <Database className="h-4 w-[18px]" />
-              </button>
-            </ImageInputsTooltip>
-          </motion.div>
-        )}
-
-        {/* Gallery button */}
-        {visibleButtons.gallery && (
-          <motion.div
-            layout
-            key="gallery"
-            initial={{ opacity: 0, scale: 0.3, x: -120, rotateZ: -5 }}
-            animate={{ opacity: 1, scale: 1, x: 0, rotateZ: 0 }}
-            exit={{ opacity: 0, scale: 0.3, x: -120, rotateZ: 5 }}
-            whileHover={{ scale: 1.08, rotateZ: 1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{
-              type: "spring",
-              stiffness: 180,
-              damping: 15,
-              mass: 0.8,
-              opacity: { duration: 0.4 },
-            }}
-            className={`flex items-center rounded-full border text-sm shadow-md backdrop-blur-sm ${
-              view === "gallery"
-                ? "border-gray-300 bg-gray-200/60 shadow-gray-200 dark:border-zinc-800/50 dark:bg-zinc-400/60 dark:shadow-zinc-600/40"
-                : "border-gray-200 bg-white/60 dark:border-zinc-800/50 dark:bg-zinc-700/60"
-            }`}
-          >
-            <ImageInputsTooltip tooltipText="Gallery" delayDuration={300}>
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 px-4 py-3 transition-colors ${
-                  view === "gallery"
-                    ? "text-gray-900 dark:text-zinc-100"
-                    : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-                onClick={() => {
-                  navigateToView("gallery");
-                }}
-              >
-                <span className="sr-only">Gallery</span>
-                <ImageIcon className="h-4 w-[18px]" />
-              </button>
-            </ImageInputsTooltip>
-          </motion.div>
-        )}
-
-        {/* Request button */}
-        {visibleButtons.requests && (
-          <motion.div
-            layout
-            key="requests"
-            initial={{ opacity: 0, scale: 0.3, x: -120, rotateZ: -5 }}
-            animate={{ opacity: 1, scale: 1, x: 0, rotateZ: 0 }}
-            exit={{ opacity: 0, scale: 0.3, x: -120, rotateZ: 5 }}
-            whileHover={{ scale: 1.08, rotateZ: -1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{
-              type: "spring",
-              stiffness: 180,
-              damping: 15,
-              mass: 0.8,
-              opacity: { duration: 0.4 },
-            }}
-            className={`flex items-center rounded-full border text-sm shadow-md backdrop-blur-sm ${
-              view === "requests"
-                ? "border-gray-300 bg-gray-200/60 shadow-gray-200 dark:border-zinc-800/50 dark:bg-zinc-400/60 dark:shadow-zinc-600/40"
-                : "border-gray-200 bg-white/60 dark:border-zinc-800/50 dark:bg-zinc-700/60"
-            }`}
-          >
-            <ImageInputsTooltip tooltipText="Request" delayDuration={300}>
-              <button
-                type="button"
-                className={`flex items-center gap-1.5 px-4 py-3 transition-colors ${
-                  view === "requests"
-                    ? "text-gray-900 dark:text-zinc-100"
-                    : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-                onClick={() => {
+              }`}
+              onClick={() => {
+                if (!shouldHideDeploymentFeatures) {
                   navigateToView("requests");
-                }}
-              >
-                <span className="sr-only">Requests</span>
-                <TextSearch className="h-4 w-[18px]" />
-              </button>
-            </ImageInputsTooltip>
-          </motion.div>
+                }
+              }}
+              onMouseEnter={() => setHoveredButton("requests")}
+            >
+              <TextSearch className="h-4 w-4" />
+            </button>
+          </ImageInputsTooltip>
         )}
-      </AnimatePresence>
+
+        {/* Active state background */}
+        {(() => {
+          // Map view names to button IDs
+          const viewToButtonId: Record<string, string> = {
+            workspace: "workspace",
+            playground: "playground",
+            machine: "machine",
+            model: "model",
+            gallery: "gallery",
+            deployment: "deployment",
+            requests: "requests",
+          };
+          
+          const buttonId = viewToButtonId[view] || view;
+          
+          if (buttonId && buttonPositions[buttonId]) {
+            return (
+              <motion.div
+                className="absolute inset-y-1 rounded-full bg-gradient-to-br from-gray-100/80 via-gray-200/80 to-gray-300/80 backdrop-blur-sm dark:from-zinc-500/50 dark:via-zinc-600/50 dark:to-zinc-700/50"
+                initial={false}
+                animate={{
+                  left: buttonPositions[buttonId].left,
+                  width: buttonPositions[buttonId].width,
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 28,
+                  mass: 0.8,
+                }}
+              />
+            );
+          }
+          return null;
+        })()}
+      </motion.div>
     </div>
   );
 }
