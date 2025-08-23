@@ -1,4 +1,13 @@
 import {
+  OrganizationSwitcher,
+  UserButton,
+  useAuth,
+  useClerk,
+} from "@clerk/clerk-react";
+import { dark } from "@clerk/themes";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
+import { motion } from "framer-motion";
+import {
   ArrowLeft,
   Book,
   Box,
@@ -10,6 +19,7 @@ import {
   Github,
   History,
   Key,
+  LogIn,
   MessageCircle,
   Moon,
   Receipt,
@@ -20,11 +30,14 @@ import {
   Sun,
   Users,
   Workflow,
-  LogIn,
 } from "lucide-react";
-
+import { useEffect, useMemo, useRef } from "react";
 import { useIsAdminAndMember, useIsAdminOnly } from "@/components/permissions";
 import { Button } from "@/components/ui/button";
+import {
+  BellIcon,
+  type BellIconHandle,
+} from "@/components/ui/custom/bell-icon";
 import {
   Sidebar,
   SidebarContent,
@@ -49,44 +62,31 @@ import {
   useCurrentPlanWithStatus,
   useIsBusinessAllowed,
 } from "@/hooks/use-current-plan";
+import {
+  InfoCard,
+  InfoCardAction,
+  InfoCardContent,
+  InfoCardDescription,
+  InfoCardDismiss,
+  InfoCardFooter,
+  InfoCardMedia,
+  InfoCardTitle,
+} from "@/kl-ui/info-card";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn, isDarkTheme } from "@/lib/utils";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { getOrgPathInfo } from "@/utils/org-path";
-import {
-  OrganizationSwitcher,
-  UserButton,
-  useAuth,
-  useClerk,
-} from "@clerk/clerk-react";
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
-import { motion } from "framer-motion";
-import { useEffect, useRef, useMemo } from "react";
+import { Icon } from "./icon-word";
+import { useTheme } from "./theme-provider";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
-import { useTheme } from "./theme-provider";
-import { dark } from "@clerk/themes";
-import { Icon } from "./icon-word";
-import {
-  InfoCard,
-  InfoCardContent,
-  InfoCardTitle,
-  InfoCardDescription,
-  InfoCardMedia,
-  InfoCardFooter,
-  InfoCardDismiss,
-  InfoCardAction,
-} from "@/kl-ui/info-card";
-import {
-  BellIcon,
-  type BellIconHandle,
-} from "@/components/ui/custom/bell-icon";
 
 // Add Session type
 export interface Session {
+  id: string;
   created_at: string;
   timeout_end?: string;
   timeout?: number;
@@ -98,7 +98,6 @@ export interface Session {
 }
 
 function UserMenu() {
-  const isAdminOnly = useIsAdminOnly();
   const isAdminAndMember = useIsAdminAndMember();
   const { theme } = useTheme();
 
