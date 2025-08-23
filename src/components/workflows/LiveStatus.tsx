@@ -90,57 +90,63 @@ export function LiveStatus({
 
   if (isForRunPage) {
     return (
-      <div className="flex w-full flex-col gap-1">
-        {/* Reserve space for live status to prevent layout shift */}
-        <div className="min-h-[20px] flex items-center">
-          {!ended && realtimeStatus && (
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Live Status</span>
-              <span className="text-sm text-muted-foreground">{liveStatus}</span>
-            </div>
-          )}
-        </div>
-        
-        {/* Reserve space for progress bar to prevent layout shift */}
-        <div className="min-h-[8px]">
-          {!ended && realtimeStatus && (
-            <Progress value={run.progress * 100} className="w-full h-2" />
-          )}
-        </div>
-
-        <div className="flex items-center gap-1 mt-1">
-          <ErrorBoundary fallback={(error) => <div>{error.message}</div>}>
-            <RunDuration
-              run={run}
-              liveStatus={liveStatus}
-              status={status}
-              realtimeStatus={realtimeStatus}
-            />
-          </ErrorBoundary>
-          <div className="overflow-hidden text-ellipsis whitespace-nowrap text-2xs">
-            {!ended &&
-              !liveStatus &&
-              run.machine_type === "comfy-deploy-serverless" &&
-              (run.queued_at !== undefined ? (
-                // <Badge>Cold Starting</Badge>
-                <></>
+      <div className="w-full">
+        {/* Compact Live Status Section */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            {/* Live Status Text */}
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-medium text-muted-foreground">Live Status</span>
+              {!ended && realtimeStatus ? (
+                <span className="text-xs text-foreground truncate">{liveStatus}</span>
               ) : (
-                <Badge>In Queue</Badge>
-              ))}
+                <span className="text-xs text-muted-foreground">Waiting...</span>
+              )}
+            </div>
+            
+            {/* Duration and Badge */}
+            <div className="flex items-center gap-2">
+              <ErrorBoundary fallback={(error) => <div>{error.message}</div>}>
+                <RunDuration
+                  run={run}
+                  liveStatus={liveStatus}
+                  status={status}
+                  realtimeStatus={realtimeStatus}
+                />
+              </ErrorBoundary>
+              {!ended &&
+                !liveStatus &&
+                run.machine_type === "comfy-deploy-serverless" &&
+                (run.queued_at !== undefined ? (
+                  <></>
+                ) : (
+                  <Badge variant="secondary" className="text-2xs">In Queue</Badge>
+                ))}
+            </div>
           </div>
-        </div>
-        {canBeCancelled && (
-          <div className="flex justify-center">
+
+          {/* Cancel Button aligned with status and time */}
+          {canBeCancelled && (
             <Button
               variant="destructive"
               size="sm"
               onClick={handleCancel}
-              className="h-8 rounded-[10px] px-2 py-1 text-2xs"
+              className="h-7 px-3 text-xs"
             >
               Cancel
             </Button>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Progress Bar - always show with skeleton when no progress */}
+        <div className="mt-2">
+          {!ended ? (
+            <Progress 
+              value={realtimeStatus && run.progress !== undefined ? run.progress * 100 : 0} 
+              className="w-full h-1.5" 
+            />
+          ) : null}
+        </div>
       </div>
     );
   }
