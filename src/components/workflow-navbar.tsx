@@ -185,11 +185,17 @@ function CenterNavigation() {
 
   const shouldHideDeploymentFeatures = !isPlanLoading && !isDeploymentAllowed;
   const [buttonPositions, setButtonPositions] = useState<Record<string, { left: number; width: number }>>({});
+  const [positionsReady, setPositionsReady] = useState(false);
+  const isFirstRender = useRef(true);
+  const hasInteracted = useRef(false);
   const navRef = useRef<HTMLDivElement>(null);
 
   // Calculate button positions after mount
   useEffect(() => {
     if (!navRef.current) return;
+
+    // Reset positions when dependencies change
+    setPositionsReady(false);
 
     const updatePositions = () => {
       const nav = navRef.current;
@@ -210,14 +216,61 @@ function CenterNavigation() {
       });
 
       setButtonPositions(positions);
+      setPositionsReady(true);
+    };
+    
+    // Force position update on first interaction
+    const handleFirstInteraction = () => {
+      if (!hasInteracted.current) {
+        hasInteracted.current = true;
+        updatePositions();
+      }
     };
 
-    // Small delay to ensure DOM is ready
-    const timer = setTimeout(updatePositions, 50);
+    // Timers for position updates
+    const timers: NodeJS.Timeout[] = [];
+    
+    // Use requestAnimationFrame to ensure DOM is painted
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        updatePositions();
+      });
+    });
+    
+    // Multiple attempts to catch layout shifts
+    timers.push(setTimeout(updatePositions, 100));
+    timers.push(setTimeout(updatePositions, 250));
+    
+    // Extra delay for first render to ensure everything is settled
+    if (isFirstRender.current) {
+      timers.push(setTimeout(() => {
+        updatePositions();
+        isFirstRender.current = false;
+      }, 500));
+    }
+    
+    // Wait for fonts to load
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        updatePositions();
+      });
+    }
+    
+    // Use ResizeObserver with debouncing
+    let resizeTimeout: NodeJS.Timeout;
+    const resizeObserver = new ResizeObserver(() => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(updatePositions, 10);
+    });
+    
+    resizeObserver.observe(navRef.current);
+    
     window.addEventListener('resize', updatePositions);
     
     return () => {
-      clearTimeout(timer);
+      timers.forEach(timer => clearTimeout(timer));
+      clearTimeout(resizeTimeout);
+      resizeObserver.disconnect();
       window.removeEventListener('resize', updatePositions);
     };
   }, [isAdminAndMember, view]);
@@ -443,26 +496,27 @@ function CenterNavigation() {
           };
           
           const buttonId = viewToButtonId[view] || view;
+          const position = buttonPositions[buttonId];
           
-          if (buttonId && buttonPositions[buttonId]) {
-            return (
-              <motion.div
-                className="absolute inset-y-1 rounded-full bg-gradient-to-br from-gray-100/80 via-gray-200/80 to-gray-300/80 backdrop-blur-sm dark:from-zinc-500/50 dark:via-zinc-600/50 dark:to-zinc-700/50"
-                initial={false}
-                animate={{
-                  left: buttonPositions[buttonId].left,
-                  width: buttonPositions[buttonId].width,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 28,
-                  mass: 0.8,
-                }}
-              />
-            );
-          }
-          return null;
+          return (
+            <motion.div
+              className="absolute inset-y-1 rounded-full bg-gradient-to-br from-gray-100/80 via-gray-200/80 to-gray-300/80 backdrop-blur-sm dark:from-zinc-500/50 dark:via-zinc-600/50 dark:to-zinc-700/50"
+              style={{
+                opacity: positionsReady && position ? 1 : 0,
+                pointerEvents: 'none',
+              }}
+              animate={position ? {
+                left: position.left,
+                width: position.width,
+              } : undefined}
+              transition={{
+                type: "spring",
+                stiffness: 350,
+                damping: 30,
+                mass: 0.7,
+              }}
+            />
+          );
         })()}
       </motion.div>
     </div>
