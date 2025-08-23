@@ -11,6 +11,10 @@ export default defineConfig(({ command, mode }) => {
   // Define default values for env variables
   const defaultValues = {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "",
+    NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL: null,
+    NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL: null,
+    NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL: null,
+    NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: null,
     COMFY_DEPLOY_SHARED_MACHINE_API_URL: null,
     NEXT_PUBLIC_POSTHOG_KEY: null,
     NEXT_PUBLIC_CD_API_URL: "http://localhost:3011",
