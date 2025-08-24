@@ -1,3 +1,27 @@
+import {
+  Check,
+  CircleX,
+  Clock,
+  Download,
+  Ellipsis,
+  FileAudio,
+  FileText,
+  FolderOpen,
+  Loader2,
+  Minus,
+  Search,
+  SearchX,
+  X,
+} from "lucide-react";
+import {
+  lazy,
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { toast } from "sonner";
 import { DownloadButton } from "@/components/download-button";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { Button } from "@/components/ui/button";
@@ -8,31 +32,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAddAsset } from "@/hooks/hook";
+import { useAuthStore } from "@/lib/auth-store";
 import { cn, getOptimizedImage } from "@/lib/utils";
-import {
-  Download,
-  SearchX,
-  Check,
-  X,
-  Minus,
-  Loader2,
-  CircleX,
-  Ellipsis,
-  Search,
-  FileText,
-  FolderOpen,
-  Clock,
-} from "lucide-react";
-import {
-  useEffect,
-  useState,
-  lazy,
-  Suspense,
-  useMemo,
-  type ReactNode,
-} from "react";
-import { ShineBorder } from "../magicui/shine-border";
 import { downloadImage } from "@/utils/download-image";
+import { ShineBorder } from "../magicui/shine-border";
+import { MoveAssetDialog } from "../move-asset-dialog";
+import { CodeBlock } from "../ui/code-blocks";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,11 +47,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { CodeBlock } from "../ui/code-blocks";
-import { useAddAsset } from "@/hooks/hook";
-import { toast } from "sonner";
-import { MoveAssetDialog } from "../move-asset-dialog";
-import { useAuthStore } from "@/lib/auth-store";
 
 // File type management utility
 const FILE_TYPES = {
@@ -198,6 +199,14 @@ function _FileURLRender({
 
   // For audio files
   if (fileTypeCategory === "AUDIO") {
+    if (isSmallView) {
+      return (
+        <div className="flex h-full w-full items-center justify-center">
+          <FileAudio className="h-4 w-4 text-muted-foreground" />
+        </div>
+      );
+    }
+
     return (
       <div className="relative">
         {isLoading && (
