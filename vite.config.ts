@@ -16,9 +16,9 @@ export default defineConfig(({ command, mode }) => {
     NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL: null,
     NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: null,
     COMFY_DEPLOY_SHARED_MACHINE_API_URL: null,
-    VITE_PUBLIC_POSTHOG_KEY: null,
     NEXT_PUBLIC_CD_API_URL: "http://localhost:3011",
     NEXT_PUBLIC_NGROK_CD_API_URL: null,
+    VITE_PUBLIC_POSTHOG_KEY: null,
     VITE_PUBLIC_POSTHOG_HOST: "https://app.posthog.com",
     COMFYUI_FRONTEND_URL: "https://comfyui.comfydeploy.com",
   };
