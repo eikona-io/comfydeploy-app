@@ -1,12 +1,11 @@
-import posthog from "posthog-js";
-import { PostHogProvider, usePostHog } from "posthog-js/react";
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
 import { useAuth, useOrganization, useUser } from "@clerk/clerk-react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { NuqsAdapter } from "nuqs/adapters/react";
+import posthog from "posthog-js";
+import { PostHogProvider, usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { api } from "./api";
 import { useAuthStore } from "./auth-store";
 
@@ -17,6 +16,8 @@ function PostHogUserIdentify() {
   const { organization } = useOrganization();
 
   useEffect(() => {
+    if (!posthog || !process.env.VITE_PUBLIC_POSTHOG_KEY) return;
+
     posthog.setPersonPropertiesForFlags({
       org_id: organization?.id ?? null,
       org_name: organization?.name ?? null,
@@ -24,6 +25,8 @@ function PostHogUserIdentify() {
   }, [organization?.id]);
 
   useEffect(() => {
+    if (!posthog || !process.env.VITE_PUBLIC_POSTHOG_KEY) return;
+
     const userProperties = {
       email: user?.primaryEmailAddress?.emailAddress,
       name: user?.fullName,
@@ -54,11 +57,30 @@ if (flags) {
   }
 }
 
-posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-  api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-  capture_pageview: false, // Disable automatic pageview capture, as we capture manually
-  bootstrap: bootstrapData,
-});
+// Only initialize PostHog if the key is provided
+if (process.env.VITE_PUBLIC_POSTHOG_KEY) {
+  posthog.init(process.env.VITE_PUBLIC_POSTHOG_KEY, {
+    api_host: process.env.VITE_PUBLIC_POSTHOG_HOST || "https://app.posthog.com",
+    capture_pageview: false, // Disable automatic pageview capture, as we capture manually
+    capture_pageleave: true, // Enable pageleave capture
+    debug: process.env.NODE_ENV === "development", // Enable debug mode in development
+    autocapture: {
+      // Disable autocapture of form inputs for privacy
+      capture_copied_text: false,
+    },
+    session_recording: {
+      // Configure session recording (can be controlled via feature flags)
+      maskAllInputs: true,
+    },
+    bootstrap: bootstrapData,
+    loaded: (posthog) => {
+      // Additional setup after PostHog is loaded
+      if (process.env.NODE_ENV === "development") {
+        console.log("PostHog loaded successfully");
+      }
+    },
+  });
+}
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -156,6 +178,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <ReactQueryDevtools initialIsOpen={true} />
           <PostHogUserIdentify />
+          <PageViewTracker />
           {children}
         </QueryClientProvider>
       </NuqsAdapter>
