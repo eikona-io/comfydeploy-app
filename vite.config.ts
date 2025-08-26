@@ -1,8 +1,8 @@
 import path from "node:path";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 // import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react-swc";
 import { defineConfig, loadEnv } from "vite";
-import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => {
     NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL: null,
     NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL: null,
     COMFY_DEPLOY_SHARED_MACHINE_API_URL: null,
-    NEXT_PUBLIC_POSTHOG_KEY: null,
+    VITE_PUBLIC_POSTHOG_KEY: null,
     NEXT_PUBLIC_CD_API_URL: "http://localhost:3011",
     NEXT_PUBLIC_NGROK_CD_API_URL: null,
     NEXT_PUBLIC_POSTHOG_HOST: "https://app.posthog.com",

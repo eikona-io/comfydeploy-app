@@ -4,18 +4,18 @@ import { useCallback } from "react";
 /**
  * Custom hook for PostHog analytics with safe fallbacks
  * This hook provides a safe interface to PostHog analytics that gracefully handles
- * cases where PostHog is not initialized (e.g., when NEXT_PUBLIC_POSTHOG_KEY is not set)
+ * cases where PostHog is not initialized (e.g., when VITE_PUBLIC_POSTHOG_KEY is not set)
  */
 export function useAnalytics() {
   const posthog = usePostHog();
-  const isEnabled = !!process.env.NEXT_PUBLIC_POSTHOG_KEY && !!posthog;
+  const isEnabled = !!process.env.VITE_PUBLIC_POSTHOG_KEY && !!posthog;
 
   const track = useCallback(
     (eventName: string, properties?: Record<string, any>) => {
       if (!isEnabled) return;
       posthog.capture(eventName, properties);
     },
-    [posthog, isEnabled]
+    [posthog, isEnabled],
   );
 
   const identify = useCallback(
@@ -23,7 +23,7 @@ export function useAnalytics() {
       if (!isEnabled) return;
       posthog.identify(userId, properties);
     },
-    [posthog, isEnabled]
+    [posthog, isEnabled],
   );
 
   const setPersonProperties = useCallback(
@@ -31,7 +31,7 @@ export function useAnalytics() {
       if (!isEnabled) return;
       posthog.setPersonProperties(properties);
     },
-    [posthog, isEnabled]
+    [posthog, isEnabled],
   );
 
   const setPersonPropertiesForFlags = useCallback(
@@ -39,7 +39,7 @@ export function useAnalytics() {
       if (!isEnabled) return;
       posthog.setPersonPropertiesForFlags(properties);
     },
-    [posthog, isEnabled]
+    [posthog, isEnabled],
   );
 
   const reset = useCallback(() => {
@@ -52,7 +52,7 @@ export function useAnalytics() {
       if (!isEnabled) return defaultValue;
       return posthog.isFeatureEnabled(flagKey) ?? defaultValue;
     },
-    [posthog, isEnabled]
+    [posthog, isEnabled],
   );
 
   const getFeatureFlag = useCallback(
@@ -60,7 +60,7 @@ export function useAnalytics() {
       if (!isEnabled) return defaultValue;
       return posthog.getFeatureFlag(flagKey) ?? defaultValue;
     },
-    [posthog, isEnabled]
+    [posthog, isEnabled],
   );
 
   return {
