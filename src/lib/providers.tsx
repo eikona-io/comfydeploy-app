@@ -22,7 +22,7 @@ function PostHogUserIdentify() {
       org_id: organization?.id ?? null,
       org_name: organization?.name ?? null,
     });
-  }, [posthog, organization?.id]);
+  }, [organization?.id]);
 
   useEffect(() => {
     if (!posthog || !process.env.VITE_PUBLIC_POSTHOG_KEY) return;
@@ -34,7 +34,7 @@ function PostHogUserIdentify() {
       org_name: organization?.name ?? null,
     };
     posthog.identify(auth.userId || undefined, userProperties || undefined);
-  }, [posthog, auth.userId, isSignedIn, organization?.id]);
+  }, [auth.userId, isSignedIn, organization?.id]);
 
   return <></>;
 }
@@ -80,10 +80,6 @@ if (process.env.VITE_PUBLIC_POSTHOG_KEY) {
       }
     },
   });
-} else {
-  if (process.env.NODE_ENV === "development") {
-    console.warn("PostHog key not provided. Analytics will be disabled.");
-  }
 }
 
 export const queryClient = new QueryClient({
