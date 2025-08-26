@@ -19,7 +19,7 @@ export default defineConfig(({ command, mode }) => {
     VITE_PUBLIC_POSTHOG_KEY: null,
     NEXT_PUBLIC_CD_API_URL: "http://localhost:3011",
     NEXT_PUBLIC_NGROK_CD_API_URL: null,
-    NEXT_PUBLIC_POSTHOG_HOST: "https://app.posthog.com",
+    VITE_PUBLIC_POSTHOG_HOST: "https://app.posthog.com",
     COMFYUI_FRONTEND_URL: "https://comfyui.comfydeploy.com",
   };
 
