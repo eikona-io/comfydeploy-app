@@ -1,12 +1,13 @@
 import {
+  createRootRouteWithContext,
   Link,
   Outlet,
-  createRootRouteWithContext,
   redirect,
   useLocation,
   useRouter,
 } from "@tanstack/react-router";
 import React, { useEffect, useRef } from "react";
+
 const TanStackRouterDevtools =
   process.env.NODE_ENV === "production"
     ? () => null // Render nothing in production
@@ -18,19 +19,25 @@ const TanStackRouterDevtools =
           // default: res.TanStackRouterDevtoolsPanel
         })),
       );
+
+import {
+  SignedIn,
+  SignedOut,
+  useAuth,
+  type useClerk,
+} from "@clerk/clerk-react";
+import { Toaster } from "sonner";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { AppSidebar, GuestSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { Icon } from "@/components/icon-word";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { SignedIn, type useClerk } from "@clerk/clerk-react";
-import { SignedOut, useAuth } from "@clerk/clerk-react";
-import { Toaster } from "sonner";
-import { queryClient } from "../lib/providers";
-import { ThemeProvider } from "@/components/theme-provider";
-import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer";
-import { WorkflowNavbar } from "@/components/workflow-navbar";
-import { cn } from "@/lib/utils";
 import { LocalGitDisplay } from "@/components/local-git-display";
+import { ThemeProvider } from "@/components/theme-provider";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { WorkflowNavbar } from "@/components/workflow-navbar";
+import { AssetsBrowserPopup } from "@/components/workspace/assets-browser-drawer";
+import { cn } from "@/lib/utils";
+import { queryClient } from "../lib/providers";
 
 export type RootRouteContext = {
   auth?: ReturnType<typeof useAuth>;
@@ -106,6 +113,7 @@ function RootComponent() {
 
   return (
     <ThemeProvider defaultTheme="system">
+      <PageViewTracker />
       <div className="fixed z-[-1] h-full w-full bg-white dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-900">
         <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)] dark:bg-[radial-gradient(#333333_1px,transparent_1px)]" />
       </div>

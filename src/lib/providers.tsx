@@ -5,7 +5,7 @@ import { NuqsAdapter } from "nuqs/adapters/react";
 import posthog from "posthog-js";
 import { PostHogProvider, usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
-import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+
 import { api } from "./api";
 import { useAuthStore } from "./auth-store";
 
@@ -178,7 +178,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <QueryClientProvider client={queryClient}>
           <ReactQueryDevtools initialIsOpen={true} />
           <PostHogUserIdentify />
-          <PageViewTracker />
           {children}
         </QueryClientProvider>
       </NuqsAdapter>
