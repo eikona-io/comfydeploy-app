@@ -81,6 +81,7 @@ export function useMachineVersions(machine_id: string) {
         ? allPages?.length * BATCH_SIZE
         : undefined;
     },
+    enabled: !!machine_id,
     initialPageParam: 0,
     refetchInterval: 5000,
   });
@@ -90,6 +91,7 @@ export function useMachineVersionsAll(machine_id: string) {
   return useQuery<any[]>({
     queryKey: ["machine", "serverless", machine_id, "versions", "all"],
     refetchInterval: 5000,
+    enabled: !!machine_id,
   });
 }
 

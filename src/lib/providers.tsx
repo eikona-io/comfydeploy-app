@@ -94,7 +94,7 @@ export const queryClient = new QueryClient({
           return true;
         }
 
-        console.log(count, error);
+        // console.log(count, error);
         return count < 2;
       },
       queryFn: async ({ queryKey, pageParam, meta }) => {

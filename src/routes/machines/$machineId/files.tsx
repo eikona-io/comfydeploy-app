@@ -145,6 +145,7 @@ function MachineFileList() {
 
   const { data, isLoading } = useQuery<FileSystemResponse>({
     queryKey: ["machine", "serverless", machineId, "files"],
+    enabled: !!machineId,
     queryKeyHashFn: (queryKey) => [...queryKey, apiPath].toString(),
     meta: {
       params: {

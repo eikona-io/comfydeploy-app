@@ -38,6 +38,14 @@ export function getSessionStatus(session: any, isLive: boolean | undefined) {
     }
   }
 
+  if (session.status === "error") {
+    return {
+      message: "Session Error",
+      description: session.error || "An error occurred with your session.",
+      isError: true,
+    };
+  }
+
   if (isLive === false) {
     return {
       message: "Connecting",
@@ -46,13 +54,6 @@ export function getSessionStatus(session: any, isLive: boolean | undefined) {
     };
   }
 
-  if (session.status === "error") {
-    return {
-      message: "Session Error",
-      description: session.error || "An error occurred with your session.",
-      isError: true,
-    };
-  }
 
   return {
     message: "Warming Up",
@@ -146,6 +147,31 @@ const NoSessionId = ({ workflowId }: { workflowId?: string }) => {
   );
 };
 
+export function useSession(sessionId: string | undefined | null) {
+  return useQuery<any>({
+    enabled: !!sessionId,
+    queryKey: ["session", sessionId],
+    retry: (count, error) => {
+      if (error.message.includes("404")) {
+        return false;
+      }
+      return count < 2;
+    },
+    refetchInterval: (query) => {
+      // console.log("refetchInterval", query);
+      if (query.state.error && query.state.error.message.includes("404") ) {
+        return false;
+      }
+
+      if (query.state.data) {
+        return 1000;
+      }
+
+      return false;
+    },
+  });
+}
+
 export function SessionCreator(props: {
   workflowId?: string;
   workflowLatestVersion?: any;
@@ -159,11 +185,7 @@ export function SessionCreator(props: {
     data: session,
     isLoading: isLoadingSession,
     isError,
-  } = useQuery<any>({
-    enabled: !!sessionId,
-    queryKey: ["session", sessionId],
-    refetchInterval: (data) => (data ? 1000 : false),
-  });
+  } = useSession(sessionId);
 
   const url = session?.url || session?.tunnel_url;
 
@@ -220,11 +242,14 @@ export function SessionCreator(props: {
   // if ()
 
   if (!session || isError) {
+    // console.log("session", session, isError);
+    if (isError) {
+      session.status = "error";
+    }
     return (
       <SessionLoading
         session={session}
         isLive={isLive ?? false}
-        // isLoadingSession={isLoadingSession}
       />
     );
   }

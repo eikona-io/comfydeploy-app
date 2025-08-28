@@ -95,6 +95,7 @@ import { sendWorkflow } from "./workspace/sendEventToCD";
 import { getCurrentEffectiveSessionId } from "./workspace/session-creator-form";
 import { WorkflowCommitSidePanel } from "./workspace/WorkflowCommitSidePanel";
 import { useWorkflowStore } from "./workspace/Workspace";
+import { useSession } from "./workspace/SessionView";
 
 // Navigation helper hook
 function useWorkflowNavigation() {
@@ -1010,11 +1011,11 @@ function SessionBar() {
   });
   const navigateToView = useWorkflowNavigation();
 
-  const { data: session } = useQuery<Session>({
-    enabled: !!sessionId,
-    queryKey: ["session", sessionId],
-    refetchInterval: (data) => (data ? 1000 : false),
-  });
+  const {
+    data: session,
+    // isLoading: isLoadingSession,
+    // isError,
+  } = useSession(sessionId);
 
   const url = session?.url || session?.tunnel_url;
 
@@ -1642,7 +1643,7 @@ function TimerPopover({
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }) {
-  console.log("🚀 ~ session:", session);
+  // console.log("🚀 ~ session:", session);
   const [selectedIncrement, setSelectedIncrement] = useState("5");
   const { countdown } = useSessionTimer(session);
 
