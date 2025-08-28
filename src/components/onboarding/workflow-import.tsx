@@ -1,16 +1,27 @@
+import { useNavigate } from "@tanstack/react-router";
+import {
+  CheckCircle2,
+  Circle,
+  CircleCheckBig,
+  Image as ImageIcon,
+  Lightbulb,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import type {
   ConflictingNodeInfo,
   WorkflowDependencies,
 } from "@/components/onboarding/workflow-analyze";
+import type { NodeData } from "@/components/onboarding/workflow-machine-import";
 import {
+  convertToDockerSteps,
+  findFirstDuplicateNode,
   type GpuTypes,
   WorkflowImportCustomNodeSetup,
   WorkflowImportMachineSetup,
   WorkflowImportSelectedMachine,
-  convertToDockerSteps,
-  findFirstDuplicateNode,
 } from "@/components/onboarding/workflow-machine-import";
-import type { NodeData } from "@/components/onboarding/workflow-machine-import";
 import { WorkflowModelCheck } from "@/components/onboarding/workflow-model-check";
 import {
   type Step,
@@ -30,11 +41,10 @@ import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { defaultWorkflowTemplates } from "@/utils/default-workflow";
-import { useNavigate } from "@tanstack/react-router";
-import { CheckCircle2, Circle, CircleCheckBig, Lightbulb } from "lucide-react";
-import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import {
+  extractWorkflowFromPNG,
+  isPNGFile,
+} from "@/utils/png-metadata-extractor";
 import { FileURLRender } from "../workflows/OutputRender";
 
 // Add these interfaces
@@ -152,8 +162,8 @@ function getStepNavigation(
         prev: validation.hasEnvironment
           ? 3
           : validation.importOption === "default"
-          ? 2
-          : 3,
+            ? 2
+            : 3,
       };
 
     default:
@@ -258,7 +268,6 @@ export default function WorkflowImport() {
   const { data: latestHashes, isLoading: hashesLoading } = useLatestHashes();
 
   // Get query parameters for shared workflow import
-  const [sharedWorkflowId] = useQueryState("shared_workflow_id");
   const [sharedSlug] = useQueryState("shared_slug");
 
   const [validation, setValidation] = useState<StepValidation>({
@@ -468,7 +477,7 @@ export default function WorkflowImport() {
           }
           try {
             JSON.parse(validation.importJson);
-          } catch (error) {
+          } catch {
             return { isValid: false, error: "Please provide valid JSON" };
           }
         }
@@ -546,7 +555,7 @@ export default function WorkflowImport() {
         }
 
         if (validation.docker_command_steps) {
-          return true;
+          return { isValid: true };
         }
 
         const docker_commands = convertToDockerSteps(
@@ -585,7 +594,7 @@ export default function WorkflowImport() {
         return { isValid: true };
       },
       actions: {
-        onNext: async (validation) => {
+        onNext: async () => {
           try {
             switch (validation.machineOption) {
               case "existing":
@@ -765,7 +774,16 @@ export default function WorkflowImport() {
       validation={validation}
       setValidation={setValidation}
       getStepNavigation={getStepNavigation}
-      onExit={() => navigate({ to: "/workflows", search: { view: undefined } })}
+      onExit={() =>
+        navigate({
+          to: "/workflows",
+          search: {
+            view: undefined,
+            shared_workflow_id: undefined,
+            shared_slug: undefined,
+          },
+        })
+      }
     />
   );
 }
@@ -1069,7 +1087,7 @@ function ImportOptions({
   const { data: latestHashes } = useLatestHashes();
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [workflowJsonUrl, setWorkflowJsonUrl] = useQueryState("workflow_json");
+  const [workflowJsonUrl] = useQueryState("workflow_json");
 
   // Add useEffect to handle URL query parameter
   useEffect(() => {
@@ -1166,14 +1184,31 @@ function ImportOptions({
 
   const handleFileSelect = async (file: File) => {
     if (file && file.type === "application/json") {
+      // Handle JSON files
       const text = await file.text();
       try {
         postProcessImport(text);
+        toast.success("Workflow JSON imported successfully");
       } catch (error) {
         toast.error("Invalid JSON file");
       }
+    } else if (file && isPNGFile(file)) {
+      // Handle PNG files with metadata
+      try {
+        const workflowJson = await extractWorkflowFromPNG(file);
+        postProcessImport(workflowJson);
+        toast.success("Workflow extracted from image successfully");
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Failed to extract workflow from image",
+        );
+      }
     } else {
-      toast.error("Please select a JSON file");
+      toast.error(
+        "Please select a JSON file or PNG image with ComfyUI metadata",
+      );
     }
   };
 
@@ -1195,7 +1230,7 @@ function ImportOptions({
             type="file"
             ref={fileInputRef}
             className="hidden"
-            accept="application/json"
+            accept="application/json,image/png"
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) handleFileSelect(file);
@@ -1228,9 +1263,18 @@ function ImportOptions({
             )}
           >
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">
-                Click or drag and drop your workflow JSON file here.
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">
+                  Click or drag and drop your workflow JSON file or ComfyUI
+                  generated PNG image here.
+                </span>
+                <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                  <ImageIcon className="h-3 w-3" />
+                  <span>PNG</span>
+                  <span>•</span>
+                  <span>JSON</span>
+                </div>
+              </div>
               {validation.hasEnvironment && (
                 <Badge
                   variant="secondary"
@@ -1244,7 +1288,7 @@ function ImportOptions({
 
             <div className="mt-2">
               <Textarea
-                placeholder="Or paste your workflow JSON here..."
+                placeholder="Or paste your workflow JSON here... (Image metadata will be extracted automatically when you upload a PNG file)"
                 className="h-48"
                 value={validation.importJson}
                 onClick={(e) => {
