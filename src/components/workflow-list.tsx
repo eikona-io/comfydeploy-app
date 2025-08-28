@@ -1,5 +1,28 @@
+import { useUser } from "@clerk/clerk-react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import {
+  AlertCircle,
+  Globe,
+  Grid2X2,
+  LayoutList,
+  MoreHorizontal,
+  PinIcon,
+  PinOff,
+  Server,
+  Workflow,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import * as React from "react";
+import { toast } from "sonner";
+import { useDebounce } from "use-debounce";
+import { CloneWorkflowDialog } from "@/components/clone-workflow-dialog";
+import { DialogTemplate } from "@/components/dialog-template";
+import { AdminAndMember, useIsAdminAndMember } from "@/components/permissions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -16,61 +39,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { cn } from "@/lib/utils";
-import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  AlertCircle,
-  Grid2X2,
-  Globe,
-  LayoutList,
-  MoreHorizontal,
-  PinIcon,
-  PinOff,
-  Workflow,
-  Server,
-} from "lucide-react";
-import * as React from "react";
-import { getRelativeTime } from "../lib/get-relative-time";
-
-import {
-  deleteWorkflow,
-  pinWorkflow,
-  renameWorkflow,
-} from "@/components/workflow-api";
-
-import { CloneWorkflowDialog } from "@/components/clone-workflow-dialog";
-
-import { DialogTemplate } from "@/components/dialog-template";
-import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { useUser } from "@clerk/clerk-react";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useDebounce } from "use-debounce";
-import { useQueryState } from "nuqs";
-
-import { AdminAndMember, useIsAdminAndMember } from "@/components/permissions";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useCurrentPlan, useCurrentPlanQuery } from "@/hooks/use-current-plan";
-import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
-import { toast } from "sonner";
-import { useWorkflowList } from "../hooks/use-workflow-list";
-import { UserIcon } from "./run/SharePageComponent";
-import { FileURLRender } from "./workflows/OutputRender";
-import { UnifiedFilterSelect } from "./unified-filter-select";
-import { useLocalStorage } from "@/hooks/use-local-storage";
-import { useMachine } from "@/hooks/use-machine";
+import {
+  deleteWorkflow,
+  pinWorkflow,
+  renameWorkflow,
+} from "@/components/workflow-api";
 import {
   getEnvColor,
   useWorkflowDeployments,
 } from "@/components/workspace/ContainersTable";
+import { useCurrentPlan, useCurrentPlanQuery } from "@/hooks/use-current-plan";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { useLocalStorage } from "@/hooks/use-local-storage";
+import { useMachine } from "@/hooks/use-machine";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { cn } from "@/lib/utils";
+import { useWorkflowList } from "../hooks/use-workflow-list";
+import { getRelativeTime } from "../lib/get-relative-time";
+import { UserIcon } from "./run/SharePageComponent";
+import { UnifiedFilterSelect } from "./unified-filter-select";
+import { FileURLRender } from "./workflows/OutputRender";
 
 export function useWorkflowVersion(
   workflow_id?: string,
@@ -432,42 +428,6 @@ function WorkflowActionsDropdown({
           }}
         >
           Clone
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={async (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            try {
-              const response = await fetch(
-                `${process.env.NEXT_PUBLIC_CD_API_URL}/api/workflow/${workflow.id}/share`,
-                {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    workflow_id: workflow.id,
-                    title: workflow.name,
-                    description: `Shared workflow: ${workflow.name}`,
-                    is_public: true,
-                  }),
-                },
-              );
-
-              if (response.ok) {
-                const sharedWorkflow = await response.json();
-                const shareUrl = `${window.location.origin}/share/${workflow.user_id}/${sharedWorkflow.share_slug}`;
-                await navigator.clipboard.writeText(shareUrl);
-                toast.success("Share link copied to clipboard!");
-              } else {
-                toast.error("Failed to create share link");
-              }
-            } catch (error) {
-              toast.error("Failed to create share link");
-            }
-          }}
-        >
-          Share
         </DropdownMenuItem>
         <DropdownMenuItem
           className="text-destructive dark:text-red-400"
