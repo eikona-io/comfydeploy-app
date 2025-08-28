@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { MachineVersionListItem } from "@/components/machine/machine-deployment";
 import { MachineSettingsWrapper } from "@/components/machine/machine-settings";
+import { LogsViewer } from "@/components/log/logs-viewer";
 import {
   getLastActiveText,
   isMachineDeprecated,
@@ -285,9 +286,8 @@ export function MachineAlert({
       <Alert variant={variant} className={`rounded-[10px] ${bgColor} relative`}>
         <Button
           onClick={() => setShow(false)}
-          className={`absolute top-1 right-1 p-1 hover:bg-${
-            variant === "warning" ? "yellow" : "red"
-          }-100`}
+          className={`absolute top-1 right-1 p-1 hover:bg-${variant === "warning" ? "yellow" : "red"
+            }-100`}
           variant="ghost"
           size="icon"
         >
@@ -417,6 +417,48 @@ const MachineVersionSkeleton = () => {
   );
 };
 
+function useMachineVersionErrorLogs(machineVersionId: string) {
+  const { data, isLoading } = useQuery({
+    queryKey: ["machine-version", machineVersionId, "error-start-logs"],
+  });
+  return { data, isLoading };
+}
+
+function MachineVersionErrorLogs({ machineVersionId }: { machineVersionId: string }) {
+  const { data: errorLogs } = useMachineVersionErrorLogs(machineVersionId);
+
+  if (!errorLogs?.logs?.length) {
+    return null;
+  }
+
+  return (
+    <div className="mb-6">
+      <LogsViewer
+        logs={errorLogs.logs}
+        hideTimestamp={true}
+        containerClassName="rounded-md border border-red-200 bg-red-50"
+        className="h-[400px] font-mono text-sm text-red-400"
+        stickToBottom={false}
+      >
+        <div className="flex flex-col p-4">
+          <h1 className="text-lg font-semibold">Startup Error</h1>
+          <div className="text-sm text-muted-foreground">
+            You have issues with machine startup. Your machine will not be able to start.
+          </div>
+        </div>
+        <div className="rounded-t-md border border-yellow-300 bg-yellow-100 p-3 text-sm text-yellow-900">
+          <div className="font-medium">Suggested fixes:</div>
+          <ul className="mt-2 list-disc space-y-1 pl-4">
+            <li>Try rebuilding the machine to ensure all dependencies are properly installed</li>
+            <li>Double check your ComfyUI version</li>
+            <li>Update ComfyDeploy custom nodes to the latest version</li>
+          </ul>
+        </div>
+      </LogsViewer>
+    </div>
+  );
+}
+
 export function MachineVersionWrapper({
   machine,
   onVersionClick,
@@ -438,6 +480,7 @@ export function MachineVersionWrapper({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col">
+        <MachineVersionErrorLogs machineVersionId={machine.machine_version_id} />
         <div className="flex items-center justify-between px-2 font-semibold text-xl">
           Machine History
         </div>

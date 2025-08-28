@@ -124,12 +124,14 @@ export function LogsViewer({
   className,
   containerClassName,
   stickToBottom = true,
+  children,
 }: {
   logs: LogsType;
   hideTimestamp?: boolean;
   containerClassName?: string;
   className?: string;
   stickToBottom?: boolean;
+  children?: React.ReactNode;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const logs = useDeferredValue(initialLogs);
@@ -150,6 +152,7 @@ export function LogsViewer({
           <Expand className="h-4 w-4" />
         </Button>
 
+        {children}
         <LogContent
           logs={logs}
           hideTimestamp={hideTimestamp}
@@ -160,6 +163,7 @@ export function LogsViewer({
 
       <Dialog open={isExpanded} onOpenChange={setIsExpanded}>
         <DialogContent className="max-h-[90vh] max-w-[90vw] bg-[#262626]">
+          {/* {children} */}
           <LogContent
             logs={logs}
             hideTimestamp={false}

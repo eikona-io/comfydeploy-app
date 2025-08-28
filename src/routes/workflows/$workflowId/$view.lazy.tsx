@@ -47,6 +47,7 @@ import { useMachine, useMachineVersionsAll } from "@/hooks/use-machine";
 import { cn } from "@/lib/utils";
 import { StoragePage } from "@/routes/models";
 import { PricingPage } from "@/routes/pricing";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
   component: WorkflowPageComponent,

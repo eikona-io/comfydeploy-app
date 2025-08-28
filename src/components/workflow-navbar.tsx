@@ -334,11 +334,10 @@ function CenterNavigation() {
           <button
             type="button"
             data-button-id="workspace"
-            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${
-              view === "workspace"
+            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${view === "workspace"
                 ? "font-medium text-gray-900 dark:text-zinc-100"
                 : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            }`}
+              }`}
             onClick={() => {
               navigateToView("workspace", {
                 sessionId: effectiveSessionId || undefined,
@@ -355,11 +354,10 @@ function CenterNavigation() {
         <button
           type="button"
           data-button-id="playground"
-          className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${
-            view === "playground"
+          className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${view === "playground"
               ? "font-medium text-gray-900 dark:text-zinc-100"
               : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-          }`}
+            }`}
           onClick={() => {
             navigateToView("playground");
           }}
@@ -375,17 +373,16 @@ function CenterNavigation() {
             <button
               type="button"
               data-button-id="machine"
-              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
-                view === "machine"
+              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "machine"
                   ? "text-gray-900 dark:text-zinc-100"
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              }`}
+                }`}
               onClick={() => {
                 navigateToView("machine");
               }}
               onMouseEnter={() => setHoveredButton("machine")}
             >
-              <Server className="h-4 w-4" />
+              <Settings className="h-4 w-4" />
             </button>
           </ImageInputsTooltip>
         )}
@@ -396,11 +393,10 @@ function CenterNavigation() {
             <button
               type="button"
               data-button-id="model"
-              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
-                view === "model"
+              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "model"
                   ? "text-gray-900 dark:text-zinc-100"
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              }`}
+                }`}
               onClick={() => {
                 navigateToView("model");
               }}
@@ -416,11 +412,10 @@ function CenterNavigation() {
           <button
             type="button"
             data-button-id="gallery"
-            className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
-              view === "gallery"
+            className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "gallery"
                 ? "text-gray-900 dark:text-zinc-100"
                 : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            }`}
+              }`}
             onClick={() => {
               navigateToView("gallery");
             }}
@@ -440,13 +435,12 @@ function CenterNavigation() {
           <button
             type="button"
             data-button-id="deployment"
-            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${
-              shouldHideDeploymentFeatures
+            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${shouldHideDeploymentFeatures
                 ? "text-purple-600 opacity-50 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100"
                 : view === "deployment"
                   ? "font-medium text-gray-900 dark:text-zinc-100"
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            }`}
+              }`}
             onClick={() => {
               navigateToView("deployment");
             }}
@@ -467,13 +461,12 @@ function CenterNavigation() {
             <button
               type="button"
               data-button-id="requests"
-              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${
-                shouldHideDeploymentFeatures
+              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${shouldHideDeploymentFeatures
                   ? "text-purple-600 opacity-50 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100"
                   : view === "requests"
                     ? "text-gray-900 dark:text-zinc-100"
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              }`}
+                }`}
               onClick={() => {
                 if (!shouldHideDeploymentFeatures) {
                   navigateToView("requests");
@@ -739,32 +732,32 @@ function WorkflowNavbarRight() {
         {(selectedDeployment === publicShareDeployment?.id ||
           selectedDeployment === privateShareDeployment?.id ||
           selectedDeployment === communityShareDeployment?.id) && (
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              className="transition-all hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600 hover:text-white"
-              confirm
-              onClick={async () => {
-                await callServerPromise(
-                  api({
-                    init: {
-                      method: "DELETE",
-                    },
-                    url: `deployment/${selectedDeployment}`,
-                  }),
-                );
-                setSelectedDeployment(null);
-                setSelectedVersion(null);
-                setIsDrawerOpen(false);
-                await queryClient.invalidateQueries({
-                  queryKey: ["workflow", workflowId, "deployments"],
-                });
-              }}
-            >
-              Delete
-            </Button>
-          </div>
-        )}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                className="transition-all hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600 hover:text-white"
+                confirm
+                onClick={async () => {
+                  await callServerPromise(
+                    api({
+                      init: {
+                        method: "DELETE",
+                      },
+                      url: `deployment/${selectedDeployment}`,
+                    }),
+                  );
+                  setSelectedDeployment(null);
+                  setSelectedVersion(null);
+                  setIsDrawerOpen(false);
+                  await queryClient.invalidateQueries({
+                    queryKey: ["workflow", workflowId, "deployments"],
+                  });
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          )}
       </DeploymentDrawer>
     </>
   );
@@ -905,11 +898,10 @@ function WorkflowNavbarRightMobile() {
           <>
             <DropdownMenuSeparator className="mx-4 my-2 bg-zinc-200/60 md:hidden dark:bg-zinc-600/60" />
             <DropdownMenuItem
-              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${
-                shouldHideDeploymentFeatures
+              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${shouldHideDeploymentFeatures
                   ? "opacity-50 cursor-not-allowed"
                   : ""
-              }`}
+                }`}
               onClick={() => {
                 if (!shouldHideDeploymentFeatures) {
                   router.navigate({
@@ -930,11 +922,10 @@ function WorkflowNavbarRightMobile() {
               API
             </DropdownMenuItem>
             <DropdownMenuItem
-              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${
-                shouldHideDeploymentFeatures
+              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${shouldHideDeploymentFeatures
                   ? "opacity-50 cursor-not-allowed"
                   : ""
-              }`}
+                }`}
               onClick={() => {
                 if (!shouldHideDeploymentFeatures) {
                   router.navigate({
@@ -1364,10 +1355,10 @@ function SessionTimerButton({
   // Calculate if less than 30 seconds remaining
   const isLowTime = countdown
     ? (() => {
-        const [hours, minutes, seconds] = countdown.split(":").map(Number);
-        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-        return totalSeconds < 30;
-      })()
+      const [hours, minutes, seconds] = countdown.split(":").map(Number);
+      const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+      return totalSeconds < 30;
+    })()
     : false;
 
   const handleDeleteSession = async (e: React.MouseEvent) => {
@@ -1439,11 +1430,10 @@ function SessionTimerButton({
           >
             {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
             <div
-              className={`relative flex h-10 cursor-pointer items-center justify-between overflow-hidden rounded-full shadow-lg transition-all duration-400 ${
-                isLowTime
+              className={`relative flex h-10 cursor-pointer items-center justify-between overflow-hidden rounded-full shadow-lg transition-all duration-400 ${isLowTime
                   ? "bg-gradient-to-br from-orange-400 to-orange-600 shadow-orange-500/25 hover:shadow-orange-500/40 dark:from-orange-500 dark:to-orange-700 dark:shadow-orange-600/25 dark:hover:shadow-orange-600/40"
                   : "border border-gray-200 bg-gradient-to-br from-white to-white shadow-md dark:border-zinc-800/50 dark:from-gray-700 dark:to-gray-800 dark:shadow-gray-700/25 dark:hover:shadow-gray-700/40"
-              }`}
+                }`}
               style={{
                 width: isHovered || urlSessionId ? "134px" : "42px",
                 paddingLeft: isHovered || urlSessionId ? "6px" : "0px",
@@ -1533,11 +1523,10 @@ function SessionTimerButton({
 
               {/* Countdown Text and End Button */}
               <div
-                className={`flex items-center gap-2 transition-all ${
-                  isHovered || urlSessionId
+                className={`flex items-center gap-2 transition-all ${isHovered || urlSessionId
                     ? "translate-x-0 opacity-100"
                     : "translate-x-4 opacity-0"
-                }`}
+                  }`}
                 style={{
                   transitionDelay: isHovered || urlSessionId ? "100ms" : "0ms",
                   transitionDuration:
@@ -1549,9 +1538,8 @@ function SessionTimerButton({
                 }}
               >
                 <span
-                  className={`whitespace-nowrap font-medium text-sm ${
-                    isLowTime ? "text-white" : "text-gray-900 dark:text-white"
-                  }`}
+                  className={`whitespace-nowrap font-medium text-sm ${isLowTime ? "text-white" : "text-gray-900 dark:text-white"
+                    }`}
                 >
                   {countdown
                     ? countdown.split(":").slice(1).join(":")
@@ -1563,11 +1551,10 @@ function SessionTimerButton({
                     type="button"
                     onClick={handleDeleteSession}
                     disabled={deleteSession.isPending}
-                    className={`rounded-full p-1 transition-colors duration-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${
-                      isLowTime
+                    className={`rounded-full p-1 transition-colors duration-200 hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-50 ${isLowTime
                         ? "text-white hover:text-white"
                         : "text-gray-600 hover:text-red-500 dark:text-gray-300 dark:hover:text-red-400"
-                    }`}
+                      }`}
                     title="End session"
                   >
                     {deleteSession.isPending ? (
@@ -1692,9 +1679,8 @@ function TimerPopover({
               {session?.timeout_end && session?.created_at && (
                 <div className="relative h-2 w-full overflow-hidden rounded-full bg-secondary">
                   <div
-                    className={`h-full transition-all ${
-                      totalSeconds < 30 ? "bg-yellow-500" : "bg-primary"
-                    }`}
+                    className={`h-full transition-all ${totalSeconds < 30 ? "bg-yellow-500" : "bg-primary"
+                      }`}
                     style={{
                       width: `${
                         ((new Date(session.timeout_end).getTime() -
@@ -1702,7 +1688,7 @@ function TimerPopover({
                           (new Date(session.timeout_end).getTime() -
                             new Date(session.created_at).getTime())) *
                         100
-                      }%`,
+                        }%`,
                     }}
                   />
                 </div>
@@ -1825,14 +1811,14 @@ function BackgroundAutoUpdate() {
           is_fluid_machine,
           query,
           setVersion,
-          setOpen: () => {},
+          setOpen: () => { },
           snapshotAction: "COMMIT_ONLY",
           comfyui_snapshot,
           comfyui_snapshot_loading,
           sessionId,
           workflow_api: selectedVersion?.workflow_api,
         });
-      } catch (error) {}
+      } catch (error) { }
     };
   }, [
     endpoint,
@@ -1925,10 +1911,10 @@ function WorkspaceConfigurationPanel() {
     return savedSettings
       ? JSON.parse(savedSettings)
       : {
-          autoSave: false,
-          autoSaveInterval: "60",
-          autoExpandSession: false,
-        };
+        autoSave: false,
+        autoSaveInterval: "60",
+        autoExpandSession: false,
+      };
   });
   const { data: session } = useQuery<Session>({
     queryKey: ["session", sessionId],
