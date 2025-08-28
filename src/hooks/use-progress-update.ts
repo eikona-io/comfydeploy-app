@@ -1,8 +1,7 @@
-import { useState, useEffect } from "react";
-import { useAuthStore } from "@/lib/auth-store";
 import { EventSourcePolyfill } from "event-source-polyfill";
+import { useEffect, useState } from "react";
 import { convertDateFields } from "@/lib/api";
-import { toast } from "sonner";
+import { useAuthStore } from "@/lib/auth-store";
 
 export interface ProgressUpdate {
   run_id: string;
@@ -42,7 +41,16 @@ export type ConnectionStatus =
   | "connecting"
   | "connected"
   | "disconnected"
-  | "error";
+  | "error"
+  | "reconnecting";
+
+export interface ConnectionDetails {
+  status: ConnectionStatus;
+  retryCount: number;
+  maxRetries: number;
+  lastError?: string;
+  isReconnecting: boolean;
+}
 
 export function useProgressUpdates({
   runId,
@@ -68,8 +76,14 @@ export function useProgressUpdates({
   deploymentId?: string;
 }) {
   const [progressUpdates, setProgressUpdates] = useState<ProgressUpdate[]>([]);
-  const [connectionStatus, setConnectionStatus] =
-    useState<ConnectionStatus>("connecting");
+  const [connectionDetails, setConnectionDetails] = useState<ConnectionDetails>(
+    {
+      status: "connecting",
+      retryCount: 0,
+      maxRetries: 5,
+      isReconnecting: false,
+    },
+  );
   const fetchToken = useAuthStore((state) => state.fetchToken);
 
   useEffect(() => {
@@ -83,7 +97,11 @@ export function useProgressUpdates({
     const retryDelay = 3000; // 3 seconds
 
     const setupEventSource = async () => {
-      setConnectionStatus("connecting");
+      setConnectionDetails((prev) => ({
+        ...prev,
+        status: retryCount > 0 ? "reconnecting" : "connecting",
+        isReconnecting: retryCount > 0,
+      }));
       const token = await fetchToken();
 
       if (unmounted) return;
@@ -132,36 +150,60 @@ export function useProgressUpdates({
                 "Redis pub/sub connection established, channels:",
                 data.channels,
               );
-              setConnectionStatus("connected");
-              toast.success("Real-time updates connected");
+              setConnectionDetails((prev) => ({
+                ...prev,
+                status: "connected",
+                retryCount: 0,
+                isReconnecting: false,
+                lastError: undefined,
+              }));
               return;
 
             case "subscribed":
               console.log("Successfully subscribed to channel:", data.channel);
-              setConnectionStatus("connected");
+              setConnectionDetails((prev) => ({
+                ...prev,
+                status: "connected",
+                retryCount: 0,
+                isReconnecting: false,
+                lastError: undefined,
+              }));
               return;
 
             case "keepalive":
               // Silent keepalive, just update connection status
-              setConnectionStatus("connected");
+              setConnectionDetails((prev) => ({
+                ...prev,
+                status: "connected",
+              }));
               return;
 
             case "error":
               console.error("Redis pub/sub error:", data.message);
-              toast.error(`Connection error: ${data.message}`);
-              setConnectionStatus("error");
+              setConnectionDetails((prev) => ({
+                ...prev,
+                status: "error",
+                lastError: data.message,
+                isReconnecting: false,
+              }));
               return;
 
             case "stream_cancelled":
               console.log("Stream cancelled:", data.reason);
-              toast.info("Real-time updates ended");
-              setConnectionStatus("disconnected");
+              setConnectionDetails((prev) => ({
+                ...prev,
+                status: "disconnected",
+                isReconnecting: false,
+              }));
               return;
 
             case "stream_complete":
               console.log("Stream completed from:", data.source);
-              toast.info("Updates completed");
-              setConnectionStatus("disconnected");
+              setConnectionDetails((prev) => ({
+                ...prev,
+                status: "disconnected",
+                isReconnecting: false,
+              }));
               return;
 
             default:
@@ -176,13 +218,22 @@ export function useProgressUpdates({
           onUpdate(data);
         }
         setProgressUpdates((prevUpdates) => [...prevUpdates, data]);
-        setConnectionStatus("connected");
+        setConnectionDetails((prev) => ({
+          ...prev,
+          status: "connected",
+        }));
       };
 
       eventSource.onerror = (event) => {
         console.error("EventSource failed:", event);
         eventSource.close();
-        setConnectionStatus("error");
+
+        setConnectionDetails((prev) => ({
+          ...prev,
+          status: "error",
+          lastError: "Connection failed",
+          isReconnecting: false,
+        }));
 
         if (reconnect) {
           if (retryCount < maxRetries && !unmounted) {
@@ -190,15 +241,22 @@ export function useProgressUpdates({
             console.log(
               `Attempting to reconnect to Redis pub/sub (${retryCount}/${maxRetries})...`,
             );
-            toast.info(
-              `Reconnecting real-time updates (${retryCount}/${maxRetries})...`,
-            );
+            setConnectionDetails((prev) => ({
+              ...prev,
+              status: "reconnecting",
+              retryCount,
+              isReconnecting: true,
+              lastError: "Connection lost, reconnecting...",
+            }));
             setTimeout(setupEventSource, retryDelay);
           } else if (retryCount >= maxRetries) {
             console.error("Max retries reached. Real-time updates disabled.");
-            toast.error(
-              "Unable to establish real-time connection. Please refresh the page.",
-            );
+            setConnectionDetails((prev) => ({
+              ...prev,
+              status: "error",
+              lastError: "Max retries reached. Connection failed.",
+              isReconnecting: false,
+            }));
           }
         }
       };
@@ -207,7 +265,10 @@ export function useProgressUpdates({
         console.log(
           "EventSource connection opened - waiting for Redis pub/sub confirmation",
         );
-        setConnectionStatus("connecting"); // Keep as connecting until we get Redis confirmation
+        setConnectionDetails((prev) => ({
+          ...prev,
+          status: "connecting", // Keep as connecting until we get Redis confirmation
+        }));
         retryCount = 0; // Reset retry count on successful connection
       };
     };
@@ -219,11 +280,19 @@ export function useProgressUpdates({
       if (eventSource) {
         eventSource.close();
       }
-      setConnectionStatus("disconnected");
+      setConnectionDetails((prev) => ({
+        ...prev,
+        status: "disconnected",
+        isReconnecting: false,
+      }));
     };
   }, [runId, workflowId, machineId, fetchToken]);
 
-  return { progressUpdates, connectionStatus };
+  return {
+    progressUpdates,
+    connectionStatus: connectionDetails.status,
+    connectionDetails,
+  };
 }
 
 // Enhanced hook specifically for Redis pub/sub v2 endpoint
@@ -272,6 +341,8 @@ export function useProgressUpdatesV2({
     // Add helper methods for v2
     isConnected: result.connectionStatus === "connected",
     isConnecting: result.connectionStatus === "connecting",
+    isReconnecting: result.connectionStatus === "reconnecting",
     hasError: result.connectionStatus === "error",
+    isDisconnected: result.connectionStatus === "disconnected",
   };
 }
