@@ -41,15 +41,20 @@ function LiveTime({ since, until, className }: { since: Date, until?: Date, clas
             return;
         }
         let requestId: number;
+        let cancelled = false;
         const callback = () => {
             const now = new Date();
             const diff = now.getTime() - since.getTime()
 
-            console.log(diff);
+            // console.log(diff);
             if (diff > 0) {
                 timerRef.current!.textContent = formatTime(diff / 1000);
             } else {
                 timerRef.current!.textContent = "";
+            }
+
+            if (cancelled) {
+                return;
             }
 
             requestId = requestAnimationFrame(callback);
@@ -57,6 +62,7 @@ function LiveTime({ since, until, className }: { since: Date, until?: Date, clas
         requestId = requestAnimationFrame(callback);
         return () => {
             cancelAnimationFrame(requestId);
+            cancelled = true;
         }
     }, [since, until]);
 
@@ -137,6 +143,7 @@ export function RunTimelineItem({ start, since, until, final, label, className }
 
     useEffect(() => {
         let requestId: number;
+        let cancelled = false;
         const callback = () => {
             const now = new Date();
 
@@ -164,10 +171,15 @@ export function RunTimelineItem({ start, since, until, final, label, className }
                 tooltipRef.current.textContent = formatTime(((until ? until.getTime() : new Date().getTime()) - since!.getTime()) / 1000);
             }
 
+            if (cancelled) {
+                return;
+            }
+
             requestId = requestAnimationFrame(callback);
         }
         requestId = requestAnimationFrame(callback);
         return () => {
+            cancelled = true;
             cancelAnimationFrame(requestId);
         }
     }, [since, until]);
