@@ -61,35 +61,8 @@ import { useMachine } from "@/hooks/use-machine";
 import { UserIcon } from "../run/SharePageComponent";
 import { useQueryClient } from "@tanstack/react-query";
 import { LiveStatus } from "./LiveStatus";
-
-const parseTimestampSafely = (timestamp: string | number): Date => {
-  try {
-    if (typeof timestamp === "string") {
-      // Handle microseconds by truncating to milliseconds
-      const truncated = timestamp.replace(/(\.\d{3})\d*/, "$1");
-      const date = new Date(truncated);
-      if (isNaN(date.getTime())) {
-        console.warn("Invalid timestamp format:", timestamp);
-        return new Date(); // fallback to current time
-      }
-      return date;
-    }
-    // Handle numeric timestamps
-    if (typeof timestamp === "number") {
-      const date = new Date(timestamp);
-      if (isNaN(date.getTime())) {
-        console.warn("Invalid numeric timestamp:", timestamp);
-        return new Date(); // fallback to current time
-      }
-      return date;
-    }
-    console.warn("Unknown timestamp type:", typeof timestamp, timestamp);
-    return new Date(); // fallback to current time
-  } catch (error) {
-    console.warn("Error parsing timestamp:", timestamp, error);
-    return new Date(); // fallback to current time
-  }
-};
+import { RunTimeline } from "./RunTimeline";
+import { InfoItem } from "./InfoItem";
 
 export default function WorkflowComponent() {
   // Utility function for parsing timestamps with microsecond precision
@@ -155,7 +128,8 @@ export function RunDetails(props: {
         query.state.data?.status === "running" ||
         query.state.data?.status === "uploading" ||
         query.state.data?.status === "not-started" ||
-        query.state.data?.status === "queued"
+        query.state.data?.status === "queued" ||
+        query.state.data?.status === "started"
       ) {
         return 2000;
       }
@@ -226,7 +200,7 @@ export function RunDetails(props: {
           <h2 className="font-bold text-2xl">Run Details</h2>
           <div className="flex items-center">
             <p className="line-clamp-1 font-mono text-2xs text-muted-foreground">
-              #{run.id}
+              #{run.id?.slice(0, 8)}
             </p>
             <Button
               variant="ghost"
@@ -287,7 +261,6 @@ export function RunDetails(props: {
           {run.queue_position !== undefined && run.queue_position !== null && (
             <InfoItem label="Queue Position" value={run.queue_position} />
           )}
-          <RunTimeline run={run} />
           {run.batch_id && (
             <InfoItem
               label="Batch"
@@ -302,16 +275,10 @@ export function RunDetails(props: {
             />
           )}
         </div>
-
-        {/* Live Status for active runs */}
-        {(run.status === "running" || run.status === "uploading" || run.status === "not-started" || run.status === "queued") && (
-          <div className="mt-3">
-            <LiveStatus run={run} isForRunPage={true} refetch={() => {
-              // Trigger refetch of the run data
-              queryClient.invalidateQueries({ queryKey: ["run", run_id] });
-            }} />
-          </div>
-        )}
+        <div className="mt-4">
+          <RunTimeline run={run} />
+        </div>
+        {/* Live Status now integrated into RunTimeline */}
 
         <Tabs
           defaultValue="outputs"
@@ -478,335 +445,6 @@ function RunVersionAndDeployment({ run }: { run: any }) {
   );
 }
 
-function RunTimeline({ run }: { run: any }) {
-  // Extract timing data with safeguards for missing/invalid values
-  const coldStartDurationTotal = run.cold_start_duration_total || 0;
-  const coldStartDuration = run.cold_start_duration || 0;
-  const runDuration = run.run_duration || 0;
-  const totalDuration = run.duration || 0;
-
-  // Calculate queue time, ensuring it's not negative
-  const queueTime = Math.max(0, coldStartDurationTotal - coldStartDuration);
-  const coldStartTime = coldStartDuration;
-
-  // Determine if we have complete timing data or just partial data
-  const hasCompleteTimingData = queueTime > 0 && runDuration > 0;
-
-  // Check if warm based on cold start duration
-  const isWarm =
-    run.started_at !== undefined &&
-    (run.cold_start_duration === undefined || run.cold_start_duration <= 5);
-
-  // Format time helper function
-  const formatTime = (seconds: number) => {
-    return seconds < 1
-      ? `${(seconds * 1000).toFixed(0)}ms`
-      : `${seconds.toFixed(1)}s`;
-  };
-
-  const getPercentage = (value: number) => {
-    return totalDuration > 0 ? (value / totalDuration) * 100 : 0;
-  };
-
-  const queueEndTime = queueTime;
-  const executionStartTime = queueEndTime + coldStartTime;
-
-  // Replace the single MIN_SEGMENT_PERCENT with specific minimums for each segment
-  const MIN_WIDTHS = {
-    queue: 15, // Queue time minimum width
-    coldStart: 10, // Cold start minimum width
-    run: 24, // Run duration minimum width
-  };
-
-  const getVisualPercentages = () => {
-    // First, calculate how many segments we actually have
-    const hasQueue = queueTime > 0;
-    const hasColdStart = coldStartTime > 0;
-    const hasRun = runDuration > 0;
-
-    // Get base percentages with their specific minimums
-    let queuePercent = hasQueue
-      ? Math.max(getPercentage(queueTime), MIN_WIDTHS.queue)
-      : 0;
-    let coldStartPercent = hasColdStart
-      ? Math.max(getPercentage(coldStartTime), MIN_WIDTHS.coldStart)
-      : 0;
-    let runPercent = hasRun
-      ? Math.max(getPercentage(runDuration), MIN_WIDTHS.run)
-      : 0;
-
-    // Calculate total of current percentages
-    const totalPercent = queuePercent + coldStartPercent + runPercent;
-
-    // If total exceeds 100%, normalize all segments proportionally
-    if (totalPercent > 100) {
-      const normalizationFactor = 100 / totalPercent;
-      queuePercent *= normalizationFactor;
-      coldStartPercent *= normalizationFactor;
-      runPercent *= normalizationFactor;
-    }
-
-    return {
-      queueWidth: queuePercent,
-      coldStartWidth: coldStartPercent,
-      runWidth: runPercent,
-    };
-  };
-
-  // Calculate normalized visual percentages
-  const { queueWidth, coldStartWidth, runWidth } = getVisualPercentages();
-
-  // Only show cold start segment if duration is greater than zero
-  const showColdStart = coldStartTime > 0;
-
-  // Calculate visual positions for segments
-  const visualQueuePos = queueWidth;
-  const visualExecStartPos = queueWidth + coldStartWidth;
-
-  return (
-    <InfoItem
-      label="Run Timeline"
-      value={
-        <div className="mt-2 w-full pb-2">
-          {/* Time Labels - with conditional rendering */}
-          <div className="relative flex h-5 w-full">
-            <div className="-translate-x-0 absolute left-0 transform whitespace-nowrap font-medium text-[10px] text-gray-600 dark:text-gray-300">
-              {formatTime(0)}
-            </div>
-
-            {hasCompleteTimingData && queueTime > 0 && (
-              <div
-                className="-translate-x-1/2 absolute transform whitespace-nowrap font-medium text-[10px] text-gray-600 dark:text-gray-300"
-                style={{ left: `${visualQueuePos}%` }}
-              >
-                {formatTime(queueEndTime)}
-              </div>
-            )}
-
-            {hasCompleteTimingData && showColdStart && (
-              <div
-                className="-translate-x-1/2 absolute transform whitespace-nowrap font-medium text-[10px] text-gray-600 dark:text-gray-300"
-                style={{ left: `${visualExecStartPos}%` }}
-              >
-                {formatTime(executionStartTime)}
-              </div>
-            )}
-
-            <div className="absolute right-0 translate-x-0 transform whitespace-nowrap font-medium text-[10px] text-gray-600 dark:text-gray-300">
-              {formatTime(totalDuration)}
-            </div>
-          </div>
-
-          {/* Timeline - Middle Row */}
-          <div className="relative flex h-5 w-full items-center">
-            {/* Base timeline track */}
-            <div className="absolute h-5 w-full shadow-inner" />
-
-            {/* Conditional rendering based on available data */}
-            {hasCompleteTimingData ? (
-              <>
-                {queueTime > 0 && (
-                  <TooltipProvider>
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <div
-                          className="absolute h-5 cursor-pointer overflow-hidden rounded-[2px] bg-gray-200/80 shadow-sm backdrop-blur-sm dark:bg-zinc-500/70"
-                          style={{
-                            width: `${queueWidth}%`,
-                            left: 0,
-                          }}
-                        >
-                          <div className="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent,5px,rgba(0,0,0,0.05)_5px,rgba(0,0,0,0.05)_10px)] opacity-20 dark:opacity-50" />
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        {formatTime(queueTime)}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-
-                {showColdStart && (
-                  <TooltipProvider>
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <div
-                          className={`absolute h-5 cursor-pointer rounded-[2px] shadow-sm ${
-                            isWarm
-                              ? "bg-amber-200/70 backdrop-blur-sm dark:bg-amber-500/70"
-                              : "bg-purple-200/70 backdrop-blur-sm dark:bg-purple-500/70"
-                          }`}
-                          style={{
-                            width: `${coldStartWidth}%`,
-                            left: `${queueWidth}%`,
-                          }}
-                        >
-                          {isWarm && (
-                            <>
-                              <div className="absolute inset-0 bg-[radial-gradient(circle,rgba(255,255,255,0.8)_0%,transparent_70%)] opacity-30" />
-                              <div className="-translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 transform text-amber-500/80">
-                                <Zap size={16} />
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent side="top">
-                        {formatTime(coldStartTime)}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-
-                <TooltipProvider>
-                  <Tooltip delayDuration={0}>
-                    <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          "absolute h-5 cursor-pointer rounded-[2px] shadow-sm backdrop-blur-sm",
-                          run.status === "timeout"
-                            ? "bg-amber-200/70"
-                            : "bg-blue-200/70",
-                        )}
-                        style={{
-                          width: `${runWidth}%`,
-                          left: `${visualExecStartPos}%`,
-                        }}
-                      >
-                        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.5)_50%,rgba(255,255,255,0)_100%)] opacity-30" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      {formatTime(runDuration)}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </>
-            ) : (
-              // Simplified view when we don't have complete timing data
-              <TooltipProvider>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    <div
-                      className={cn(
-                        "absolute h-5 cursor-pointer rounded-[2px] shadow-sm backdrop-blur-sm",
-                        run.status === "timeout"
-                          ? "bg-amber-200/70"
-                          : "bg-blue-200/70",
-                      )}
-                      style={{
-                        width: "100%",
-                        left: 0,
-                      }}
-                    >
-                      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(255,255,255,0.5)_50%,rgba(255,255,255,0)_100%)] opacity-30" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    {formatTime(totalDuration)}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            {/* Timeline markers - always show start and end */}
-            <div className="absolute left-0 z-10 h-6 w-0.5 rounded-full bg-gray-700 dark:bg-gray-300" />
-
-            {/* Only show intermediate markers if we have the data */}
-            {hasCompleteTimingData && queueTime > 0 && (
-              <div
-                className="absolute z-10 h-6 w-0.5 rounded-full bg-gray-700 dark:bg-gray-300"
-                style={{ left: `${visualQueuePos}%` }}
-              />
-            )}
-
-            {/* Only show cold start marker if there's a cold start duration */}
-            {hasCompleteTimingData && showColdStart && (
-              <div
-                className="absolute z-10 h-6 w-0.5 rounded-full bg-gray-700 dark:bg-gray-300"
-                style={{ left: `${visualExecStartPos}%` }}
-              />
-            )}
-
-            <div
-              className="absolute z-10 h-6 w-0.5 rounded-full bg-gray-700 dark:bg-gray-300"
-              style={{ right: 0 }}
-            />
-          </div>
-
-          {/* Event Labels - with conditional rendering */}
-          <div className="relative mt-1.5 h-8 w-full">
-            <div className="-translate-x-0 absolute left-0 transform whitespace-normal border-gray-400 border-l-2 pl-1 font-medium text-[10px] text-gray-700 dark:text-gray-300">
-              Submitted
-            </div>
-
-            {hasCompleteTimingData && queueTime > 0 && (
-              <div
-                className="absolute transform whitespace-normal font-medium text-[10px]"
-                style={{
-                  left: `${visualQueuePos}%`,
-                }}
-              >
-                <div
-                  className={cn(
-                    "flex flex-col items-start border-l-2 pl-1",
-                    isWarm
-                      ? "border-amber-500 text-amber-500"
-                      : "border-purple-600 text-purple-600",
-                  )}
-                >
-                  {!showColdStart ? (
-                    <>
-                      <span>Execution</span>
-                      <span>Started</span>
-                    </>
-                  ) : isWarm ? (
-                    <>
-                      <span>Warm</span>
-                      <span>Start</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Cold</span>
-                      <span>Start</span>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {hasCompleteTimingData && showColdStart && (
-              <div
-                className="absolute transform whitespace-normal font-medium text-[10px] text-blue-700"
-                style={{
-                  left: `${visualExecStartPos}%`,
-                }}
-              >
-                <div className="flex flex-col items-start border-blue-500 border-l-2 pl-1">
-                  <span>Execution</span>
-                  <span>Started</span>
-                </div>
-              </div>
-            )}
-
-            <div
-              className={`absolute right-0 flex translate-x-0 transform flex-col items-end whitespace-normal border-r-2 pr-1 font-medium text-[10px] ${
-                run.status === "timeout"
-                  ? "border-amber-500 text-amber-500"
-                  : "border-green-500 text-green-700"
-              }`}
-            >
-              <span>Execution</span>
-              <span>{run.status === "timeout" ? "Timeout" : "Finished"}</span>
-            </div>
-          </div>
-        </div>
-      }
-      className="col-span-3"
-    />
-  );
-}
-
 function FilteredWorkflowExecutionGraph({ run }: { run: any }) {
   const data = useMemo(() => {
     const output = run.outputs?.find((output: any) => {
@@ -827,22 +465,34 @@ function FilteredWorkflowExecutionGraph({ run }: { run: any }) {
   return <WorkflowExecutionGraph run={data} />;
 }
 
-function InfoItem({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={cn(className)}>
-      <p className="text-muted-foreground text-xs">{label}</p>
-      <p className="font-medium">{value}</p>
-    </div>
-  );
-}
+const parseTimestampSafely = (timestamp: string | number): Date => {
+  try {
+    if (typeof timestamp === "string") {
+      // Handle microseconds by truncating to milliseconds
+      const truncated = timestamp.replace(/(\.\d{3})\d*/, "$1");
+      const date = new Date(truncated);
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid timestamp format:", timestamp);
+        return new Date(); // fallback to current time
+      }
+      return date;
+    }
+    // Handle numeric timestamps
+    if (typeof timestamp === "number") {
+      const date = new Date(timestamp);
+      if (isNaN(date.getTime())) {
+        console.warn("Invalid numeric timestamp:", timestamp);
+        return new Date(); // fallback to current time
+      }
+      return date;
+    }
+    console.warn("Unknown timestamp type:", typeof timestamp, timestamp);
+    return new Date(); // fallback to current time
+  } catch (error) {
+    console.warn("Error parsing timestamp:", timestamp, error);
+    return new Date(); // fallback to current time
+  }
+};
 
 export function LogsTab({ runId }: { runId: string }) {
   const [logs, setLogs] = useState<Array<{ timestamp: number; logs: string }>>(
@@ -1171,10 +821,10 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
                                   {typeof event.message.message === "string"
                                     ? event.message.message
                                     : JSON.stringify(
-                                        event.message.message,
-                                        null,
-                                        2,
-                                      )}
+                                      event.message.message,
+                                      null,
+                                      2,
+                                    )}
                                 </pre>
                               </div>
                             </div>

@@ -199,16 +199,6 @@ export function RealtimeWorkflowProvider({
     status,
     deploymentId,
   );
-  // const socket = useRealtimeWorkflowUpdate(workflowId);
-  // useRealtimeWorkflowUpdate2(workflowId);
-
-  // useEffect(() => {
-  //   console.log("progressUpdates", progressUpdates);
-  // }, [progressUpdates]);
-
-  // useEffect(() => {
-  //   console.log("connectionStatus", connectionStatus);
-  // }, [connectionStatus]);
 
   return (
     <RealtimeWorkflowContext.Provider

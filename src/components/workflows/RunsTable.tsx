@@ -175,9 +175,9 @@ export function useRuns(props: {
     initialPageParam: 0,
     initialData: props.defaultData
       ? {
-          pages: [props.defaultData],
-          pageParams: [0],
-        }
+        pages: [props.defaultData],
+        pageParams: [0],
+      }
       : undefined,
     refetchOnWindowFocus: false,
   });
@@ -434,7 +434,7 @@ export function RunsTableVirtualized(props: {
       <div
         ref={parentRef}
         className={cn(
-          "scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent h-[calc(100vh-10rem)] overflow-y-scroll transition-opacity duration-300",
+          "scrollbar scrollbar-thumb-gray-200 scrollbar-track-transparent h-[calc(100vh-10rem)] overflow-y-scroll transition-opacity duration-300 focus-visible:ring-transparent focus:outline-none",
           isRefetching && "pointer-events-none opacity-50",
           props.className,
         )}
@@ -696,7 +696,7 @@ function DeploymentVersion(props: { deploymentId?: string }) {
       )}
     >
       {deployment.environment === "public-share" ||
-      deployment.environment === "community-share" ? (
+        deployment.environment === "community-share" ? (
         <div className="flex items-center gap-1">
           <Globe className="h-3 w-3" />
           {/* {deployment.environment} */}
@@ -1065,10 +1065,10 @@ export function FilterDropdown({
                     value={
                       filterFromTime
                         ? Math.round(
-                            (Math.floor(Date.now() / 1000) -
-                              Number.parseInt(filterFromTime)) /
-                              60,
-                          ).toString()
+                          (Math.floor(Date.now() / 1000) -
+                            Number.parseInt(filterFromTime)) /
+                          60,
+                        ).toString()
                         : null
                     }
                   >
@@ -1076,19 +1076,19 @@ export function FilterDropdown({
                       <SelectValue>
                         {filterFromTime
                           ? [
-                              { label: "Last 2 days", value: "2880" },
-                              { label: "Last 7 days", value: "10080" },
-                              { label: "Last 14 days", value: "20160" },
-                              { label: "Last 30 days", value: "43200" },
-                            ].find(
-                              (option) =>
-                                option.value ===
-                                Math.round(
-                                  (Math.floor(Date.now() / 1000) -
-                                    Number.parseInt(filterFromTime)) /
-                                    60,
-                                ).toString(),
-                            )?.label || "More"
+                            { label: "Last 2 days", value: "2880" },
+                            { label: "Last 7 days", value: "10080" },
+                            { label: "Last 14 days", value: "20160" },
+                            { label: "Last 30 days", value: "43200" },
+                          ].find(
+                            (option) =>
+                              option.value ===
+                              Math.round(
+                                (Math.floor(Date.now() / 1000) -
+                                  Number.parseInt(filterFromTime)) /
+                                60,
+                              ).toString(),
+                          )?.label || "More"
                           : "More"}
                       </SelectValue>
                     </SelectTrigger>
