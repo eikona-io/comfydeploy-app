@@ -83,8 +83,8 @@ export function RunTimeline({ run }: { run: any }) {
         "status": "not-started",
         "id": "d286e588-69f3-477d-b803-fad3bce4d1aa",
         "created_at": "2025-08-29T02:35:19.907Z",
-        "queued_at": "2025-08-29T02:35:24.720Z",
-        "started_at": "2025-08-29T02:35:32.483Z",
+        "queued_at": "2025-08-29T02:35:19.907Z",
+        "started_at": "2025-08-29T02:35:19.907Z",
         "ended_at": "2025-08-29T02:35:38.666Z",
 
         // "updated_at": "2025-08-29T02:35:38.666Z",
@@ -151,7 +151,7 @@ export function RunTimelineItem({ start, since, until, final, label, className }
 
             const total = finalTime - (start ? start.getTime() : 0);
 
-            const width = ((until ? until.getTime() : new Date().getTime()) - since!.getTime()) / total;
+            const width = Math.max(0, ((until ? until.getTime() : now.getTime()) - since!.getTime())) / total;
 
             timerRef.current!.style.width = `${width * 100}%`;
 
