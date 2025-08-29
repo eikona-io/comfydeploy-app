@@ -43,7 +43,14 @@ function LiveTime({ since, until, className }: { since: Date, until?: Date, clas
         let requestId: number;
         const callback = () => {
             const now = new Date();
-            timerRef.current!.textContent = formatTime((now.getTime() - since.getTime()) / 1000);
+            const diff = now.getTime() - since.getTime()
+
+            console.log(diff);
+            if (diff > 0) {
+                timerRef.current!.textContent = formatTime(diff / 1000);
+            } else {
+                timerRef.current!.textContent = "";
+            }
 
             requestId = requestAnimationFrame(callback);
         }
@@ -53,12 +60,14 @@ function LiveTime({ since, until, className }: { since: Date, until?: Date, clas
         }
     }, [since, until]);
 
+    const diff = (until ? until.getTime() - since.getTime() : 0)
+
     return <motion.div
         initial={{ opacity: 0, y: -10, x: "50%" }}
         animate={{ opacity: 1, y: 0, x: "50%" }}
         exit={{ opacity: 0, y: -10, x: "50%" }}
         className={cn("text-xs text-muted-foreground font-mono", className)} ref={timerRef} >
-        {formatTime((until ? until.getTime() - since.getTime() : 0) / 1000)}
+        {diff > 0 ? formatTime(diff / 1000) : ""}
     </motion.div >;
 }
 
@@ -99,6 +108,11 @@ export function RunTimeline({ run }: { run: any }) {
     const started = run.started_at ? new Date(run.started_at) : undefined;
     const end = run.ended_at ? new Date(run.ended_at) : undefined;
 
+    if (run.status == "cancelled") {
+        return (
+            <></>
+        );
+    }
 
     return (
         <div className="my-12 h-4 flex flex-row bg-gray-200 dark:bg-gray-800 relative">
@@ -107,7 +121,7 @@ export function RunTimeline({ run }: { run: any }) {
             <RunTimelineItem start={start} since={started} until={end} final={end} label="Execution" className="bg-green-400" />
 
             <div className={cn("text-xs text-muted-foreground font-mono", "absolute -top-6 left-0")}>
-                0
+                0ms
             </div>
             <motion.div className="absolute left-0 text-xs text-muted-foreground h-[20px] -top-[2px] w-[2px] rounded bg-gray-600">
             </motion.div>
@@ -119,6 +133,7 @@ export function RunTimelineItem({ start, since, until, final, label, className }
     const timerRef = useRef<HTMLButtonElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [evade, setEvade] = useState(false);
+    const [hideLabel, setHideLabel] = useState(false);
 
     useEffect(() => {
         let requestId: number;
@@ -137,6 +152,12 @@ export function RunTimelineItem({ start, since, until, final, label, className }
                 setEvade(true);
             } else {
                 setEvade(false);
+            }
+
+            if (width < 0.05) {
+                setHideLabel(true);
+            } else {
+                setHideLabel(false);
             }
 
             if (tooltipRef.current) {
@@ -161,10 +182,10 @@ export function RunTimelineItem({ start, since, until, final, label, className }
                     <AnimatePresence>
                         {start && <LiveTime since={start} until={until} className={cn("transition-all duration-200 absolute -top-6 right-0 w-fit transform translate-x-1/2 whitespace-nowrap z-10", evade ? "-top-10" : "")} />}
 
-                        <motion.div className="absolute right-0 text-xs text-muted-foreground h-[20px] -top-[2px] w-[2px] rounded bg-gray-600">
-                        </motion.div>
+                        {!hideLabel && <motion.div className="absolute right-0 text-xs text-muted-foreground h-[20px] -top-[2px] w-[2px] rounded bg-gray-600">
+                        </motion.div>}
 
-                        {since && label && <motion.div
+                        {since && label && !hideLabel && <motion.div
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: -10 }}
