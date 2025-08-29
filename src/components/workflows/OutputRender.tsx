@@ -5,6 +5,7 @@ import {
   Download,
   Ellipsis,
   FileAudio,
+  FileDown,
   FileText,
   FolderOpen,
   Loader2,
@@ -316,7 +317,13 @@ function _FileURLRender({
     );
   }
 
-  return <DownloadButton filename={filename} href={url} />;
+  return isSmallView ? (
+    <div className="flex h-full w-full items-center justify-center">
+      <FileDown className="h-4 w-4 text-muted-foreground" />
+    </div>
+  ) : (
+    <DownloadButton filename={filename} href={url} />
+  );
 }
 
 // New component for text file rendering
