@@ -5,6 +5,10 @@ import {
   CircleCheckBig,
   Image as ImageIcon,
   Lightbulb,
+  Plus,
+  Upload,
+  FileText,
+  MousePointer,
 } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -35,6 +39,14 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
@@ -179,6 +191,38 @@ type SearchParams = {
   workflow_json?: string;
 };
 
+// Random name generator for workflows
+function generateRandomWorkflowName(): string {
+  const adjectives = [
+    "Cosmic", "Neural", "Digital", "Mystic", "Quantum", "Ethereal", "Luminous", "Crystalline",
+    "Infinite", "Radiant", "Spectral", "Vivid", "Prismatic", "Celestial", "Enchanted", "Sublime",
+    "Ethereal", "Boundless", "Transcendent", "Luminescent", "Iridescent", "Kaleidoscopic", "Shimmering"
+  ];
+
+  const nouns = [
+    "Canvas", "Vision", "Dream", "Artisan", "Forge", "Studio", "Workshop", "Laboratory",
+    "Atelier", "Gallery", "Realm", "Odyssey", "Journey", "Creation", "Masterpiece", "Symphony",
+    "Tapestry", "Mosaic", "Prism", "Aurora", "Nebula", "Constellation", "Genesis", "Renaissance"
+  ];
+
+  const randomAdjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
+
+  return `${randomAdjective} ${randomNoun}`;
+}
+
+function generateRandomMachineName(workflowName: string): string {
+  // Extract the adjective from workflow name and create a machine variant
+  const adjective = workflowName.split(' ')[0];
+  const machineTypes = [
+    "Engine", "Processor", "Generator", "Computer", "System", "Machine", "Server", "Hub",
+    "Node", "Core", "Unit", "Station", "Terminal", "Cluster", "Array", "Grid"
+  ];
+
+  const randomType = machineTypes[Math.floor(Math.random() * machineTypes.length)];
+  return `${adjective} ${randomType}`;
+}
+
 // Add this helper function near the top of the file, after the imports
 function ensureComfyUIDeployInSteps(
   dockerSteps: any,
@@ -270,8 +314,11 @@ export default function WorkflowImport() {
   // Get query parameters for shared workflow import
   const [sharedSlug] = useQueryState("shared_slug");
 
+  // Generate random names
+  const randomWorkflowName = generateRandomWorkflowName();
+
   const [validation, setValidation] = useState<StepValidation>({
-    workflowName: "Untitled Workflow",
+    workflowName: randomWorkflowName,
     importOption:
       (localStorage.getItem("workflowImportOption") as "import" | "default") ||
       "default",
@@ -280,7 +327,7 @@ export default function WorkflowImport() {
     workflowApi: "",
     selectedMachineId: "",
     machineOption: "new",
-    machineName: "Untitled Machine",
+    machineName: generateRandomMachineName(randomWorkflowName),
     gpuType: "A10G",
     comfyUiHash:
       latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
@@ -387,7 +434,7 @@ export default function WorkflowImport() {
               ...prev,
               workflowName: sharedWorkflow.title || prev.workflowName,
               machineName: sharedWorkflow.title
-                ? `${sharedWorkflow.title} Machine`
+                ? generateRandomMachineName(sharedWorkflow.title)
                 : prev.machineName,
               importOption: "import",
               importJson: workflowJson,
@@ -897,13 +944,14 @@ function DefaultOption({
   setValidation,
 }: StepComponentProps<StepValidation>) {
   const { data: latestHashes } = useLatestHashes();
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   // Initialize innerSelected from validation if it exists, otherwise use default
   const [workflowSelected, setWorkflowSelected] = useState<string>(
     validation.workflowJson
       ? defaultWorkflowTemplates.find(
-          (t) => t.workflowJson === validation.workflowJson,
-        )?.workflowId || "sd1.5"
+        (t) => t.workflowJson === validation.workflowJson,
+      )?.workflowId || "sd1.5"
       : "sd1.5",
   );
 
@@ -939,7 +987,7 @@ function DefaultOption({
                   (step: DockerCommandStep) =>
                     step.type === "custom-node" &&
                     (step.data as CustomNodeData)?.url ===
-                      "https://github.com/BennyKok/comfyui-deploy",
+                    "https://github.com/BennyKok/comfyui-deploy",
                 );
 
               updatedDockerSteps = {
@@ -951,7 +999,7 @@ function DefaultOption({
                       if (
                         step.type === "custom-node" &&
                         (step.data as CustomNodeData)?.url ===
-                          "https://github.com/BennyKok/comfyui-deploy"
+                        "https://github.com/BennyKok/comfyui-deploy"
                       ) {
                         return {
                           ...step,
@@ -970,19 +1018,19 @@ function DefaultOption({
                   ...(hasComfyDeploy
                     ? []
                     : [
-                        {
-                          id: crypto.randomUUID().slice(0, 10),
-                          type: "custom-node" as const,
-                          data: {
-                            name: "ComfyUI Deploy",
-                            url: "https://github.com/BennyKok/comfyui-deploy",
-                            files: [],
-                            install_type: "git-clone" as const,
-                            pip: [],
-                            hash: latestHashes?.comfydeploy_hash,
-                          } as CustomNodeData,
-                        },
-                      ]),
+                      {
+                        id: crypto.randomUUID().slice(0, 10),
+                        type: "custom-node" as const,
+                        data: {
+                          name: "ComfyUI Deploy",
+                          url: "https://github.com/BennyKok/comfyui-deploy",
+                          files: [],
+                          install_type: "git-clone" as const,
+                          pip: [],
+                          hash: latestHashes?.comfydeploy_hash,
+                        } as CustomNodeData,
+                      },
+                    ]),
                 ],
               };
             }
@@ -1017,6 +1065,17 @@ function DefaultOption({
     setValidation,
   ]);
 
+  // Get the currently selected template for display
+  const selectedTemplate = defaultWorkflowTemplates.find(
+    (template) => template.workflowId === workflowSelected,
+  );
+
+  // Handle template selection and close dialog
+  const handleTemplateSelect = (templateId: string) => {
+    setWorkflowSelected(templateId);
+    setDialogOpen(false);
+  };
+
   return (
     <AccordionOption
       value="default"
@@ -1029,51 +1088,107 @@ function DefaultOption({
             Select a workflow as your starting point.{" "}
           </span>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
-            {defaultWorkflowTemplates.map((template, index) => (
-              <button
-                key={template.workflowId}
-                type="button"
-                className={cn(
-                  "group relative h-[280px] w-full overflow-hidden rounded-lg border text-left transition-all duration-500 ease-in-out sm:h-[320px] lg:h-[350px]",
-                  workflowSelected === template.workflowId
-                    ? "opacity-100 shadow-lg"
-                    : "opacity-70 grayscale hover:grayscale-0",
-                )}
-                onClick={() => setWorkflowSelected(template.workflowId)}
-                aria-pressed={workflowSelected === template.workflowId}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="mt-4 h-auto w-full justify-start p-4 text-left"
               >
-                <FileURLRender
-                  url={template.workflowImageUrl}
-                  imgClasses="h-full max-w-full w-full object-cover absolute inset-0 group-hover:scale-105 transition-all duration-500 pointer-events-none"
-                />
-                <div className="absolute right-0 bottom-0 left-0 flex flex-col gap-2 bg-gradient-to-t from-background/95 via-background/80 to-transparent p-4">
-                  <div className="flex flex-row items-center justify-between">
+                <div className="flex w-full items-center gap-4">
+                  {selectedTemplate ? (
+                    <>
+                      <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md">
+                        <FileURLRender
+                          url={selectedTemplate.workflowImageUrl}
+                          imgClasses="h-full w-full object-cover"
+                        />
+                      </div>
+                      <div className="flex flex-1 flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-medium">
+                            {selectedTemplate.workflowName}
+                          </h3>
+                          {selectedTemplate.hasEnvironment && (
+                            <Badge variant="yellow" className="whitespace-nowrap">
+                              <Lightbulb className="h-3 w-3" />
+                              With Preset
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-muted-foreground text-sm">
+                          {selectedTemplate.workflowDescription}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
                     <div className="flex items-center gap-2">
-                      {workflowSelected === template.workflowId ? (
-                        <CircleCheckBig className="h-4 w-4" />
-                      ) : (
-                        <Circle className="h-4 w-4" />
-                      )}
-                      <h3 className="line-clamp-1 font-medium text-shadow">
-                        {template.workflowName}
-                      </h3>
+                      <Plus className="h-4 w-4" />
+                      <span>Select a template</span>
                     </div>
-                    {template.hasEnvironment && (
-                      <Badge variant="yellow" className="whitespace-nowrap">
-                        <Lightbulb className="h-3 w-3" />
-                        With Preset
-                      </Badge>
-                    )}
-                  </div>
-
-                  <p className="line-clamp-1 text-muted-foreground text-sm backdrop-blur-[2px]">
-                    {template.workflowDescription}
-                  </p>
+                  )}
                 </div>
-              </button>
-            ))}
-          </div>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-6xl">
+              <DialogHeader>
+                <DialogTitle>Select a Workflow Template</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4 grid max-h-[70vh] grid-cols-1 gap-3 overflow-y-auto sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                {defaultWorkflowTemplates.map((template) => (
+                  <button
+                    key={template.workflowId}
+                    type="button"
+                    className={cn(
+                      "group relative h-[280px] w-full overflow-hidden rounded-lg border text-left transition-all duration-500 ease-in-out sm:h-[320px] lg:h-[350px]",
+                      workflowSelected === template.workflowId
+                        ? "opacity-100 shadow-lg"
+                        : "opacity-70 grayscale hover:grayscale-0",
+                    )}
+                    onClick={() => handleTemplateSelect(template.workflowId)}
+                    aria-pressed={workflowSelected === template.workflowId}
+                  >
+                    <FileURLRender
+                      url={template.workflowImageUrl}
+                      imgClasses="h-full max-w-full w-full object-cover absolute inset-0 group-hover:scale-105 transition-all duration-500 pointer-events-none"
+                    />
+                    {/* Selected state overlay */}
+                    {workflowSelected === template.workflowId && (
+                      <div className="absolute inset-0 border-2 border-primary rounded-lg" />
+                    )}
+                    <div className={cn(
+                      "absolute flex flex-col gap-2 bg-gradient-to-t from-background/95 via-background/80 to-transparent p-4",
+                      workflowSelected === template.workflowId
+                        ? "right-2 bottom-2 left-2 rounded-b-md"
+                        : "right-0 bottom-0 left-0"
+                    )}>
+                      <div className="flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {workflowSelected === template.workflowId ? (
+                            <CircleCheckBig className="h-4 w-4" />
+                          ) : (
+                            <Circle className="h-4 w-4" />
+                          )}
+                          <h3 className="line-clamp-1 font-medium text-shadow">
+                            {template.workflowName}
+                          </h3>
+                        </div>
+                        {template.hasEnvironment && (
+                          <Badge variant="yellow" className="whitespace-nowrap">
+                            <Lightbulb className="h-3 w-3" />
+                            With Preset
+                          </Badge>
+                        )}
+                      </div>
+
+                      <p className="line-clamp-1 text-muted-foreground text-sm backdrop-blur-[2px]">
+                        {template.workflowDescription}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       }
     />
@@ -1225,7 +1340,7 @@ function ImportOptions({
       selected={validation.importOption}
       label="Import"
       content={
-        <>
+        <div className="space-y-4">
           <input
             type="file"
             ref={fileInputRef}
@@ -1236,74 +1351,107 @@ function ImportOptions({
               if (file) handleFileSelect(file);
             }}
           />
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
+
+          {/* File Upload Section */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Upload className="h-4 w-4 text-blue-600" />
+              <span className="font-medium text-sm">Upload File</span>
+            </div>
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  fileInputRef.current?.click();
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label="Upload file"
+              onDragOver={(e) => {
                 e.preventDefault();
-                fileInputRef.current?.click();
-              }
-            }}
-            tabIndex={0}
-            role="button"
-            aria-label="Upload file"
-            onDragOver={(e) => {
-              e.preventDefault();
-              setIsDragging(true);
-            }}
-            onDragLeave={(e) => {
-              e.preventDefault();
-              setIsDragging(false);
-            }}
-            onDrop={handleDrop}
-            className={cn(
-              "cursor-pointer rounded-md border-2 border-dashed p-4 transition-colors duration-200",
-              isDragging ? "border-green-500 bg-green-50" : "border-gray-200",
-              "hover:border-gray-300",
-            )}
-          >
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+              }}
+              onDrop={handleDrop}
+              className={cn(
+                "cursor-pointer rounded-lg border-2 border-dashed p-6 transition-all duration-200",
+                isDragging
+                  ? "border-blue-500 bg-blue-50/50 shadow-lg"
+                  : "border-gray-200 hover:border-blue-300 hover:bg-blue-50/30",
+              )}
+            >
+              <div className="flex flex-col items-center gap-3 text-center">
+                <div className={cn(
+                  "flex items-center justify-center w-12 h-12 rounded-full transition-colors",
+                  isDragging ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-500"
+                )}>
+                  {isDragging ? <Upload className="h-5 w-5" /> : <MousePointer className="h-5 w-5" />}
+                </div>
+                <div>
+                  <p className="font-medium text-sm mb-1">
+                    {isDragging ? "Drop your file here" : "Click to browse or drag & drop"}
+                  </p>
+                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3 w-3" />
+                      <span>JSON files</span>
+                    </div>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <ImageIcon className="h-3 w-3" />
+                      <span>ComfyUI PNG images</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-border"></div>
+            <span className="text-xs text-muted-foreground font-medium">OR</span>
+            <div className="flex-1 h-px bg-border"></div>
+          </div>
+
+          {/* Paste JSON Section */}
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">
-                  Click or drag and drop your workflow JSON file or ComfyUI
-                  generated PNG image here.
-                </span>
-                <div className="flex items-center gap-1 text-muted-foreground text-xs">
-                  <ImageIcon className="h-3 w-3" />
-                  <span>PNG</span>
-                  <span>•</span>
-                  <span>JSON</span>
-                </div>
+                <FileText className="h-4 w-4 text-green-600" />
+                <span className="font-medium text-sm">Paste JSON</span>
               </div>
               {validation.hasEnvironment && (
                 <Badge
                   variant="secondary"
-                  className="ml-2 bg-green-100 text-green-700 hover:bg-green-100"
+                  className="bg-green-100 text-green-700 hover:bg-green-100"
                 >
                   <CheckCircle2 className="mr-1 h-3 w-3" />
                   Environment Detected
                 </Badge>
               )}
             </div>
-
-            <div className="mt-2">
-              <Textarea
-                placeholder="Or paste your workflow JSON here... (Image metadata will be extracted automatically when you upload a PNG file)"
-                className="h-48"
-                value={validation.importJson}
-                onClick={(e) => {
-                  e.stopPropagation();
-                }}
-                onChange={(e) => {
-                  const text = e.target.value;
-                  try {
-                    postProcessImport(text);
-                  } catch (error) {}
-                }}
-              />
-            </div>
+            <Textarea
+              placeholder="Paste your workflow JSON here..."
+              className="h-32 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 focus:ring-offset-0 border-2 focus:border-green-500 transition-colors"
+              value={validation.importJson}
+              onChange={(e) => {
+                const text = e.target.value;
+                try {
+                  postProcessImport(text);
+                } catch (error) { }
+              }}
+            />
+            <p className="text-xs text-muted-foreground">
+              Workflow JSON exports from ComfyUI or shared workflows
+            </p>
           </div>
-        </>
+        </div>
       }
     />
   );
