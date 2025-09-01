@@ -5,7 +5,6 @@ import {
 } from "@/components/machine/machine-schema";
 import { CustomNodeList } from "@/components/machines/custom-node-list";
 import {
-  type ConflictingNodeInfo,
   analyzeWorkflowJson,
 } from "@/components/onboarding/workflow-analyze";
 import {
@@ -26,10 +25,6 @@ interface DockerCommandStep {
   type: "custom-node" | "commands";
   data: CustomNodeData | string;
 }
-import {
-  type SnapshotImportData,
-  SnapshotImportZoneLite,
-} from "@/components/snapshot-import-zone";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -39,9 +34,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -51,48 +50,35 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
-import {
-  getBranchInfo,
-  useGithubBranchInfo,
-} from "@/hooks/use-github-branch-info";
-import { useMachines } from "@/hooks/use-machine";
+import { useMachine, useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowLeftRight,
+  AlertTriangle,
   CheckCircle,
   ChevronDown,
   ChevronUp,
+  Edit2,
   ExternalLink,
   Info,
-  Loader2,
   Lock,
-  Package,
-  Pencil,
   Plus,
   Search,
   Server,
   Settings,
   Settings2,
   Star,
-  X,
 } from "lucide-react";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { MachineSettingsWrapper } from "../machine/machine-settings";
+import { getBranchInfo } from "@/hooks/use-github-branch-info";
 
 // Add this type
 export type ComfyUIOption = {
@@ -132,6 +118,85 @@ export type NodeData = {
   pip?: string[];
   meta?: NodeMeta;
 };
+
+// Custom hook to enrich workflow dependencies with GitHub data
+function useEnrichedDependencies(rawDependencies: any, skipEnrichment?: boolean) {
+  return useQuery({
+    queryKey: ["enrichedDependencies", rawDependencies],
+    queryFn: async () => {
+      if (!rawDependencies) return null;
+
+      const enrichedDeps = { ...rawDependencies };
+
+      // Enrich custom nodes with GitHub data
+      if (enrichedDeps.custom_nodes) {
+        const nodeEntries = Object.entries(enrichedDeps.custom_nodes);
+        const enrichedNodes = await Promise.all(
+          nodeEntries.map(async ([url, node]: [string, any]) => {
+            try {
+              const branchInfo = await getBranchInfo(url);
+              return [url, {
+                ...(typeof node === 'object' ? node : {}),
+                meta: {
+                  ...(node?.meta || {}),
+                  stargazers_count: branchInfo?.stargazers_count,
+                  latest_hash: branchInfo?.commit?.sha,
+                  message: branchInfo?.commit?.commit?.message,
+                  committer: branchInfo?.commit?.commit?.committer,
+                  commit_url: branchInfo?.commit?.html_url,
+                }
+              }];
+            } catch (error) {
+              console.error(`Failed to fetch GitHub data for ${url}:`, error);
+              return [url, node];
+            }
+          })
+        );
+        enrichedDeps.custom_nodes = Object.fromEntries(enrichedNodes);
+      }
+
+      // Enrich conflicting nodes with GitHub data
+      if (enrichedDeps.conflicting_nodes) {
+        const conflictEntries = Object.entries(enrichedDeps.conflicting_nodes);
+        const enrichedConflicts = await Promise.all(
+          conflictEntries.map(async ([nodeName, implementations]: [string, any]) => {
+            if (!Array.isArray(implementations)) {
+              return [nodeName, implementations];
+            }
+            const enrichedImpls = await Promise.all(
+              implementations.map(async (impl: any) => {
+                try {
+                  const branchInfo = await getBranchInfo(impl.url);
+                  return {
+                    ...(typeof impl === 'object' ? impl : {}),
+                    meta: {
+                      ...(impl?.meta || {}),
+                      stargazers_count: branchInfo?.stargazers_count,
+                      latest_hash: branchInfo?.commit?.sha,
+                      message: branchInfo?.commit?.commit?.message,
+                      committer: branchInfo?.commit?.commit?.committer,
+                      commit_url: branchInfo?.commit?.html_url,
+                    }
+                  };
+                } catch (error) {
+                  console.error(`Failed to fetch GitHub data for ${impl.url}:`, error);
+                  return impl;
+                }
+              })
+            );
+            return [nodeName, enrichedImpls];
+          })
+        );
+        enrichedDeps.conflicting_nodes = Object.fromEntries(enrichedConflicts);
+      }
+
+      return enrichedDeps;
+    },
+    enabled: !!rawDependencies && !skipEnrichment,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: Number.POSITIVE_INFINITY,
+  });
+}
 
 // Helper function to get unique URLs map
 function mergeCustomNodes(
@@ -211,13 +276,18 @@ export function WorkflowImportSelectedMachine() {
       ? validation.workflowJson
       : validation.importJson;
 
-  const { data: dependencies, error: dependenciesError, isLoading: dependenciesLoading } = useQuery({
+  const { data: rawDependencies, error: dependenciesError, isLoading: rawDependenciesLoading } = useQuery({
     queryKey: ["analyzeWorkflowJson", json],
     queryFn: () => (json ? analyzeWorkflowJson(json) : null),
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
     enabled: !!json && !skipCustomNodeCheck,
   });
+
+  // Enrich dependencies with GitHub star data
+  const { data: dependencies, isLoading: enrichmentLoading } = useEnrichedDependencies(rawDependencies, skipCustomNodeCheck);
+
+  const dependenciesLoading = rawDependenciesLoading || enrichmentLoading;
 
   // Initialize dependencies for validation purposes only
   useEffect(() => {
@@ -227,10 +297,10 @@ export function WorkflowImportSelectedMachine() {
 
       if (dependencies.conflicting_nodes) {
         for (const [nodeName, conflicts] of Object.entries(dependencies.conflicting_nodes)) {
-          if (conflicts.length > 0) {
+          if (Array.isArray(conflicts) && conflicts.length > 0) {
             // Sort by star count (descending) to get most popular
             const sortedConflicts = [...conflicts].sort(
-              (a, b) => (b.meta?.stargazers_count || 0) - (a.meta?.stargazers_count || 0)
+              (a: any, b: any) => (b.meta?.stargazers_count || 0) - (a.meta?.stargazers_count || 0)
             );
             autoSelectedConflictingNodes[nodeName] = [sortedConflicts[0]];
           }
@@ -293,31 +363,39 @@ export function WorkflowImportSelectedMachine() {
   ) : (
     <div className="space-y-4">
       {/* Machine Selection Toggle */}
-      <div className="flex items-center gap-2 p-1 bg-muted/30 rounded-lg w-fit">
-        <Button
-          variant={validation.machineOption === "new" ? "default" : "ghost"}
-          size="sm"
+      <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+        <button
+          type="button"
           onClick={() => setValidation({
             machineOption: "new",
             selectedMachineId: "",
           })}
-          className="h-8"
+          className={cn(
+            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+            validation.machineOption === "new"
+              ? "bg-background text-foreground shadow-sm"
+              : "hover:bg-background/50 hover:text-foreground"
+          )}
         >
-          <Plus className="h-4 w-4 mr-1" />
+          <Plus className="mr-1 h-3.5 w-3.5" />
           New Machine
-        </Button>
-        <Button
-          variant={validation.machineOption === "existing" ? "default" : "ghost"}
-          size="sm"
+        </button>
+        <button
+          type="button"
           onClick={() => setValidation({
             machineOption: "existing",
             selectedMachineId: "",
           })}
-          className="h-8"
+          className={cn(
+            "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+            validation.machineOption === "existing"
+              ? "bg-background text-foreground shadow-sm"
+              : "hover:bg-background/50 hover:text-foreground"
+          )}
         >
-          <Server className="h-4 w-4 mr-1" />
+          <Server className="mr-1 h-3.5 w-3.5" />
           Use Existing
-        </Button>
+        </button>
       </div>
 
       {/* New Machine Content */}
@@ -336,7 +414,7 @@ export function WorkflowImportSelectedMachine() {
         <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 flex items-center gap-2">
           <Lock className="h-4 w-4 text-yellow-600" />
           <span className="text-sm text-yellow-800">
-            Machine limit reached. <Link href="/settings/billing" className="underline">Upgrade</Link> to create more.
+            Machine limit reached. <Link href="/pricing" className="underline">Upgrade</Link> to create more.
           </span>
         </div>
       )}
@@ -349,17 +427,107 @@ export function WorkflowImportSelectedMachine() {
             setValidation={setValidation}
           />
 
-          {/* Simple info note */}
-          {validation.selectedMachineId && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Info className="h-3 w-3" />
-              Workflow custom nodes won't be added to existing machines
-            </p>
+          {/* Warning about missing nodes */}
+          {validation.selectedMachineId && validation.existingMachineMissingNodes && validation.existingMachineMissingNodes.length > 0 && (
+            <div className="rounded-md border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 p-3 flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  {validation.existingMachineMissingNodes.length} custom node{validation.existingMachineMissingNodes.length > 1 ? 's' : ''} missing
+                </p>
+                <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                  The selected machine is missing these nodes required by your workflow:
+                </p>
+                <ul className="text-xs text-yellow-700 dark:text-yellow-300 space-y-0.5">
+                  {validation.existingMachineMissingNodes.slice(0, 3).map((node, i) => (
+                    <li key={i}>• {node.name}</li>
+                  ))}
+                  {validation.existingMachineMissingNodes.length > 3 && (
+                    <li>• and {validation.existingMachineMissingNodes.length - 3} more...</li>
+                  )}
+                </ul>
+              </div>
+            </div>
           )}
         </div>
       )}
     </div>
   );
+}
+
+function NodeComparison({ nodeComparison }: { nodeComparison: any }) {
+  return (
+    <>
+      <Badge
+        variant={
+          nodeComparison.missingNodes.length === 0
+            ? "success"
+            : nodeComparison.matchingCount === 0
+              ? "destructive"
+              : "yellow"
+        }
+        className="text-[10px] px-1.5 py-0 h-5"
+      >
+        {nodeComparison.matchingCount}/{nodeComparison.totalRequired} nodes
+      </Badge>
+      {nodeComparison.missingNodes.length > 0 && (
+        <HoverCard>
+          <HoverCardTrigger asChild>
+            <Badge
+              variant="yellow"
+              className="text-[10px] px-1.5 py-0 h-5 cursor-help hover:bg-yellow-100 dark:hover:bg-yellow-900/40"
+            >
+              {nodeComparison.missingNodes.length} missing
+            </Badge>
+          </HoverCardTrigger>
+          <HoverCardContent className="w-80">
+            <div className="space-y-2">
+              <p className="font-medium text-sm">Missing Custom Nodes</p>
+              <div className="space-y-1 text-xs">
+                {nodeComparison.missingNodes.map((node: any, i: number) => (
+                  <div key={i} className="flex items-start gap-1.5">
+                    <span className="text-muted-foreground">•</span>
+                    <span className="break-words">{node.name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      )}
+    </>
+  );
+}
+
+// Helper function to compare nodes
+function compareNodes(machineDockerSteps: any,
+  validation: StepValidation) {
+  const matchingNodes: NodeData[] = [];
+  const missingNodes: NodeData[] = [];
+  const machineNodeUrls = machineDockerSteps?.steps?.map((node: any) => node?.data?.url?.toLowerCase()
+  );
+
+  const uniqueUrls = mergeCustomNodes(
+    validation.dependencies?.custom_nodes,
+    validation.selectedConflictingNodes
+  );
+
+  for (const [url, nodeData] of uniqueUrls) {
+    const isMatched = machineNodeUrls?.some(
+      (mnUrl: string) => mnUrl === url.toLowerCase()
+    );
+    if (isMatched) {
+      matchingNodes.push(nodeData);
+    } else {
+      missingNodes.push(nodeData);
+    }
+  }
+
+  return {
+    matchingCount: matchingNodes.length,
+    totalRequired: uniqueUrls.size,
+    missingNodes,
+  };
 }
 
 function ExistingMachineDialog({
@@ -390,39 +558,6 @@ function ExistingMachineDialog({
     query.refetch();
   }, [debouncedSearchValue]);
 
-  // Helper function to compare nodes
-  const compareNodes = (
-    machineDockerSteps: any,
-    validation: StepValidation,
-  ) => {
-    const matchingNodes: NodeData[] = [];
-    const missingNodes: NodeData[] = [];
-    const machineNodeUrls = machineDockerSteps?.steps?.map((node: any) =>
-      node?.data?.url?.toLowerCase(),
-    );
-
-    const uniqueUrls = mergeCustomNodes(
-      validation.dependencies?.custom_nodes,
-      validation.selectedConflictingNodes,
-    );
-
-    for (const [url, nodeData] of uniqueUrls) {
-      const isMatched = machineNodeUrls?.some(
-        (mnUrl: string) => mnUrl === url.toLowerCase(),
-      );
-      if (isMatched) {
-        matchingNodes.push(nodeData);
-      } else {
-        missingNodes.push(nodeData);
-      }
-    }
-
-    return {
-      matchingCount: matchingNodes.length,
-      totalRequired: uniqueUrls.size,
-      missingNodes,
-    };
-  };
 
   const handleMachineSelect = (
     machineId: string,
@@ -430,7 +565,6 @@ function ExistingMachineDialog({
     missingNodes: NodeData[]
   ) => {
     setValidation({
-      ...validation,
       selectedMachineId: checked ? machineId : "",
       existingMachineMissingNodes: missingNodes,
     });
@@ -443,150 +577,130 @@ function ExistingMachineDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl h-[90vh] flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 border-b">
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
+        <DialogHeader className="px-4 py-3 border-b shrink-0">
           <DialogTitle>Select Existing Machine</DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="space-y-4">
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <div className="px-4 pt-3 pb-2 shrink-0">
             <div className="flex items-center space-x-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search machines..."
-                className="focus-visible:ring-0"
+                className="focus-visible:ring-0 h-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 pb-4">
 
             {query.isLoading ? (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {[...Array(5)].map((_, index) => (
                   <div
-                    className={cn(
-                      "flex items-center space-x-4 border-gray-200 border-r border-b border-l p-2.5",
-                      index === 4 && "rounded-b-[8px]",
-                      index === 0 && "rounded-t-[8px] border-t",
-                    )}
+                    className="w-full border rounded-md p-3 border-gray-200"
                     key={index}
                   >
-                    <Checkbox className="rounded-[4px] border-gray-500" disabled />
-                    <Skeleton className="h-6 w-[200px]" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-[180px]" />
+                      <div className="flex gap-1.5">
+                        <Skeleton className="h-4 w-[40px]" />
+                        <Skeleton className="h-4 w-[70px]" />
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <VirtualizedInfiniteList
-                queryResult={query}
-                renderItem={(item, index) => {
-                  const isSelected = validation.selectedMachineId === item.id;
-                  const nodeComparison = compareNodes(
-                    (item as any).docker_command_steps,
-                    validation,
-                  );
+              <div>
+                <VirtualizedInfiniteList
+                  queryResult={query}
+                  renderItem={(item, index) => {
+                    const isSelected = validation.selectedMachineId === item.id;
+                    const nodeComparison = compareNodes(
+                      (item as any).docker_command_steps,
+                      validation,
+                    );
 
-                  return (
-                    <div
-                      className={cn(
-                        "flex h-[72px] flex-col items-center justify-center border-gray-200 border-r border-b border-l p-2.5",
-                        index === 0 && "rounded-t-[8px] border-t",
-                      )}
-                    >
-                      <div className="group flex w-full items-center gap-3">
-                        <Checkbox
-                          id={item.id}
-                          className="data-[state=checked]:!bg-primary rounded-[4px] border-gray-500 group-hover:bg-gray-100"
-                          checked={isSelected}
-                          onCheckedChange={(checked: boolean) => {
+                    return (
+                      <div
+                        key={item.id}
+                        className="mb-3"
+                      >
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             handleMachineSelect(
                               item.id,
-                              checked,
+                              true,
                               nodeComparison.missingNodes
                             );
                           }}
-                        />
-                        <label
-                          htmlFor={item.id}
-                          className="flex min-w-0 flex-1 items-center gap-4"
-                        >
-                          <span className="flex-1 truncate whitespace-nowrap">
-                            {item.name}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-[10px]">
-                              {item.gpu}
-                            </Badge>
-                            <Badge
-                              variant={
-                                nodeComparison.missingNodes.length === 0
-                                  ? "success"
-                                  : "secondary"
-                              }
-                              className="text-[10px]"
-                            >
-                              {nodeComparison.matchingCount}/{nodeComparison.totalRequired} nodes
-                            </Badge>
-                          </div>
-                        </label>
-
-                        {nodeComparison.missingNodes.length > 0 && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <div className="text-yellow-500">
-                                  <Settings2 className="h-4 w-4" />
-                                </div>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p className="font-medium">Missing Custom Nodes:</p>
-                                <ul className="text-xs">
-                                  {nodeComparison.missingNodes.map((node, i) => (
-                                    <li
-                                      key={node.url}
-                                      className="text-muted-foreground"
-                                    >
-                                      • {node.url.split("/").pop()}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-
-                        <Link
-                          href={`/machines/${item.id}`}
-                          target="_blank"
-                          className="shrink-0 text-muted-foreground transition-colors hover:text-gray-600"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </Link>
-                      </div>
-
-                      <CustomNodeList machine={item} />
-                    </div>
-                  );
-                }}
-                estimateSize={72}
-                renderLoading={() => {
-                  return (
-                    <>
-                      {[...Array(4)].map((_, index) => (
-                        <div
                           className={cn(
-                            "flex items-center space-x-4 border-gray-200 border-r border-b border-l p-2.5",
-                            index === 3 && "rounded-b-[8px]",
+                            "w-full text-left border rounded-md p-3 transition-all",
+                            "hover:border-primary/50 hover:bg-muted/30",
+                            isSelected && "border-primary bg-primary/10 ring-1 ring-primary/20",
+                            !isSelected && "border-border"
                           )}
-                          key={index}
                         >
-                          <Checkbox className="rounded-[4px] border-gray-500" disabled />
-                          <Skeleton className="h-6 w-[200px]" />
-                        </div>
-                      ))}
-                    </>
-                  );
-                }}
-              />
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1.5">
+                                {isSelected && (
+                                  <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />
+                                )}
+                                <span className="font-medium text-sm truncate">{item.name}</span>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
+                                  {item.gpu}
+                                </Badge>
+                                <NodeComparison nodeComparison={nodeComparison} />
+                              </div>
+                            </div>
+
+                            <Link
+                              href={`/machines/${item.id}`}
+                              target="_blank"
+                              onClick={(e) => e.stopPropagation()}
+                              className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5" />
+                            </Link>
+                          </div>
+
+                          <CustomNodeList machine={item} />
+                        </button>
+                      </div>
+                    );
+                  }}
+                  estimateSize={110}
+                  renderLoading={() => {
+                    return (
+                      <>
+                        {[...Array(4)].map((_, index) => (
+                          <div
+                            className="w-full border rounded-md p-3 mb-3 border-gray-200"
+                            key={index}
+                          >
+                            <div className="space-y-1.5">
+                              <Skeleton className="h-4 w-[180px]" />
+                              <div className="flex gap-1.5">
+                                <Skeleton className="h-4 w-[40px]" />
+                                <Skeleton className="h-4 w-[70px]" />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    );
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -594,6 +708,141 @@ function ExistingMachineDialog({
     </Dialog>
   );
 }
+
+// Memoized node item component
+const NodeItem = memo(({
+  url,
+  nodeData,
+  isSelected,
+  isDuplicate,
+  onToggle,
+}: {
+  url: string;
+  nodeData: any;
+  isSelected: boolean;
+  isDuplicate: boolean;
+  onToggle: (url: string, checked: boolean) => void;
+}) => {
+  const author = url.split("/")[3];
+
+  return (
+    <div
+      className={cn(
+        "flex items-center space-x-2 rounded border p-2",
+        isDuplicate && "bg-gray-50 border-gray-200"
+      )}
+    >
+      <Checkbox
+        id={`node-${url}`}
+        className="data-[state=checked]:!bg-primary rounded-[4px] border-gray-500 shrink-0"
+        checked={isSelected}
+        disabled={isDuplicate}
+        onCheckedChange={(checked: boolean) => onToggle(url, checked)}
+      />
+
+      <div className="flex-1 min-w-0 flex items-center gap-2">
+        <span className={cn(
+          "font-medium text-sm truncate",
+          isDuplicate && "text-gray-500"
+        )}>
+          {nodeData.name}
+        </span>
+        <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
+          {author}
+        </Badge>
+        {nodeData.meta?.stargazers_count && (
+          <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">
+            <Star className="h-2 w-2 mr-0.5 fill-current" />
+            {nodeData.meta.stargazers_count}
+          </Badge>
+        )}
+        <div className="ml-auto shrink-0">
+          {isDuplicate ? (
+            <Badge variant="secondary" className="text-[10px] px-1 py-0">
+              Installed
+            </Badge>
+          ) : isSelected ? (
+            <Badge variant="success" className="text-[10px] px-1 py-0">
+              Will add
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px] px-1 py-0">
+              Skipped
+            </Badge>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+NodeItem.displayName = "NodeItem";
+
+// Memoized conflicting node item
+const ConflictingNodeItem = memo(({
+  nodeName,
+  impl,
+  isSelected,
+  isDuplicate,
+  onChange,
+}: {
+  nodeName: string;
+  impl: any;
+  isSelected: boolean;
+  isDuplicate: boolean;
+  onChange: (nodeName: string, selectedImpl: any | null) => void;
+}) => {
+  const author = impl.url.split("/")[3];
+
+  return (
+    <div
+      className={cn(
+        "flex items-center space-x-2 rounded border p-2",
+        isDuplicate && "bg-gray-50 border-gray-200",
+        isSelected && "border-primary bg-primary/5"
+      )}
+    >
+      <Checkbox
+        id={`${nodeName}-${impl.url}`}
+        className="data-[state=checked]:!bg-primary rounded-[4px] border-gray-500 shrink-0"
+        checked={isSelected}
+        disabled={isDuplicate}
+        onCheckedChange={(checked: boolean) =>
+          onChange(nodeName, checked ? impl : null)
+        }
+      />
+      <label
+        htmlFor={`${nodeName}-${impl.url}`}
+        className="flex-1 min-w-0 flex items-center gap-2 cursor-pointer"
+      >
+        <span className={cn(
+          "font-medium text-sm truncate",
+          isDuplicate && "text-gray-500"
+        )}>
+          {impl.name}
+        </span>
+        <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
+          {author}
+        </Badge>
+        {impl.meta?.stargazers_count && (
+          <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">
+            <Star className="h-2 w-2 mr-0.5 fill-current" />
+            {impl.meta.stargazers_count}
+          </Badge>
+        )}
+      </label>
+      <Link
+        href={impl.url}
+        target="_blank"
+        className="shrink-0 text-muted-foreground hover:text-gray-600 transition-colors"
+      >
+        <ExternalLink className="h-3 w-3" />
+      </Link>
+    </div>
+  );
+});
+
+ConflictingNodeItem.displayName = "ConflictingNodeItem";
 
 function DetectedCustomNodesSection({
   validation,
@@ -620,13 +869,119 @@ function DetectedCustomNodesSection({
     if (Object.keys(updates).length > 0) {
       setValidation(updates);
     }
-  }, [validation.workflowName, validation.machineName, validation.gpuType]);
+  }, [validation.workflowName, validation.machineName, validation.gpuType, setValidation]);
 
-  // All validation checks at the beginning to avoid hook inconsistencies
   const customNodes = validation.dependencies?.custom_nodes;
   const conflictingNodes = validation.dependencies?.conflicting_nodes || {};
   const selectedConflictingNodes = validation.selectedConflictingNodes || {};
 
+  // Memoize URL to conflicting nodes mapping
+  const urlToConflictingNodes = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    Object.entries(conflictingNodes).forEach(([nodeName, implementations]) => {
+      (implementations as any[]).forEach((impl: any) => {
+        const url = impl.url.toLowerCase();
+        if (!map.has(url)) {
+          map.set(url, new Set());
+        }
+        map.get(url)!.add(nodeName);
+      });
+    });
+    return map;
+  }, [conflictingNodes]);
+
+  // Memoize non-conflicting custom nodes
+  const nonConflictingCustomNodes = useMemo(() => {
+    return Object.entries(customNodes || {}).filter(([url]) => {
+      return !urlToConflictingNodes.has(url.toLowerCase());
+    });
+  }, [customNodes, urlToConflictingNodes]);
+
+  // Memoize conflicting node URLs
+  const conflictingNodeUrls = useMemo(() => {
+    const urls = new Set<string>();
+    Object.values(selectedConflictingNodes).forEach((nodes) => {
+      (nodes as any[]).forEach(node => urls.add(node.url));
+    });
+    return urls;
+  }, [selectedConflictingNodes]);
+
+  // Memoize duplicate check function
+  const checkIsDuplicate = useCallback((url: string) => {
+    return existingMachineSteps.some((step: any) =>
+      step.type === "custom-node" &&
+      (step.data as CustomNodeData)?.url?.toLowerCase() === url.toLowerCase()
+    );
+  }, [existingMachineSteps]);
+
+  // Initialize selected custom nodes
+  const selectedCustomNodes = validation.selectedCustomNodesToApply || new Set(
+    nonConflictingCustomNodes.map(([url]) => url)
+  );
+
+  // Memoize event handlers
+  const handleNodeToggle = useCallback((url: string, checked: boolean) => {
+    const newSelected = new Set(selectedCustomNodes);
+    if (checked) {
+      newSelected.add(url);
+    } else {
+      newSelected.delete(url);
+    }
+    setValidation({
+      ...validation,
+      selectedCustomNodesToApply: newSelected,
+    });
+  }, [selectedCustomNodes, setValidation, validation]);
+
+  const handleConflictingNodeChange = useCallback((nodeName: string, selectedImpl: any | null) => {
+    const newSelectedConflicting = { ...selectedConflictingNodes };
+    if (selectedImpl) {
+      newSelectedConflicting[nodeName] = [selectedImpl];
+    } else {
+      delete newSelectedConflicting[nodeName];
+    }
+    setValidation({
+      ...validation,
+      selectedConflictingNodes: newSelectedConflicting,
+    });
+  }, [selectedConflictingNodes, setValidation, validation]);
+
+  // Memoize URL counting with optimized algorithm
+  const { selectedUrls, totalNodes } = useMemo(() => {
+    const selected = new Set<string>();
+    const all = new Set<string>();
+
+    // Process non-conflicting nodes
+    nonConflictingCustomNodes.forEach(([url]) => {
+      const lowerUrl = url.toLowerCase();
+      all.add(lowerUrl);
+      if (selectedCustomNodes.has(url)) {
+        selected.add(lowerUrl);
+      }
+    });
+
+    // Process conflicting nodes
+    Object.entries(conflictingNodes).forEach(([nodeName, implementations]) => {
+      (implementations as any[]).forEach(impl => {
+        const lowerUrl = impl.url.toLowerCase();
+        all.add(lowerUrl);
+        const selectedImpl = selectedConflictingNodes[nodeName]?.[0];
+        if (selectedImpl && selectedImpl.url.toLowerCase() === lowerUrl) {
+          selected.add(lowerUrl);
+        }
+      });
+    });
+
+    return {
+      selectedUrls: selected,
+      totalNodes: all.size,
+    };
+  }, [nonConflictingCustomNodes, conflictingNodes, selectedCustomNodes, selectedConflictingNodes]);
+
+  const totalSelected = selectedUrls.size;
+  const isConfigured = validation.machineName && validation.gpuType;
+
+  // Early return for no nodes - moved after all hooks
   if (!customNodes && Object.keys(conflictingNodes).length === 0) {
     return (
       <div className="space-y-3 pt-3 border-t">
@@ -639,84 +994,9 @@ function DetectedCustomNodesSection({
     );
   }
 
-  // Build a map of which URLs provide which conflicting nodes
-  const urlToConflictingNodes = new Map<string, Set<string>>();
-  Object.entries(conflictingNodes).forEach(([nodeName, implementations]) => {
-    (implementations as any[]).forEach((impl: any) => {
-      const url = impl.url.toLowerCase();
-      if (!urlToConflictingNodes.has(url)) {
-        urlToConflictingNodes.set(url, new Set());
-      }
-      urlToConflictingNodes.get(url)!.add(nodeName);
-    });
-  });
-
-  // Get nodes that don't have conflicts
-  const nonConflictingCustomNodes = Object.entries(customNodes || {}).filter(([url]) => {
-    return !urlToConflictingNodes.has(url.toLowerCase());
-  });
-
-  // Get unique URLs from conflicting nodes
-  const conflictingNodeUrls = new Set<string>();
-  Object.values(selectedConflictingNodes).forEach((nodes) => {
-    (nodes as any[]).forEach(node => conflictingNodeUrls.add(node.url));
-  });
-
-
-
   if (nonConflictingCustomNodes.length === 0 && conflictingNodeUrls.size === 0) {
     return null;
   }
-
-  // Check for duplicates against existing machine steps
-  const checkIsDuplicate = (url: string) => {
-    return existingMachineSteps.some((step: any) =>
-      step.type === "custom-node" &&
-      (step.data as CustomNodeData)?.url?.toLowerCase() === url.toLowerCase()
-    );
-  };
-
-  // Initialize selected custom nodes
-  const selectedCustomNodes = validation.selectedCustomNodesToApply || new Set(
-    nonConflictingCustomNodes.map(([url]) => url)
-  );
-
-  const handleNodeToggle = (url: string, checked: boolean) => {
-    const newSelected = new Set(selectedCustomNodes);
-    if (checked) {
-      newSelected.add(url);
-    } else {
-      newSelected.delete(url);
-    }
-    setValidation({
-      ...validation,
-      selectedCustomNodesToApply: newSelected,
-    });
-  };
-
-  const handleConflictingNodeChange = (nodeName: string, selectedImpl: any | null) => {
-    const newSelectedConflicting = { ...selectedConflictingNodes };
-    if (selectedImpl) {
-      newSelectedConflicting[nodeName] = [selectedImpl];
-    } else {
-      delete newSelectedConflicting[nodeName];
-    }
-    setValidation({
-      ...validation,
-      selectedConflictingNodes: newSelectedConflicting,
-    });
-  };
-
-  // Count total selected
-  const totalSelected = selectedCustomNodes.size + Object.keys(selectedConflictingNodes).length;
-  const totalNodes = nonConflictingCustomNodes.length + Object.keys(conflictingNodes).length;
-
-  // Get preview items for compact view
-  const previewNodes = [...nonConflictingCustomNodes.slice(0, 3)];
-  const remainingCount = Math.max(0, totalNodes - 3);
-
-  // Check if machine is configured
-  const isConfigured = validation.machineName && validation.gpuType;
 
   return (
     <>
@@ -738,9 +1018,10 @@ function DetectedCustomNodesSection({
             variant="ghost"
             size="sm"
             onClick={() => setDialogOpen(true)}
-            className="h-7 text-xs"
+            className="h-7 text-xs gap-1"
           >
-            Change
+            <Edit2 className="h-3 w-3" />
+            Edit
           </Button>
         </div>
       ) : (
@@ -754,248 +1035,219 @@ function DetectedCustomNodesSection({
         </Button>
       )}
 
-      {/* Detailed Configuration Dialog */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-          <DialogHeader className="px-6 py-4 border-b">
-            <div className="flex items-center justify-between">
-              <DialogTitle>Configure Machine</DialogTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={showAdvancedView ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowAdvancedView(!showAdvancedView)}
-                  className="text-xs"
-                >
-                  {showAdvancedView ? "Simplified View" : "Advanced View"}
-                </Button>
-                <DialogClose />
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            {!showAdvancedView ? (
-              // Simplified View - Custom Nodes Configuration
-              <div className="space-y-4">
-                {/* GPU Selection */}
-                <div>
-                  <label className="text-sm font-medium mb-1.5 block">
-                    GPU Type
-                  </label>
-                  <Select
-                    value={validation.gpuType || 'T4'}
-                    onValueChange={(value) => setValidation({ gpuType: value as GpuTypes })}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select GPU type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CPU">CPU</SelectItem>
-                      <SelectItem value="T4">T4</SelectItem>
-                      <SelectItem value="A10G">A10G</SelectItem>
-                      <SelectItem value="L40S">L40S</SelectItem>
-                      <SelectItem value="L4">L4</SelectItem>
-                      <SelectItem value="A100">A100</SelectItem>
-                      <SelectItem value="A100-80GB">A100-80GB</SelectItem>
-                      <SelectItem value="H100">H100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Custom Nodes Section */}
-                {totalNodes > 0 && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="text-sm font-medium">
-                        Custom Nodes
-                      </label>
-                      <Badge variant="outline" className="shrink-0 text-xs">
-                        {totalSelected}/{totalNodes} selected
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2">
-                      {/* Non-conflicting nodes */}
-                      {nonConflictingCustomNodes.map(([url, nodeData]: [string, any]) => {
-                        const isDuplicate = checkIsDuplicate(url);
-                        const isSelected = selectedCustomNodes.has(url);
-                        const author = url.split("/")[3];
-
-                        return (
-                          <div
-                            key={url}
-                            className={cn(
-                              "flex items-center space-x-2 rounded border p-2",
-                              isDuplicate && "bg-gray-50 border-gray-200"
-                            )}
-                          >
-                            <Checkbox
-                              id={`node-${url}`}
-                              className="data-[state=checked]:!bg-primary rounded-[4px] border-gray-500 shrink-0"
-                              checked={isSelected}
-                              disabled={isDuplicate}
-                              onCheckedChange={(checked: boolean) => handleNodeToggle(url, checked)}
-                            />
-
-                            <div className="flex-1 min-w-0 flex items-center gap-2">
-                              <span className={cn(
-                                "font-medium text-sm truncate",
-                                isDuplicate && "text-gray-500"
-                              )}>
-                                {nodeData.name}
-                              </span>
-                              <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
-                                {author}
-                              </Badge>
-                              {nodeData.meta?.stargazers_count && (
-                                <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">
-                                  <Star className="h-2 w-2 mr-0.5 fill-current" />
-                                  {nodeData.meta.stargazers_count}
-                                </Badge>
-                              )}
-                              <div className="ml-auto shrink-0">
-                                {isDuplicate ? (
-                                  <Badge variant="secondary" className="text-[10px] px-1 py-0">
-                                    Installed
-                                  </Badge>
-                                ) : isSelected ? (
-                                  <Badge variant="success" className="text-[10px] px-1 py-0">
-                                    Will add
-                                  </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-[10px] px-1 py-0">
-                                    Skipped
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Conflicting nodes */}
-                      {Object.entries(conflictingNodes).map(([nodeName, implementations]: [string, any]) => {
-                        const selectedImpl = selectedConflictingNodes[nodeName]?.[0];
-                        const hasSelection = !!selectedImpl;
-
-                        return (
-                          <div key={nodeName} className="space-y-1">
-                            <div className="flex items-center gap-2 px-2 py-1">
-                              <span className="text-sm font-medium text-yellow-600">{nodeName}</span>
-                              <Badge variant="yellow" className="text-[10px] px-1 py-0">
-                                {implementations.length} options
-                              </Badge>
-                            </div>
-                            <div className="ml-4 space-y-1">
-                              {implementations.map((impl: any) => {
-                                const isSelected = selectedImpl?.url === impl.url;
-                                const author = impl.url.split("/")[3];
-                                const isDuplicate = checkIsDuplicate(impl.url);
-
-                                return (
-                                  <div
-                                    key={impl.url}
-                                    className={cn(
-                                      "flex items-center space-x-2 rounded border p-2",
-                                      isDuplicate && "bg-gray-50 border-gray-200",
-                                      isSelected && "border-primary bg-primary/5"
-                                    )}
-                                  >
-                                    <Checkbox
-                                      id={`${nodeName}-${impl.url}`}
-                                      className="data-[state=checked]:!bg-primary rounded-[4px] border-gray-500 shrink-0"
-                                      checked={isSelected}
-                                      disabled={isDuplicate}
-                                      onCheckedChange={(checked: boolean) =>
-                                        handleConflictingNodeChange(nodeName, checked ? impl : null)
-                                      }
-                                    />
-                                    <label
-                                      htmlFor={`${nodeName}-${impl.url}`}
-                                      className="flex-1 min-w-0 flex items-center gap-2 cursor-pointer"
-                                    >
-                                      <span className={cn(
-                                        "font-medium text-sm truncate",
-                                        isDuplicate && "text-gray-500"
-                                      )}>
-                                        {impl.name}
-                                      </span>
-                                      <Badge variant="secondary" className="text-[10px] px-1 py-0 shrink-0">
-                                        {author}
-                                      </Badge>
-                                      {impl.meta?.stargazers_count && (
-                                        <Badge variant="outline" className="text-[10px] px-1 py-0 shrink-0">
-                                          <Star className="h-2 w-2 mr-0.5 fill-current" />
-                                          {impl.meta.stargazers_count}
-                                        </Badge>
-                                      )}
-                                    </label>
-                                    <Link
-                                      href={impl.url}
-                                      target="_blank"
-                                      className="shrink-0 text-muted-foreground hover:text-gray-600 transition-colors"
-                                    >
-                                      <ExternalLink className="h-3 w-3" />
-                                    </Link>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Advanced View - Full Machine Settings
-              <div className="space-y-6">
-                <div className="rounded-md border border-muted bg-muted/20 p-2 flex items-center gap-2 mb-4">
-                  <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Configure GPU, ComfyUI version, and advanced settings</span>
-                </div>
-
-                <MachineSettingsWrapper
-                  onValueChange={(key, value) => {
-                    const updates: Partial<StepValidation> = {};
-                    if (key === "comfyui_version") {
-                      updates.comfyUiHash = value;
-                    } else if (key === "gpu") {
-                      updates.gpuType = value;
-                    } else if (key === "docker_command_steps") {
-                      updates.docker_command_steps = value;
-                    } else if (key === "install_custom_node_with_gpu") {
-                      updates.install_custom_node_with_gpu = value;
-                    } else if (key === "base_docker_image") {
-                      updates.base_docker_image = value;
-                    } else if (key === "python_version") {
-                      updates.python_version = value;
-                    }
-                    setValidation(updates);
-                  }}
-                  machine={{
-                    id: "new",
-                    type: "comfy-deploy-serverless",
-                    comfyui_version: validation.comfyUiHash || latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
-                    name: validation.machineName || `${validation.workflowName}'s Machine`,
-                    gpu: validation.gpuType || "T4",
-                    docker_command_steps: validation.docker_command_steps,
-                    install_custom_node_with_gpu: validation.install_custom_node_with_gpu,
-                    base_docker_image: validation.base_docker_image,
-                    python_version: validation.python_version || "3.11",
-                  }}
-                  disableUnsavedChangesWarningServerless={true}
-                />
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Only render dialog when it's open */}
+      {dialogOpen && (
+        <MachineConfigDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          validation={validation}
+          setValidation={setValidation}
+          showAdvancedView={showAdvancedView}
+          setShowAdvancedView={setShowAdvancedView}
+          nonConflictingCustomNodes={nonConflictingCustomNodes}
+          conflictingNodes={conflictingNodes}
+          selectedCustomNodes={selectedCustomNodes}
+          handleNodeToggle={handleNodeToggle}
+          handleConflictingNodeChange={handleConflictingNodeChange}
+          checkIsDuplicate={checkIsDuplicate}
+          selectedConflictingNodes={selectedConflictingNodes}
+          totalSelected={totalSelected}
+          totalNodes={totalNodes}
+        />
+      )}
     </>
   );
 }
+
+// Extract dialog content to prevent unnecessary renders
+const MachineConfigDialog = memo(({
+  open,
+  onOpenChange,
+  validation,
+  setValidation,
+  showAdvancedView,
+  setShowAdvancedView,
+  nonConflictingCustomNodes,
+  conflictingNodes,
+  selectedCustomNodes,
+  handleNodeToggle,
+  handleConflictingNodeChange,
+  checkIsDuplicate,
+  selectedConflictingNodes,
+  totalSelected,
+  totalNodes,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  validation: StepValidation;
+  setValidation: (validation: Partial<StepValidation>) => void;
+  showAdvancedView: boolean;
+  setShowAdvancedView: (show: boolean) => void;
+  nonConflictingCustomNodes: Array<[string, any]>;
+  conflictingNodes: Record<string, any>;
+  selectedCustomNodes: Set<string>;
+  handleNodeToggle: (url: string, checked: boolean) => void;
+  handleConflictingNodeChange: (nodeName: string, selectedImpl: any | null) => void;
+  checkIsDuplicate: (url: string) => boolean;
+  selectedConflictingNodes: Record<string, any[]>;
+  totalSelected: number;
+  totalNodes: number;
+}) => {
+  const { data: latestHashes } = useLatestHashes();
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 py-4 border-b">
+          <div className="flex items-center justify-between">
+            <DialogTitle>Configure Machine</DialogTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                variant={showAdvancedView ? "default" : "outline"}
+                size="sm"
+                onClick={() => setShowAdvancedView(!showAdvancedView)}
+                className="text-xs"
+              >
+                {showAdvancedView ? "Simplified View" : "Advanced View"}
+              </Button>
+              <DialogClose />
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {!showAdvancedView ? (
+            // Simplified View - Custom Nodes Configuration
+            <div className="space-y-4">
+              {/* GPU Selection */}
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">
+                  GPU Type
+                </label>
+                <Select
+                  value={validation.gpuType || 'T4'}
+                  onValueChange={(value) => setValidation({ gpuType: value as GpuTypes })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select GPU type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CPU">CPU</SelectItem>
+                    <SelectItem value="T4">T4</SelectItem>
+                    <SelectItem value="A10G">A10G</SelectItem>
+                    <SelectItem value="L40S">L40S</SelectItem>
+                    <SelectItem value="L4">L4</SelectItem>
+                    <SelectItem value="A100">A100</SelectItem>
+                    <SelectItem value="A100-80GB">A100-80GB</SelectItem>
+                    <SelectItem value="H100">H100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Custom Nodes Section */}
+              {totalNodes > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-sm font-medium">
+                      Custom Nodes
+                    </label>
+                    <Badge variant="outline" className="shrink-0 text-xs">
+                      {totalSelected}/{totalNodes} selected
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    {/* Non-conflicting nodes */}
+                    {nonConflictingCustomNodes.map(([url, nodeData]: [string, any]) => (
+                      <NodeItem
+                        key={url}
+                        url={url}
+                        nodeData={nodeData}
+                        isSelected={selectedCustomNodes.has(url)}
+                        isDuplicate={checkIsDuplicate(url)}
+                        onToggle={handleNodeToggle}
+                      />
+                    ))}
+
+                    {/* Conflicting nodes */}
+                    {Object.entries(conflictingNodes).map(([nodeName, implementations]: [string, any]) => {
+                      const selectedImpl = selectedConflictingNodes[nodeName]?.[0];
+
+                      return (
+                        <div key={nodeName} className="space-y-1">
+                          <div className="flex items-center gap-2 px-2 py-1">
+                            <span className="text-sm font-medium text-yellow-600">{nodeName}</span>
+                            <Badge variant="yellow" className="text-[10px] px-1 py-0">
+                              {implementations.length} options
+                            </Badge>
+                          </div>
+                          <div className="ml-4 space-y-1">
+                            {implementations.map((impl: any) => (
+                              <ConflictingNodeItem
+                                key={impl.url}
+                                nodeName={nodeName}
+                                impl={impl}
+                                isSelected={selectedImpl?.url === impl.url}
+                                isDuplicate={checkIsDuplicate(impl.url)}
+                                onChange={handleConflictingNodeChange}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Advanced View - Full Machine Settings
+            <div className="space-y-6">
+              <div className="rounded-md border border-muted bg-muted/20 p-2 flex items-center gap-2 mb-4">
+                <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Configure GPU, ComfyUI version, and advanced settings</span>
+              </div>
+
+              <MachineSettingsWrapper
+                onValueChange={(key, value) => {
+                  const updates: Partial<StepValidation> = {};
+                  if (key === "comfyui_version") {
+                    updates.comfyUiHash = value;
+                  } else if (key === "gpu") {
+                    updates.gpuType = value;
+                  } else if (key === "docker_command_steps") {
+                    updates.docker_command_steps = value;
+                  } else if (key === "install_custom_node_with_gpu") {
+                    updates.install_custom_node_with_gpu = value;
+                  } else if (key === "base_docker_image") {
+                    updates.base_docker_image = value;
+                  } else if (key === "python_version") {
+                    updates.python_version = value;
+                  }
+                  setValidation(updates);
+                }}
+                machine={{
+                  id: "new",
+                  type: "comfy-deploy-serverless",
+                  comfyui_version: validation.comfyUiHash || latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
+                  name: validation.machineName || `${validation.workflowName}'s Machine`,
+                  gpu: validation.gpuType || "T4",
+                  docker_command_steps: validation.docker_command_steps,
+                  install_custom_node_with_gpu: validation.install_custom_node_with_gpu,
+                  base_docker_image: validation.base_docker_image,
+                  python_version: validation.python_version || "3.11",
+                }}
+                disableUnsavedChangesWarningServerless={true}
+              />
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+});
+
+MachineConfigDialog.displayName = "MachineConfigDialog";
 
 // Clean function to merge all nodes without duplicates
 export function buildDockerStepsFromNodes(
@@ -1215,10 +1467,13 @@ function ExistingMachineSelector({
   setValidation: (validation: Partial<StepValidation>) => void;
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: machines } = useMachines("", 1, undefined, undefined, false, false, false, true);
 
-  // Find selected machine details
-  const selectedMachine = machines?.pages?.[0]?.find((m: any) => m.id === validation.selectedMachineId);
+  const { data: selectedMachine } = useMachine(validation.selectedMachineId);
+
+  const nodeComparison = selectedMachine ? compareNodes(
+    selectedMachine?.docker_command_steps,
+    validation,
+  ) : null;
 
   // Auto-open dialog when switching to existing machine mode
   useEffect(() => {
@@ -1230,30 +1485,32 @@ function ExistingMachineSelector({
   return (
     <>
       {validation.selectedMachineId && selectedMachine ? (
-        <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
+        <div className="flex items-center justify-between p-2.5 rounded-md border bg-muted/20">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-green-500" />
-            <span className="font-medium text-sm">{selectedMachine.name}</span>
-            <Badge variant="secondary" className="text-[10px]">
+            <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
+            <span className="font-medium text-sm truncate">{selectedMachine.name}</span>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
               {selectedMachine.gpu}
             </Badge>
+            <NodeComparison nodeComparison={nodeComparison} />
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setDialogOpen(true)}
-            className="h-7 text-xs"
+            className="h-7 text-xs gap-1 px-2"
           >
-            Change
+            <Edit2 className="h-3 w-3" />
+            <span className="hidden sm:inline">Change</span>
           </Button>
         </div>
       ) : (
         <Button
           variant="outline"
           onClick={() => setDialogOpen(true)}
-          className="w-full justify-start"
+          className="w-full justify-start h-9"
         >
-          <Search className="h-4 w-4 mr-2" />
+          <Search className="h-3.5 w-3.5 mr-2" />
           Select Machine
         </Button>
       )}
@@ -1309,13 +1566,18 @@ export function WorkflowImportCustomNodeSetup() {
       ? validation.workflowJson
       : validation.importJson;
 
-  const { data: dependencies, error: dependenciesError, isLoading: dependenciesLoading } = useQuery({
+  const { data: rawDependencies, error: dependenciesError, isLoading: rawDependenciesLoading } = useQuery({
     queryKey: ["analyzeWorkflowJson", json],
     queryFn: () => (json ? analyzeWorkflowJson(json) : null),
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
     enabled: !!json && !skipCustomNodeCheck,
   });
+
+  // Enrich dependencies with GitHub star data
+  const { data: dependencies, isLoading: enrichmentLoading } = useEnrichedDependencies(rawDependencies, skipCustomNodeCheck);
+
+  const dependenciesLoading = rawDependenciesLoading || enrichmentLoading;
 
   // Initialize dependencies for validation purposes only
   useEffect(() => {
@@ -1325,10 +1587,10 @@ export function WorkflowImportCustomNodeSetup() {
 
       if (dependencies.conflicting_nodes) {
         for (const [nodeName, conflicts] of Object.entries(dependencies.conflicting_nodes)) {
-          if (conflicts.length > 0) {
+          if (Array.isArray(conflicts) && conflicts.length > 0) {
             // Sort by star count (descending) to get most popular
             const sortedConflicts = [...conflicts].sort(
-              (a, b) => (b.meta?.stargazers_count || 0) - (a.meta?.stargazers_count || 0)
+              (a: any, b: any) => (b.meta?.stargazers_count || 0) - (a.meta?.stargazers_count || 0)
             );
             autoSelectedConflictingNodes[nodeName] = [sortedConflicts[0]];
           }

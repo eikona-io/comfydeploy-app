@@ -497,6 +497,7 @@ const OptionList = memo(
     isModal?: boolean;
   }) => {
     const [fileList, setFileList] = useState<FileList[]>([]);
+    const [showCompleted, setShowCompleted] = useState(false);
 
     const isNodeSuccessful = (nodeValue: string, category: string) => {
       // If no value, it's not successful
@@ -536,12 +537,18 @@ const OptionList = memo(
     // Get all node types that exist in the workflow AND have missing items
     const defaultExpandedValues = useMemo(() => {
       if (!workflowNodeList || fileList.length === 0) {
-        // If no file list yet, expand all
-        return Object.values(NodeToBeFocus)
-          .map((node) => node.type)
-          .filter((type) =>
-            workflowNodeList?.some((wNode) => wNode.type === type),
-          );
+        // If no file list yet, expand all incomplete
+        return Object.entries(NodeToBeFocus)
+          .filter(([category, node]) => {
+            const matchingNodes = workflowNodeList?.filter(
+              (wNode) => wNode.type === node.type,
+            );
+            if (!matchingNodes || matchingNodes.length === 0) return false;
+
+            const { success, total } = calculateSuccessRatio(category, node.type);
+            return success < total; // Only include if incomplete
+          })
+          .map(([_, node]) => node.type);
       }
 
       // Only expand categories that have missing items
@@ -661,86 +668,119 @@ const OptionList = memo(
         </div>
       );
 
+    // Separate completed and incomplete categories
+    const categorizedItems = useMemo(() => {
+      const items = Object.entries(NodeToBeFocus)
+        .map(([category, node]) => {
+          const matchingNodes = workflowNodeList?.filter(
+            (wNode) => wNode.type === node.type,
+          );
+          const { success, total } = calculateSuccessRatio(category, node.type);
+          const successPercentage = total > 0 ? (success / total) * 100 : 0;
+          return {
+            category,
+            node,
+            success,
+            total,
+            successPercentage,
+            matchingNodes,
+            isComplete: successPercentage === 100,
+          };
+        })
+        .filter((item) => item.matchingNodes?.length > 0);
+
+      return {
+        incomplete: items.filter((item) => !item.isComplete),
+        complete: items.filter((item) => item.isComplete),
+      };
+    }, [workflowNodeList, fileList]);
+
+    const itemsToDisplay = showCompleted
+      ? [...categorizedItems.incomplete, ...categorizedItems.complete]
+      : categorizedItems.incomplete;
+
     return (
       <div>
         <div className="mb-3 flex items-center justify-between gap-2">
           {!isModal ? (
             <span className="block text-muted-foreground text-sm">
-              Model Check helps find missing models for your workflow.
+              {categorizedItems.incomplete.length > 0 ? "Missing Models" : "All Models Complete"}
             </span>
           ) : (
             <span className="block text-muted-foreground text-sm">
               Click on a node to zoom in.
             </span>
           )}
-          <Button
-            variant={"ghost"}
-            size="sm"
-            className="h-7 shrink-0 text-xs"
-            onClick={() => {
-              // Get all existing categories
-              const allCategories = Object.entries(NodeToBeFocus)
-                .filter(([_, node]) =>
-                  workflowNodeList?.some((wNode) => wNode.type === node.type)
-                )
-                .map(([_, node]) => node.type);
+          <div className="flex items-center gap-2">
+            {categorizedItems.complete.length > 0 && (
+              <Button
+                variant={"ghost"}
+                size="sm"
+                className="h-7 shrink-0 text-xs"
+                onClick={() => setShowCompleted(!showCompleted)}
+              >
+                {showCompleted ? "Hide" : "Show"} Completed ({categorizedItems.complete.length})
+                <Check className="ml-1 h-3 w-3 text-green-600 dark:text-green-500" />
+              </Button>
+            )}
+            <Button
+              variant={"ghost"}
+              size="sm"
+              className="h-7 shrink-0 text-xs"
+              onClick={() => {
+                // Get all visible categories
+                const visibleCategories = itemsToDisplay.map((item) => item.node.type);
 
-              if (accordionValues.length === allCategories.length) {
-                // If all are expanded, collapse all
-                setAccordionValues([]);
-              } else {
-                // Otherwise, expand all
-                setAccordionValues(allCategories);
-              }
-            }}
-          >
-            {accordionValues.length > 0 ? "Collapse All" : "Expand All"}
-            <ChevronsUpDown className="ml-1 h-3 w-3" />
-          </Button>
+                if (accordionValues.length === visibleCategories.length) {
+                  // If all are expanded, collapse all
+                  setAccordionValues([]);
+                } else {
+                  // Otherwise, expand all visible
+                  setAccordionValues(visibleCategories);
+                }
+              }}
+            >
+              {accordionValues.length > 0 ? "Collapse All" : "Expand All"}
+              <ChevronsUpDown className="ml-1 h-3 w-3" />
+            </Button>
+          </div>
         </div>
         <div className="space-y-3">
+          {/* Show incomplete models first */}
           <Accordion
             type="multiple"
             value={accordionValues}
             onValueChange={setAccordionValues}
             className="space-y-3"
           >
-            {Object.entries(NodeToBeFocus)
-              .map(([category, node]) => {
-                const matchingNodes = workflowNodeList?.filter(
-                  (wNode) => wNode.type === node.type,
-                );
-                const { success, total } = calculateSuccessRatio(
-                  category,
-                  node.type,
-                );
-                const successPercentage =
-                  total > 0 ? (success / total) * 100 : 0;
-                return {
-                  category,
-                  node,
-                  success,
-                  total,
-                  successPercentage,
-                  matchingNodes,
-                };
-              })
-              .filter((item) => item.matchingNodes?.length > 0)
-              .map(
-                ({
-                  category,
-                  node,
-                  success,
-                  total,
-                  successPercentage,
-                  matchingNodes,
-                }) => (
+            {itemsToDisplay.map(
+              ({
+                category,
+                node,
+                success,
+                total,
+                successPercentage,
+                matchingNodes,
+                isComplete,
+              }, index) => (
+                <>
+                  {/* Add separator before first complete item */}
+                  {showCompleted &&
+                    index === categorizedItems.incomplete.length &&
+                    categorizedItems.incomplete.length > 0 &&
+                    categorizedItems.complete.length > 0 && (
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center bg-background px-2 text-xs">
+                          <span className="text-muted-foreground">Completed Models</span>
+                        </div>
+                      </div>
+                    )}
                   <AccordionItem value={node.type} key={node.type} className="border rounded-lg">
                     <AccordionTrigger className="px-3 py-2 hover:no-underline">
-                      <div className={cn(
-                        "flex w-full flex-row items-center justify-between",
-                        successPercentage === 100 && "opacity-60"
-                      )}>
+                      <div className="flex w-full flex-row items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-medium">
                             {category}
@@ -814,8 +854,8 @@ const OptionList = memo(
                         ))}
                     </AccordionContent>
                   </AccordionItem>
-                ),
-              )}
+                </>
+              ))}
           </Accordion>
         </div>
       </div>

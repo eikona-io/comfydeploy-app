@@ -1315,7 +1315,6 @@ function CustomNodeCard({
                     }
                   } else {
                     setValidation({
-                      ...validation,
                       isEditingHashOrAddingCommands: true,
                     });
                     setEditingCommand(node.id);
@@ -1420,6 +1419,12 @@ function CustomNodeCard({
               <span className="truncate text-2xs text-gray-500">
                 {node.data.url.split("/").slice(-2)[0]}
               </span>
+              {node.data.meta?.stargazers_count !== undefined && (
+                <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 text-2xs text-gray-500">
+                  <Star size={10} />
+                  {node.data.meta.stargazers_count.toLocaleString()}
+                </span>
+              )}
               <Link
                 to={node.data.url}
                 target="_blank"

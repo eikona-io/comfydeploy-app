@@ -82,6 +82,7 @@ export interface StepValidation {
     setDockerCommandSteps: (dockerCommandSteps: DockerCommandSteps) => void;
     setHasEnvironment: (hasEnvironment: boolean) => void;
     setExistingMachineMissingNodes: (existingMachineMissingNodes: NodeData[]) => void;
+    setImportedFileName: (importedFileName: string) => void;
 
     latestHashes?: { comfyui_hash?: string, comfydeploy_hash?: string };
 
@@ -105,6 +106,7 @@ export interface StepValidation {
     comfyUiHash?: string;
     selectedComfyOption?: "recommended" | "latest" | "custom";
     firstTimeSelectGPU?: boolean;
+    importedFileName?: string;
 
     dependencies?: WorkflowDependencies;
     selectedConflictingNodes?: {
@@ -279,6 +281,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
     selectedComfyOption: "recommended",
     dependencies: undefined,
     selectedConflictingNodes: {},
+    importedFileName: "",
     docker_command_steps: {
         steps: [
             {
@@ -312,6 +315,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
     setDockerCommandSteps: (dockerCommandSteps: DockerCommandSteps) => set({ docker_command_steps: dockerCommandSteps }),
     setHasEnvironment: (hasEnvironment: boolean) => set({ hasEnvironment }),
     setExistingMachineMissingNodes: (existingMachineMissingNodes: NodeData[]) => set({ existingMachineMissingNodes }),
+    setImportedFileName: (importedFileName: string) => set({ importedFileName }),
 
     setValidation: (validation: Partial<StepValidation>) => {
         const currentValidation = get();
@@ -357,6 +361,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
                     },
                 ],
             },
+            importedFileName: "",
         })
     },
 }));
@@ -691,7 +696,6 @@ export default function WorkflowImport() {
                 <div className="mx-4 w-full max-w-5xl py-10">
                     <div className="space-y-12">
                         <Import />
-                        {/* <WorkflowImportCustomNodeSetup /> */}
                         <WorkflowImportSelectedMachine />
                         <WorkflowModelCheck />
                     </div>
@@ -764,18 +768,15 @@ function Import() {
                 {selectedTemplate ? (
                     <TemplateSelectedView
                         template={selectedTemplate}
-                        onClear={() => validation.reset()}
+                        onClear={() => validation.reset(validation.latestHashes)}
                     />
                 ) : validation.importOption === "import" && validation.importJson && validation.importJson.trim() !== "" ? (
                     <ImportedWorkflowView
                         validation={validation}
-                        onClear={() => validation.reset()}
+                        onClear={() => validation.reset(validation.latestHashes)}
                     />
                 ) : (
-                    <ImportView
-                        validation={validation}
-                        setValidation={setValidation}
-                    />
+                    <ImportView />
                 )}
 
                 {/* Template selection dialog */}
@@ -849,16 +850,19 @@ function ImportedWorkflowView({
     const getWorkflowInfo = () => {
         try {
             const workflow = JSON.parse(validation.importJson || "{}");
-            const nodeCount = Object.keys(workflow).filter(key => !isNaN(Number(key))).length;
+            // Correct way to count nodes in ComfyUI workflows
+            const nodeCount = workflow.nodes ? workflow.nodes.length : 0;
 
-            // Try to get title from various places
-            let title = "Imported Workflow";
-            if (workflow.title) {
-                title = workflow.title;
-            } else if (workflow.workflow?.title) {
-                title = workflow.workflow.title;
-            } else if (workflow.extra?.title) {
-                title = workflow.extra.title;
+            // Use imported file name if available, otherwise try to get title from various places
+            let title = validation.importedFileName || "Imported Workflow";
+            if (!validation.importedFileName) {
+                if (workflow.title) {
+                    title = workflow.title;
+                } else if (workflow.workflow?.title) {
+                    title = workflow.workflow.title;
+                } else if (workflow.extra?.title) {
+                    title = workflow.extra.title;
+                }
             }
 
             return {
@@ -869,7 +873,7 @@ function ImportedWorkflowView({
             };
         } catch (error) {
             return {
-                title: "Imported Workflow",
+                title: validation.importedFileName || "Imported Workflow",
                 nodeCount: 0,
                 hasEnvironment: validation.hasEnvironment || false,
                 size: Math.round((validation.importJson?.length || 0) / 1024)
@@ -920,10 +924,10 @@ function ImportedWorkflowView({
     );
 }
 
-function ImportView({
-    validation,
-    setValidation,
-}: StepComponentProps<StepValidation>) {
+function ImportView() {
+    const validation = useImportWorkflowStore();
+    const setValidation = validation.setValidation;
+
     const { data: latestHashes } = useLatestHashes();
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -937,7 +941,7 @@ function ImportView({
                 .then((response) => response.text())
                 .then((text) => {
                     try {
-                        postProcessImport(text);
+                        postProcessImport(text, "Workflow from URL");
                     } catch (error) {
                         toast.error("Failed to load workflow from URL");
                     }
@@ -949,13 +953,14 @@ function ImportView({
     }, [workflowJsonUrl]);
 
     const postProcessImport = useCallback(
-        (text: string) => {
+        (text: string, fileName?: string) => {
             if (!text.trim()) {
                 const clearedData = {
                     importOption: "import" as const,
                     importJson: "",
                     workflowJson: "",
                     workflowApi: "",
+                    importedFileName: "",
 
                     // Reset dependencies and custom node selections when clearing
                     dependencies: undefined,
@@ -982,6 +987,12 @@ function ImportView({
 
             const json = JSON.parse(text);
 
+            // Validate that the JSON contains both 'nodes' and 'links' keys for ComfyUI workflows
+            // unless it has an environment (which means it's a ComfyDeploy export)
+            if (!json.environment && (!json.nodes || !json.links)) {
+                throw new Error("Invalid workflow format: missing 'nodes' or 'links' keys");
+            }
+
             const environment = json.environment;
             const workflowAPIJson = json.workflow_api;
 
@@ -992,6 +1003,7 @@ function ImportView({
                     workflowJson: text,
                     hasEnvironment: false,
                     workflowApi: undefined,
+                    importedFileName: fileName || "",
 
                     // Reset dependencies to trigger re-analysis
                     dependencies: undefined,
@@ -1020,6 +1032,7 @@ function ImportView({
                 importJson: text,
                 workflowJson: "",
                 workflowApi: JSON.stringify(workflowAPIJson),
+                importedFileName: fileName || "",
 
                 // Reset dependencies to trigger re-analysis even with environment
                 dependencies: undefined,
@@ -1049,16 +1062,16 @@ function ImportView({
             // Handle JSON files
             const text = await file.text();
             try {
-                postProcessImport(text);
+                postProcessImport(text, file.name);
                 toast.success("Workflow JSON imported successfully");
             } catch (error) {
-                toast.error("Invalid JSON file");
+                toast.error(error instanceof Error ? error.message : "Invalid JSON file");
             }
         } else if (file && isPNGFile(file)) {
             // Handle PNG files with metadata
             try {
                 const workflowJson = await extractWorkflowFromPNG(file);
-                postProcessImport(workflowJson);
+                postProcessImport(workflowJson, file.name);
                 toast.success("Workflow extracted from image successfully");
             } catch (error) {
                 toast.error(
@@ -1089,10 +1102,10 @@ function ImportView({
             const text = e.clipboardData?.getData('text');
             if (text) {
                 try {
-                    postProcessImport(text);
+                    postProcessImport(text, "Pasted Workflow");
                     toast.success("Workflow JSON pasted successfully");
                 } catch (error) {
-                    toast.error("Invalid JSON format");
+                    toast.error(error instanceof Error ? error.message : "Invalid JSON format");
                 }
             }
         };
@@ -1222,15 +1235,19 @@ function ImportView({
                         onChange={(e) => {
                             const text = e.target.value;
                             try {
-                                postProcessImport(text);
-                            } catch (error) { }
+                                postProcessImport(text, "Pasted Workflow");
+                            } catch (error) {
+                                // Silent fail for continuous paste attempts
+                            }
                         }}
                         onPaste={(e) => {
                             e.preventDefault();
                             const text = e.clipboardData.getData('text');
                             try {
-                                postProcessImport(text);
-                            } catch (error) { }
+                                postProcessImport(text, "Pasted Workflow");
+                            } catch (error) {
+                                // Silent fail for continuous paste attempts
+                            }
                         }}
                         aria-label="Paste workflow JSON"
                     />
