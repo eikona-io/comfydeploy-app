@@ -130,7 +130,7 @@ export function MachineSettingsWrapper({
     <div>
       <div
         className={cn(
-          "sticky top-[57px] z-10 flex h-[72px] flex-col bg-background/80 backdrop-blur-sm md:h-12 md:flex-row md:items-center md:justify-between dark:bg-transparent",
+          " top-[57px] z-10 flex h-[72px] flex-col bg-background/80 backdrop-blur-sm md:h-12 md:flex-row md:items-center md:justify-between dark:bg-transparent",
           className,
         )}
       >
@@ -553,10 +553,10 @@ function ServerlessSettings({
               const showError = (message: string, field?: string) => {
                 const displayField = field
                   ? field
-                      .replace(/_/g, " ")
-                      .replace(/([A-Z])/g, " $1")
-                      .replace(/^./, (str) => str.toUpperCase())
-                      .trim()
+                    .replace(/_/g, " ")
+                    .replace(/([A-Z])/g, " $1")
+                    .replace(/^./, (str) => str.toUpperCase())
+                    .trim()
                   : "Form";
                 toast.error(`${displayField}: ${message}`);
               };
@@ -1875,7 +1875,7 @@ export function MaxParallelGPUSlider({
       onChange={onChange}
       min={1}
       max={maxGPU}
-      // description=""
+    // description=""
     />
   );
 }
@@ -2086,7 +2086,7 @@ export function WarmTime({
       onChange={onChange}
       options={options}
       placeholder="Select Warm Time"
-      // description="The warm time is the seconds before the container will be stopped after the run is finished. So the next request will reuse the warm container."
+    // description="The warm time is the seconds before the container will be stopped after the run is finished. So the next request will reuse the warm container."
     />
   );
 }
@@ -2194,7 +2194,7 @@ function BuilderVersionSelectBox({
                   <Badge
                     variant={
                       builderVersions.find((v) => v.value === value)?.status ===
-                      "deprecated"
+                        "deprecated"
                         ? "destructive"
                         : "green"
                     }

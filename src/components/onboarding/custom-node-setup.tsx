@@ -142,19 +142,19 @@ const updateNodeWithBranchInfo = async (
         steps: prev.docker_command_steps.steps.map((step) =>
           step.id === node.id && isCustomNodeData(step)
             ? {
-                ...step,
-                data: {
-                  ...step.data,
-                  hash: branchInfo.commit.sha,
-                  meta: {
-                    message: branchInfo.commit.commit.message,
-                    committer: branchInfo.commit.commit.committer,
-                    latest_hash: branchInfo.commit.sha,
-                    stargazers_count: branchInfo.stargazers_count,
-                    commit_url: branchInfo.commit.html_url,
-                  },
+              ...step,
+              data: {
+                ...step.data,
+                hash: branchInfo.commit.sha,
+                meta: {
+                  message: branchInfo.commit.commit.message,
+                  committer: branchInfo.commit.commit.committer,
+                  latest_hash: branchInfo.commit.sha,
+                  stargazers_count: branchInfo.stargazers_count,
+                  commit_url: branchInfo.commit.html_url,
                 },
-              }
+              },
+            }
             : step,
         ),
       },
@@ -737,12 +737,12 @@ function SelectedNodeList({
         steps: prev.docker_command_steps.steps.map((step) =>
           isCustomNodeData(step) && step.data.url === node.data.url
             ? {
-                ...step,
-                data: {
-                  ...(step.data as CustomNodeData),
-                  hash: value || node.data.meta?.latest_hash,
-                },
-              }
+              ...step,
+              data: {
+                ...(step.data as CustomNodeData),
+                hash: value || node.data.meta?.latest_hash,
+              },
+            }
             : step,
         ),
       },
@@ -1289,7 +1289,7 @@ function CustomNodeCard({
                 className={cn(
                   "text-gray-500",
                   editingCommand !== node.id &&
-                    "opacity-0 transition-opacity duration-200 hover:text-gray-700 group-hover:opacity-100",
+                  "opacity-0 transition-opacity duration-200 hover:text-gray-700 group-hover:opacity-100",
                 )}
                 onClick={(e) => {
                   if (editingCommand === node.id) {
@@ -1480,7 +1480,7 @@ function CustomNodeCard({
                 className={cn(
                   "shrink-0 text-gray-500",
                   editingHash !== node.data.url &&
-                    "h-3 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100",
+                  "h-3 opacity-0 transition-opacity duration-200 hover:text-red-600 group-hover:opacity-100",
                 )}
                 onClick={(e) => {
                   if (editingHash === node.data.url) {
