@@ -26,6 +26,32 @@ interface DockerCommandStep {
   data: CustomNodeData | string;
 }
 
+// Skeleton Components
+const NodeItemSkeleton = () => (
+  <div className="flex items-center gap-3 p-3 rounded-lg border">
+    <Skeleton className="h-4 w-4 rounded" />
+    <div className="flex-1 space-y-2">
+      <Skeleton className="h-4 w-48" />
+      <Skeleton className="h-3 w-72" />
+    </div>
+    <Skeleton className="h-3 w-20" />
+  </div>
+);
+
+const CustomNodesLoadingSkeleton = () => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <Skeleton className="h-5 w-24" />
+      <Skeleton className="h-5 w-16 rounded-full" />
+    </div>
+    <div className="space-y-2">
+      {[1, 2, 3].map((i) => (
+        <NodeItemSkeleton key={i} />
+      ))}
+    </div>
+  </div>
+);
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -74,6 +100,7 @@ import {
   Settings,
   Settings2,
   Star,
+  X,
 } from "lucide-react";
 import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { toast } from "sonner";
@@ -468,7 +495,7 @@ function NodeComparison({ nodeComparison }: { nodeComparison: any }) {
               ? "destructive"
               : "yellow"
         }
-        className="text-[10px] px-1.5 py-0 h-5"
+        className="text-[9px] px-1 py-0 h-4 shrink-0"
       >
         {nodeComparison.matchingCount}/{nodeComparison.totalRequired} nodes
       </Badge>
@@ -477,7 +504,7 @@ function NodeComparison({ nodeComparison }: { nodeComparison: any }) {
           <HoverCardTrigger asChild>
             <Badge
               variant="yellow"
-              className="text-[10px] px-1.5 py-0 h-5 cursor-help hover:bg-yellow-100 dark:hover:bg-yellow-900/40"
+              className="text-[9px] px-1 py-0 h-4 cursor-help hover:bg-yellow-100 dark:hover:bg-yellow-900/40 shrink-0"
             >
               {nodeComparison.missingNodes.length} missing
             </Badge>
@@ -579,12 +606,12 @@ function ExistingMachineDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col p-0">
+      <DialogContent hideCloseButton className="max-w-2xl max-h-[80vh] flex flex-col p-0">
         <DialogHeader className="px-4 py-3 border-b shrink-0">
-          <DialogTitle>Select Existing Machine</DialogTitle>
+          <DialogTitle className="text-sm flex justify-between items-center">Select Existing Machine <DialogClose >  <X className="z-50 h-4 w-4" /> </DialogClose></DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-hidden flex flex-col">
-          <div className="px-4 pt-3 pb-2 shrink-0">
+          <div className="px-4 pb-2 shrink-0">
             <div className="flex items-center space-x-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <Input
@@ -596,20 +623,17 @@ function ExistingMachineDialog({
             </div>
           </div>
           <div className="flex-1 overflow-y-auto px-4 pb-4">
-
             {query.isLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {[...Array(5)].map((_, index) => (
                   <div
-                    className="w-full border rounded-md p-3 border-gray-200"
+                    className="w-full border rounded-md p-2 border-gray-200"
                     key={index}
                   >
-                    <div className="space-y-1.5">
-                      <Skeleton className="h-4 w-[180px]" />
-                      <div className="flex gap-1.5">
-                        <Skeleton className="h-4 w-[40px]" />
-                        <Skeleton className="h-4 w-[70px]" />
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-3 w-[120px]" />
+                      <Skeleton className="h-4 w-[30px]" />
+                      <Skeleton className="h-4 w-[60px]" />
                     </div>
                   </div>
                 ))}
@@ -628,7 +652,7 @@ function ExistingMachineDialog({
                     return (
                       <div
                         key={item.id}
-                        className="mb-3"
+                        className="mb-2"
                       >
                         <button
                           type="button"
@@ -642,27 +666,22 @@ function ExistingMachineDialog({
                             );
                           }}
                           className={cn(
-                            "w-full text-left border rounded-md p-3 transition-all",
+                            "w-full text-left border rounded-md p-2 transition-all",
                             "hover:border-primary/50 hover:bg-muted/30",
                             isSelected && "border-primary bg-primary/10 ring-1 ring-primary/20",
                             !isSelected && "border-border"
                           )}
                         >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                {isSelected && (
-                                  <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" />
-                                )}
-                                <span className="font-medium text-sm truncate">{item.name}</span>
-                              </div>
-
-                              <div className="flex flex-wrap items-center gap-1.5">
-                                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5">
-                                  {item.gpu}
-                                </Badge>
-                                <NodeComparison nodeComparison={nodeComparison} />
-                              </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              {isSelected && (
+                                <CheckCircle className="h-3 w-3 text-primary shrink-0" />
+                              )}
+                              <span className="font-medium text-xs truncate flex-shrink min-w-0">{item.name}</span>
+                              <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4 shrink-0">
+                                {item.gpu}
+                              </Badge>
+                              <NodeComparison nodeComparison={nodeComparison} />
                             </div>
 
                             <Link
@@ -671,30 +690,57 @@ function ExistingMachineDialog({
                               onClick={(e) => e.stopPropagation()}
                               className="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
                             >
-                              <ExternalLink className="h-3.5 w-3.5" />
+                              <ExternalLink className="h-3 w-3" />
                             </Link>
                           </div>
 
-                          <CustomNodeList machine={item} />
+                          {item.docker_command_steps?.steps?.length > 0 && (
+                            <div className="mt-1 flex items-center gap-1 overflow-hidden">
+                              <span className="text-[9px] text-muted-foreground shrink-0">
+                                Nodes:
+                              </span>
+                              <div className="flex items-center gap-1 overflow-hidden">
+                                {item.docker_command_steps.steps
+                                  .slice(0, 3)
+                                  .filter((node: any) => node.type === "custom-node" || node.type === "custom-node-manager")
+                                  .map((node: any, idx: number) => (
+                                    <span
+                                      key={node.id || idx}
+                                      className="text-[9px] text-muted-foreground bg-secondary/50 px-1 rounded-sm truncate max-w-[80px] shrink-0"
+                                      title={node.type === "custom-node" ? node.data?.name : node.data?.node_id}
+                                    >
+                                      {node.type === "custom-node" ? node.data?.name : node.data?.node_id}
+                                    </span>
+                                  ))}
+                                {item.docker_command_steps.steps.filter((node: any) =>
+                                  node.type === "custom-node" || node.type === "custom-node-manager"
+                                ).length > 3 && (
+                                    <span className="text-[9px] text-muted-foreground shrink-0">
+                                      +{item.docker_command_steps.steps.filter((node: any) =>
+                                        node.type === "custom-node" || node.type === "custom-node-manager"
+                                      ).length - 3}
+                                    </span>
+                                  )}
+                              </div>
+                            </div>
+                          )}
                         </button>
                       </div>
                     );
                   }}
-                  estimateSize={110}
+                  estimateSize={70}
                   renderLoading={() => {
                     return (
                       <>
                         {[...Array(4)].map((_, index) => (
                           <div
-                            className="w-full border rounded-md p-3 mb-3 border-gray-200"
+                            className="w-full border rounded-md p-2 mb-2 border-gray-200"
                             key={index}
                           >
-                            <div className="space-y-1.5">
-                              <Skeleton className="h-4 w-[180px]" />
-                              <div className="flex gap-1.5">
-                                <Skeleton className="h-4 w-[40px]" />
-                                <Skeleton className="h-4 w-[70px]" />
-                              </div>
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-3 w-[120px]" />
+                              <Skeleton className="h-4 w-[30px]" />
+                              <Skeleton className="h-4 w-[60px]" />
                             </div>
                           </div>
                         ))}
@@ -987,17 +1033,32 @@ function DetectedCustomNodesSection({
   if (!customNodes && Object.keys(conflictingNodes).length === 0) {
     return (
       <div className="space-y-3 pt-3 border-t">
-        <div className="text-muted-foreground text-sm">
-          {!validation.dependencies
-            ? "⏳ Analyzing workflow for custom nodes..."
-            : "No custom nodes detected in this workflow."}
-        </div>
+        {!validation.dependencies ? (
+          // Loading skeleton
+          <CustomNodesLoadingSkeleton />
+        ) : (
+          <div className="text-muted-foreground text-sm">
+            No custom nodes detected in this workflow.
+          </div>
+        )}
       </div>
     );
   }
 
   if (nonConflictingCustomNodes.length === 0 && conflictingNodeUrls.size === 0) {
     return null;
+  }
+
+  // Show skeleton while dependencies are still loading
+  if (!validation.dependencies) {
+    return (
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-full rounded-lg" />
+        <div className="pt-3 border-t">
+          <CustomNodesLoadingSkeleton />
+        </div>
+      </div>
+    );
   }
 
   return (

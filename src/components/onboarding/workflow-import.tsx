@@ -758,7 +758,7 @@ function Import() {
                     onChange={(e) =>
                         setValidation({ ...validation, workflowName: e.target.value })
                     }
-                    className="h-11 border-2 border-gray-300 focus:border-primary transition-colors"
+                    className="h-11 border-gray-300 focus:border-primary transition-colors"
                 />
             </div>
 
@@ -1193,30 +1193,23 @@ function ImportView() {
                                     <span>ComfyUI PNG images</span>
                                 </div>
                             </div>
+                            {/* Paste shortcut notice */}
+                            <div className="mt-3 flex items-center justify-center gap-2 px-3 py-1.5 bg-muted/50 rounded-full">
+                                <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-background border rounded shadow-sm">
+                                    {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+V
+                                </kbd>
+                                <span className="text-xs text-muted-foreground">
+                                    to paste workflow JSON
+                                </span>
+                                {validation.importJson && (
+                                    <CheckCircle2 className="h-3 w-3 text-green-600 ml-1" />
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            {/* Divider */}
-            <div className="flex items-center gap-4">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
-                <span className="text-xs text-muted-foreground font-semibold px-3 py-1 bg-muted rounded-full">
-                    OR
-                </span>
-                <div className="flex-1 h-px bg-gradient-to-l from-transparent via-border to-transparent"></div>
-            </div>
-
-            {/* Paste JSON Section */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
-                            <FileText className="h-4 w-4 text-green-600" />
-                        </div>
-                        <span className="font-semibold text-sm">Paste JSON</span>
-                    </div>
-                    {validation.hasEnvironment && (
+                {validation.hasEnvironment && (
+                    <div className="flex justify-center">
                         <Badge
                             variant="secondary"
                             className="bg-green-100 border-green-200 text-green-700 hover:bg-green-100"
@@ -1224,50 +1217,8 @@ function ImportView() {
                             <CheckCircle2 className="mr-1.5 h-3 w-3" />
                             Environment Detected
                         </Badge>
-                    )}
-                </div>
-                <div className="space-y-2">
-                    {/* Hidden textarea for paste functionality */}
-                    <Textarea
-                        placeholder="Paste your workflow JSON here..."
-                        className="sr-only"
-                        value={validation.importJson}
-                        onChange={(e) => {
-                            const text = e.target.value;
-                            try {
-                                postProcessImport(text, "Pasted Workflow");
-                            } catch (error) {
-                                // Silent fail for continuous paste attempts
-                            }
-                        }}
-                        onPaste={(e) => {
-                            e.preventDefault();
-                            const text = e.clipboardData.getData('text');
-                            try {
-                                postProcessImport(text, "Pasted Workflow");
-                            } catch (error) {
-                                // Silent fail for continuous paste attempts
-                            }
-                        }}
-                        aria-label="Paste workflow JSON"
-                    />
-                    <div className="flex items-center justify-center gap-2 px-4 py-3 bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg transition-all duration-200 hover:border-gray-400">
-                        <div className="flex items-center gap-2">
-                            <kbd className="px-2 py-1 text-xs font-semibold bg-white border border-gray-200 rounded shadow-sm">
-                                {navigator.platform.includes('Mac') ? '⌘' : 'Ctrl'}+V
-                            </kbd>
-                            <span className="text-sm text-gray-600 font-medium">
-                                to paste workflow JSON
-                            </span>
-                        </div>
-                        {validation.importJson && (
-                            <CheckCircle2 className="h-4 w-4 text-green-600 ml-2" />
-                        )}
                     </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                        Workflow JSON exports from ComfyUI or shared workflows
-                    </p>
-                </div>
+                )}
             </div>
         </div>
     );
