@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { FolderTree } from "@/components/models/folder-tree";
+import { ModelSelectorDialog } from "@/components/models/model-selector-dialog";
 import {
   Dialog,
   DialogContent,
@@ -203,30 +204,57 @@ export function getModelNameWithoutParent(path: string) {
   return parts.slice(1).join("/");
 }
 
-export function WorkflowModelCheck() {
+export function WorkflowModelCheck({
+  workflow: propWorkflow,
+  onWorkflowUpdate,
+}: {
+  workflow?: string;
+  onWorkflowUpdate?: (workflow: any) => void;
+} = {}) {
   const validation = useImportWorkflowStore();
   const setValidation = validation.setValidation;
-  // Use Zustand store instead of props
-  const workflow = validation.workflowJson;
+
+  // Use props if provided (navbar context), otherwise use Zustand store (import context)
+  const workflow = propWorkflow || validation.workflowJson;
   const updateWorkflowJson = validation.setWorkflowJson;
   const updateImportJson = validation.setImportJson;
   const importOption = validation.importOption;
 
-  // Update workflow based on import option
-  const updateWorkflow = useCallback((updatedWorkflow: string) => {
-    if (importOption === "import") {
-      updateImportJson(updatedWorkflow);
-    } else {
-      updateWorkflowJson(updatedWorkflow);
-    }
-  }, [importOption, updateImportJson, updateWorkflowJson]);
+  // Simplified workflow update - directly update the store or call callback
+  const updateNodeInWorkflow = useCallback((nodeId: number, widgetValues: string[]) => {
+    try {
+      const parsedWorkflow = JSON.parse(workflow || '{}');
+      const nodeIndex = parsedWorkflow.nodes?.findIndex(
+        (node: any) => node.id === nodeId,
+      );
 
-  const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
+      if (nodeIndex !== -1) {
+        // Update the specific node's widget values
+        parsedWorkflow.nodes[nodeIndex].widgets_values = widgetValues;
+
+        console.log("widgetValues", widgetValues);
+
+        if (onWorkflowUpdate) {
+          // Navbar context - use callback
+          onWorkflowUpdate(parsedWorkflow);
+        } else {
+          // Import context - update store
+          const updatedWorkflowJson = JSON.stringify(parsedWorkflow);
+          if (importOption === "import") {
+            updateImportJson(updatedWorkflowJson);
+          } else {
+            updateWorkflowJson(updatedWorkflowJson);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error updating workflow:", e);
+    }
+  }, [workflow, importOption, updateImportJson, updateWorkflowJson, onWorkflowUpdate]);
+
   const [isModelBrowserExpanded, setIsModelBrowserExpanded] = useState(false);
   const [showAddModelDialog, setShowAddModelDialog] = useState(false);
   const [selectedFolderPath, setSelectedFolderPath] = useState("");
-
-
 
   // Fetch model data from API
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery({
@@ -263,47 +291,6 @@ export function WorkflowModelCheck() {
     }
   }, [workflow]);
 
-  useEffect(() => {
-    if (!selectedNode) return;
-
-    try {
-      // Parse the workflow JSON to get the nodes
-      const parsedWorkflow = JSON.parse(workflow || '{}');
-
-      // Find the corresponding node in the workflow
-      const nodeIndex = parsedWorkflow.nodes?.findIndex(
-        (node: any) => node.id === selectedNode.id,
-      ) ?? -1;
-
-      if (nodeIndex !== -1) {
-        const node = parsedWorkflow.nodes[nodeIndex];
-
-        // Find the node type configuration to get noOfNodes
-        const nodeType = Object.entries(NodeToBeFocus).find(
-          ([_, config]) => config.type === selectedNode.type,
-        )?.[0];
-        const numInputs = nodeType ? NodeToBeFocus[nodeType].noOfNodes || 1 : 1;
-
-        // Check if any of the widget values are different
-        let hasChanges = false;
-        for (let i = 0; i < numInputs; i++) {
-          if (node.widgets_values[i] !== selectedNode.widgets_values[i]) {
-            node.widgets_values[i] = selectedNode.widgets_values[i];
-            hasChanges = true;
-          }
-        }
-
-        // Only update if there were changes
-        if (hasChanges) {
-          const updatedWorkflowJson = JSON.stringify(parsedWorkflow);
-          updateWorkflow(updatedWorkflowJson);
-        }
-      }
-    } catch (e) {
-      console.error("Error updating selected node:", e);
-    }
-  }, [selectedNode, workflow, updateWorkflow]);
-
   const handleAddModel = (folderPath: string) => {
     setSelectedFolderPath(folderPath);
     setShowAddModelDialog(true);
@@ -319,8 +306,7 @@ export function WorkflowModelCheck() {
       <div className="w-full flex-1">
         <OptionList
           workflowNodeList={nodesToFocus}
-          selectedNode={selectedNode}
-          setSelectedNode={setSelectedNode}
+          updateNodeInWorkflow={updateNodeInWorkflow}
           isModelBrowserExpanded={isModelBrowserExpanded}
           privateFiles={privateFiles}
           publicFiles={publicFiles}
@@ -328,7 +314,7 @@ export function WorkflowModelCheck() {
           isModal={false}
         />
       </div>
-      {true && (
+      {/* {true && (
         <div className="relative hidden md:block">
           {isModelBrowserExpanded && (
             <div className="w-[500px] rounded-xl border bg-white p-4 drop-shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
@@ -363,7 +349,7 @@ export function WorkflowModelCheck() {
             </TooltipProvider>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Add Model Dialog */}
       <Dialog open={showAddModelDialog} onOpenChange={setShowAddModelDialog}>
@@ -479,8 +465,7 @@ export function getVolumeFileList(
 const OptionList = memo(
   ({
     workflowNodeList,
-    selectedNode,
-    setSelectedNode,
+    updateNodeInWorkflow,
     isModelBrowserExpanded,
     privateFiles,
     publicFiles,
@@ -488,8 +473,7 @@ const OptionList = memo(
     isModal = false,
   }: {
     workflowNodeList: WorkflowNode[] | undefined;
-    selectedNode: WorkflowNode | null;
-    setSelectedNode: (node: WorkflowNode | null) => void;
+    updateNodeInWorkflow: (nodeId: number, widgetValues: string[]) => void;
     isModelBrowserExpanded: boolean;
     privateFiles: FileEntry[] | undefined;
     publicFiles: FileEntry[] | undefined;
@@ -845,8 +829,8 @@ const OptionList = memo(
                                 : "flex-1 justify-end"
                             )}>
                               <ModelSelectComboBox
-                                selectedNode={workflowNode}
-                                setSelectedNode={setSelectedNode}
+                                workflowNode={workflowNode}
+                                updateNodeInWorkflow={updateNodeInWorkflow}
                                 fileList={fileList}
                               />
                             </div>
@@ -879,22 +863,24 @@ export function extractModelPathWithoutTopDir(path: string) {
 }
 
 export function ModelSelectComboBox({
-  selectedNode,
-  setSelectedNode,
+  workflowNode,
+  updateNodeInWorkflow,
   fileList,
 }: {
-  selectedNode: WorkflowNode;
-  setSelectedNode: (node: WorkflowNode) => void;
+  workflowNode: WorkflowNode;
+  updateNodeInWorkflow: (nodeId: number, widgetValues: string[]) => void;
   fileList: FileList[];
 }) {
   const [openStates, setOpenStates] = useState<boolean[]>([]);
+  const [selectorDialogOpen, setSelectorDialogOpen] = useState(false);
+  const [selectedInputIndex, setSelectedInputIndex] = useState<number>(0);
 
   // Find the category for this node type
   const nodeCategory = useMemo(() => {
     return Object.entries(NodeToBeFocus).find(
-      ([_, config]) => config.type === selectedNode.type,
+      ([_, config]) => config.type === workflowNode.type,
     )?.[0];
-  }, [selectedNode.type]);
+  }, [workflowNode.type]);
 
   // Get files for this category
   const categoryFiles = useMemo(() => {
@@ -934,101 +920,51 @@ export function ModelSelectComboBox({
     return Array.from(uniqueFiles.values());
   }, [categoryFiles]);
 
+  const handleModelSelect = (modelPath: string) => {
+    // Create a copy of the widgets_values array
+    const newWidgetsValues = [...workflowNode.widgets_values];
+
+    // Ensure the array is long enough
+    while (newWidgetsValues.length <= selectedInputIndex) {
+      newWidgetsValues.push("");
+    }
+
+    // Extract model path without top directory (to match existing format)
+    const displayPath = extractModelPathWithoutTopDir(modelPath);
+    newWidgetsValues[selectedInputIndex] = displayPath;
+
+    // Directly update the workflow with the new widget values
+    updateNodeInWorkflow(workflowNode.id, newWidgetsValues);
+    setSelectorDialogOpen(false);
+  };
+
   const renderComboBox = (index: number) => {
-    const currentValue = selectedNode.widgets_values[index] || "";
+    const currentValue = workflowNode.widgets_values[index] || "";
     const isValid = processedFiles.some(
       (file) => file.name === currentValue || file.displayPath === currentValue,
     );
 
     return (
-      <div
-        key={`combobox-${selectedNode.id}-${index}`}
-      >
-        <Popover
-          open={openStates[index]}
-          onOpenChange={(open) => {
-            const newStates = [...openStates];
-            newStates[index] = open;
-            setOpenStates(newStates);
+      <div key={`combobox-${workflowNode.id}-${index}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSelectedInputIndex(index);
+            setSelectorDialogOpen(true);
           }}
+          className={cn(
+            "h-7 min-w-[200px] max-w-[300px] justify-between px-2 text-xs",
+            !currentValue || isValid
+              ? ""
+              : "border-yellow-500 bg-yellow-50/50 dark:border-yellow-500 dark:bg-yellow-900/20",
+          )}
         >
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              size="sm"
-              aria-expanded={openStates[index]}
-              className={cn(
-                "h-7 min-w-[200px] max-w-[300px] justify-between px-2 text-xs",
-                !currentValue || isValid
-                  ? ""
-                  : "border-yellow-500 bg-yellow-50/50 dark:border-yellow-500 dark:bg-yellow-900/20",
-              )}
-            >
-              <span className="truncate">
-                {currentValue ? currentValue : "Select model..."}
-              </span>
-              <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[320px] p-0">
-            <Command>
-              <CommandInput placeholder="Search files..." className="h-8" />
-              <CommandList>
-                <CommandEmpty>No files found.</CommandEmpty>
-                <CommandGroup>
-                  {processedFiles.map((file) => (
-                    <CommandItem
-                      key={`${file.name}-${index}`}
-                      value={file.name}
-                      onSelect={() => {
-                        // Create a copy of the widgets_values array
-                        const newWidgetsValues = [
-                          ...selectedNode.widgets_values,
-                        ];
-
-                        // Ensure the array is long enough
-                        while (newWidgetsValues.length <= index) {
-                          newWidgetsValues.push("");
-                        }
-
-                        // Store the model path without the top directory
-                        // This preserves subdirectories like "upscale/x4-upscaler-ema.safetensors"
-                        newWidgetsValues[index] = file.displayPath;
-
-                        // Create a new node object with the updated widgets_values
-                        const updatedNode = {
-                          ...selectedNode,
-                          widgets_values: newWidgetsValues,
-                        };
-
-                        // Update the selected node
-                        setSelectedNode(updatedNode);
-
-                        // Close the popover
-                        const newStates = [...openStates];
-                        newStates[index] = false;
-                        setOpenStates(newStates);
-                      }}
-                    >
-                      <div className="flex items-center">
-                        <Check
-                          className={cn(
-                            "mr-2 h-3 w-3",
-                            currentValue === file.displayPath
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                        />
-                        <span className="text-xs">{file.displayPath}</span>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+          <span className="truncate">
+            {currentValue ? currentValue : "Select model..."}
+          </span>
+          <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+        </Button>
       </div>
     );
   };
@@ -1043,84 +979,20 @@ export function ModelSelectComboBox({
   }
 
   return (
-    <div className="flex items-center gap-1">
-      {Array.from({ length: numInputs }, (_, index) => renderComboBox(index))}
-    </div>
-  );
-}
+    <>
+      <div className="flex items-center gap-1">
+        {Array.from({ length: numInputs }, (_, index) => renderComboBox(index))}
+      </div>
 
-// ---------------deprecated----------------
-function NodeDisplay({
-  selectedNode,
-  setSelectedNode,
-  fileList,
-}: {
-  selectedNode: WorkflowNode;
-  setSelectedNode: (node: WorkflowNode) => void;
-  fileList: FileList[];
-}) {
-  return (
-    <div className="relative p-4 md:p-10">
-      <div
-        className="-z-[1] absolute inset-0 min-h-[100px] overflow-hidden border border-neutral-600 bg-[#212121] shadow-lg"
-        style={{
-          backgroundImage: `
-              linear-gradient(to right, #1B1B1B 1px, transparent 1px),
-              linear-gradient(to bottom, #1B1B1B 1px, transparent 1px)
-            `,
-          backgroundSize: "20px 20px",
-        }}
+      <ModelSelectorDialog
+        open={selectorDialogOpen}
+        onOpenChange={setSelectorDialogOpen}
+        onModelSelect={handleModelSelect}
+        currentValue={workflowNode.widgets_values[selectedInputIndex] || ""}
+        category={nodeCategory}
+        title={`Select ${nodeCategory ? nodeCategory.charAt(0).toUpperCase() + nodeCategory.slice(1) : "Model"}`}
+        description={`Browse and select a model for ${workflowNode.type}`}
       />
-
-      <div className="flex justify-end px-2 py-1">
-        <h3 className="rounded-[8px] bg-green-950 px-2 text-white text-xs">
-          #{selectedNode.id}
-        </h3>
-      </div>
-      <div className="min-h-[100px] rounded-xl border border-neutral-600 bg-neutral-700 shadow-lg outline outline-gray-400 outline-offset-4">
-        {/* Header */}
-        <div className="flex items-center gap-3 border-neutral-800 border-b px-4 py-2">
-          <div className="h-3 w-3 rounded-full bg-neutral-600" />
-          <h3 className="text-gray-300">{selectedNode.type}</h3>
-        </div>
-
-        {/* Inputs and Outputs */}
-        <div className="flex flex-row justify-between px-4 py-2">
-          {/* Inputs */}
-          <div className="flex flex-col gap-1">
-            {selectedNode.inputs?.map((input, index) => (
-              <div
-                key={`input-${input.name}-${index}`}
-                className="flex items-center gap-2"
-              >
-                <div className="h-2 w-2 rounded-full bg-purple-400" />
-                <span className="text-gray-300 text-sm">{input.name}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Outputs */}
-          <div className="flex flex-col items-end gap-1">
-            {selectedNode.outputs?.map((output, index) => (
-              <div
-                key={`output-${output.name}-${index}`}
-                className="flex items-center gap-2"
-              >
-                <span className="text-gray-300 text-sm">{output.name}</span>
-                <div className="h-2 w-2 rounded-full bg-pink-400" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-4 pb-4">
-          <ModelSelectComboBox
-            selectedNode={selectedNode}
-            setSelectedNode={setSelectedNode}
-            fileList={fileList}
-          />
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

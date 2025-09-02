@@ -29,6 +29,7 @@ interface DockerCommandStep {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -79,6 +80,7 @@ import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { MachineSettingsWrapper } from "../machine/machine-settings";
 import { getBranchInfo } from "@/hooks/use-github-branch-info";
+import { ScrollArea } from "../ui/scroll-area";
 
 // Add this type
 export type ComfyUIOption = {
@@ -854,7 +856,7 @@ function DetectedCustomNodesSection({
   existingMachineSteps?: DockerCommandStep[];
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [showAdvancedView, setShowAdvancedView] = useState(false);
+  const [activeTab, setActiveTab] = useState<"simplified" | "advanced">("simplified");
   const { data: latestHashes } = useLatestHashes();
 
   // Auto-generate machine name and set default GPU if not set
@@ -1042,8 +1044,8 @@ function DetectedCustomNodesSection({
           onOpenChange={setDialogOpen}
           validation={validation}
           setValidation={setValidation}
-          showAdvancedView={showAdvancedView}
-          setShowAdvancedView={setShowAdvancedView}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           nonConflictingCustomNodes={nonConflictingCustomNodes}
           conflictingNodes={conflictingNodes}
           selectedCustomNodes={selectedCustomNodes}
@@ -1065,8 +1067,8 @@ const MachineConfigDialog = memo(({
   onOpenChange,
   validation,
   setValidation,
-  showAdvancedView,
-  setShowAdvancedView,
+  activeTab,
+  setActiveTab,
   nonConflictingCustomNodes,
   conflictingNodes,
   selectedCustomNodes,
@@ -1081,8 +1083,8 @@ const MachineConfigDialog = memo(({
   onOpenChange: (open: boolean) => void;
   validation: StepValidation;
   setValidation: (validation: Partial<StepValidation>) => void;
-  showAdvancedView: boolean;
-  setShowAdvancedView: (show: boolean) => void;
+  activeTab: "simplified" | "advanced";
+  setActiveTab: (tab: "simplified" | "advanced") => void;
   nonConflictingCustomNodes: Array<[string, any]>;
   conflictingNodes: Record<string, any>;
   selectedCustomNodes: Set<string>;
@@ -1097,153 +1099,155 @@ const MachineConfigDialog = memo(({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 py-4 border-b">
-          <div className="flex items-center justify-between">
-            <DialogTitle>Configure Machine</DialogTitle>
-            <div className="flex items-center gap-2">
-              <Button
-                variant={showAdvancedView ? "default" : "outline"}
-                size="sm"
-                onClick={() => setShowAdvancedView(!showAdvancedView)}
-                className="text-xs"
-              >
-                {showAdvancedView ? "Simplified View" : "Advanced View"}
-              </Button>
-              <DialogClose />
-            </div>
-          </div>
-        </DialogHeader>
+      <DialogContent hideCloseButton className="max-w-4xl h-[90vh] flex flex-col p-0 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "simplified" | "advanced")} className="flex flex-col h-full">
+          <DialogHeader className="px-6 py-4 border-b flex-shrink-0">
+            <DialogTitle className="flex justify-between items-center">
+              <div>Configure Machine</div>
+              <TabsList className="grid w-fit max-w-[400px] grid-cols-2">
+                <TabsTrigger value="simplified" className="text-xs">
+                  Simple
+                </TabsTrigger>
+                <TabsTrigger value="advanced" className="text-xs">
+                  Advanced
+                </TabsTrigger>
+              </TabsList></DialogTitle>
+          </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {!showAdvancedView ? (
-            // Simplified View - Custom Nodes Configuration
-            <div className="space-y-4">
-              {/* GPU Selection */}
-              <div>
-                <label className="text-sm font-medium mb-1.5 block">
-                  GPU Type
-                </label>
-                <Select
-                  value={validation.gpuType || 'T4'}
-                  onValueChange={(value) => setValidation({ gpuType: value as GpuTypes })}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select GPU type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CPU">CPU</SelectItem>
-                    <SelectItem value="T4">T4</SelectItem>
-                    <SelectItem value="A10G">A10G</SelectItem>
-                    <SelectItem value="L40S">L40S</SelectItem>
-                    <SelectItem value="L4">L4</SelectItem>
-                    <SelectItem value="A100">A100</SelectItem>
-                    <SelectItem value="A100-80GB">A100-80GB</SelectItem>
-                    <SelectItem value="H100">H100</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Custom Nodes Section */}
-              {totalNodes > 0 && (
+          <TabsContent value="simplified" className="flex-1 overflow-y-auto px-6 py-4">
+            {activeTab === "simplified" && (
+              // Simplified View - Custom Nodes Configuration
+              <div className="space-y-4">
+                {/* GPU Selection */}
                 <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium">
-                      Custom Nodes
-                    </label>
-                    <Badge variant="outline" className="shrink-0 text-xs">
-                      {totalSelected}/{totalNodes} selected
-                    </Badge>
-                  </div>
-
-                  <div className="space-y-2">
-                    {/* Non-conflicting nodes */}
-                    {nonConflictingCustomNodes.map(([url, nodeData]: [string, any]) => (
-                      <NodeItem
-                        key={url}
-                        url={url}
-                        nodeData={nodeData}
-                        isSelected={selectedCustomNodes.has(url)}
-                        isDuplicate={checkIsDuplicate(url)}
-                        onToggle={handleNodeToggle}
-                      />
-                    ))}
-
-                    {/* Conflicting nodes */}
-                    {Object.entries(conflictingNodes).map(([nodeName, implementations]: [string, any]) => {
-                      const selectedImpl = selectedConflictingNodes[nodeName]?.[0];
-
-                      return (
-                        <div key={nodeName} className="space-y-1">
-                          <div className="flex items-center gap-2 px-2 py-1">
-                            <span className="text-sm font-medium text-yellow-600">{nodeName}</span>
-                            <Badge variant="yellow" className="text-[10px] px-1 py-0">
-                              {implementations.length} options
-                            </Badge>
-                          </div>
-                          <div className="ml-4 space-y-1">
-                            {implementations.map((impl: any) => (
-                              <ConflictingNodeItem
-                                key={impl.url}
-                                nodeName={nodeName}
-                                impl={impl}
-                                isSelected={selectedImpl?.url === impl.url}
-                                isDuplicate={checkIsDuplicate(impl.url)}
-                                onChange={handleConflictingNodeChange}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                  <label className="text-sm font-medium mb-1.5 block">
+                    GPU Type
+                  </label>
+                  <Select
+                    value={validation.gpuType || 'T4'}
+                    onValueChange={(value) => setValidation({ gpuType: value as GpuTypes })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select GPU type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CPU">CPU</SelectItem>
+                      <SelectItem value="T4">T4</SelectItem>
+                      <SelectItem value="A10G">A10G</SelectItem>
+                      <SelectItem value="L40S">L40S</SelectItem>
+                      <SelectItem value="L4">L4</SelectItem>
+                      <SelectItem value="A100">A100</SelectItem>
+                      <SelectItem value="A100-80GB">A100-80GB</SelectItem>
+                      <SelectItem value="H100">H100</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
-            </div>
-          ) : (
-            // Advanced View - Full Machine Settings
-            <div className="space-y-6">
-              <div className="rounded-md border border-muted bg-muted/20 p-2 flex items-center gap-2 mb-4">
-                <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Configure GPU, ComfyUI version, and advanced settings</span>
-              </div>
 
-              <MachineSettingsWrapper
-                onValueChange={(key, value) => {
-                  const updates: Partial<StepValidation> = {};
-                  if (key === "comfyui_version") {
-                    updates.comfyUiHash = value;
-                  } else if (key === "gpu") {
-                    updates.gpuType = value;
-                  } else if (key === "docker_command_steps") {
-                    updates.docker_command_steps = value;
-                  } else if (key === "install_custom_node_with_gpu") {
-                    updates.install_custom_node_with_gpu = value;
-                  } else if (key === "base_docker_image") {
-                    updates.base_docker_image = value;
-                  } else if (key === "python_version") {
-                    updates.python_version = value;
-                  }
-                  setValidation(updates);
-                }}
-                machine={{
-                  id: "new",
-                  type: "comfy-deploy-serverless",
-                  comfyui_version: validation.comfyUiHash || latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
-                  name: validation.machineName || `${validation.workflowName}'s Machine`,
-                  gpu: validation.gpuType || "T4",
-                  docker_command_steps: validation.docker_command_steps,
-                  install_custom_node_with_gpu: validation.install_custom_node_with_gpu,
-                  base_docker_image: validation.base_docker_image,
-                  python_version: validation.python_version || "3.11",
-                }}
-                disableUnsavedChangesWarningServerless={true}
-              />
-            </div>
-          )}
-        </div>
+                {/* Custom Nodes Section */}
+                {totalNodes > 0 && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium">
+                        Custom Nodes
+                      </label>
+                      <Badge variant="outline" className="shrink-0 text-xs">
+                        {totalSelected}/{totalNodes} selected
+                      </Badge>
+                    </div>
+
+                    <div className="space-y-2">
+                      {/* Non-conflicting nodes */}
+                      {nonConflictingCustomNodes.map(([url, nodeData]: [string, any]) => (
+                        <NodeItem
+                          key={url}
+                          url={url}
+                          nodeData={nodeData}
+                          isSelected={selectedCustomNodes.has(url)}
+                          isDuplicate={checkIsDuplicate(url)}
+                          onToggle={handleNodeToggle}
+                        />
+                      ))}
+
+                      {/* Conflicting nodes */}
+                      {Object.entries(conflictingNodes).map(([nodeName, implementations]: [string, any]) => {
+                        const selectedImpl = selectedConflictingNodes[nodeName]?.[0];
+
+                        return (
+                          <div key={nodeName} className="space-y-1">
+                            <div className="flex items-center gap-2 px-2 py-1">
+                              <span className="text-sm font-medium text-yellow-600">{nodeName}</span>
+                              <Badge variant="yellow" className="text-[10px] px-1 py-0">
+                                {implementations.length} options
+                              </Badge>
+                            </div>
+                            <div className="ml-4 space-y-1">
+                              {implementations.map((impl: any) => (
+                                <ConflictingNodeItem
+                                  key={impl.url}
+                                  nodeName={nodeName}
+                                  impl={impl}
+                                  isSelected={selectedImpl?.url === impl.url}
+                                  isDuplicate={checkIsDuplicate(impl.url)}
+                                  onChange={handleConflictingNodeChange}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="advanced" className="flex-1 overflow-y-auto px-6 py-4">
+            {activeTab === "advanced" && (
+              // Advanced View - Full Machine Settings
+              <div className="space-y-6">
+                <div className="rounded-md border border-muted bg-muted/20 p-2 flex items-center gap-2 mb-4">
+                  <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Configure GPU, ComfyUI version, and advanced settings</span>
+                </div>
+
+                <MachineSettingsWrapper
+                  onValueChange={(key, value) => {
+                    const updates: Partial<StepValidation> = {};
+                    if (key === "comfyui_version") {
+                      updates.comfyUiHash = value;
+                    } else if (key === "gpu") {
+                      updates.gpuType = value;
+                    } else if (key === "docker_command_steps") {
+                      updates.docker_command_steps = value;
+                    } else if (key === "install_custom_node_with_gpu") {
+                      updates.install_custom_node_with_gpu = value;
+                    } else if (key === "base_docker_image") {
+                      updates.base_docker_image = value;
+                    } else if (key === "python_version") {
+                      updates.python_version = value;
+                    }
+                    setValidation(updates);
+                  }}
+                  machine={{
+                    id: "new",
+                    type: "comfy-deploy-serverless",
+                    comfyui_version: validation.comfyUiHash || latestHashes?.comfyui_hash || "158419f3a0017c2ce123484b14b6c527716d6ec8",
+                    name: validation.machineName || `${validation.workflowName}'s Machine`,
+                    gpu: validation.gpuType || "T4",
+                    docker_command_steps: validation.docker_command_steps,
+                    install_custom_node_with_gpu: validation.install_custom_node_with_gpu,
+                    base_docker_image: validation.base_docker_image,
+                    python_version: validation.python_version || "3.11",
+                  }}
+                  disableUnsavedChangesWarningServerless={true}
+                />
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 });
 

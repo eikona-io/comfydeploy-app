@@ -270,7 +270,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
     importOption:
         (localStorage.getItem("workflowImportOption") as "import" | "default") ||
         "import",
-    importJson: "",
+    get importJson() { return this.workflowJson; },
     workflowJson: "",
     workflowApi: "",
     selectedMachineId: "",
@@ -301,7 +301,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
 
     setWorkflowName: (workflowName: string) => set({ workflowName, machineName: generateRandomMachineName(workflowName) }),
     setImportOption: (importOption: "import" | "default") => set({ importOption }),
-    setImportJson: (importJson: string) => set({ importJson }),
+    setImportJson: (importJson: string) => set({ workflowJson: importJson }),
     setWorkflowJson: (workflowJson: string) => set({ workflowJson }),
     setWorkflowApi: (workflowApi: string) => set({ workflowApi }),
     setSelectedMachineId: (selectedMachineId: string) => set({ selectedMachineId }),
