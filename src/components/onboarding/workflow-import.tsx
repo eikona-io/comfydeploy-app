@@ -362,6 +362,8 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
                 ],
             },
             importedFileName: "",
+            hasEnvironment: false,
+            existingMachine: undefined,
         })
     },
 }));
