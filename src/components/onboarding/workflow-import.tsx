@@ -270,7 +270,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
     importOption:
         (localStorage.getItem("workflowImportOption") as "import" | "default") ||
         "import",
-    get importJson() { return this.workflowJson; },
+    get importJson() { return get().workflowJson; },
     workflowJson: "",
     workflowApi: "",
     selectedMachineId: "",
@@ -658,10 +658,7 @@ export default function WorkflowImport() {
             // Create workflow
             const workflowData = {
                 name: validation.workflowName,
-                workflow_json:
-                    validation.importOption === "import"
-                        ? validation.importJson
-                        : validation.workflowJson,
+                workflow_json: typeof validation.workflowJson === 'string' ? validation.workflowJson : JSON.stringify(validation.workflowJson),
                 ...(validation.workflowApi && { workflow_api: validation.workflowApi }),
                 ...(machineId && { machine_id: machineId }),
             };

@@ -231,21 +231,7 @@ export function WorkflowModelCheck({
       if (nodeIndex !== -1) {
         // Update the specific node's widget values
         parsedWorkflow.nodes[nodeIndex].widgets_values = widgetValues;
-
-        console.log("widgetValues", widgetValues);
-
-        if (onWorkflowUpdate) {
-          // Navbar context - use callback
-          onWorkflowUpdate(parsedWorkflow);
-        } else {
-          // Import context - update store
-          const updatedWorkflowJson = JSON.stringify(parsedWorkflow);
-          if (importOption === "import") {
-            updateImportJson(updatedWorkflowJson);
-          } else {
-            updateWorkflowJson(updatedWorkflowJson);
-          }
-        }
+        useImportWorkflowStore.getState().setWorkflowJson(parsedWorkflow);
       }
     } catch (e) {
       console.error("Error updating workflow:", e);
