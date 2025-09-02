@@ -9,6 +9,8 @@ import {
   type StepValidation,
   useImportWorkflowStore,
 } from "@/components/onboarding/workflow-import";
+import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Local type definitions
 interface CustomNodeData {
@@ -53,6 +55,7 @@ const CustomNodesLoadingSkeleton = () => (
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  AlertCircle,
   AlertTriangle,
   CheckCircle,
   ChevronDown,
@@ -98,7 +101,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { getBranchInfo } from "@/hooks/use-github-branch-info";
 import { useMachine, useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
@@ -280,6 +282,7 @@ export function WorkflowImportSelectedMachine() {
 
   const sub = useCurrentPlan();
   const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
+  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Clear machine config when switching between new/existing machine
   const prevMachineOption = React.useRef(validation.machineOption);
@@ -706,7 +709,7 @@ function ExistingMachineDialog({
                             "w-full text-left border rounded-md p-2 transition-all",
                             "hover:border-primary/50 hover:bg-muted/30",
                             isSelected &&
-                              "border-primary bg-primary/10 ring-1 ring-primary/20",
+                            "border-primary bg-primary/10 ring-1 ring-primary/20",
                             !isSelected && "border-border",
                           )}
                         >
@@ -770,15 +773,15 @@ function ExistingMachineDialog({
                                     node.type === "custom-node" ||
                                     node.type === "custom-node-manager",
                                 ).length > 3 && (
-                                  <span className="text-[9px] text-muted-foreground shrink-0">
-                                    +
-                                    {item.docker_command_steps.steps.filter(
-                                      (node: any) =>
-                                        node.type === "custom-node" ||
-                                        node.type === "custom-node-manager",
-                                    ).length - 3}
-                                  </span>
-                                )}
+                                    <span className="text-[9px] text-muted-foreground shrink-0">
+                                      +
+                                      {item.docker_command_steps.steps.filter(
+                                        (node: any) =>
+                                          node.type === "custom-node" ||
+                                          node.type === "custom-node-manager",
+                                      ).length - 3}
+                                    </span>
+                                  )}
                               </div>
                             </div>
                           )}
@@ -972,6 +975,8 @@ function DetectedCustomNodesSection({
     "simplified",
   );
   const { data: latestHashes } = useLatestHashes();
+  const sub = useCurrentPlan();
+  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Auto-generate machine name and set default GPU if not set
   useEffect(() => {
@@ -1034,7 +1039,7 @@ function DetectedCustomNodesSection({
         (step: any) =>
           step.type === "custom-node" &&
           (step.data as CustomNodeData)?.url?.toLowerCase() ===
-            url.toLowerCase(),
+          url.toLowerCase(),
       );
     },
     [existingMachineSteps],
@@ -1153,8 +1158,29 @@ function DetectedCustomNodesSection({
     );
   }
 
+  // Check if free plan has non-ComfyUI Deploy nodes
+  const hasNonComfyDeployNodes = isFreePlan && validation.dependencies?.custom_nodes &&
+    Object.entries(validation.dependencies.custom_nodes).some(([url, node]) => {
+      const urlLower = url.toLowerCase();
+      return !urlLower.includes("github.com/bennykok/comfyui-deploy");
+    });
+
   return (
     <>
+      {/* Free plan warning */}
+      {isFreePlan && hasNonComfyDeployNodes && (
+        <Alert className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm">
+            <strong>Free plan limitation:</strong> Only the ComfyUI Deploy custom node is allowed.
+            Other custom nodes detected in this workflow will not be installed.{" "}
+            <Link href="/pricing" className="underline font-medium">
+              Upgrade to use additional custom nodes
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {isConfigured ? (
         <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
           <div className="flex items-center gap-2">
@@ -1920,9 +1946,8 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
           variant={"expandIcon"}
           iconPlacement="right"
           Icon={Settings2}
-          className={`${
-            sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-          }`}
+          className={`${sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
+            }`}
           onClick={() => {
             if (sub?.plans?.plans) {
               setOpenAdvanceSettings(true);
@@ -1936,9 +1961,8 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
         <Button
           size={"icon"}
           variant={"outline"}
-          className={`${
-            sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-          }`}
+          className={`${sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
+            }`}
           onClick={() => {
             if (sub?.plans?.plans) {
               setOpenAdvanceSettings(true);
@@ -2115,9 +2139,9 @@ function NodeListItem({
       className={cn(
         "flex items-center gap-3 rounded-sm border px-3 py-2 hover:bg-gray-50",
         !hasHash &&
-          "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
+        "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
         isUrlDuplicate &&
-          "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
+        "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
       )}
     >
       {checkbox}

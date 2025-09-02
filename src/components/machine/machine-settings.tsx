@@ -29,10 +29,11 @@ import { cn } from "@/lib/utils";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQuery } from "@tanstack/react-query";
-import { useBlocker, useMatch, useNavigate } from "@tanstack/react-router";
+import { useBlocker, useMatch, useNavigate, Link } from "@tanstack/react-router";
 import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
 import { isEqual } from "lodash";
 import {
+  AlertCircle,
   ArchiveX,
   ExternalLinkIcon,
   Info,
@@ -49,6 +50,7 @@ import {
   type ReactNode,
   type RefObject,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -63,6 +65,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../ui/accordion";
+import { Alert, AlertDescription } from "../ui/alert";
 import { Badge } from "../ui/badge";
 import {
   Form,
@@ -1638,6 +1641,9 @@ function CustomNodeSetupWrapper({
   onChange: (value: any) => void;
   readonly?: boolean;
 }) {
+  const sub = useCurrentPlan();
+  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
+
   const [validation, setValidation] = useState<StepValidation>(() => ({
     docker_command_steps: value || { steps: [] },
     machineName: "",
@@ -1659,10 +1665,32 @@ function CustomNodeSetupWrapper({
   const handleValidationChange = (
     newValidation: StepValidation | ((prev: StepValidation) => StepValidation),
   ) => {
-    const nextValidation =
+    let nextValidation =
       typeof newValidation === "function"
         ? newValidation(validation)
         : newValidation;
+
+    // For free plan, filter out non-ComfyUI Deploy nodes
+    if (isFreePlan && nextValidation.docker_command_steps?.steps) {
+      const filteredSteps = nextValidation.docker_command_steps.steps.filter((step: any) => {
+        if (step.type !== "custom-node") return false;
+        const url = step.data?.url?.toLowerCase() || "";
+        return url.includes("github.com/bennykok/comfyui-deploy");
+      });
+
+      // If steps were filtered, show a warning
+      if (filteredSteps.length < nextValidation.docker_command_steps.steps.length) {
+        toast.warning("Only ComfyUI Deploy custom node is allowed on free plan");
+      }
+
+      nextValidation = {
+        ...nextValidation,
+        docker_command_steps: {
+          ...nextValidation.docker_command_steps,
+          steps: filteredSteps
+        }
+      };
+    }
 
     setValidation(nextValidation);
     if (!isEqual(nextValidation.docker_command_steps, value)) {
@@ -1670,12 +1698,51 @@ function CustomNodeSetupWrapper({
     }
   };
 
+  // Filter validation to only keep ComfyUI Deploy nodes for free plan
+  const filteredValidation = useMemo(() => {
+    if (!isFreePlan || !validation.docker_command_steps?.steps) {
+      return validation;
+    }
+
+    // Filter steps to only include ComfyUI Deploy nodes
+    const filteredSteps = validation.docker_command_steps.steps.filter((step: any) => {
+      if (step.type !== "custom-node") return false;
+      const url = step.data?.url?.toLowerCase() || "";
+      return url.includes("github.com/bennykok/comfyui-deploy");
+    });
+
+    return {
+      ...validation,
+      docker_command_steps: {
+        ...validation.docker_command_steps,
+        steps: filteredSteps
+      }
+    };
+  }, [isFreePlan, validation]);
+
   return (
-    <CustomNodeSetup
-      validation={validation}
-      setValidation={handleValidationChange}
-      readonly={readonly}
-    />
+    <div className="space-y-4">
+      {isFreePlan && (
+        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm">
+            <strong>Free plan limitation:</strong> You can update the ComfyUI Deploy custom node,
+            but additional custom nodes cannot be added.{" "}
+            <Link
+              to="/pricing"
+              className="underline font-medium hover:text-amber-700"
+            >
+              Upgrade to use additional custom nodes
+            </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+      <CustomNodeSetup
+        validation={isFreePlan ? filteredValidation : validation}
+        setValidation={handleValidationChange}
+        readonly={readonly}
+      />
+    </div>
   );
 }
 
