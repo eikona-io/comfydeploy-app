@@ -1,11 +1,11 @@
-import type { StepValidation } from "@/components/onboarding/workflow-import";
+import { useImportWorkflowStore, type StepValidation } from "@/components/onboarding/workflow-import";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
+
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -20,8 +20,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
@@ -34,12 +32,11 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
-  ChevronsDownUp,
   ChevronsUpDown,
-  TriangleAlert,
 } from "lucide-react";
 import { memo, useEffect, useMemo, useState, useCallback } from "react";
 import { FolderTree } from "@/components/models/folder-tree";
+import { ModelSelectorDialog } from "@/components/models/model-selector-dialog";
 import {
   Dialog,
   DialogContent,
@@ -108,11 +105,12 @@ export type FileEntry = {
 // PhotoMakerLoader
 
 export const NodeToBeFocus: NodeCategories = {
-  Image: {
-    type: "LoadImage",
-    folder: "input",
-    onlyRootFiles: true,
-  },
+  // Disabled LoadImage as requested - users will configure in workspace
+  // Image: {
+  //   type: "LoadImage",
+  //   folder: "input",
+  //   onlyRootFiles: true,
+  // },
   Checkpoint: {
     type: "CheckpointLoaderSimple",
     folder: "checkpoints",
@@ -207,62 +205,56 @@ export function getModelNameWithoutParent(path: string) {
 }
 
 export function WorkflowModelCheck({
-  workflow: initialWorkflow,
+  workflow: propWorkflow,
   onWorkflowUpdate,
-  validation,
-  setValidation,
 }: {
   workflow?: string;
-  onWorkflowUpdate?: (updatedWorkflow: string) => void;
-  validation?: StepValidation;
-  setValidation?: (validation: StepValidation) => void;
-}) {
-  // Get initial workflow from either direct prop or validation object
-  const [workflow, setWorkflowInternal] = useState<string>(() => {
-    if (initialWorkflow) return initialWorkflow;
-    if (validation) {
-      return (
-        (validation.importOption === "import"
-          ? validation.importJson
-          : validation.workflowJson) || ""
-      );
-    }
-    return "";
-  });
+  onWorkflowUpdate?: (workflow: any) => void;
+} = {}) {
+  const validation = useImportWorkflowStore();
+  const setValidation = validation.setValidation;
 
-  const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(null);
+  // Use props if provided (navbar context), otherwise use Zustand store (import context)
+  const workflow = propWorkflow || validation.workflowJson;
+  const updateWorkflowJson = validation.setWorkflowJson;
+  const updateImportJson = validation.setImportJson;
+  const importOption = validation.importOption;
+
+  // Simplified workflow update - directly update the store or call callback
+  const updateNodeInWorkflow = useCallback((nodeId: number, widgetValues: string[]) => {
+    try {
+      const parsedWorkflow = JSON.parse(workflow || '{}');
+      const nodeIndex = parsedWorkflow.nodes?.findIndex(
+        (node: any) => node.id === nodeId,
+      );
+
+      if (nodeIndex !== -1) {
+        // Update the specific node's widget values
+        parsedWorkflow.nodes[nodeIndex].widgets_values = widgetValues;
+
+        console.log("widgetValues", widgetValues);
+
+        if (onWorkflowUpdate) {
+          // Navbar context - use callback
+          onWorkflowUpdate(parsedWorkflow);
+        } else {
+          // Import context - update store
+          const updatedWorkflowJson = JSON.stringify(parsedWorkflow);
+          if (importOption === "import") {
+            updateImportJson(updatedWorkflowJson);
+          } else {
+            updateWorkflowJson(updatedWorkflowJson);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Error updating workflow:", e);
+    }
+  }, [workflow, importOption, updateImportJson, updateWorkflowJson, onWorkflowUpdate]);
+
   const [isModelBrowserExpanded, setIsModelBrowserExpanded] = useState(false);
   const [showAddModelDialog, setShowAddModelDialog] = useState(false);
   const [selectedFolderPath, setSelectedFolderPath] = useState("");
-
-  // Function to update workflow in all necessary places
-  const updateWorkflow = useCallback(
-    (newWorkflow: string) => {
-      // Update internal state
-      setWorkflowInternal(newWorkflow);
-
-      // If direct callback provided, use it
-      if (onWorkflowUpdate) {
-        onWorkflowUpdate(JSON.parse(newWorkflow));
-      }
-
-      // If using validation context, update that too
-      if (validation && setValidation) {
-        if (validation.importOption === "import") {
-          setValidation({
-            ...validation,
-            importJson: newWorkflow,
-          });
-        } else if (validation.importOption === "default") {
-          setValidation({
-            ...validation,
-            workflowJson: newWorkflow,
-          });
-        }
-      }
-    },
-    [onWorkflowUpdate, validation, setValidation],
-  );
 
   // Fetch model data from API
   const { data: privateFiles, isLoading: isLoadingPrivate } = useQuery({
@@ -286,6 +278,7 @@ export function WorkflowModelCheck({
   });
 
   const nodesToFocus = useMemo(() => {
+    if (!workflow) return [];
     try {
       return JSON.parse(workflow)?.nodes?.filter((node: any) =>
         Object.values(NodeToBeFocus).some(
@@ -298,67 +291,30 @@ export function WorkflowModelCheck({
     }
   }, [workflow]);
 
-  useEffect(() => {
-    if (!selectedNode) return;
-
-    try {
-      // Parse the workflow JSON to get the nodes
-      const parsedWorkflow = JSON.parse(workflow);
-
-      // Find the corresponding node in the workflow
-      const nodeIndex = parsedWorkflow.nodes.findIndex(
-        (node: any) => node.id === selectedNode.id,
-      );
-
-      if (nodeIndex !== -1) {
-        const node = parsedWorkflow.nodes[nodeIndex];
-
-        // Find the node type configuration to get noOfNodes
-        const nodeType = Object.entries(NodeToBeFocus).find(
-          ([_, config]) => config.type === selectedNode.type,
-        )?.[0];
-        const numInputs = nodeType ? NodeToBeFocus[nodeType].noOfNodes || 1 : 1;
-
-        // Check if any of the widget values are different
-        let hasChanges = false;
-        for (let i = 0; i < numInputs; i++) {
-          if (node.widgets_values[i] !== selectedNode.widgets_values[i]) {
-            node.widgets_values[i] = selectedNode.widgets_values[i];
-            hasChanges = true;
-          }
-        }
-
-        // Only update if there were changes
-        if (hasChanges) {
-          const updatedWorkflowJson = JSON.stringify(parsedWorkflow);
-          updateWorkflow(updatedWorkflowJson);
-        }
-      }
-    } catch (e) {
-      console.error("Error updating selected node:", e);
-    }
-  }, [selectedNode, workflow, updateWorkflow]);
-
   const handleAddModel = (folderPath: string) => {
     setSelectedFolderPath(folderPath);
     setShowAddModelDialog(true);
   };
+
+  // Hide entire component if no nodes to focus on
+  if (!nodesToFocus || nodesToFocus.length === 0) {
+    return null;
+  }
 
   return (
     <div className="flex h-full gap-4">
       <div className="w-full flex-1">
         <OptionList
           workflowNodeList={nodesToFocus}
-          selectedNode={selectedNode}
-          setSelectedNode={setSelectedNode}
+          updateNodeInWorkflow={updateNodeInWorkflow}
           isModelBrowserExpanded={isModelBrowserExpanded}
           privateFiles={privateFiles}
           publicFiles={publicFiles}
           isLoading={isLoadingPrivate || isLoadingPublic}
-          isModal={!!initialWorkflow}
+          isModal={false}
         />
       </div>
-      {!initialWorkflow && (
+      {/* {true && (
         <div className="relative hidden md:block">
           {isModelBrowserExpanded && (
             <div className="w-[500px] rounded-xl border bg-white p-4 drop-shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
@@ -393,7 +349,7 @@ export function WorkflowModelCheck({
             </TooltipProvider>
           </div>
         </div>
-      )}
+      )} */}
 
       {/* Add Model Dialog */}
       <Dialog open={showAddModelDialog} onOpenChange={setShowAddModelDialog}>
@@ -504,32 +460,12 @@ export function getVolumeFileList(
   return mergedList;
 }
 
-export const StatusTooltip = ({
-  children,
-  content,
-  variant,
-}: {
-  children: React.ReactNode;
-  content: string | React.ReactNode;
-  variant: "destructive" | "yellow" | "success";
-}) => (
-  <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger className="flex items-center">
-        <Badge variant={variant}>{children}</Badge>
-      </TooltipTrigger>
-      <TooltipContent className="max-w-[300px]">
-        <p className="break-words">{content}</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-);
+// Removed StatusTooltip as we're using inline tooltips now
 
 const OptionList = memo(
   ({
     workflowNodeList,
-    selectedNode,
-    setSelectedNode,
+    updateNodeInWorkflow,
     isModelBrowserExpanded,
     privateFiles,
     publicFiles,
@@ -537,8 +473,7 @@ const OptionList = memo(
     isModal = false,
   }: {
     workflowNodeList: WorkflowNode[] | undefined;
-    selectedNode: WorkflowNode | null;
-    setSelectedNode: (node: WorkflowNode | null) => void;
+    updateNodeInWorkflow: (nodeId: number, widgetValues: string[]) => void;
     isModelBrowserExpanded: boolean;
     privateFiles: FileEntry[] | undefined;
     publicFiles: FileEntry[] | undefined;
@@ -546,27 +481,7 @@ const OptionList = memo(
     isModal?: boolean;
   }) => {
     const [fileList, setFileList] = useState<FileList[]>([]);
-
-    // Get all node types that exist in the workflow
-    const defaultExpandedValues = useMemo(
-      () =>
-        Object.values(NodeToBeFocus)
-          .map((node) => node.type)
-          .filter((type) =>
-            workflowNodeList?.some((wNode) => wNode.type === type),
-          ),
-      [workflowNodeList],
-    );
-
-    // Replace the single accordionValue with an array of values
-    const [accordionValues, setAccordionValues] = useState<string[]>(
-      defaultExpandedValues,
-    );
-
-    useEffect(() => {
-      const files = getVolumeFileList(privateFiles, publicFiles, NodeToBeFocus);
-      setFileList(files);
-    }, [privateFiles, publicFiles]);
+    const [showCompleted, setShowCompleted] = useState(false);
 
     const isNodeSuccessful = (nodeValue: string, category: string) => {
       // If no value, it's not successful
@@ -603,6 +518,52 @@ const OptionList = memo(
       return { success: successfulInputs, total: totalInputs };
     };
 
+    // Get all node types that exist in the workflow AND have missing items
+    const defaultExpandedValues = useMemo(() => {
+      if (!workflowNodeList || fileList.length === 0) {
+        // If no file list yet, expand all incomplete
+        return Object.entries(NodeToBeFocus)
+          .filter(([category, node]) => {
+            const matchingNodes = workflowNodeList?.filter(
+              (wNode) => wNode.type === node.type,
+            );
+            if (!matchingNodes || matchingNodes.length === 0) return false;
+
+            const { success, total } = calculateSuccessRatio(category, node.type);
+            return success < total; // Only include if incomplete
+          })
+          .map(([_, node]) => node.type);
+      }
+
+      // Only expand categories that have missing items
+      return Object.entries(NodeToBeFocus)
+        .filter(([category, node]) => {
+          const matchingNodes = workflowNodeList.filter(
+            (wNode) => wNode.type === node.type,
+          );
+          if (matchingNodes.length === 0) return false;
+
+          const { success, total } = calculateSuccessRatio(category, node.type);
+          return success < total; // Only expand if there are missing items
+        })
+        .map(([_, node]) => node.type);
+    }, [workflowNodeList, fileList]);
+
+    // Replace the single accordionValue with an array of values
+    const [accordionValues, setAccordionValues] = useState<string[]>(
+      defaultExpandedValues,
+    );
+
+    useEffect(() => {
+      const files = getVolumeFileList(privateFiles, publicFiles, NodeToBeFocus);
+      setFileList(files);
+    }, [privateFiles, publicFiles]);
+
+    // Update accordion values when defaultExpandedValues changes
+    useEffect(() => {
+      setAccordionValues(defaultExpandedValues);
+    }, [defaultExpandedValues]);
+
     const HandleNodeStatus = memo(
       ({
         category,
@@ -616,7 +577,7 @@ const OptionList = memo(
         const nodeValues = nodeData.widgets_values.slice(0, numInputs);
 
         return (
-          <div className="flex flex-row gap-1 whitespace-nowrap">
+          <div className="flex flex-row gap-0.5 whitespace-nowrap">
             {nodeValues.map((value, index) => (
               <StatusBadge
                 key={`${category}-${nodeToFocus.folder}-${index}`}
@@ -642,43 +603,37 @@ const OptionList = memo(
       }) => {
         if (!value) {
           return (
-            <StatusTooltip
-              content={`Please add a ${category} file for it!`}
-              variant="destructive"
-            >
-              Empty
-            </StatusTooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-destructive text-xs">Empty</span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px]">
+                  <p>Please add a {category} file</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         }
 
         if (!isNodeSuccessful(value, category)) {
           const folders = Array.isArray(folder) ? folder.join(", ") : folder;
           return (
-            <StatusTooltip
-              content={
-                <div>
-                  Fail to find the <b>"{value}"</b> file! Please update / add it
-                  back to the <b>{folders}</b> folder.
-                </div>
-              }
-              variant="yellow"
-            >
-              Not Exist
-            </StatusTooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-yellow-600 dark:text-yellow-500 text-xs">Not Exist</span>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[300px]">
+                  <p>Cannot find "{value}" in {folders} folder</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         }
 
         return (
-          <StatusTooltip
-            content={
-              <div>
-                File found! [<b>{value}</b>]
-              </div>
-            }
-            variant="success"
-          >
-            <Check size={18} />
-          </StatusTooltip>
+          <Check className="h-3.5 w-3.5 text-green-600 dark:text-green-500" />
         );
       },
     );
@@ -697,181 +652,196 @@ const OptionList = memo(
         </div>
       );
 
+    // Separate completed and incomplete categories
+    const categorizedItems = useMemo(() => {
+      const items = Object.entries(NodeToBeFocus)
+        .map(([category, node]) => {
+          const matchingNodes = workflowNodeList?.filter(
+            (wNode) => wNode.type === node.type,
+          );
+          const { success, total } = calculateSuccessRatio(category, node.type);
+          const successPercentage = total > 0 ? (success / total) * 100 : 0;
+          return {
+            category,
+            node,
+            success,
+            total,
+            successPercentage,
+            matchingNodes,
+            isComplete: successPercentage === 100,
+          };
+        })
+        .filter((item) => item.matchingNodes?.length > 0);
+
+      return {
+        incomplete: items.filter((item) => !item.isComplete),
+        complete: items.filter((item) => item.isComplete),
+      };
+    }, [workflowNodeList, fileList]);
+
+    const itemsToDisplay = showCompleted
+      ? [...categorizedItems.incomplete, ...categorizedItems.complete]
+      : categorizedItems.incomplete;
+
     return (
       <div>
-        <div className="flex items-center justify-between gap-2">
+        <div className="mb-3 flex items-center justify-between gap-2">
           {!isModal ? (
-            <span className="block text-muted-foreground text-sm leading-normal">
-              Model Check helps find missing models and inputs for your
-              workflow.
+            <span className="block text-muted-foreground text-sm">
+              {categorizedItems.incomplete.length > 0 ? "Missing Models" : "All Models Complete"}
             </span>
           ) : (
-            <span className="block text-muted-foreground text-sm leading-normal">
+            <span className="block text-muted-foreground text-sm">
               Click on a node to zoom in.
             </span>
           )}
-          <Button
-            variant={"outline"}
-            className="shrink-0"
-            onClick={() => {
-              if (accordionValues.length > 0) {
-                setAccordionValues([]);
-              } else {
-                setAccordionValues(defaultExpandedValues);
-              }
-            }}
-          >
-            {accordionValues.length > 0 ? (
-              <div className="flex flex-row items-center gap-2">
-                <span>Collapse</span>
-                <ChevronsDownUp className="h-4 w-4" />
-              </div>
-            ) : (
-              <div className="flex flex-row items-center gap-2">
-                <span>Expand</span>
-                <ChevronsUpDown className="h-4 w-4" />
-              </div>
+          <div className="flex items-center gap-2">
+            {categorizedItems.complete.length > 0 && (
+              <Button
+                variant={"ghost"}
+                size="sm"
+                className="h-7 shrink-0 text-xs"
+                onClick={() => setShowCompleted(!showCompleted)}
+              >
+                {showCompleted ? "Hide" : "Show"} Completed ({categorizedItems.complete.length})
+                <Check className="ml-1 h-3 w-3 text-green-600 dark:text-green-500" />
+              </Button>
             )}
-          </Button>
-        </div>
-        <ScrollArea hideHorizontal>
-          <div className="max-h-[70vh]">
-            <Accordion
-              type="multiple"
-              value={accordionValues}
-              onValueChange={setAccordionValues}
+            <Button
+              variant={"ghost"}
+              size="sm"
+              className="h-7 shrink-0 text-xs"
+              onClick={() => {
+                // Get all visible categories
+                const visibleCategories = itemsToDisplay.map((item) => item.node.type);
+
+                if (accordionValues.length === visibleCategories.length) {
+                  // If all are expanded, collapse all
+                  setAccordionValues([]);
+                } else {
+                  // Otherwise, expand all visible
+                  setAccordionValues(visibleCategories);
+                }
+              }}
             >
-              {Object.entries(NodeToBeFocus)
-                .map(([category, node]) => {
-                  const matchingNodes = workflowNodeList?.filter(
-                    (wNode) => wNode.type === node.type,
-                  );
-                  const { success, total } = calculateSuccessRatio(
-                    category,
-                    node.type,
-                  );
-                  const successPercentage =
-                    total > 0 ? (success / total) * 100 : 0;
-                  return {
-                    category,
-                    node,
-                    success,
-                    total,
-                    successPercentage,
-                    matchingNodes,
-                  };
-                })
-                .filter((item) => item.matchingNodes?.length > 0)
-                .map(
-                  ({
-                    category,
-                    node,
-                    success,
-                    total,
-                    successPercentage,
-                    matchingNodes,
-                  }) => (
-                    <AccordionItem value={node.type} key={node.type}>
-                      <AccordionTrigger className="py-3 text-base">
-                        <div
-                          className={`flex w-full flex-row items-center justify-between ${
-                            successPercentage === 100
-                              ? "opacity-60"
-                              : "opacity-100"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <div className="overflow-hidden text-ellipsis whitespace-nowrap">
-                              {category}
-                            </div>
-                            {success < total ? (
-                              <Badge variant="yellow">
-                                {total - success} missing
-                              </Badge>
-                            ) : (
-                              <Badge variant="success">Complete</Badge>
-                            )}
-                          </div>
-                          <div className="flex flex-row items-center gap-2">
-                            <Progress
-                              value={successPercentage}
-                              className="w-24"
-                            />
-                            <span className="w-12 text-right text-sm">
-                              ({success}/{total})
-                            </span>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="text-sm">
-                        {matchingNodes
-                          .sort((a, b) => a.id - b.id)
-                          .map((workflowNode, index) => (
-                            <div
-                              key={`${workflowNode.type}-${workflowNode.id}-${index}`}
-                              className={cn(
-                                "mb-0.5 flex flex-col items-center gap-2 rounded-[4px] px-2 py-2",
-                                index % 2 === 1
-                                  ? "bg-gray-100 dark:bg-zinc-700/50"
-                                  : "",
-                                isModelBrowserExpanded || isModal
-                                  ? ""
-                                  : "md:flex-row md:justify-between",
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  "flex w-full flex-row items-center justify-between gap-2",
-                                  isModelBrowserExpanded || isModal
-                                    ? ""
-                                    : "md:w-1/3",
-                                )}
-                              >
-                                {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
-                                <p
-                                  className={cn(
-                                    "overflow-hidden truncate whitespace-nowrap",
-                                    isModal && "cursor-pointer hover:underline",
-                                  )}
-                                  onClick={() => {
-                                    if (isModal) {
-                                      sendEventToCD("zoom_to_node", {
-                                        nodeId: workflowNode.id,
-                                        position: workflowNode.pos,
-                                      });
-                                    }
-                                  }}
-                                >
-                                  {`${workflowNode.type} #${workflowNode.id}`}
-                                </p>
-                                <HandleNodeStatus
-                                  category={category}
-                                  nodeData={workflowNode}
-                                />
-                              </div>
-                              <div
-                                className={cn(
-                                  "w-full",
-                                  isModelBrowserExpanded || isModal
-                                    ? ""
-                                    : "md:w-1/2",
-                                )}
-                              >
-                                <ModelSelectComboBox
-                                  selectedNode={workflowNode}
-                                  setSelectedNode={setSelectedNode}
-                                  fileList={fileList}
-                                />
-                              </div>
-                            </div>
-                          ))}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ),
-                )}
-            </Accordion>
+              {accordionValues.length > 0 ? "Collapse All" : "Expand All"}
+              <ChevronsUpDown className="ml-1 h-3 w-3" />
+            </Button>
           </div>
-        </ScrollArea>
+        </div>
+        <div className="space-y-3">
+          {/* Show incomplete models first */}
+          <Accordion
+            type="multiple"
+            value={accordionValues}
+            onValueChange={setAccordionValues}
+            className="space-y-3"
+          >
+            {itemsToDisplay.map(
+              ({
+                category,
+                node,
+                success,
+                total,
+                successPercentage,
+                matchingNodes,
+                isComplete,
+              }, index) => (
+                <>
+                  {/* Add separator before first complete item */}
+                  {showCompleted &&
+                    index === categorizedItems.incomplete.length &&
+                    categorizedItems.incomplete.length > 0 &&
+                    categorizedItems.complete.length > 0 && (
+                      <div className="relative my-4">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-border" />
+                        </div>
+                        <div className="relative flex justify-center bg-background px-2 text-xs">
+                          <span className="text-muted-foreground">Completed Models</span>
+                        </div>
+                      </div>
+                    )}
+                  <AccordionItem value={node.type} key={node.type} className="border rounded-lg">
+                    <AccordionTrigger className="px-3 py-2 hover:no-underline">
+                      <div className="flex w-full flex-row items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {category}
+                          </span>
+                          {success < total ? (
+                            <span className="text-xs text-yellow-600 dark:text-yellow-500">
+                              {total - success} missing
+                            </span>
+                          ) : (
+                            <span className="text-xs text-green-600 dark:text-green-500">Complete</span>
+                          )}
+                        </div>
+                        <span className="mr-1 text-xs text-muted-foreground">
+                          ({success}/{total})
+                        </span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-3 pb-2 pt-0">
+                      {matchingNodes
+                        .sort((a, b) => a.id - b.id)
+                        .map((workflowNode, index) => (
+                          <div
+                            key={`${workflowNode.type}-${workflowNode.id}-${index}`}
+                            className={cn(
+                              "flex gap-2 py-1.5",
+                              index > 0 && "border-t",
+                              isModelBrowserExpanded || isModal
+                                ? "flex-col items-start"
+                                : "items-center justify-between"
+                            )}
+                          >
+                            <div className={cn(
+                              "flex items-center gap-2",
+                              isModelBrowserExpanded || isModal ? "w-full" : "flex-1"
+                            )}>
+                              {/* biome-ignore lint/a11y/useKeyWithClickEvents: <explanation> */}
+                              <p
+                                className={cn(
+                                  "text-xs text-muted-foreground",
+                                  isModal && "cursor-pointer hover:underline",
+                                )}
+                                onClick={() => {
+                                  if (isModal) {
+                                    sendEventToCD("zoom_to_node", {
+                                      nodeId: workflowNode.id,
+                                      position: workflowNode.pos,
+                                    });
+                                  }
+                                }}
+                              >
+                                #{workflowNode.id}
+                              </p>
+                              <HandleNodeStatus
+                                category={category}
+                                nodeData={workflowNode}
+                              />
+                            </div>
+                            <div className={cn(
+                              "flex items-center",
+                              isModelBrowserExpanded || isModal
+                                ? "w-full justify-start"
+                                : "flex-1 justify-end"
+                            )}>
+                              <ModelSelectComboBox
+                                workflowNode={workflowNode}
+                                updateNodeInWorkflow={updateNodeInWorkflow}
+                                fileList={fileList}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                </>
+              ))}
+          </Accordion>
+        </div>
       </div>
     );
   },
@@ -893,22 +863,24 @@ export function extractModelPathWithoutTopDir(path: string) {
 }
 
 export function ModelSelectComboBox({
-  selectedNode,
-  setSelectedNode,
+  workflowNode,
+  updateNodeInWorkflow,
   fileList,
 }: {
-  selectedNode: WorkflowNode;
-  setSelectedNode: (node: WorkflowNode) => void;
+  workflowNode: WorkflowNode;
+  updateNodeInWorkflow: (nodeId: number, widgetValues: string[]) => void;
   fileList: FileList[];
 }) {
   const [openStates, setOpenStates] = useState<boolean[]>([]);
+  const [selectorDialogOpen, setSelectorDialogOpen] = useState(false);
+  const [selectedInputIndex, setSelectedInputIndex] = useState<number>(0);
 
   // Find the category for this node type
   const nodeCategory = useMemo(() => {
     return Object.entries(NodeToBeFocus).find(
-      ([_, config]) => config.type === selectedNode.type,
+      ([_, config]) => config.type === workflowNode.type,
     )?.[0];
-  }, [selectedNode.type]);
+  }, [workflowNode.type]);
 
   // Get files for this category
   const categoryFiles = useMemo(() => {
@@ -948,101 +920,51 @@ export function ModelSelectComboBox({
     return Array.from(uniqueFiles.values());
   }, [categoryFiles]);
 
+  const handleModelSelect = (modelPath: string) => {
+    // Create a copy of the widgets_values array
+    const newWidgetsValues = [...workflowNode.widgets_values];
+
+    // Ensure the array is long enough
+    while (newWidgetsValues.length <= selectedInputIndex) {
+      newWidgetsValues.push("");
+    }
+
+    // Extract model path without top directory (to match existing format)
+    const displayPath = extractModelPathWithoutTopDir(modelPath);
+    newWidgetsValues[selectedInputIndex] = displayPath;
+
+    // Directly update the workflow with the new widget values
+    updateNodeInWorkflow(workflowNode.id, newWidgetsValues);
+    setSelectorDialogOpen(false);
+  };
+
   const renderComboBox = (index: number) => {
-    const currentValue = selectedNode.widgets_values[index] || "";
+    const currentValue = workflowNode.widgets_values[index] || "";
     const isValid = processedFiles.some(
       (file) => file.name === currentValue || file.displayPath === currentValue,
     );
 
     return (
-      <div
-        key={`combobox-${selectedNode.id}-${index}`}
-        className="mb-2 last:mb-0"
-      >
-        <Popover
-          open={openStates[index]}
-          onOpenChange={(open) => {
-            const newStates = [...openStates];
-            newStates[index] = open;
-            setOpenStates(newStates);
+      <div key={`combobox-${workflowNode.id}-${index}`}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setSelectedInputIndex(index);
+            setSelectorDialogOpen(true);
           }}
+          className={cn(
+            "h-7 min-w-[200px] max-w-[300px] justify-between px-2 text-xs",
+            !currentValue || isValid
+              ? ""
+              : "border-yellow-500 bg-yellow-50/50 dark:border-yellow-500 dark:bg-yellow-900/20",
+          )}
         >
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              role="combobox"
-              aria-expanded={openStates[index]}
-              className={cn(
-                "w-full justify-between rounded-md",
-                !currentValue || isValid
-                  ? ""
-                  : "border-yellow-500 bg-yellow-50/80 dark:border-yellow-500 dark:bg-yellow-900/50",
-              )}
-            >
-              <span className="truncate">
-                {currentValue ? currentValue : "Select model..."}
-              </span>
-              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Search files..." />
-              <CommandList>
-                <CommandEmpty>No files found.</CommandEmpty>
-                <CommandGroup>
-                  {processedFiles.map((file) => (
-                    <CommandItem
-                      key={`${file.name}-${index}`}
-                      value={file.name}
-                      onSelect={() => {
-                        // Create a copy of the widgets_values array
-                        const newWidgetsValues = [
-                          ...selectedNode.widgets_values,
-                        ];
-
-                        // Ensure the array is long enough
-                        while (newWidgetsValues.length <= index) {
-                          newWidgetsValues.push("");
-                        }
-
-                        // Store the model path without the top directory
-                        // This preserves subdirectories like "upscale/x4-upscaler-ema.safetensors"
-                        newWidgetsValues[index] = file.displayPath;
-
-                        // Create a new node object with the updated widgets_values
-                        const updatedNode = {
-                          ...selectedNode,
-                          widgets_values: newWidgetsValues,
-                        };
-
-                        // Update the selected node
-                        setSelectedNode(updatedNode);
-
-                        // Close the popover
-                        const newStates = [...openStates];
-                        newStates[index] = false;
-                        setOpenStates(newStates);
-                      }}
-                    >
-                      <div className="flex items-center">
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            currentValue === file.displayPath
-                              ? "opacity-100"
-                              : "opacity-0",
-                          )}
-                        />
-                        <span>{file.displayPath}</span>
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          </PopoverContent>
-        </Popover>
+          <span className="truncate">
+            {currentValue ? currentValue : "Select model..."}
+          </span>
+          <ChevronsUpDown className="ml-1 h-3 w-3 shrink-0 opacity-50" />
+        </Button>
       </div>
     );
   };
@@ -1050,91 +972,27 @@ export function ModelSelectComboBox({
   // If no category files are available, show a message
   if (!categoryFiles || categoryFiles.filePaths.length === 0) {
     return (
-      <div className="text-muted-foreground text-sm">
-        No models available for this node type.
+      <div className="text-muted-foreground text-xs">
+        No models available
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-0.5">
-      {Array.from({ length: numInputs }, (_, index) => renderComboBox(index))}
-    </div>
-  );
-}
+    <>
+      <div className="flex items-center gap-1">
+        {Array.from({ length: numInputs }, (_, index) => renderComboBox(index))}
+      </div>
 
-// ---------------deprecated----------------
-function NodeDisplay({
-  selectedNode,
-  setSelectedNode,
-  fileList,
-}: {
-  selectedNode: WorkflowNode;
-  setSelectedNode: (node: WorkflowNode) => void;
-  fileList: FileList[];
-}) {
-  return (
-    <div className="relative p-4 md:p-10">
-      <div
-        className="-z-[1] absolute inset-0 min-h-[100px] overflow-hidden border border-neutral-600 bg-[#212121] shadow-lg"
-        style={{
-          backgroundImage: `
-              linear-gradient(to right, #1B1B1B 1px, transparent 1px),
-              linear-gradient(to bottom, #1B1B1B 1px, transparent 1px)
-            `,
-          backgroundSize: "20px 20px",
-        }}
+      <ModelSelectorDialog
+        open={selectorDialogOpen}
+        onOpenChange={setSelectorDialogOpen}
+        onModelSelect={handleModelSelect}
+        currentValue={workflowNode.widgets_values[selectedInputIndex] || ""}
+        category={nodeCategory}
+        title={`Select ${nodeCategory ? nodeCategory.charAt(0).toUpperCase() + nodeCategory.slice(1) : "Model"}`}
+        description={`Browse and select a model for ${workflowNode.type}`}
       />
-
-      <div className="flex justify-end px-2 py-1">
-        <h3 className="rounded-[8px] bg-green-950 px-2 text-white text-xs">
-          #{selectedNode.id}
-        </h3>
-      </div>
-      <div className="min-h-[100px] rounded-xl border border-neutral-600 bg-neutral-700 shadow-lg outline outline-gray-400 outline-offset-4">
-        {/* Header */}
-        <div className="flex items-center gap-3 border-neutral-800 border-b px-4 py-2">
-          <div className="h-3 w-3 rounded-full bg-neutral-600" />
-          <h3 className="text-gray-300">{selectedNode.type}</h3>
-        </div>
-
-        {/* Inputs and Outputs */}
-        <div className="flex flex-row justify-between px-4 py-2">
-          {/* Inputs */}
-          <div className="flex flex-col gap-1">
-            {selectedNode.inputs?.map((input, index) => (
-              <div
-                key={`input-${input.name}-${index}`}
-                className="flex items-center gap-2"
-              >
-                <div className="h-2 w-2 rounded-full bg-purple-400" />
-                <span className="text-gray-300 text-sm">{input.name}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Outputs */}
-          <div className="flex flex-col items-end gap-1">
-            {selectedNode.outputs?.map((output, index) => (
-              <div
-                key={`output-${output.name}-${index}`}
-                className="flex items-center gap-2"
-              >
-                <span className="text-gray-300 text-sm">{output.name}</span>
-                <div className="h-2 w-2 rounded-full bg-pink-400" />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-4 pb-4">
-          <ModelSelectComboBox
-            selectedNode={selectedNode}
-            setSelectedNode={setSelectedNode}
-            fileList={fileList}
-          />
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

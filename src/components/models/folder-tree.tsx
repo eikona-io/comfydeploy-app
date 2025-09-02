@@ -71,6 +71,10 @@ interface FileEntry {
 interface FolderTreeProps {
   className?: string;
   onAddModel: (folderPath: string) => void;
+  onModelSelect?: (modelPath: string) => void;
+  selectorMode?: boolean;
+  selectedPath?: string;
+  filterByCategory?: string;
 }
 
 interface TreeNode {
@@ -183,12 +187,18 @@ function TreeNode({
   parentMatched = false,
   operations,
   onAddModel,
+  onModelSelect,
+  selectorMode = false,
+  selectedPath,
 }: {
   node: TreeNode;
   search: string;
   parentMatched?: boolean;
   operations: FileOperations;
   onAddModel: (folderPath: string) => void;
+  onModelSelect?: (modelPath: string) => void;
+  selectorMode?: boolean;
+  selectedPath?: string;
 }) {
   const [isOpen, setIsOpen] = useState(!!search);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
@@ -436,9 +446,18 @@ function TreeNode({
             "flex items-center gap-2 rounded px-2 py-1 hover:bg-accent",
             node.isVirtual && "text-muted-foreground",
             node.type === 2 &&
-              "border border-transparent hover:border hover:border-blue-200 hover:border-dashed hover:bg-blue-50 dark:hover:border-blue-700 dark:hover:bg-blue-900/50",
+            "border border-transparent hover:border hover:border-blue-200 hover:border-dashed hover:bg-blue-50 dark:hover:border-blue-700 dark:hover:bg-blue-900/50",
+            selectorMode && node.type === 1 && selectedPath === node.path && "bg-blue-100 dark:bg-blue-900/50"
           )}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            if (selectorMode && node.type === 1) {
+              // In selector mode, select the file
+              onModelSelect?.(node.path);
+            } else if (node.type === 2) {
+              // For folders, toggle open/close
+              setIsOpen(!isOpen);
+            }
+          }}
         >
           {node.type === 2 ? (
             <>
@@ -837,6 +856,9 @@ function TreeNode({
               parentMatched={nodeMatches || parentMatched}
               operations={operations}
               onAddModel={onAddModel}
+              onModelSelect={onModelSelect}
+              selectorMode={selectorMode}
+              selectedPath={selectedPath}
             />
           ))}
         </div>
@@ -903,7 +925,14 @@ function mergeNodes(
   return result;
 }
 
-export function FolderTree({ className, onAddModel }: FolderTreeProps) {
+export function FolderTree({
+  className,
+  onAddModel,
+  onModelSelect,
+  selectorMode = false,
+  selectedPath,
+  filterByCategory
+}: FolderTreeProps) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useQueryState<ModelFilter>("model_view", {
@@ -1389,6 +1418,9 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                   search={search}
                   operations={operations}
                   onAddModel={onAddModel}
+                  onModelSelect={onModelSelect}
+                  selectorMode={selectorMode}
+                  selectedPath={selectedPath}
                 />
               ))}
 
@@ -1419,6 +1451,9 @@ export function FolderTree({ className, onAddModel }: FolderTreeProps) {
                   search={search}
                   operations={operations}
                   onAddModel={onAddModel}
+                  onModelSelect={onModelSelect}
+                  selectorMode={selectorMode}
+                  selectedPath={selectedPath}
                 />
               ))}
           </div>

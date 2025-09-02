@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Star } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -32,6 +32,12 @@ export function CustomNodeList({
                     <span className="max-w-[100px] truncate inline-block">
                       {node.data?.name}
                     </span>
+                    {node.data?.meta?.stargazers_count !== undefined && (
+                      <span className="inline-flex items-center gap-0.5">
+                        <Star className="h-2.5 w-2.5" />
+                        {node.data.meta.stargazers_count.toLocaleString()}
+                      </span>
+                    )}
                     <ExternalLink className="h-2.5 w-2.5" />
                   </a>
                 ) : node.type === "custom-node-manager" ? (
@@ -80,7 +86,15 @@ export function CustomNodeList({
                           <span className="truncate flex-1">
                             {node.data?.name}
                           </span>
-                          <ExternalLink className="h-2.5 w-2.5 flex-shrink-0 ml-2" />
+                          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                            {node.data?.meta?.stargazers_count !== undefined && (
+                              <span className="inline-flex items-center gap-0.5">
+                                <Star className="h-2.5 w-2.5" />
+                                {node.data.meta.stargazers_count.toLocaleString()}
+                              </span>
+                            )}
+                            <ExternalLink className="h-2.5 w-2.5" />
+                          </div>
                         </a>
                       ) : node.type === "custom-node-manager" ? (
                         <span
