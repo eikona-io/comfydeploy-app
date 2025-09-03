@@ -1,3 +1,9 @@
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { Check, Clock, Globe, Settings2Icon, Trash, X } from "lucide-react";
+import { useQueryState } from "nuqs";
+import React, { useEffect, useState } from "react";
+import { create } from "zustand";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { LoadingWrapper } from "@/components/loading-wrapper";
 import { Badge } from "@/components/ui/badge";
@@ -25,20 +31,15 @@ import { RunOutputs } from "@/components/workflows/RunOutputs";
 import { api } from "@/lib/api";
 import { getRelativeTime } from "@/lib/get-relative-time";
 import { cn } from "@/lib/utils";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { Check, Clock, Globe, Settings2Icon, Trash, X } from "lucide-react";
-import { useQueryState } from "nuqs";
-import React, { useEffect, useState } from "react";
-import { create } from "zustand";
 import type { Deployment } from "../deployment/deployment-page";
 import {
+  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { DropdownMenu, DropdownMenuTrigger } from "../ui/dropdown-menu";
 import {
   getEnvColor,
   useWorkflowDeployments,
@@ -175,9 +176,9 @@ export function useRuns(props: {
     initialPageParam: 0,
     initialData: props.defaultData
       ? {
-        pages: [props.defaultData],
-        pageParams: [0],
-      }
+          pages: [props.defaultData],
+          pageParams: [0],
+        }
       : undefined,
     refetchOnWindowFocus: false,
   });
@@ -574,7 +575,11 @@ function RunRow({
           <OutputPreview runId={run.id} />
         </div>
         <div className="col-span-2 flex items-center justify-end gap-2">
-          <LiveStatus run={run} refetch={refetch} hideProgressAndStatus={true} />
+          <LiveStatus
+            run={run}
+            refetch={refetch}
+            hideProgressAndStatus={true}
+          />
         </div>
       </div>
     </div>
@@ -696,7 +701,7 @@ function DeploymentVersion(props: { deploymentId?: string }) {
       )}
     >
       {deployment.environment === "public-share" ||
-        deployment.environment === "community-share" ? (
+      deployment.environment === "community-share" ? (
         <div className="flex items-center gap-1">
           <Globe className="h-3 w-3" />
           {/* {deployment.environment} */}
@@ -1061,14 +1066,14 @@ export function FilterDropdown({
                     onValueChange={(value) =>
                       handleTimeFilterChange(Number.parseInt(value), undefined)
                     }
-                    // @ts-ignore
+                    // @ts-expect-error
                     value={
                       filterFromTime
                         ? Math.round(
-                          (Math.floor(Date.now() / 1000) -
-                            Number.parseInt(filterFromTime)) /
-                          60,
-                        ).toString()
+                            (Math.floor(Date.now() / 1000) -
+                              Number.parseInt(filterFromTime)) /
+                              60,
+                          ).toString()
                         : null
                     }
                   >
@@ -1076,19 +1081,19 @@ export function FilterDropdown({
                       <SelectValue>
                         {filterFromTime
                           ? [
-                            { label: "Last 2 days", value: "2880" },
-                            { label: "Last 7 days", value: "10080" },
-                            { label: "Last 14 days", value: "20160" },
-                            { label: "Last 30 days", value: "43200" },
-                          ].find(
-                            (option) =>
-                              option.value ===
-                              Math.round(
-                                (Math.floor(Date.now() / 1000) -
-                                  Number.parseInt(filterFromTime)) /
-                                60,
-                              ).toString(),
-                          )?.label || "More"
+                              { label: "Last 2 days", value: "2880" },
+                              { label: "Last 7 days", value: "10080" },
+                              { label: "Last 14 days", value: "20160" },
+                              { label: "Last 30 days", value: "43200" },
+                            ].find(
+                              (option) =>
+                                option.value ===
+                                Math.round(
+                                  (Math.floor(Date.now() / 1000) -
+                                    Number.parseInt(filterFromTime)) /
+                                    60,
+                                ).toString(),
+                            )?.label || "More"
                           : "More"}
                       </SelectValue>
                     </SelectTrigger>
@@ -1135,7 +1140,7 @@ export function FilterDropdown({
               )}
             </div>
 
-            {hasActiveFilters && (
+            {hasActiveFilters && !isDeploymentPage && (
               <div className="border-t pt-1">
                 <DropdownMenuItem
                   className="w-full justify-between text-red-500 hover:text-red-600"
