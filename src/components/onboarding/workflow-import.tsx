@@ -1,4 +1,4 @@
-import { useNavigate } from "@tanstack/react-router";
+import { useMatchRoute, useNavigate } from "@tanstack/react-router";
 import {
     Check,
     CheckCircle2,
@@ -62,6 +62,8 @@ import {
 import { FileURLRender } from "../workflows/OutputRender";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useQuery } from "@tanstack/react-query";
+import { Route } from "@/routes/workflows";
 
 // Add these interfaces
 export interface StepValidation {
@@ -157,16 +159,6 @@ interface CustomNodeData {
         stargazers_count?: number;
     };
 }
-
-interface StepNavigation {
-    next: number | null; // null means end of flow
-    prev: number | null; // null means start of flow
-}
-
-// Add type for search params
-type SearchParams = {
-    workflow_json?: string;
-};
 
 // Random name generator for workflows
 function generateRandomWorkflowName(): string {
@@ -391,6 +383,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
             machineName: generateRandomMachineName(
                 currentValidation.workflowName || "",
             ),
+            workflowJson: validation.workflowJson || validation.importJson,
         });
     },
 
@@ -451,8 +444,7 @@ export default function WorkflowImport() {
     const sub = useCurrentPlan();
     const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
-    // Get query parameters for shared workflow import
-    const [sharedSlug] = useQueryState("shared_slug");
+    const { shared_slug: sharedSlug } = Route.useSearch();
 
     const validation = useImportWorkflowStore();
 
@@ -467,91 +459,100 @@ export default function WorkflowImport() {
         hashesLoading,
     ]);
 
+    const { data: sharedWorkflow, isLoading: isSharedWorkflowLoading } = useQuery({
+        queryKey: ["shared-workflow", sharedSlug],
+        enabled: !!sharedSlug && !validation.importJson,
+        queryFn: () => {
+            return api({
+                url: `shared-workflows/${sharedSlug}`,
+            });
+        },
+    });
+
     // Handle shared workflow import
     useEffect(() => {
-        if (sharedSlug && !validation.importJson) {
-            const fetchSharedWorkflow = async () => {
-                try {
-                    const sharedWorkflow = await api({
-                        url: `shared-workflows/${sharedSlug}`,
-                    });
+        if (!sharedWorkflow) return;
+        if (sharedWorkflow?.workflow_export) {
+            const workflowJson = JSON.stringify(
+                sharedWorkflow.workflow_export,
+                null,
+                2,
+            );
 
-                    if (sharedWorkflow?.workflow_export) {
-                        const workflowJson = JSON.stringify(
-                            sharedWorkflow.workflow_export,
-                            null,
-                            2,
-                        );
+            // Extract environment data from shared workflow if it exists
+            const environment = sharedWorkflow.workflow_export.environment;
+            const environmentFields: Partial<StepValidation> = {};
 
-                        // Extract environment data from shared workflow if it exists
-                        const environment = sharedWorkflow.workflow_export.environment;
-                        const environmentFields: Partial<StepValidation> = {};
-
-                        if (environment) {
-                            // Map environment fields to validation state
-                            if (environment.comfyui_version) {
-                                environmentFields.comfyUiHash = environment.comfyui_version;
-                                environmentFields.selectedComfyOption = "custom";
-                            }
-                            if (environment.gpu) {
-                                environmentFields.gpuType = environment.gpu;
-                            }
-                            if (environment.python_version) {
-                                environmentFields.python_version = environment.python_version;
-                            }
-                            if (environment.base_docker_image) {
-                                environmentFields.base_docker_image =
-                                    environment.base_docker_image;
-                            }
-                            if (environment.install_custom_node_with_gpu !== undefined) {
-                                environmentFields.install_custom_node_with_gpu =
-                                    environment.install_custom_node_with_gpu;
-                            }
-                            if (environment.docker_command_steps) {
-                                environmentFields.docker_command_steps =
-                                    environment.docker_command_steps;
-                            }
-
-                            environmentFields.hasEnvironment = true;
-                        }
-
-                        validation.setValidation({
-                            workflowName: sharedWorkflow.title || validation.workflowName,
-                            importOption: "import",
-                            importJson: workflowJson,
-                            ...environmentFields,
-                        });
-
-                        if (environment) {
-                            const configItems = [];
-                            if (environment.comfyui_version)
-                                configItems.push("ComfyUI version");
-                            if (environment.gpu) configItems.push("GPU type");
-                            if (environment.python_version)
-                                configItems.push("Python version");
-                            if (environment.docker_command_steps)
-                                configItems.push("custom nodes");
-
-                            const environmentMessage =
-                                configItems.length > 0
-                                    ? ` with pre-configured ${configItems.join(", ")}`
-                                    : " with environment configuration";
-                            toast.success(
-                                `Imported workflow: ${sharedWorkflow.title}${environmentMessage}`,
-                            );
-                        } else {
-                            toast.success(`Imported workflow: ${sharedWorkflow.title}`);
-                        }
-                    }
-                } catch (error) {
-                    console.error("Failed to fetch shared workflow:", error);
-                    toast.error("Failed to load shared workflow");
+            if (environment) {
+                // Map environment fields to validation state
+                if (environment.comfyui_version) {
+                    environmentFields.comfyUiHash = environment.comfyui_version;
+                    environmentFields.selectedComfyOption = "custom";
                 }
-            };
+                if (environment.gpu) {
+                    environmentFields.gpuType = environment.gpu;
+                }
+                if (environment.python_version) {
+                    environmentFields.python_version = environment.python_version;
+                }
+                if (environment.base_docker_image) {
+                    environmentFields.base_docker_image =
+                        environment.base_docker_image;
+                }
+                if (environment.install_custom_node_with_gpu !== undefined) {
+                    environmentFields.install_custom_node_with_gpu =
+                        environment.install_custom_node_with_gpu;
+                }
+                if (environment.docker_command_steps) {
+                    environmentFields.docker_command_steps =
+                        environment.docker_command_steps;
+                }
 
-            fetchSharedWorkflow();
+                environmentFields.hasEnvironment = true;
+            }
+
+            validation.setValidation({
+                workflowName: sharedWorkflow.title || validation.workflowName,
+                importOption: "import",
+                importJson: workflowJson,
+                ...environmentFields,
+            });
+
+            if (environment) {
+                const configItems = [];
+                if (environment.comfyui_version)
+                    configItems.push("ComfyUI version");
+                if (environment.gpu) configItems.push("GPU type");
+                if (environment.python_version)
+                    configItems.push("Python version");
+                if (environment.docker_command_steps)
+                    configItems.push("custom nodes");
+
+                const environmentMessage =
+                    configItems.length > 0
+                        ? ` with pre-configured ${configItems.join(", ")}`
+                        : " with environment configuration";
+                toast.success(
+                    `Imported workflow: ${sharedWorkflow.title}${environmentMessage}`,
+                );
+            } else {
+                toast.success(`Imported workflow: ${sharedWorkflow.title}`);
+            }
         }
-    }, [sharedSlug, validation.importJson]);
+    }, [sharedWorkflow]);
+
+    if (isSharedWorkflowLoading) {
+        return (
+            <div className="flex h-[400px] items-center justify-center">
+                <div className="flex flex-col items-center gap-2">
+                    <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                    <p className="text-muted-foreground text-sm">
+                        Loading shared workflow...
+                    </p>
+                </div>
+            </div>
+        );
+    }
 
     // Show loading while hashes are being fetched
     if (hashesLoading) {
@@ -567,140 +568,6 @@ export default function WorkflowImport() {
         );
     }
 
-    // const createWorkflow = async (machineId?: string) => {
-    //     const requestBody = {
-    //         name: validation.workflowName,
-    //         workflow_json:
-    //             validation.importOption === "import"
-    //                 ? validation.importJson
-    //                 : validation.workflowJson,
-    //         ...(validation.workflowApi && { workflow_api: validation.workflowApi }),
-    //         ...(machineId && { machine_id: machineId }),
-    //     };
-
-    //     const result = await api({
-    //         url: "workflow",
-    //         init: {
-    //             method: "POST",
-    //             body: JSON.stringify(requestBody),
-    //         },
-    //     });
-
-    //     return result;
-    // };
-
-    // // Define steps configuration
-    // const STEPS: Step<StepValidation>[] = [
-
-    //     {
-    //         id: 4,
-    //         title: "Model Check",
-    //         component: WorkflowModelCheck,
-    //         validate: (validation) => {
-    //             if (validation.machineOption === "new") {
-    //                 if (!validation.machineName?.trim()) {
-    //                     return { isValid: false, error: "Please enter a machine name" };
-    //                 }
-    //                 if (!validation.comfyUiHash?.trim()) {
-    //                     return { isValid: false, error: "ComfyUI version is required" };
-    //                 }
-    //             }
-    //             return { isValid: true };
-    //         },
-    //         actions: {
-    //             onNext: async (validation) => {
-    //                 try {
-    //                     let response: any;
-    //                     let machineId: string;
-
-    //                     if (validation.machineOption === "existing") {
-    //                         if (!validation.selectedMachineId) {
-    //                             throw new Error("No machine selected");
-    //                         }
-    //                         machineId = validation.selectedMachineId;
-
-    //                         // Update existing machine if needed
-    //                         if (validation.machineConfig) {
-    //                             if (validation.machineConfig.type !== "comfy-deploy-serverless") {
-    //                                 await api({
-    //                                     url: `machine/custom/${validation.selectedMachineId}`,
-    //                                     init: {
-    //                                         method: "PATCH",
-    //                                         body: JSON.stringify({
-    //                                             name: validation.machineConfig.name,
-    //                                             type: validation.machineConfig.type,
-    //                                             endpoint: validation.machineConfig.endpoint,
-    //                                             auth_token: validation.machineConfig.auth_token,
-    //                                         }),
-    //                                     },
-    //                                 });
-    //                             } else {
-    //                                 await api({
-    //                                     url: `machine/serverless/${validation.selectedMachineId}`,
-    //                                     init: {
-    //                                         method: "PATCH",
-    //                                         body: JSON.stringify(validation.machineConfig),
-    //                                     },
-    //                                 });
-    //                             }
-    //                         }
-    //                     } else {
-    //                         // Create new machine
-    //                         if (!validation.machineName || !validation.comfyUiHash || !validation.gpuType) {
-    //                             throw new Error("Missing required fields for new machine");
-    //                         }
-
-    //                         const finalDockerSteps = ensureComfyUIDeployInSteps(
-    //                             validation.docker_command_steps,
-    //                             latestHashes,
-    //                         );
-
-    //                         response = await api({
-    //                             url: "machine/serverless",
-    //                             init: {
-    //                                 method: "POST",
-    //                                 body: JSON.stringify({
-    //                                     name: validation.machineName,
-    //                                     comfyui_version: validation.comfyUiHash,
-    //                                     gpu: validation.gpuType,
-    //                                     docker_command_steps: finalDockerSteps,
-    //                                     install_custom_node_with_gpu: validation.install_custom_node_with_gpu,
-    //                                     base_docker_image: validation.base_docker_image,
-    //                                     python_version: validation.python_version,
-    //                                     concurrency_limit: 1,
-    //                                 }),
-    //                             },
-    //                         });
-
-    //                         machineId = response.id;
-    //                         toast.success(`${validation.machineName} created successfully!`);
-    //                     }
-
-    //                     // Create workflow with the machine ID
-    //                     const workflowResult = await createWorkflow(machineId);
-
-    //                     toast.success(`Workflow "${validation.workflowName}" created successfully!`);
-
-    //                     if (workflowResult.workflow_id) {
-    //                         navigate({
-    //                             to: "/workflows/$workflowId/$view",
-    //                             params: {
-    //                                 workflowId: workflowResult.workflow_id,
-    //                                 view: "workspace",
-    //                             },
-    //                         });
-    //                     }
-
-    //                     return true;
-    //                 } catch (error) {
-    //                     toast.error(`Failed to create: ${error}`);
-    //                     return false;
-    //                 }
-    //             },
-    //         },
-    //     },
-    // ];
-
     const handleFinish = async () => {
         try {
             let machineId = validation.selectedMachineId;
@@ -713,18 +580,18 @@ export default function WorkflowImport() {
                 );
 
                 // For free plan, filter to only ComfyUI Deploy nodes
-                if (isFreePlan && finalDockerSteps?.steps) {
-                    const filteredSteps = finalDockerSteps.steps.filter((step: any) => {
-                        if (step.type !== "custom-node") return false;
-                        const url = step.data?.url?.toLowerCase() || "";
-                        return url.includes("github.com/bennykok/comfyui-deploy");
-                    });
+                // if (isFreePlan && finalDockerSteps?.steps) {
+                //     const filteredSteps = finalDockerSteps.steps.filter((step: any) => {
+                //         if (step.type !== "custom-node") return false;
+                //         const url = step.data?.url?.toLowerCase() || "";
+                //         return url.includes("github.com/bennykok/comfyui-deploy");
+                //     });
 
-                    finalDockerSteps = {
-                        ...finalDockerSteps,
-                        steps: filteredSteps
-                    };
-                }
+                //     finalDockerSteps = {
+                //         ...finalDockerSteps,
+                //         steps: filteredSteps
+                //     };
+                // }
 
                 const machineData = {
                     name: validation.machineName,
@@ -831,6 +698,8 @@ function Import() {
 
     const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
 
+    const navigate = useNavigate();
+
     // Get the currently selected template for display
     const selectedTemplate =
         validation.importOption === "default" && validation.workflowJson
@@ -879,7 +748,17 @@ function Import() {
                     validation.importJson.trim() !== "" ? (
                     <ImportedWorkflowView
                         validation={validation}
-                        onClear={() => validation.reset(validation.latestHashes)}
+                        onClear={() => {
+                            navigate({
+                                to: "/workflows",
+                                search: {
+                                    view: "import",
+                                    shared_slug: undefined,
+                                    shared_workflow_id: undefined,
+                                },
+                            });
+                            validation.reset(validation.latestHashes)
+                        }}
                     />
                 ) : (
                     <ImportView />
