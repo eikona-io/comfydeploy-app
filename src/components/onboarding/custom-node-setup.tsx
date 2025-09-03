@@ -1428,12 +1428,14 @@ function CustomNodeCard({
               >
                 <ExternalLink size={12} />
               </Link>
-              <span className="mx-1.5 text-muted-foreground">•</span>
               {node.data.meta?.stargazers_count !== undefined && (
-                <span className="inline-flex shrink-0 items-center gap-0.5 text-2xs text-gray-500">
-                  <Star size={10} />
-                  {node.data.meta.stargazers_count.toLocaleString()}
-                </span>
+                <>
+                  <span className="mx-1.5 text-muted-foreground">•</span>
+                  <span className="inline-flex shrink-0 items-center gap-0.5 text-2xs text-gray-500">
+                    <Star size={10} />
+                    {node.data.meta.stargazers_count.toLocaleString()}
+                  </span>
+                </>
               )}
             </div>
           </div>
