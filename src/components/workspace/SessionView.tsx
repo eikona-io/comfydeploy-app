@@ -159,7 +159,7 @@ export function useSession(sessionId: string | undefined | null) {
     },
     refetchInterval: (query) => {
       // console.log("refetchInterval", query);
-      if (query.state.error && query.state.error.message.includes("404") ) {
+      if (query.state.error && query.state.error.message.includes("404")) {
         return false;
       }
 
@@ -202,7 +202,7 @@ export function SessionCreator(props: {
     queryFn: async ({ queryKey }) => {
       if (!url) return null;
       try {
-        const response = await fetch(url, { method: "HEAD" });
+        const response = await fetch(url, { method: "OPTIONS" });
         if (!response.ok) throw new Error("Failed to connect");
 
         // Set hasInitiallyConnected to true on first successful connection
