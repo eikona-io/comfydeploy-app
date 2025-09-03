@@ -231,7 +231,8 @@ export function WorkflowModelCheck({
       if (nodeIndex !== -1) {
         // Update the specific node's widget values
         parsedWorkflow.nodes[nodeIndex].widgets_values = widgetValues;
-        useImportWorkflowStore.getState().setWorkflowJson(parsedWorkflow);
+        useImportWorkflowStore.getState().setWorkflowJson(JSON.stringify(parsedWorkflow));
+        // console.log(useImportWorkflowStore.getState());
       }
     } catch (e) {
       console.error("Error updating workflow:", e);
@@ -277,15 +278,13 @@ export function WorkflowModelCheck({
     }
   }, [workflow]);
 
-  const handleAddModel = (folderPath: string) => {
-    setSelectedFolderPath(folderPath);
-    setShowAddModelDialog(true);
-  };
+  if (!workflow) return null;
+
 
   // Hide entire component if no nodes to focus on
-  if (!nodesToFocus || nodesToFocus.length === 0) {
-    return null;
-  }
+  // if (!nodesToFocus || nodesToFocus.length === 0) {
+  //   return null;
+  // }
 
   return (
     <div className="flex h-full gap-4">
@@ -624,19 +623,7 @@ const OptionList = memo(
       },
     );
 
-    if (!workflowNodeList || workflowNodeList.length === 0)
-      return <div>You are all set!</div>;
-    if (publicFiles === undefined && privateFiles === undefined)
-      return (
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <Skeleton
-              key={`skeleton-${index}-${Math.random()}`}
-              className="h-[60px] w-full"
-            />
-          ))}
-        </div>
-      );
+
 
     // Separate completed and incomplete categories
     const categorizedItems = useMemo(() => {
@@ -657,7 +644,9 @@ const OptionList = memo(
             isComplete: successPercentage === 100,
           };
         })
-        .filter((item) => item.matchingNodes?.length > 0);
+        .filter((item) => item?.matchingNodes?.length ?? 0 > 0);
+
+      console.log(items);
 
       return {
         incomplete: items.filter((item) => !item.isComplete),
@@ -668,6 +657,21 @@ const OptionList = memo(
     const itemsToDisplay = showCompleted
       ? [...categorizedItems.incomplete, ...categorizedItems.complete]
       : categorizedItems.incomplete;
+
+    // if (!workflowNodeList || workflowNodeList.length === 0)
+    //   return <div>You are all set!</div>;
+
+    if (publicFiles === undefined && privateFiles === undefined)
+      return (
+        <div className="flex flex-col gap-2">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton
+              key={`skeleton-${index}-${Math.random()}`}
+              className="h-[60px] w-full"
+            />
+          ))}
+        </div>
+      );
 
     return (
       <div>
@@ -682,17 +686,17 @@ const OptionList = memo(
             </span>
           )}
           <div className="flex items-center gap-2">
-            {categorizedItems.complete.length > 0 && (
-              <Button
-                variant={"ghost"}
-                size="sm"
-                className="h-7 shrink-0 text-xs"
-                onClick={() => setShowCompleted(!showCompleted)}
-              >
-                {showCompleted ? "Hide" : "Show"} Completed ({categorizedItems.complete.length})
-                <Check className="ml-1 h-3 w-3 text-green-600 dark:text-green-500" />
-              </Button>
-            )}
+            {/* {categorizedItems.complete.length > 0 && ( */}
+            <Button
+              variant={"ghost"}
+              size="sm"
+              className="h-7 shrink-0 text-xs"
+              onClick={() => setShowCompleted(!showCompleted)}
+            >
+              {showCompleted ? "Hide" : "Show"} Completed ({categorizedItems.complete.length})
+              <Check className="ml-1 h-3 w-3 text-green-600 dark:text-green-500" />
+            </Button>
+            {/* )} */}
             <Button
               variant={"ghost"}
               size="sm"
