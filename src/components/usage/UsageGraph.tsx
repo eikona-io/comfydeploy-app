@@ -138,6 +138,7 @@ export function UsageGraph({
             stackId="a"
             fill={`var(--color-${gpu})`}
             radius={[0, 0, 0, 0]}
+            maxBarSize={60}
           />
         ))}
       </BarChart>
