@@ -514,6 +514,8 @@ export default function WorkflowImport() {
               workflowName: sharedWorkflow.title || validation.workflowName,
               importOption: "import",
               importJson: workflowJson,
+              workflowJson: workflowJson,
+              workflowApi: JSON.stringify(JSON.parse(workflowJson)?.workflow_api),
               ...environmentFields,
             });
 
@@ -561,140 +563,6 @@ export default function WorkflowImport() {
       </div>
     );
   }
-
-  // const createWorkflow = async (machineId?: string) => {
-  //     const requestBody = {
-  //         name: validation.workflowName,
-  //         workflow_json:
-  //             validation.importOption === "import"
-  //                 ? validation.importJson
-  //                 : validation.workflowJson,
-  //         ...(validation.workflowApi && { workflow_api: validation.workflowApi }),
-  //         ...(machineId && { machine_id: machineId }),
-  //     };
-
-  //     const result = await api({
-  //         url: "workflow",
-  //         init: {
-  //             method: "POST",
-  //             body: JSON.stringify(requestBody),
-  //         },
-  //     });
-
-  //     return result;
-  // };
-
-  // // Define steps configuration
-  // const STEPS: Step<StepValidation>[] = [
-
-  //     {
-  //         id: 4,
-  //         title: "Model Check",
-  //         component: WorkflowModelCheck,
-  //         validate: (validation) => {
-  //             if (validation.machineOption === "new") {
-  //                 if (!validation.machineName?.trim()) {
-  //                     return { isValid: false, error: "Please enter a machine name" };
-  //                 }
-  //                 if (!validation.comfyUiHash?.trim()) {
-  //                     return { isValid: false, error: "ComfyUI version is required" };
-  //                 }
-  //             }
-  //             return { isValid: true };
-  //         },
-  //         actions: {
-  //             onNext: async (validation) => {
-  //                 try {
-  //                     let response: any;
-  //                     let machineId: string;
-
-  //                     if (validation.machineOption === "existing") {
-  //                         if (!validation.selectedMachineId) {
-  //                             throw new Error("No machine selected");
-  //                         }
-  //                         machineId = validation.selectedMachineId;
-
-  //                         // Update existing machine if needed
-  //                         if (validation.machineConfig) {
-  //                             if (validation.machineConfig.type !== "comfy-deploy-serverless") {
-  //                                 await api({
-  //                                     url: `machine/custom/${validation.selectedMachineId}`,
-  //                                     init: {
-  //                                         method: "PATCH",
-  //                                         body: JSON.stringify({
-  //                                             name: validation.machineConfig.name,
-  //                                             type: validation.machineConfig.type,
-  //                                             endpoint: validation.machineConfig.endpoint,
-  //                                             auth_token: validation.machineConfig.auth_token,
-  //                                         }),
-  //                                     },
-  //                                 });
-  //                             } else {
-  //                                 await api({
-  //                                     url: `machine/serverless/${validation.selectedMachineId}`,
-  //                                     init: {
-  //                                         method: "PATCH",
-  //                                         body: JSON.stringify(validation.machineConfig),
-  //                                     },
-  //                                 });
-  //                             }
-  //                         }
-  //                     } else {
-  //                         // Create new machine
-  //                         if (!validation.machineName || !validation.comfyUiHash || !validation.gpuType) {
-  //                             throw new Error("Missing required fields for new machine");
-  //                         }
-
-  //                         const finalDockerSteps = ensureComfyUIDeployInSteps(
-  //                             validation.docker_command_steps,
-  //                             latestHashes,
-  //                         );
-
-  //                         response = await api({
-  //                             url: "machine/serverless",
-  //                             init: {
-  //                                 method: "POST",
-  //                                 body: JSON.stringify({
-  //                                     name: validation.machineName,
-  //                                     comfyui_version: validation.comfyUiHash,
-  //                                     gpu: validation.gpuType,
-  //                                     docker_command_steps: finalDockerSteps,
-  //                                     install_custom_node_with_gpu: validation.install_custom_node_with_gpu,
-  //                                     base_docker_image: validation.base_docker_image,
-  //                                     python_version: validation.python_version,
-  //                                     concurrency_limit: 1,
-  //                                 }),
-  //                             },
-  //                         });
-
-  //                         machineId = response.id;
-  //                         toast.success(`${validation.machineName} created successfully!`);
-  //                     }
-
-  //                     // Create workflow with the machine ID
-  //                     const workflowResult = await createWorkflow(machineId);
-
-  //                     toast.success(`Workflow "${validation.workflowName}" created successfully!`);
-
-  //                     if (workflowResult.workflow_id) {
-  //                         navigate({
-  //                             to: "/workflows/$workflowId/$view",
-  //                             params: {
-  //                                 workflowId: workflowResult.workflow_id,
-  //                                 view: "workspace",
-  //                             },
-  //                         });
-  //                     }
-
-  //                     return true;
-  //                 } catch (error) {
-  //                     toast.error(`Failed to create: ${error}`);
-  //                     return false;
-  //                 }
-  //             },
-  //         },
-  //     },
-  // ];
 
   const handleFinish = async () => {
     try {
