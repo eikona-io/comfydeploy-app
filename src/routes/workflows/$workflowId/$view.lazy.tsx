@@ -85,14 +85,14 @@ function WorkflowPageComponent() {
   // Define allowed views based on permissions
   const allowedViews = isAdminAndMember
     ? [
-        "workspace",
-        "playground",
-        "gallery",
-        "machine",
-        "model",
-        "requests",
-        "deployment",
-      ]
+      "workspace",
+      "playground",
+      "gallery",
+      "machine",
+      "model",
+      "requests",
+      "deployment",
+    ]
     : ["playground", "gallery"];
 
   // Permission check and redirect - do this after all hooks are called

@@ -45,10 +45,12 @@ import {
   Wallet,
   Plus,
 } from "lucide-react";
-import { type ReactNode, Suspense, memo, useMemo } from "react";
+import { type ReactNode, Suspense, memo, useMemo, useEffect } from "react";
 import { useState } from "react";
 import type { AutumnDataV2Response, Product, Feature } from "@/types/autumn-v2";
 import { isFeatureItem, isPricedFeatureItem } from "@/types/autumn-v2";
+import { TopUpButton } from "@/components/pricing/TopUpButton";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/usage")({
   component: RouteComponent,
@@ -57,6 +59,18 @@ export const Route = createFileRoute("/usage")({
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"graph" | "grid">("graph");
   const [creditsExpanded, setCreditsExpanded] = useState(false);
+
+  // Handle topup success from URL params
+  const searchParams = new URLSearchParams(window.location.search);
+  useEffect(() => {
+    if (searchParams.get('topup') === 'success') {
+      toast.success('Credits added successfully!');
+      // Clean up the URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('topup');
+      window.history.replaceState({}, '', url.pathname);
+    }
+  }, []);
   const { data: invoices, isLoading: invoicesLoading } = useQuery<Invoice[]>({
     queryKey: ["platform", "invoices"],
   });
@@ -282,62 +296,74 @@ function RouteComponent() {
       </div>
 
       {/* GPU Credits - Compact */}
-      {gpuCreditFeature && (
-        <Card className="mb-6 overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
-          <button
-            type="button"
-            onClick={() => setCreditsExpanded(!creditsExpanded)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-                <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
-              </div>
-              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">GPU Credits</span>
+      <Card className="mb-6 overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+        <button
+          type="button"
+          onClick={() => {
+            if (gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0) {
+              setCreditsExpanded(!creditsExpanded);
+            }
+          }}
+          className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+              <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
             </div>
+            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">GPU Credits</span>
+          </div>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-zinc-500 dark:text-zinc-500">Balance</span>
-                <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
-                  ${totalBalance.toFixed(2)}
-                </span>
-                <span className="text-zinc-400 dark:text-zinc-600">/</span>
-                <span className="font-mono text-zinc-600 dark:text-zinc-400">
-                  ${totalIncluded.toFixed(2)}
-                </span>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-zinc-500 dark:text-zinc-500">Balance</span>
+              <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                ${gpuCreditFeature ? totalBalance.toFixed(2) : "0.00"}
+              </span>
+              {/* <span className="text-zinc-400 dark:text-zinc-600">/</span>
+              <span className="font-mono text-zinc-600 dark:text-zinc-400">
+                ${gpuCreditFeature ? totalIncluded.toFixed(2) : "5.00"}
+              </span> */}
+            </div>
+            <TopUpButton
+              variant="default"
+              size="sm"
+              className="h-7 px-3 text-xs font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200"
+              showIcon={true}
+            >
+              Add Credits
+            </TopUpButton>
+            {gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
               <ChevronDown
                 className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""
                   }`}
               />
-            </div>
-          </button>
+            )}
+          </div>
+        </button>
 
-          {creditsExpanded && gpuCreditFeature.breakdown && gpuCreditFeature.breakdown.length > 1 && (
-            <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
-              {gpuCreditFeature.breakdown.map((breakdown, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs">
-                  <span className="text-zinc-500 dark:text-zinc-500">
-                    {breakdown.interval === 'month' ? 'Monthly' :
-                      breakdown.interval === 'lifetime' ? 'Lifetime' :
-                        breakdown.interval}
+        {creditsExpanded && gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
+          <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+            {gpuCreditFeature.breakdown.map((breakdown, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs">
+                <span className="text-zinc-500 dark:text-zinc-500">
+                  {breakdown.interval === 'month' ? 'Monthly' :
+                    breakdown.interval === 'lifetime' ? 'Lifetime' :
+                      breakdown.interval}
+                </span>
+                <div className="flex items-center gap-2 font-mono">
+                  <span className="text-zinc-900 dark:text-zinc-100">
+                    ${(breakdown.balance / 100).toFixed(2)}
                   </span>
-                  <div className="flex items-center gap-2 font-mono">
-                    <span className="text-zinc-900 dark:text-zinc-100">
-                      ${(breakdown.balance / 100).toFixed(2)}
-                    </span>
-                    <span className="text-zinc-400 dark:text-zinc-600">/</span>
-                    <span className="text-zinc-600 dark:text-zinc-400">
-                      ${(breakdown.included_usage / 100).toFixed(2)}
-                    </span>
-                  </div>
+                  <span className="text-zinc-400 dark:text-zinc-600">/</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    ${(breakdown.included_usage / 100).toFixed(2)}
+                  </span>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* All Features Section - Compact Table */}
       {autumnData?.features && Object.keys(autumnData.features).filter(id => id !== 'gpu-credit').length > 0 && (
@@ -513,7 +539,7 @@ function RouteComponent() {
             <div className="text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Usage</div>
             <div className="mt-0.5 text-sm font-mono font-medium text-zinc-900 dark:text-zinc-100">
               ${is_displaying_invoice
-                ? usage?.total_cost?.toFixed(2)
+                ? (usage?.total_cost?.toFixed(2) ?? "0.00")
                 : (used?.toFixed(2) ?? "0.00")}
             </div>
           </div>
@@ -523,7 +549,7 @@ function RouteComponent() {
                 Credit Balance
               </div>
               <div className="mt-0.5 text-sm font-mono font-medium text-green-600 dark:text-green-400">
-                ${credit.toFixed(2)}
+                ${(credit ?? 0).toFixed(2)}
               </div>
             </div>
           )}
@@ -531,8 +557,8 @@ function RouteComponent() {
             <div className="text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Final Usage</div>
             <div className="mt-0.5 text-sm font-mono font-medium text-zinc-900 dark:text-zinc-100">
               ${is_displaying_invoice
-                ? usage?.final_cost?.toFixed(2)
-                : Math.max(0, used - credit).toFixed(2)}
+                ? (usage?.final_cost?.toFixed(2) ?? "0.00")
+                : Math.max(0, (used ?? 0) - (credit ?? 0)).toFixed(2)}
             </div>
           </div>
         </div>

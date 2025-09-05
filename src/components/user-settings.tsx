@@ -97,11 +97,10 @@ export function UserSettings() {
           if (
             data?.spend_limit &&
             Number(data.spend_limit) >
-              (userSettings?.max_spend_limit || DEFAULT_MAX_SPEND_LIMIT)
+            (userSettings?.max_spend_limit || DEFAULT_MAX_SPEND_LIMIT)
           ) {
             toast.error(
-              `Spend limit cannot be greater than ${
-                userSettings?.max_spend_limit || DEFAULT_MAX_SPEND_LIMIT
+              `Spend limit cannot be greater than ${userSettings?.max_spend_limit || DEFAULT_MAX_SPEND_LIMIT
               }. Please contact us via Email or Discord DM to raise this limit.`,
             );
             return;

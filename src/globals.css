@@ -15,14 +15,22 @@
     --shiki-token-punctuation: theme("colors.zinc.200");
 
     /* GPU Colors - matching machineGPUOptions */
-    --color-gpu-CPU: hsl(354, 65%, 45%); /* Sophisticated red for CPU */
-    --color-gpu-T4: hsl(142, 55%, 45%); /* Muted green for T4 */
-    --color-gpu-L4: hsl(187, 65%, 45%); /* Ocean blue for L4 */
-    --color-gpu-A10G: hsl(230, 60%, 55%); /* Royal blue for A10G */
-    --color-gpu-L40S: hsl(230, 60%, 55%); /* Royal blue for A10G */
-    --color-gpu-A100: hsl(270, 55%, 50%); /* Deep purple for A100 */
-    --color-gpu-A100-80GB: hsl(290, 50%, 45%); /* Rich plum for A100-80GB */
-    --color-gpu-H100: hsl(320, 55%, 45%); /* Deep rose for H100 */
+    --color-gpu-CPU: hsl(354, 65%, 45%);
+    /* Sophisticated red for CPU */
+    --color-gpu-T4: hsl(142, 55%, 45%);
+    /* Muted green for T4 */
+    --color-gpu-L4: hsl(187, 65%, 45%);
+    /* Ocean blue for L4 */
+    --color-gpu-A10G: hsl(230, 60%, 55%);
+    /* Royal blue for A10G */
+    --color-gpu-L40S: hsl(230, 60%, 55%);
+    /* Royal blue for A10G */
+    --color-gpu-A100: hsl(270, 55%, 50%);
+    /* Deep purple for A100 */
+    --color-gpu-A100-80GB: hsl(290, 50%, 45%);
+    /* Rich plum for A100-80GB */
+    --color-gpu-H100: hsl(320, 55%, 45%);
+    /* Deep rose for H100 */
   }
 
   .dolloar .tooltip-value::before {
@@ -99,7 +107,7 @@
   }
 }
 
-.shiki > code > span {
+.shiki>code>span {
   /* text-wrap: wrap; */
   /* word-wrap: break-word; */
   /* @apply break-all ; */
@@ -110,13 +118,20 @@
   /* @apply rounded-lg p-2 overflow-x-scroll */
   /* @apply p-2 max-w-full w-full */
 }
+
 .vsc-controller {
   position: absolute;
 }
+
 @layer base {
   * {
     @apply border-border;
   }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -133,7 +148,9 @@
   }
 
   .scrollbar-hidden {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
   }
 }

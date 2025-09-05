@@ -49,9 +49,10 @@ const usePermissionCheck = (metadataKey: MetadataKey, planCheck: PlanCheck) => {
 };
 
 export const useIsDeploymentAllowed = () => {
-  return usePermissionCheck("isDeploymentAllowed", (plan) =>
-    ALLOWED_DEPLOYMENT_PLANS.includes(plan?.plans?.plans?.[0]),
-  );
+  return true;
+  // return usePermissionCheck("isDeploymentAllowed", (plan) =>
+  //   ALLOWED_DEPLOYMENT_PLANS.includes(plan?.plans?.plans?.[0]),
+  // );
 };
 
 export const useIsBusinessAllowed = () => {

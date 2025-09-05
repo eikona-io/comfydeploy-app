@@ -1680,7 +1680,7 @@ function CustomNodeSetupWrapper({
 
       // If steps were filtered, show a warning
       if (filteredSteps.length < nextValidation.docker_command_steps.steps.length) {
-        toast.warning("Only ComfyUI Deploy custom node is allowed on free plan");
+        toast.warning("Only ComfyUI Deploy custom node is allowed on Pay as you go plan");
       }
 
       nextValidation = {
@@ -1726,7 +1726,7 @@ function CustomNodeSetupWrapper({
         <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-sm">
-            <strong>Free plan limitation:</strong> You can update the ComfyUI Deploy custom node,
+            <strong>Pay as you go limitation:</strong> You can update the ComfyUI Deploy custom node,
             but additional custom nodes cannot be added.{" "}
             <Link
               to="/pricing"

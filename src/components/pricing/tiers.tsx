@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { satisfies } from "semver";
 
 export const FREE_TIER = {
-  name: "Basic",
+  name: "Pay as you go",
   id: "basic",
   startingAt: false,
   href: "/api/stripe/checkout?plan=basic",
