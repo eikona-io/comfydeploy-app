@@ -9,7 +9,7 @@ import {
   type StepValidation,
   useImportWorkflowStore,
 } from "@/components/onboarding/workflow-import";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useCurrentPlan, useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Local type definitions
@@ -53,6 +53,7 @@ const CustomNodesLoadingSkeleton = () => (
 );
 
 import { useQuery } from "@tanstack/react-query";
+import type { Feature as AutumnFeature } from "@/types/autumn-v2";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   AlertCircle,
@@ -281,7 +282,15 @@ export function WorkflowImportSelectedMachine() {
   const setValidation = validation.setValidation;
 
   const sub = useCurrentPlan();
-  const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
+  // Autumn machine limit for gating creation inside the import flow via plan status
+  // Use the existing plan status hook to avoid extra queries
+  const { data: planStatus } = useCurrentPlanWithStatus();
+  const autumnData = planStatus?.plans?.autumn_data;
+  const machineLimitFeature = (autumnData?.features?.["machine_limit"] ?? null) as (AutumnFeature | null);
+  const machineLimit = machineLimitFeature?.included_usage ?? sub?.features?.machineLimit;
+  const MACHINE_LIMIT_REACHED = machineLimitFeature
+    ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0
+    : sub?.features?.machineLimited;
   const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Clear machine config when switching between new/existing machine
@@ -1158,28 +1167,11 @@ function DetectedCustomNodesSection({
     );
   }
 
-  // Check if free plan has non-ComfyUI Deploy nodes
-  const hasNonComfyDeployNodes = isFreePlan && validation.dependencies?.custom_nodes &&
-    Object.entries(validation.dependencies.custom_nodes).some(([url, node]) => {
-      const urlLower = url.toLowerCase();
-      return !urlLower.includes("github.com/bennykok/comfyui-deploy");
-    });
+  // Free plan now supports all custom nodes
 
   return (
     <>
-      {/* Free plan warning */}
-      {isFreePlan && hasNonComfyDeployNodes && (
-        <Alert className="mb-4 border-amber-200 bg-amber-50 dark:bg-amber-950/50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-sm">
-            <strong>Free plan limitation:</strong> Only the ComfyUI Deploy custom node is allowed.
-            Other custom nodes detected in this workflow will not be installed.{" "}
-            <Link href="/pricing" className="underline font-medium">
-              Upgrade to use additional custom nodes
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* All custom nodes allowed on Free plan - no warning */}
 
       {isConfigured ? (
         <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
@@ -1975,16 +1967,16 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
 
       <InsertModal
         hideButton
-        open={openAdvanceSettings && !sub?.features.machineLimited}
+        open={openAdvanceSettings && !MACHINE_LIMIT_REACHED}
         mutateFn={query.refetch}
         setOpen={setOpenAdvanceSettings}
-        disabled={sub?.features.machineLimited}
+        disabled={MACHINE_LIMIT_REACHED}
         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
         containerClassName="flex-col"
         tooltip={
-          sub?.features.machineLimited
-            ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
-            : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
+          MACHINE_LIMIT_REACHED
+            ? `Max ${machineLimit ?? ""} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${machineLimit ?? ""} ComfyUI machine for your account`
         }
         title="Create New Machine"
         description="Create a new serverless ComfyUI machine based on the analyzed workflow."
@@ -2016,7 +2008,7 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
 
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
-            toast.error(`Failed to create: ${error}`);
+            toast.error("Failed to create");
             throw error;
           }
         }}

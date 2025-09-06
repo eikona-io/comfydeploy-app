@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useCurrentPlan, useIsBusinessAllowed } from "@/hooks/use-current-plan";
+import { useCurrentPlan, useCurrentPlanWithStatus, useIsBusinessAllowed } from "@/hooks/use-current-plan";
 import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -49,6 +49,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { queryClient } from "@/lib/providers";
+import type { Feature as AutumnFeature } from "@/types/autumn-v2";
 
 interface Machine {
   id: string;
@@ -128,6 +129,14 @@ export function MachineList() {
   };
 
   const sub = useCurrentPlan();
+  const { data: planStatus } = useCurrentPlanWithStatus();
+  const autumnData = planStatus?.plans?.autumn_data;
+  const machineLimitFeature = (autumnData?.features?.["machine_limit"] ?? null) as (AutumnFeature | null);
+  const machineLimit = machineLimitFeature?.included_usage ?? sub?.features?.machineLimit;
+  const currentMachineCount = machineLimitFeature?.usage ?? sub?.features?.currentMachineCount;
+  const machineLimited = machineLimitFeature
+    ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0
+    : sub?.features?.machineLimited;
   const hasActiveSub = !sub || !!sub?.sub;
   const isBusinessAllowed = useIsBusinessAllowed();
 
@@ -563,7 +572,7 @@ export function MachineList() {
             });
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
-            toast.error(`Failed to create: ${error}`);
+            toast.error("Failed to create");
             throw error;
           }
         }}
@@ -606,7 +615,7 @@ export function MachineList() {
 
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
-            toast.error(`Failed to create: ${error}`);
+            toast.error("Failed to create");
             throw error;
           }
         }}
@@ -663,39 +672,43 @@ export function MachineList() {
           icon: Plus,
         }}
         disabled={{
-          disabled: sub?.features.machineLimited,
+          disabled: machineLimited,
           disabledText: "Max Machines Exceeded. ",
         }}
         subItems={[
           {
-            name: sub
-              ? `Docker Machine (${sub.features.currentMachineCount}/${sub.features.machineLimit})`
+            name: (currentMachineCount !== undefined && machineLimit !== undefined)
+              ? `Docker Machine (${currentMachineCount}/${machineLimit})`
               : "Docker Machine",
             icon: Cloud,
             onClick: () => {
-              if (!sub?.features.machineLimited) {
+              if (!machineLimited) {
                 navigate({
                   search: { view: "create" },
                 });
               }
             },
             disabled: {
-              disabled: sub?.features.machineLimited,
-              disabledText: `Max ${sub?.features.machineLimit} Docker machines for your account. Upgrade to create more machines.`,
+              disabled: machineLimited,
+              disabledText: machineLimit !== undefined
+                ? `Max ${machineLimit} Docker machines for your account. Upgrade to create more machines.`
+                : `Max Docker machines for your account. Upgrade to create more machines.`,
             },
           },
           {
             name: "Self Hosted Machine",
             icon: Server,
             onClick: () => {
-              if (!sub?.features.machineLimited && isBusinessAllowed) {
+              if (!machineLimited && isBusinessAllowed) {
                 setOpenCustomDialog(true);
               }
             },
             disabled: {
-              disabled: !isBusinessAllowed || sub?.features.machineLimited,
-              disabledText: sub?.features.machineLimited
-                ? `Max ${sub?.features.machineLimit} Self-hosted machines for your account. Upgrade to create more machines.`
+              disabled: !isBusinessAllowed || machineLimited,
+              disabledText: machineLimited
+                ? (machineLimit !== undefined
+                    ? `Max ${machineLimit} Self-hosted machines for your account. Upgrade to create more machines.`
+                    : `Max Self-hosted machines for your account. Upgrade to create more machines.`)
                 : "Upgrade to Business plan to create self-hosted machines.",
             },
           },

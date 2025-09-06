@@ -120,6 +120,7 @@ export interface StepValidation {
     selectedComfyOption?: "recommended" | "latest" | "custom";
     firstTimeSelectGPU?: boolean;
     importedFileName?: string;
+    selectedTemplateId?: string;
 
     dependencies?: WorkflowDependencies;
     selectedConflictingNodes?: {
@@ -329,6 +330,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
     dependencies: undefined,
     selectedConflictingNodes: {},
     importedFileName: "",
+    selectedTemplateId: undefined,
     docker_command_steps: {
         steps: [
             {
@@ -375,16 +377,30 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
         set({ existingMachineMissingNodes }),
     setImportedFileName: (importedFileName: string) => set({ importedFileName }),
 
-    setValidation: (validation: Partial<StepValidation>) => {
-        const currentValidation = get();
-        set({
-            ...currentValidation,
-            ...validation,
-            machineName: generateRandomMachineName(
-                currentValidation.workflowName || "",
-            ),
-            workflowJson: validation.workflowJson || validation.importJson,
-        });
+    setValidation: (update: Partial<StepValidation>) => {
+        const current = get();
+        // Start from current state and shallow-merge the update
+        const next: StepValidation = {
+            ...(current as StepValidation),
+            ...(update as StepValidation),
+        } as StepValidation;
+
+        // Only modify workflowJson if the caller provided one of these fields
+        if (Object.prototype.hasOwnProperty.call(update, "workflowJson")) {
+            // use provided workflowJson as-is (may be empty string intentionally)
+        } else if (Object.prototype.hasOwnProperty.call(update, "importJson")) {
+            // keep workflowJson in sync when importJson is explicitly provided
+            // @ts-ignore - Partial may not include importJson
+            next.workflowJson = update.importJson as string;
+        } else {
+            // Preserve existing workflowJson; do not clobber it on unrelated updates
+            next.workflowJson = current.workflowJson;
+        }
+
+        // Keep machine name derived from workflow name on changes
+        next.machineName = generateRandomMachineName(current.workflowName || "");
+
+        set(next as Partial<StepValidation>);
     },
 
     latestHashes: undefined,
@@ -434,6 +450,7 @@ export const useImportWorkflowStore = create<StepValidation>((set, get) => ({
             importedFileName: "",
             hasEnvironment: false,
             existingMachine: undefined,
+            selectedTemplateId: undefined,
         });
     },
 }));
@@ -448,16 +465,15 @@ export default function WorkflowImport() {
 
     const validation = useImportWorkflowStore();
 
-    // Update comfyUiHash when latestHashes becomes available
+    // Initialize once with latest hashes to seed defaults
+    const didInitRef = useRef(false);
     useEffect(() => {
+        if (didInitRef.current) return;
         if (latestHashes?.comfyui_hash && !hashesLoading) {
             validation.reset(latestHashes);
+            didInitRef.current = true;
         }
-    }, [
-        latestHashes?.comfyui_hash,
-        latestHashes?.comfydeploy_hash,
-        hashesLoading,
-    ]);
+    }, [latestHashes?.comfyui_hash, latestHashes?.comfydeploy_hash, hashesLoading]);
 
     const { data: sharedWorkflow, isLoading: isSharedWorkflowLoading } = useQuery({
         queryKey: ["shared-workflow", sharedSlug],
@@ -593,7 +609,7 @@ export default function WorkflowImport() {
                 //     };
                 // }
 
-                const machineData = {
+                const machineData: any = {
                     name: validation.machineName,
                     gpu: validation.gpuType,
                     comfyui_version: validation.comfyUiHash,
@@ -650,7 +666,7 @@ export default function WorkflowImport() {
             });
         } catch (error) {
             console.error("Error creating workflow:", error);
-            toast.error(`Failed to create workflow: ${error}`);
+            toast.error("Failed to create workflow");
         }
     };
 
@@ -700,11 +716,11 @@ function Import() {
 
     const navigate = useNavigate();
 
-    // Get the currently selected template for display
+    // Get the currently selected template for display (prefer ID to avoid string-equality issues)
     const selectedTemplate =
-        validation.importOption === "default" && validation.workflowJson
+        validation.importOption === "default" && validation.selectedTemplateId
             ? defaultWorkflowTemplates.find(
-                (t) => t.workflowJson === validation.workflowJson,
+                (t) => t.workflowId === validation.selectedTemplateId,
             )
             : undefined;
 
@@ -919,7 +935,9 @@ function ImportView() {
     const validation = useImportWorkflowStore();
     const setValidation = validation.setValidation;
 
-    const { data: latestHashes } = useLatestHashes();
+    const { data: latestHashes, isLoading: hashesLoading } = useLatestHashes();
+    const sub = useCurrentPlan();
+    const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [workflowJsonUrl] = useQueryState("workflow_json");
@@ -1241,7 +1259,8 @@ function TemplateSelectionDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-    const { data: latestHashes } = useLatestHashes();
+    // Include loading state to prevent undefined reference during selection
+    const { data: latestHashes, isLoading: hashesLoading } = useLatestHashes();
 
     // Use Zustand store for reactive updates to ensure sync
     const validation = useImportWorkflowStore();
@@ -1249,29 +1268,36 @@ function TemplateSelectionDialog({
 
     // Initialize workflowSelected from validation if it exists, otherwise use default
     const [workflowSelected, setWorkflowSelected] = useState<string>(
-        validation.workflowJson
-            ? defaultWorkflowTemplates.find(
-                (t) => t.workflowJson === validation.workflowJson,
-            )?.workflowId || "sd1.5"
-            : "sd1.5",
+        validation.selectedTemplateId ||
+            (validation.workflowJson
+                ? defaultWorkflowTemplates.find(
+                    (t) => t.workflowJson === validation.workflowJson,
+                )?.workflowId || "sd1.5"
+                : "sd1.5"),
     );
 
     // Handle template selection and close dialog
     const handleTemplateSelect = (templateId: string) => {
         setWorkflowSelected(templateId);
+        // Avoid applying before hashes load to keep consistency
+        if (hashesLoading) {
+            toast.info("Loading latest versions… please try again in a moment");
+            return;
+        }
 
         const selectedTemplate = defaultWorkflowTemplates.find(
             (template) => template.workflowId === templateId,
         );
 
         if (selectedTemplate) {
-            const updatedValidation = {
+            const updatedValidation: Partial<StepValidation> = {
                 ...validation,
                 importOption: "default" as const,
                 workflowJson: selectedTemplate.workflowJson,
                 workflowApi: selectedTemplate.workflowApi,
                 importJson: "",
                 hasEnvironment: selectedTemplate.hasEnvironment || false,
+                selectedTemplateId: templateId,
 
                 // Reset dependencies to trigger re-analysis when template changes
                 dependencies: undefined,

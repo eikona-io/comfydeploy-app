@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 // import { getFileDownloadUrlV2 } from "@/db/getFileDownloadUrl";
 import { useAuthStore } from "@/lib/auth-store";
+import { api } from "@/lib/api";
+import { withErrorContext } from "@/lib/error-context";
 import { callServerPromise } from "@/lib/call-server-promise";
 import {
   type WorkflowInputsType,
@@ -64,7 +66,6 @@ import type { z } from "zod";
 import { uploadFile } from "../files-api";
 import { publicRunStore } from "./VersionSelect";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
-import { api } from "@/lib/api";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { queryClient } from "@/lib/providers";
 
@@ -979,22 +980,17 @@ export function RunWorkflowInline({
         setLoading2(true);
       }
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_CD_API_URL}/api/run${model_id ? "/sync" : ""}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${auth}`,
-          },
-          body: JSON.stringify(body),
-        },
+      const data = await withErrorContext(
+        { action: "Run workflow" },
+        () =>
+          api({
+            url: `run${model_id ? "/sync" : ""}`,
+            init: {
+              method: "POST",
+              body: JSON.stringify(body),
+            },
+          }),
       );
-      if (!response.ok) {
-        throw new Error(await response.text());
-      }
-
-      const data = await response.json();
 
       if (runOrigin === "public-share") {
         setRunId(data.run_id);
@@ -1003,7 +999,6 @@ export function RunWorkflowInline({
       }
 
       if (model_id) {
-        const data = await response.json();
         setLoading2(false);
         const mediaData = data[0]?.data;
         if (mediaData?.images?.[0]?.url) {
@@ -1019,11 +1014,7 @@ export function RunWorkflowInline({
     } catch (error) {
       setIsLoading(false);
       setLoading2(false);
-      toast.error(
-        `Failed to run workflow: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`,
-      );
+      toast.error("Failed to run workflow");
     }
   };
 

@@ -138,7 +138,11 @@ export function WorkspaceClientWrapper({
     isLoading: isLoadingWorkflow,
   } = useCurrentWorkflow(props.workflow_id);
 
-  const { data: versions, isLoading: isLoadingVersions } = useQuery<
+  const {
+    data: versions,
+    isLoading: isLoadingVersions,
+    isError: isVersionsError,
+  } = useQuery<
     WorkflowVersion[]
   >({
     enabled: !!props.workflow_id,
@@ -150,7 +154,7 @@ export function WorkspaceClientWrapper({
   });
 
   const [version] = useQueryState("version", {
-    defaultValue: String(workflow?.versions[0].version ?? 1),
+    defaultValue: String(workflow?.versions?.[0]?.version ?? 1),
   });
 
   const { data: versionData, status } = useQuery<any>({
@@ -191,7 +195,10 @@ export function WorkspaceClientWrapper({
     return () => clearTimeout(timer);
   }, [isDescriptionHovered]);
 
-  if (isLoadingWorkflow || isLoading || isLoadingVersions || !versions) {
+  // Only show loading while initial fetches are pending; do not block on missing/error versions
+  // Only block on workflow loading if there's no cached workflow yet.
+  // Only block the entire workspace if the workflow itself hasn't loaded yet.
+  if (isLoadingWorkflow && !workflow) {
     return (
       <div className="flex h-full w-full items-center justify-center">
         <LoadingIcon />
@@ -199,7 +206,9 @@ export function WorkspaceClientWrapper({
     );
   }
 
-  if (!machine && !isLoading && !isLoadingWorkflow)
+  // If there's no selected machine or the selected machine was not found (404),
+  // render the inline machine picker instead of a full-screen spinner.
+  if (!workflow?.selected_machine_id || !machine)
     return (
       <div
         className={cn(
@@ -343,16 +352,16 @@ export function WorkspaceClientWrapper({
               }}
             >
               <div className="rounded-lg bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-800/40">
-                <SessionCreatorForm
-                  workflowId={props.workflow_id}
-                  version={versions[0]?.version ?? 0}
-                  defaultMachineId={workflow?.selected_machine_id}
-                  defaultMachineVersionId={
-                    workflow?.selected_machine_version_id
-                  }
-                  onShareWorkflow={props.onShareWorkflow}
-                  mode="description-only"
-                />
+            <SessionCreatorForm
+              workflowId={props.workflow_id}
+              version={versions?.[0]?.version ?? 0}
+              defaultMachineId={workflow?.selected_machine_id}
+              defaultMachineVersionId={
+                workflow?.selected_machine_version_id
+              }
+              onShareWorkflow={props.onShareWorkflow}
+              mode="description-only"
+            />
               </div>
             </motion.div>
 
@@ -371,7 +380,7 @@ export function WorkspaceClientWrapper({
                 <div className="rounded-t-xl bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-800/40">
                   <SessionCreatorForm
                     workflowId={props.workflow_id}
-                    version={versions[0]?.version ?? 0}
+                    version={versions?.[0]?.version ?? 0}
                     defaultMachineId={workflow?.selected_machine_id}
                     defaultMachineVersionId={
                       workflow?.selected_machine_version_id
@@ -409,7 +418,7 @@ export function WorkspaceClientWrapper({
                           {workflow?.name || "ComfyUI"}
                         </h3>
                         <Badge variant="outline" className="text-xs">
-                          v{versions[0]?.version ?? 0}
+                          v{versions?.[0]?.version ?? 0}
                         </Badge>
                       </div>
                       <Button
@@ -431,7 +440,7 @@ export function WorkspaceClientWrapper({
                     {/* Always show the main form */}
                     <SessionCreatorForm
                       workflowId={props.workflow_id}
-                      version={versions[0]?.version ?? 0}
+                      version={versions?.[0]?.version ?? 0}
                       defaultMachineId={workflow?.selected_machine_id}
                       defaultMachineVersionId={
                         workflow?.selected_machine_version_id
@@ -453,7 +462,7 @@ export function WorkspaceClientWrapper({
                           <div className="mt-4 border-white/20 border-t pt-4 dark:border-zinc-700/50">
                             <SessionCreatorForm
                               workflowId={props.workflow_id}
-                              version={versions[0]?.version ?? 0}
+                              version={versions?.[0]?.version ?? 0}
                               defaultMachineId={workflow?.selected_machine_id}
                               defaultMachineVersionId={
                                 workflow?.selected_machine_version_id

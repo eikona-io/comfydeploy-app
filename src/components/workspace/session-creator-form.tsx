@@ -71,6 +71,7 @@ import { useAssetsBrowserStore } from "./Workspace";
 import type { AssetType } from "../SDInputs/sd-asset-input";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { useUser } from "@clerk/clerk-react";
+import { withErrorContext } from "@/lib/error-context";
 
 interface SessionForm {
   machineId: string;
@@ -109,9 +110,8 @@ export function useUserSessionsCount(machineId: string) {
 
 export function getCurrentEffectiveSessionId(workflowId: string) {
   const { workflow } = useCurrentWorkflow(workflowId);
-  return getCurrentEffectiveSessionIdFromMachineId(
-    workflow?.selected_machine_id || "",
-  );
+  const { data: selectedMachine } = useMachine(workflow?.selected_machine_id);
+  return getCurrentEffectiveSessionIdFromMachineId(selectedMachine?.id || "");
 }
 
 export function getCurrentEffectiveSessionIdFromMachineId(machineId: string) {
@@ -239,9 +239,7 @@ export function SessionCreatorForm({
   const [_, setSessionId] = useQueryState("sessionId");
 
   // Get current user's session count for blocking
-  const userSessionCount = useUserSessionsCount(
-    workflow?.selected_machine_id || "",
-  );
+  const userSessionCount = useUserSessionsCount(selectedMachine?.id || "");
 
   const form = useForm<SessionForm>({
     defaultValues: {
@@ -296,12 +294,15 @@ export function SessionCreatorForm({
     }
 
     try {
-      const response = await createDynamicSession.mutateAsync({
+      const response = await withErrorContext(
+        { action: "Create session" },
+        () => createDynamicSession.mutateAsync({
         gpu: data.gpu,
         timeout: data.timeout,
         machine_id: workflow.selected_machine_id,
         machine_version_id: defaultMachineVersionId,
-      });
+        }),
+      );
 
       useLogStore.getState().clearLogs();
 
@@ -318,7 +319,8 @@ export function SessionCreatorForm({
       setSessionId(response.session_id);
       onSuccess?.();
     } catch (error) {
-      toast.error(`Failed to create session: ${error}`);
+      // Global handler opens dialog for API errors. Optional: lean toast.
+      toast.error("Failed to create session");
     }
   };
 
@@ -450,8 +452,8 @@ export function SessionCreatorForm({
       <div className="space-y-4">
         <div className="space-y-2">
           {/* Compact Active Sessions List */}
-          {workflow?.selected_machine_id && (
-            <MachineSessionsList machineId={workflow.selected_machine_id} />
+          {selectedMachine?.id && (
+            <MachineSessionsList machineId={selectedMachine.id} />
           )}
         </div>
 
@@ -705,8 +707,8 @@ export function SessionCreatorForm({
           />
 
           {/* Mobile Active Sessions List */}
-          {workflow?.selected_machine_id && (
-            <MachineSessionsList machineId={workflow.selected_machine_id} />
+          {selectedMachine?.id && (
+            <MachineSessionsList machineId={selectedMachine.id} />
           )}
         </div>
 
@@ -775,8 +777,8 @@ export function SessionCreatorForm({
               workflow_id={workflowId}
               className="rounded-md border bg-background"
             />
-            {workflow?.selected_machine_id && (
-              <MachineSessionsList machineId={workflow.selected_machine_id} />
+            {selectedMachine?.id && (
+              <MachineSessionsList machineId={selectedMachine.id} />
             )}
             <FormDescription>
               {isFluidVersion

@@ -423,7 +423,7 @@ function RouteComponent() {
                   </button>
                 </div>
                 {featuresExpanded && (
-                  <div className="absolute top-full right-4 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-lg p-3 min-w-[300px] z-50">
+                  <div className="absolute top-full right-4 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg p-4 min-w-[380px] sm:min-w-[420px] z-50">
                     <Table>
                       <TableHeader>
                         <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
@@ -439,7 +439,7 @@ function RouteComponent() {
                             <TableRow key={id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
                               <TableCell className="py-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
                                     {feature.name}
                                   </span>
                                   {feature.overage_allowed && (
@@ -449,33 +449,34 @@ function RouteComponent() {
                                   )}
                                 </div>
                               </TableCell>
-                              <TableCell className="py-1">
-                                <div className="flex items-center gap-2">
-                                  {feature.unlimited ? (
-                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
-                                  ) : (
-                                    <>
-                                      <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
-                                        {feature.usage}
+                              <TableCell className="py-1 w-[45%]">
+                                {feature.unlimited ? (
+                                  <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
+                                ) : (
+                                  <div className="flex flex-col gap-1">
+                                    <div className="flex items-center justify-between">
+                                      <span className="font-mono text-[11px] text-zinc-900 dark:text-zinc-100">
+                                        {feature.usage} / {feature.included_usage}
                                       </span>
-                                      {feature.type === 'continuous_use' && feature.balance !== null && (
-                                        <span className="text-xs text-red-600 dark:text-red-400">
-                                          (-{Math.abs(feature.balance)})
-                                        </span>
-                                      )}
-                                    </>
-                                  )}
-                                </div>
+                                    </div>
+                                    {/* Progress bar to visualize usage vs limit */}
+                                    <Progress
+                                      value={(() => {
+                                        const limit = feature.included_usage || 0;
+                                        if (limit <= 0) return 100;
+                                        const pct = (feature.usage / limit) * 100;
+                                        return Math.min(Math.max(pct, 0), 100);
+                                      })()}
+                                      className="h-1.5 rounded-sm bg-zinc-200 dark:bg-zinc-800"
+                                    />
+                                  </div>
+                                )}
                               </TableCell>
                               <TableCell className="py-1 text-right">
                                 {feature.unlimited ? (
                                   <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
                                     Unlimited
                                   </Badge>
-                                ) : feature.type === 'continuous_use' && feature.balance !== null ? (
-                                  <span className="font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                                    {feature.balance}
-                                  </span>
                                 ) : (
                                   <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
                                     {feature.included_usage}

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useCurrentPlan, useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
 import { useMachine } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { useLatestHashes } from "@/utils/comfydeploy-hash";
@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { MachineSettingsWrapper } from "../machine/machine-settings";
 import { LoadingIcon } from "../ui/custom/loading-icon";
 import { Input } from "../ui/input";
+import type { Feature as AutumnFeature } from "@/types/autumn-v2";
 
 const createNewMachine = (latestHashes: any) => ({
   name: "My New Machine",
@@ -81,6 +82,14 @@ export function filterMachineConfig(machine: any) {
 export function MachineCreate() {
   const navigate = useNavigate({ from: "/machines" });
   const sub = useCurrentPlan();
+  // Use Autumn machine_limit to gate creation (via existing plan hook)
+  // Use status variant to access nested autumn_data
+  const { data: planStatus } = useCurrentPlanWithStatus();
+  const autumnData = planStatus?.plans?.autumn_data;
+  const machineLimitFeature = (autumnData?.features?.["machine_limit"] ?? null) as (AutumnFeature | null);
+  const machineLimited = machineLimitFeature
+    ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0
+    : sub?.features?.machineLimited;
   const [cloneMachineId, setCloneMachineId] = useQueryState("machineId");
   const { data: machine, isLoading } = useMachine(cloneMachineId ?? undefined);
   const { data: latestHashes } = useLatestHashes();
@@ -99,12 +108,12 @@ export function MachineCreate() {
 
   // machine limit effect
   useEffect(() => {
-    if (sub?.features.machineLimited) {
+    if (machineLimited) {
       navigate({
         search: { view: undefined },
       });
     }
-  }, [sub, navigate]);
+  }, [machineLimited, navigate]);
 
   if (cloneMachineId && (!formValues || isLoading)) {
     return (
@@ -209,7 +218,7 @@ export function MachineCreate() {
 
               return true;
             } catch (error) {
-              toast.error(`Failed to create: ${error}`);
+              toast.error("Failed to create");
               return false;
             }
           }}

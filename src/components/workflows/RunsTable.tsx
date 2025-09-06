@@ -662,6 +662,7 @@ function LoadingSpinner() {
 function DisplayVersion(props: { versionId?: string }) {
   const { data: version } = useQuery({
     queryKey: ["workflow-version", props.versionId],
+    enabled: !!props.versionId,
     queryFn: async ({ queryKey }) => {
       const response = await api({ url: queryKey.join("/") });
       return response;

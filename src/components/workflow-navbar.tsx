@@ -59,6 +59,8 @@ import type { Session } from "./app-sidebar";
 import { ConnectionStatusIndicator } from "./connection-status-indicator";
 import { ImageInputsTooltip } from "./image-inputs-tooltip";
 import { WorkflowModelCheck } from "./onboarding/workflow-model-check";
+import { MachineSelect } from "./workspace/MachineSelect";
+import { useMachine } from "@/hooks/use-machine";
 import { useIsAdminAndMember } from "./permissions";
 import { ShareWorkflowDialog } from "./share-workflow-dialog";
 import { Badge } from "./ui/badge";
@@ -140,6 +142,18 @@ function useWorkflowNavigation() {
 
 export function WorkflowNavbar() {
   const sessionId = useSessionIdInSessionView();
+  const workflowId = useWorkflowIdInWorkflowPage();
+  const { workflow } = useCurrentWorkflow(workflowId || "");
+  const { data: machine, isLoading: isMachineLoading } = useMachine(
+    workflow?.selected_machine_id,
+  );
+
+  // Detect machine-not-found (404) without hiding UI
+  const isMachineNotFound = Boolean(
+    workflow?.selected_machine_id && !isMachineLoading && !machine,
+  );
+
+  // Keep navbar visible even if machine is missing; avoid collapsing UI
 
   return (
     <div>
@@ -166,7 +180,7 @@ export function WorkflowNavbar() {
             sessionId && "dark",
           )}
         >
-          <CenterNavigation />
+          <CenterNavigation isMachineNotFound={isMachineNotFound} />
         </div>
 
         <div className="pointer-events-auto ml-auto flex items-center pr-2 md:pr-4">
@@ -177,7 +191,11 @@ export function WorkflowNavbar() {
   );
 }
 
-function CenterNavigation() {
+function CenterNavigation({
+  isMachineNotFound,
+}: {
+  isMachineNotFound: boolean;
+}) {
   const workflowId = useWorkflowIdInWorkflowPage();
   const isAdminAndMember = useIsAdminAndMember();
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
@@ -191,9 +209,41 @@ function CenterNavigation() {
   const { connectionDetails } = useRealtimeWorkflowUpdateV2(workflowId || "");
 
   const shouldHideDeploymentFeatures = false//!isPlanLoading && !isDeploymentAllowed;
+  const deploymentDisabled = shouldHideDeploymentFeatures || isMachineNotFound;
+  
+  // Auto-redirect to machine settings when machine is not found
+  useEffect(() => {
+    if (isMachineNotFound && view !== "machine") {
+      navigateToView("machine");
+    }
+  }, [isMachineNotFound, view, navigateToView]);
+
+  // Unified helper functions for disabled state
+  const isButtonDisabled = (buttonView: string) => {
+    // Machine button is never disabled since it's the target for configuration
+    if (buttonView === "machine") return false;
+    // All other buttons are disabled when machine is not found
+    return isMachineNotFound;
+  };
+
+  const getDisabledClassName = (buttonView: string, baseClassName: string) => {
+    return isButtonDisabled(buttonView) 
+      ? `${baseClassName} opacity-50 cursor-not-allowed`
+      : baseClassName;
+  };
+
+  const handleButtonClick = (buttonView: string, originalHandler: () => void) => {
+    if (isButtonDisabled(buttonView)) {
+      navigateToView("machine");
+      return;
+    }
+    originalHandler();
+  };
+
   const [buttonPositions, setButtonPositions] = useState<
     Record<string, { left: number; width: number }>
   >({});
+  const lastPositionsRef = useRef<Record<string, { left: number; width: number }>>({});
   const [positionsReady, setPositionsReady] = useState(false);
   const isFirstRender = useRef(true);
   const hasInteracted = useRef(false);
@@ -203,8 +253,7 @@ function CenterNavigation() {
   useEffect(() => {
     if (!navRef.current) return;
 
-    // Reset positions when dependencies change
-    setPositionsReady(false);
+    // Do not force-hide while recalculating to avoid flicker
 
     const updatePositions = () => {
       const nav = navRef.current;
@@ -224,8 +273,24 @@ function CenterNavigation() {
         };
       });
 
-      setButtonPositions(positions);
-      setPositionsReady(true);
+      // Only update state when positions actually change
+      let changed = false;
+      const prev = lastPositionsRef.current;
+      const keys = new Set([...Object.keys(prev), ...Object.keys(positions)]);
+      for (const key of keys) {
+        const a = prev[key];
+        const b = positions[key];
+        if (!a || !b || a.left !== b.left || a.width !== b.width) {
+          changed = true;
+          break;
+        }
+      }
+
+      if (changed) {
+        setButtonPositions(positions);
+        setPositionsReady(true);
+        lastPositionsRef.current = positions;
+      }
     };
 
     // Force position update on first interaction
@@ -341,16 +406,17 @@ function CenterNavigation() {
           <button
             type="button"
             data-button-id="workspace"
-            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${view === "workspace"
+            disabled={isButtonDisabled("workspace")}
+            className={getDisabledClassName("workspace", `relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${view === "workspace"
                 ? "font-medium text-gray-900 dark:text-zinc-100"
                 : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              }`}
-            onClick={() => {
+              }`)}
+            onClick={() => handleButtonClick("workspace", () => {
               navigateToView("workspace", {
                 sessionId: effectiveSessionId || undefined,
               });
-            }}
-            onMouseEnter={() => setHoveredButton("workspace")}
+            })}
+            onMouseEnter={() => !isButtonDisabled("workspace") && setHoveredButton("workspace")}
           >
             <WorkflowIcon className="h-4 w-4" />
             <span>Workflow</span>
@@ -361,14 +427,15 @@ function CenterNavigation() {
         <button
           type="button"
           data-button-id="playground"
-          className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${view === "playground"
+          disabled={isButtonDisabled("playground")}
+          className={getDisabledClassName("playground", `relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${view === "playground"
               ? "font-medium text-gray-900 dark:text-zinc-100"
               : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-            }`}
-          onClick={() => {
+            }`)}
+          onClick={() => handleButtonClick("playground", () => {
             navigateToView("playground");
-          }}
-          onMouseEnter={() => setHoveredButton("playground")}
+          })}
+          onMouseEnter={() => !isButtonDisabled("playground") && setHoveredButton("playground")}
         >
           <Play className="h-4 w-4" />
           <span>Playground</span>
@@ -380,14 +447,15 @@ function CenterNavigation() {
             <button
               type="button"
               data-button-id="machine"
-              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "machine"
+              disabled={isButtonDisabled("machine")}
+              className={getDisabledClassName("machine", `relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "machine"
                   ? "text-gray-900 dark:text-zinc-100"
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-              onClick={() => {
+                }`)}
+              onClick={() => handleButtonClick("machine", () => {
                 navigateToView("machine");
-              }}
-              onMouseEnter={() => setHoveredButton("machine")}
+              })}
+              onMouseEnter={() => !isButtonDisabled("machine") && setHoveredButton("machine")}
             >
               <Settings className="h-4 w-4" />
             </button>
@@ -400,14 +468,15 @@ function CenterNavigation() {
             <button
               type="button"
               data-button-id="model"
-              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "model"
+              disabled={isButtonDisabled("model")}
+              className={getDisabledClassName("model", `relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "model"
                   ? "text-gray-900 dark:text-zinc-100"
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-              onClick={() => {
+                }`)}
+              onClick={() => handleButtonClick("model", () => {
                 navigateToView("model");
-              }}
-              onMouseEnter={() => setHoveredButton("model")}
+              })}
+              onMouseEnter={() => !isButtonDisabled("model") && setHoveredButton("model")}
             >
               <Database className="h-4 w-4" />
             </button>
@@ -419,14 +488,15 @@ function CenterNavigation() {
           <button
             type="button"
             data-button-id="gallery"
-            className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "gallery"
+            disabled={isButtonDisabled("gallery")}
+            className={getDisabledClassName("gallery", `relative z-10 flex items-center justify-center p-2.5 transition-colors ${view === "gallery"
                 ? "text-gray-900 dark:text-zinc-100"
                 : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              }`}
-            onClick={() => {
+              }`)}
+            onClick={() => handleButtonClick("gallery", () => {
               navigateToView("gallery");
-            }}
-            onMouseEnter={() => setHoveredButton("gallery")}
+            })}
+            onMouseEnter={() => !isButtonDisabled("gallery") && setHoveredButton("gallery")}
           >
             <ImageIcon className="h-4 w-4" />
           </button>
@@ -442,18 +512,22 @@ function CenterNavigation() {
           <button
             type="button"
             data-button-id="deployment"
-            className={`relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${shouldHideDeploymentFeatures
-                ? "text-purple-600 opacity-50 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100"
-                : view === "deployment"
+            disabled={deploymentDisabled}
+            className={getDisabledClassName("deployment", `relative z-10 flex items-center gap-1.5 px-4 py-2.5 transition-colors ${
+              !deploymentDisabled
+                ? view === "deployment"
                   ? "font-medium text-gray-900 dark:text-zinc-100"
                   : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-              }`}
-            onClick={() => {
+                : shouldHideDeploymentFeatures && !isMachineNotFound
+                  ? "text-purple-600 dark:text-purple-400"
+                  : "text-gray-600 dark:text-zinc-400"
+              }`)}
+            onClick={() => handleButtonClick("deployment", () => {
               navigateToView("deployment");
-            }}
-            onMouseEnter={() => setHoveredButton("deployment")}
+            })}
+            onMouseEnter={() => !deploymentDisabled && setHoveredButton("deployment")}
           >
-            {shouldHideDeploymentFeatures ? (
+            {shouldHideDeploymentFeatures && !isMachineNotFound ? (
               <Lock className="h-4 w-4" />
             ) : (
               <GitBranch className="h-4 w-4" />
@@ -468,18 +542,20 @@ function CenterNavigation() {
             <button
               type="button"
               data-button-id="requests"
-              className={`relative z-10 flex items-center justify-center p-2.5 transition-colors ${shouldHideDeploymentFeatures
-                  ? "text-purple-600 opacity-50 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100"
-                  : view === "requests"
+              disabled={deploymentDisabled}
+              className={getDisabledClassName("requests", `relative z-10 flex items-center justify-center p-2.5 transition-colors ${
+                !deploymentDisabled
+                  ? view === "requests"
                     ? "text-gray-900 dark:text-zinc-100"
                     : "text-gray-600 hover:text-gray-900 dark:text-zinc-400 dark:hover:text-zinc-100"
-                }`}
-              onClick={() => {
-                if (!shouldHideDeploymentFeatures) {
-                  navigateToView("requests");
-                }
-              }}
-              onMouseEnter={() => setHoveredButton("requests")}
+                  : shouldHideDeploymentFeatures && !isMachineNotFound
+                    ? "text-purple-600 dark:text-purple-400"
+                    : "text-gray-600 dark:text-zinc-400"
+                }`)}
+              onClick={() => handleButtonClick("requests", () => {
+                navigateToView("requests");
+              })}
+              onMouseEnter={() => !deploymentDisabled && setHoveredButton("requests")}
             >
               <TextSearch className="h-4 w-4" />
             </button>
@@ -623,6 +699,12 @@ function WorkflowNavbarRight() {
     from: "/workflows/$workflowId/$view",
   });
   const { workflow } = useCurrentWorkflow(workflowId || "");
+  const { data: machine, isLoading: isMachineLoading } = useMachine(
+    workflow?.selected_machine_id,
+  );
+  const isMachineNotFound = Boolean(
+    workflow?.selected_machine_id && !isMachineLoading && !machine,
+  );
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<any>(null);
@@ -816,7 +898,52 @@ function WorkflowNavbarRightMobile() {
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
   const isDeploymentAllowed = useIsDeploymentAllowed();
 
+  // Get machine and check if not found
+  const { workflow } = useCurrentWorkflow(workflowId || "");
+  const { data: machine, isLoading: isMachineLoading } = useMachine(
+    workflow?.selected_machine_id,
+  );
+  const isMachineNotFound = Boolean(
+    workflow?.selected_machine_id && !isMachineLoading && !machine,
+  );
+
   const shouldHideDeploymentFeatures = !isPlanLoading && !isDeploymentAllowed;
+
+  // Unified mobile helper functions for disabled state
+  const isMobileButtonDisabled = (buttonView: string) => {
+    // Machine button is never disabled since it's the target for configuration
+    if (buttonView === "machine") return false;
+    // All other buttons are disabled when machine is not found
+    return isMachineNotFound;
+  };
+
+  const getMobileDisabledClassName = (buttonView: string, baseClassName: string) => {
+    return isMobileButtonDisabled(buttonView) 
+      ? `${baseClassName} opacity-50 cursor-not-allowed`
+      : baseClassName;
+  };
+
+  const handleMobileButtonClick = (buttonView: string, originalHandler: () => void) => {
+    if (isMobileButtonDisabled(buttonView)) {
+      router.navigate({
+        to: "/workflows/$workflowId/$view",
+        params: {
+          workflowId,
+          view: "machine",
+        },
+      });
+      return;
+    }
+    originalHandler();
+  };
+
+  // Handle deployment-specific disabled state for mobile
+  const isMobileDeploymentDisabled = (buttonView: string) => {
+    if (buttonView === "deployment" || buttonView === "requests") {
+      return shouldHideDeploymentFeatures || isMachineNotFound;
+    }
+    return isMobileButtonDisabled(buttonView);
+  };
 
   return (
     <DropdownMenu>
@@ -855,8 +982,9 @@ function WorkflowNavbarRightMobile() {
         {isAdminAndMember && (
           <>
             <DropdownMenuItem
-              className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-              onClick={() => {
+              className={getMobileDisabledClassName("workspace", "px-3 py-2 md:hidden dark:focus:bg-zinc-700/40")}
+              disabled={isMobileButtonDisabled("workspace")}
+              onClick={() => handleMobileButtonClick("workspace", () => {
                 router.navigate({
                   to: "/workflows/$workflowId/$view",
                   params: {
@@ -864,14 +992,15 @@ function WorkflowNavbarRightMobile() {
                     view: "workspace",
                   },
                 });
-              }}
+              })}
             >
               <WorkflowIcon size={16} className="mr-2" />
               Workflow
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-              onClick={() => {
+              className={getMobileDisabledClassName("machine", "px-3 py-2 md:hidden dark:focus:bg-zinc-700/40")}
+              disabled={isMobileButtonDisabled("machine")}
+              onClick={() => handleMobileButtonClick("machine", () => {
                 router.navigate({
                   to: "/workflows/$workflowId/$view",
                   params: {
@@ -879,14 +1008,15 @@ function WorkflowNavbarRightMobile() {
                     view: "machine",
                   },
                 });
-              }}
+              })}
             >
               <Server size={16} className="mr-2" />
               Machine
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-              onClick={() => {
+              className={getMobileDisabledClassName("model", "px-3 py-2 md:hidden dark:focus:bg-zinc-700/40")}
+              disabled={isMobileButtonDisabled("model")}
+              onClick={() => handleMobileButtonClick("model", () => {
                 router.navigate({
                   to: "/workflows/$workflowId/$view",
                   params: {
@@ -894,7 +1024,7 @@ function WorkflowNavbarRightMobile() {
                     view: "model",
                   },
                 });
-              }}
+              })}
             >
               <Database size={16} className="mr-2" />
               Model
@@ -905,8 +1035,9 @@ function WorkflowNavbarRightMobile() {
 
         {/* Playground and Gallery are always available */}
         <DropdownMenuItem
-          className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-          onClick={() => {
+          className={getMobileDisabledClassName("playground", "px-3 py-2 md:hidden dark:focus:bg-zinc-700/40")}
+          disabled={isMobileButtonDisabled("playground")}
+          onClick={() => handleMobileButtonClick("playground", () => {
             router.navigate({
               to: "/workflows/$workflowId/$view",
               params: {
@@ -914,14 +1045,15 @@ function WorkflowNavbarRightMobile() {
                 view: "playground",
               },
             });
-          }}
+          })}
         >
           <Play size={16} className="mr-2" />
           Playground
         </DropdownMenuItem>
         <DropdownMenuItem
-          className="px-3 py-2 md:hidden dark:focus:bg-zinc-700/40"
-          onClick={() => {
+          className={getMobileDisabledClassName("gallery", "px-3 py-2 md:hidden dark:focus:bg-zinc-700/40")}
+          disabled={isMobileButtonDisabled("gallery")}
+          onClick={() => handleMobileButtonClick("gallery", () => {
             router.navigate({
               to: "/workflows/$workflowId/$view",
               params: {
@@ -929,7 +1061,7 @@ function WorkflowNavbarRightMobile() {
                 view: "gallery",
               },
             });
-          }}
+          })}
         >
           <ImageIcon size={16} className="mr-2" />
           Gallery
@@ -940,11 +1072,9 @@ function WorkflowNavbarRightMobile() {
           <>
             <DropdownMenuSeparator className="mx-4 my-2 bg-zinc-200/60 md:hidden dark:bg-zinc-600/60" />
             <DropdownMenuItem
-              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${shouldHideDeploymentFeatures
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-                }`}
-              onClick={() => {
+              className={getMobileDisabledClassName("deployment", "px-3 py-2 md:hidden dark:focus:bg-zinc-700/40")}
+              disabled={isMobileDeploymentDisabled("deployment")}
+              onClick={() => handleMobileButtonClick("deployment", () => {
                 if (!shouldHideDeploymentFeatures) {
                   router.navigate({
                     to: "/workflows/$workflowId/$view",
@@ -954,9 +1084,9 @@ function WorkflowNavbarRightMobile() {
                     },
                   });
                 }
-              }}
+              })}
             >
-              {shouldHideDeploymentFeatures ? (
+              {shouldHideDeploymentFeatures && !isMachineNotFound ? (
                 <Lock size={16} className="mr-2" />
               ) : (
                 <GitBranch size={16} className="mr-2" />
@@ -964,11 +1094,9 @@ function WorkflowNavbarRightMobile() {
               API
             </DropdownMenuItem>
             <DropdownMenuItem
-              className={`px-3 py-2 md:hidden dark:focus:bg-zinc-700/40 ${shouldHideDeploymentFeatures
-                  ? "opacity-50 cursor-not-allowed"
-                  : ""
-                }`}
-              onClick={() => {
+              className={getMobileDisabledClassName("requests", "px-3 py-2 md:hidden dark:focus:bg-zinc-700/40")}
+              disabled={isMobileDeploymentDisabled("requests")}
+              onClick={() => handleMobileButtonClick("requests", () => {
                 if (!shouldHideDeploymentFeatures) {
                   router.navigate({
                     to: "/workflows/$workflowId/$view",
@@ -978,7 +1106,7 @@ function WorkflowNavbarRightMobile() {
                     },
                   });
                 }
-              }}
+              })}
             >
               <TextSearch size={16} className="mr-2" />
               Requests

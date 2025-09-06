@@ -8,6 +8,7 @@ import { machineGPUOptions } from "../machine/machine-schema";
 import { Button } from "../ui/button";
 import { useLogStore } from "./LogContext";
 import { useMachine } from "@/hooks/use-machine";
+import { withErrorContext } from "@/lib/error-context";
 
 type SessionCreateProps = {
   workflowId: string;
@@ -28,7 +29,8 @@ export function SessionCreate({
   const { workflow } = useCurrentWorkflow(workflowId);
   const machineId = workflow?.selected_machine_id;
   const { data: machine, isLoading: machineLoading } = useMachine(machineId);
-  const { createSession, listSession } = useSessionAPI(machineId);
+  // Bind session API to a verified machine to avoid errors for stale IDs
+  const { createSession, listSession } = useSessionAPI(machine?.id);
   const { open, ui, setOpen } = useUpdateServerActionDialog({
     title: "Create Session",
     description: "Create a new session",
@@ -74,12 +76,16 @@ export function SessionCreate({
       try {
         localStorage.setItem("lastGPUSelection", data.gpu);
         localStorage.setItem("lastTimeoutSelection", data.timeout.toString());
-        const response = await createSession.mutateAsync(data);
+        const response = await withErrorContext(
+          { action: "Create session" },
+          () => createSession.mutateAsync(data),
+        );
         useLogStore.getState().clearLogs();
         await listSession.refetch();
         setSessionId(response.session_id);
       } catch (e) {
-        toast.error(`Failed to create session: ${e}`);
+        // Global handler will open the dialog. Optional: lean toast.
+        toast.error("Failed to create session");
       }
     },
   });

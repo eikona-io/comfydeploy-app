@@ -353,6 +353,7 @@ function ServerlessSettings({
   const isBusiness = sub?.plans?.plans?.some((plan) =>
     plan.includes("business"),
   );
+  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Session check hooks and data
   const [showSessionDialog, setShowSessionDialog] = useState(false);
@@ -403,6 +404,26 @@ function ServerlessSettings({
       memory_limit: machine.memory_limit,
     },
   });
+
+  // Enforce free plan constraints in the form state (not during onboarding/new machine)
+  useEffect(() => {
+    if (isFreePlan && machine.id !== "new") {
+      // Force GPU install for custom nodes
+      if (!form.getValues("install_custom_node_with_gpu")) {
+        form.setValue("install_custom_node_with_gpu", true, {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      }
+      // Disable base docker image by clearing any existing value
+      if (form.getValues("base_docker_image")) {
+        form.setValue("base_docker_image", "", {
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+      }
+    }
+  }, [isFreePlan, form, machine.id]);
 
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
@@ -468,6 +489,11 @@ function ServerlessSettings({
   };
 
   const performSubmission = async (changedData: Record<string, any>) => {
+    // Enforce server-side payload for free plan
+    if (isFreePlan) {
+      changedData.install_custom_node_with_gpu = true;
+      changedData.base_docker_image = "";
+    }
     const response = await callServerPromise(
       api({
         url: `machine/serverless/${machine.id}`,
@@ -757,12 +783,18 @@ function ServerlessSettings({
                                     placeholder="nvidia/cuda:12.8.0-devel-ubuntu22.04"
                                     value={field.value ?? ""}
                                     onChange={field.onChange}
+                                    disabled={isFreePlan && machine.id !== "new"}
                                   />
                                 </FormControl>
-                                <FormDescription>
+                                  <FormDescription>
                                   Specify a custom base Docker image for your
                                   machine
-                                </FormDescription>
+                                  {isFreePlan && machine.id !== "new" && (
+                                    <span className="text-amber-600 ml-2">
+                                      Disabled on Free plan
+                                    </span>
+                                  )}
+                                  </FormDescription>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -776,8 +808,9 @@ function ServerlessSettings({
                                 <FormControl>
                                   <Switch
                                     id="install_custom_node_with_gpu"
-                                    checked={field.value}
+                                    checked={isFreePlan && machine.id !== "new" ? true : field.value}
                                     onCheckedChange={field.onChange}
+                                    disabled={isFreePlan && machine.id !== "new"}
                                   />
                                 </FormControl>
                                 <div>
@@ -787,6 +820,11 @@ function ServerlessSettings({
                                   <FormDescription>
                                     Enable GPU support for custom node
                                     installation
+                                    {isFreePlan && machine.id !== "new" && (
+                                      <span className="text-amber-600 ml-2">
+                                        Enforced on Free plan
+                                      </span>
+                                    )}
                                   </FormDescription>
                                 </div>
                               </FormItem>
@@ -1641,8 +1679,7 @@ function CustomNodeSetupWrapper({
   onChange: (value: any) => void;
   readonly?: boolean;
 }) {
-  const sub = useCurrentPlan();
-  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
+  // Free plan now supports all custom nodes; no gating required
 
   const [validation, setValidation] = useState<StepValidation>(() => ({
     docker_command_steps: value || { steps: [] },
@@ -1670,75 +1707,16 @@ function CustomNodeSetupWrapper({
         ? newValidation(validation)
         : newValidation;
 
-    // For free plan, filter out non-ComfyUI Deploy nodes
-    if (isFreePlan && nextValidation.docker_command_steps?.steps) {
-      const filteredSteps = nextValidation.docker_command_steps.steps.filter((step: any) => {
-        if (step.type !== "custom-node") return false;
-        const url = step.data?.url?.toLowerCase() || "";
-        return url.includes("github.com/bennykok/comfyui-deploy");
-      });
-
-      // If steps were filtered, show a warning
-      if (filteredSteps.length < nextValidation.docker_command_steps.steps.length) {
-        toast.warning("Only ComfyUI Deploy custom node is allowed on Pay as you go plan");
-      }
-
-      nextValidation = {
-        ...nextValidation,
-        docker_command_steps: {
-          ...nextValidation.docker_command_steps,
-          steps: filteredSteps
-        }
-      };
-    }
-
     setValidation(nextValidation);
     if (!isEqual(nextValidation.docker_command_steps, value)) {
       onChange(nextValidation.docker_command_steps);
     }
   };
 
-  // Filter validation to only keep ComfyUI Deploy nodes for free plan
-  const filteredValidation = useMemo(() => {
-    if (!isFreePlan || !validation.docker_command_steps?.steps) {
-      return validation;
-    }
-
-    // Filter steps to only include ComfyUI Deploy nodes
-    const filteredSteps = validation.docker_command_steps.steps.filter((step: any) => {
-      if (step.type !== "custom-node") return false;
-      const url = step.data?.url?.toLowerCase() || "";
-      return url.includes("github.com/bennykok/comfyui-deploy");
-    });
-
-    return {
-      ...validation,
-      docker_command_steps: {
-        ...validation.docker_command_steps,
-        steps: filteredSteps
-      }
-    };
-  }, [isFreePlan, validation]);
-
   return (
     <div className="space-y-4">
-      {isFreePlan && (
-        <Alert className="border-amber-200 bg-amber-50 dark:bg-amber-950/50">
-          <AlertCircle className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-sm">
-            <strong>Pay as you go limitation:</strong> You can update the ComfyUI Deploy custom node,
-            but additional custom nodes cannot be added.{" "}
-            <Link
-              to="/pricing"
-              className="underline font-medium hover:text-amber-700"
-            >
-              Upgrade to use additional custom nodes
-            </Link>
-          </AlertDescription>
-        </Alert>
-      )}
       <CustomNodeSetup
-        validation={isFreePlan ? filteredValidation : validation}
+        validation={validation}
         setValidation={handleValidationChange}
         readonly={readonly}
       />

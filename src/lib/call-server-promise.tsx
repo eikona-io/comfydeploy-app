@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useErrorDialogStore } from "@/stores/error-dialog-store";
 
 export async function callServerPromise<T>(
   result: Promise<T>,
@@ -57,42 +58,38 @@ function reportError(
   },
 ) {
   const max = 20;
-  // if (error?.length > max) {
+  if (errorAction) {
+    const cleaned = (error || "").replace(/^ApiError:\s*/i, "");
+    // Open the global dialog with a destructive confirmation CTA
+    useErrorDialogStore.getState().sustainError({
+      title: "Confirm Delete",
+      message: cleaned || "Delete this resource?",
+      kind: "unknown",
+      confirm: {
+        label: errorAction.name,
+        destructive: true,
+        onConfirm: errorAction.action,
+      },
+    });
+    return;
+  }
+
+  // Fallback: show toast with copy/report when no action is present
   toast.error(
     <div className="flex w-full flex-col items-start justify-between gap-2">
       <span className="font-medium">{error}</span>
       <div className="flex w-full justify-end gap-2">
-        {/* <Link target="_blank" href={"https://discord.gg/e5ZYBSvr"}> */}
         <Button
           variant="outline"
           className="h-fit min-h-0 px-2 py-0 text-2xs"
           onClick={async () => {
-            await navigator.clipboard.writeText(`Error: 
-\`\`\`
-${error}
-\`\`\`
-`);
+            await navigator.clipboard.writeText(`Error: \n\`\`\`\n${error}\n\`\`\`\n`);
             window.open("https://discord.gg/q6HVeCxvCK", "_blank");
           }}
         >
           Report
         </Button>
-
-        {errorAction && (
-          <Button
-            confirm
-            variant="outline"
-            className="h-fit min-h-0 px-2 py-0 text-2xs"
-            onClick={errorAction.action}
-          >
-            {errorAction.name}
-          </Button>
-        )}
-        {/* </Link> */}
       </div>
     </div>,
   );
-  // } else {
-  //   toast.error(error?.toString());
-  // }
 }

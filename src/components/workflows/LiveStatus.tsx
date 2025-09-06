@@ -81,7 +81,7 @@ export function LiveStatus({
           toast.success(res.message);
           refetch?.();
         } catch (error: any) {
-          toast.error(`Failed to cancel: ${error.message}`);
+          toast.error("Failed to cancel");
         }
       }
     },

@@ -192,6 +192,7 @@ export const columns: ColumnDef<ColumnSchema>[] = [
       const value = row.getValue("version") as string;
       const { data: version, isLoading } = useQuery({
         queryKey: ["workflow-version", value],
+        enabled: !!value,
         queryFn: async ({ queryKey }) => {
           const response = await api({ url: queryKey.join("/") });
           return response;

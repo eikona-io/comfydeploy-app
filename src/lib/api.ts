@@ -1,4 +1,6 @@
 import { useAuthStore } from "./auth-store";
+import { ApiError } from "./api-error";
+import { emitApiError } from "./api-error-bus";
 
 export async function api({
   url,
@@ -64,18 +66,49 @@ export async function api({
       // Handle completion
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          const response = xhr.responseText
-            ? JSON.parse(xhr.responseText)
-            : null;
-          resolve(convertDateFields(response));
+          try {
+            const response = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+            resolve(convertDateFields(response));
+          } catch {
+            resolve(null);
+          }
         } else {
-          reject(new Error(`HTTP error! status: ${xhr.status}`));
+          let parsed: any = null;
+          try {
+            parsed = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+          } catch {
+            // ignore
+          }
+          const candidateStrings = [
+            parsed?.message,
+            parsed?.error,
+            parsed?.detail,
+            parsed?.error?.message,
+            parsed?.msg,
+            parsed?.reason,
+          ].filter((v) => typeof v === "string" && v.trim().length > 0) as string[];
+          const message =
+            candidateStrings[0] ||
+            (parsed?.error && typeof parsed.error === "object"
+              ? JSON.stringify(parsed.error)
+              : undefined) ||
+            `HTTP error ${xhr.status}`;
+          const err = new ApiError(message, {
+            status: xhr.status,
+            url: finalUrl,
+            body: parsed ?? xhr.responseText,
+            code: parsed?.code,
+          });
+          emitApiError(err);
+          reject(err);
         }
       };
 
       // Handle error
       xhr.onerror = () => {
-        reject(new Error("Network error occurred"));
+        const err = new ApiError("Network error occurred", { status: 0, url: finalUrl });
+        emitApiError(err);
+        reject(err);
       };
 
       // Send the request
@@ -90,8 +123,44 @@ export async function api({
     credentials: "include",
   }).then(async (res) => {
     if (!res.ok) {
-      const errorBody = await res.text();
-      throw new Error(`HTTP error! status: ${res.status}, body: ${errorBody}`);
+      const contentType = res.headers.get("content-type") || "";
+      let bodyText = "";
+      try {
+        bodyText = await res.text();
+      } catch {
+        bodyText = "";
+      }
+      let parsed: any = undefined;
+      if (contentType.includes("application/json")) {
+        try {
+          parsed = bodyText ? JSON.parse(bodyText) : undefined;
+        } catch {
+          parsed = undefined;
+        }
+      }
+      const candidateStrings = [
+        parsed?.message,
+        parsed?.error,
+        parsed?.detail,
+        parsed?.error?.message,
+        parsed?.msg,
+        parsed?.reason,
+      ].filter((v) => typeof v === "string" && v.trim().length > 0) as string[];
+      const message =
+        candidateStrings[0] ||
+        (parsed?.error && typeof parsed.error === "object"
+          ? JSON.stringify(parsed.error)
+          : undefined) ||
+        (bodyText ? bodyText.slice(0, 500) : `HTTP error ${res.status}`);
+      const code = parsed?.code || parsed?.error?.code;
+      const err = new ApiError(message, {
+        status: res.status,
+        url: finalUrl,
+        body: parsed ?? bodyText,
+        code,
+      });
+      emitApiError(err);
+      throw err;
     }
     if (raw) {
       return res;
