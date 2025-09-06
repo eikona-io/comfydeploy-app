@@ -50,6 +50,7 @@ import { useState } from "react";
 import type { AutumnDataV2Response, Product, Feature } from "@/types/autumn-v2";
 import { isFeatureItem, isPricedFeatureItem } from "@/types/autumn-v2";
 import { TopUpButton } from "@/components/pricing/TopUpButton";
+import { BlueprintOutline } from "@/components/ui/custom/blueprint-outline";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/usage")({
@@ -59,6 +60,8 @@ export const Route = createFileRoute("/usage")({
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"graph" | "grid">("graph");
   const [creditsExpanded, setCreditsExpanded] = useState(false);
+  const [showAddons, setShowAddons] = useState(false);
+  const [featuresExpanded, setFeaturesExpanded] = useState(false);
 
   // Handle topup success from URL params
   const searchParams = new URLSearchParams(window.location.search);
@@ -75,11 +78,11 @@ function RouteComponent() {
     queryKey: ["platform", "invoices"],
   });
 
-  const { data: sub } = useQuery<Subscription>({
+  const { data: sub, isLoading: subLoading } = useQuery<Subscription>({
     queryKey: ["platform", "plan"],
   });
 
-  const { data: autumnDataResponse } = useQuery<AutumnDataV2Response>({
+  const { data: autumnDataResponse, isLoading: autumnLoading } = useQuery<AutumnDataV2Response>({
     queryKey: ["platform", "autumn-data"],
   });
 
@@ -112,7 +115,7 @@ function RouteComponent() {
     const end = new Date();
     return {
       id: "current",
-      label: `Current Period (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`,
+      label: `Current (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`,
       start,
       end,
       period_start: start.toLocaleDateString(),
@@ -223,221 +226,297 @@ function RouteComponent() {
         {/* <Suspense> */}
         <UnpaidInvoices />
         {/* </Suspense> */}
-        {/* Subscription products - Compact */}
+        {/* Plan */}
         <div className="mb-6">
-          <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
-                  <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Product</TableHead>
-                  <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Type</TableHead>
-                  <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Status</TableHead>
-                  <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">Price</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {/* Active products from autumn data */}
-                {autumnData?.products?.map((product: Product) => {
-                  const priceItem = product.items.find(item => item.type === 'price');
-                  const featureItems = product.items.filter(item => item.type === 'feature' || item.type === 'priced_feature');
-                  const gpuCreditItem = featureItems.find(item => item.feature_id === 'gpu-credit');
+          <div className="mb-2 px-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">Plan</h2>
+          </div>
+          {/* GPU Credits - Compact (moved above plan) */}
+          <Card className="relative mb-0 rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+            <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
+            <button
+              type="button"
+              onClick={() => {
+                if (gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0) {
+                  setCreditsExpanded(!creditsExpanded);
+                }
+              }}
+              className="relative z-10 w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                  <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
+                </div>
+                <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">GPU Credits</span>
+              </div>
 
-                  return (
-                    <TableRow key={product.id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
-                      <TableCell className="py-1">
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-                            {product.is_add_on ? (
-                              <Plus className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
-                            ) : (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-zinc-500 dark:text-zinc-500">Balance</span>
+                  <span className="text-sm font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                    ${gpuCreditFeature ? totalBalance.toFixed(2) : "0.00"}
+                  </span>
+                </div>
+                <TopUpButton
+                  variant="outline"
+                  size="sm"
+                  className="h-8 px-3 text-xs font-medium rounded-[2px] bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm hover:bg-gray-100 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
+                  showIcon={true}
+                >
+                  Add Credits
+                </TopUpButton>
+                {gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
+                  <ChevronDown
+                    className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""}`}
+                  />
+                )}
+              </div>
+            </button>
+
+            {creditsExpanded && gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
+              <div className="relative z-10 border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+                {gpuCreditFeature.breakdown.map((breakdown, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500 dark:text-zinc-500">
+                      {breakdown.interval === 'month' ? 'Monthly' :
+                        breakdown.interval === 'lifetime' ? 'Lifetime' :
+                          breakdown.interval}
+                    </span>
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="text-zinc-900 dark:text-zinc-100">
+                        ${(breakdown.balance / 100).toFixed(2)}
+                      </span>
+                      <span className="text-zinc-400 dark:text-zinc-600">/</span>
+                      <span className="text-zinc-600 dark:text-zinc-400">
+                        ${(breakdown.included_usage / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+          <Card className="relative rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+            <div className="relative z-10">
+              <Table>
+                <TableBody>
+                  {/* Active plan products */}
+                  {autumnLoading && (
+                    <>
+                      {Array.from({ length: 2 }).map((_, i) => (
+                        <TableRow key={`plan-skel-${i}`} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
+                          <TableCell className="py-2">
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-4 w-4 rounded-[2px]" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Skeleton className="h-3 w-10" />
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Skeleton className="h-3 w-12" />
+                          </TableCell>
+                          <TableCell className="py-2 text-right">
+                            <div className="flex justify-end">
+                              <Skeleton className="h-3 w-16" />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </>
+                  )}
+                  {(autumnData?.products ?? []).filter(p => !p.is_add_on).map((product: Product, idx: number) => {
+                    const priceItem = product.items.find(item => item.type === 'price');
+                    const hasAddons = (autumnData?.products ?? []).some(p => p.is_add_on);
+                    return (
+                      <TableRow key={product.id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
+                        <TableCell className="py-1">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
                               <CreditCard className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
+                            </div>
+                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{product.name}</span>
+                            {hasAddons && idx === 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setShowAddons(v => !v)}
+                                className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800"
+                                aria-label="Toggle add-ons"
+                                aria-expanded={showAddons}
+                              >
+                                <ChevronDown className={`h-3 w-3 transition-transform ${showAddons ? 'rotate-180' : ''}`} />
+                              </button>
                             )}
                           </div>
-                          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                            {product.name}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">
-                          {product.is_add_on ? "Add-on" : "Plan"}
-                        </span>
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <div className="flex items-center gap-1">
-                          <div className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-green-500' : 'bg-zinc-400'
-                            }`} />
-                          <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
-                            {product.status}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-1 text-right">
-                        {priceItem && (
-                          <div className="text-xs">
-                            <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
-                              ${priceItem.price.toFixed(2)}
-                            </span>
-                            {priceItem.interval && (
-                              <span className="text-[10px] text-zinc-500 dark:text-zinc-500">
-                                /{priceItem.interval === 'month' ? 'mo' : priceItem.interval}
-                              </span>
-                            )}
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">Plan</span>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <div className="flex items-center gap-1">
+                            <div className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-green-500' : 'bg-zinc-400'}`} />
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{product.status}</span>
                           </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                        <TableCell className="py-1 text-right">
+                          {priceItem && (
+                            <div className="text-xs">
+                              <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">${priceItem.price.toFixed(2)}</span>
+                              {priceItem.interval && (
+                                <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">/{priceItem.interval === 'month' ? 'mo' : priceItem.interval}</span>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+
+                  {/* Add-on products (collapsible) */}
+                  {showAddons && (autumnData?.products ?? []).filter(p => p.is_add_on).map((product: Product) => {
+                    const priceItem = product.items.find(item => item.type === 'price');
+                    return (
+                      <TableRow key={product.id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
+                        <TableCell className="py-1">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                              <Plus className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
+                            </div>
+                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{product.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">Add-on</span>
+                        </TableCell>
+                        <TableCell className="py-1">
+                          <div className="flex items-center gap-1">
+                            <div className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-green-500' : 'bg-zinc-400'}`} />
+                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{product.status}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-1 text-right">
+                          {priceItem && (
+                            <div className="text-xs">
+                              <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">${priceItem.price.toFixed(2)}</span>
+                              {priceItem.interval && (
+                                <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">/{priceItem.interval === 'month' ? 'mo' : priceItem.interval}</span>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            {/* Collapsible Features Section - Bottom Right */}
+            {autumnData?.features && Object.keys(autumnData.features).filter(id => id !== 'gpu-credit').length > 0 && (
+              <div className="relative px-4 py-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => setFeaturesExpanded(!featuresExpanded)}
+                    className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline underline-offset-2"
+                  >
+                    {featuresExpanded ? 'Hide Details' : 'View Details'}
+                  </button>
+                </div>
+                {featuresExpanded && (
+                  <div className="absolute top-full right-4 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-sm shadow-lg p-3 min-w-[300px] z-50">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
+                          <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Feature</TableHead>
+                          <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Usage</TableHead>
+                          <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">Limit</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(autumnData.features)
+                          .filter(([id]) => id !== 'gpu-credit')
+                          .map(([id, feature]) => (
+                            <TableRow key={id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
+                              <TableCell className="py-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                                    {feature.name}
+                                  </span>
+                                  {feature.overage_allowed && (
+                                    <Badge variant="outline" className="h-3.5 px-1 text-[9px]">
+                                      Overage
+                                    </Badge>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-1">
+                                <div className="flex items-center gap-2">
+                                  {feature.unlimited ? (
+                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
+                                  ) : (
+                                    <>
+                                      <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                                        {feature.usage}
+                                      </span>
+                                      {feature.type === 'continuous_use' && feature.balance !== null && (
+                                        <span className="text-xs text-red-600 dark:text-red-400">
+                                          (-{Math.abs(feature.balance)})
+                                        </span>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-1 text-right">
+                                {feature.unlimited ? (
+                                  <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
+                                    Unlimited
+                                  </Badge>
+                                ) : feature.type === 'continuous_use' && feature.balance !== null ? (
+                                  <span className="font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                                    {feature.balance}
+                                  </span>
+                                ) : (
+                                  <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                                    {feature.included_usage}
+                                  </span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            )}
           </Card>
         </div>
       </div>
 
-      {/* GPU Credits - Compact */}
-      <Card className="mb-6 overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
-        <button
-          type="button"
-          onClick={() => {
-            if (gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0) {
-              setCreditsExpanded(!creditsExpanded);
-            }
-          }}
-          className="w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-              <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
-            </div>
-            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">GPU Credits</span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-zinc-500 dark:text-zinc-500">Balance</span>
-              <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
-                ${gpuCreditFeature ? totalBalance.toFixed(2) : "0.00"}
-              </span>
-              {/* <span className="text-zinc-400 dark:text-zinc-600">/</span>
-              <span className="font-mono text-zinc-600 dark:text-zinc-400">
-                ${gpuCreditFeature ? totalIncluded.toFixed(2) : "5.00"}
-              </span> */}
-            </div>
-            <TopUpButton
-              variant="default"
-              size="sm"
-              className="h-7 px-3 text-xs font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200"
-              showIcon={true}
+      {/* Usage + Period Selection */}
+      <div className="flex w-full items-center justify-between mb-2 mt-6 px-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">Usage</h2>
+          <div className="flex items-center rounded border border-zinc-200/50 bg-white p-0.5 shadow-sm dark:border-zinc-800/50 dark:bg-zinc-900">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("graph")}
+              className={`h-6 w-6 rounded-[3px] ${viewMode === "graph" ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"}`}
             >
-              Add Credits
-            </TopUpButton>
-            {gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
-              <ChevronDown
-                className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""
-                  }`}
-              />
-            )}
+              <BarChart2 className="h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              className={`h-6 w-6 rounded-[3px] ${viewMode === "grid" ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"}`}
+            >
+              <Grid2X2 className="h-3 w-3" />
+            </Button>
           </div>
-        </button>
-
-        {creditsExpanded && gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
-          <div className="border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
-            {gpuCreditFeature.breakdown.map((breakdown, idx) => (
-              <div key={idx} className="flex items-center justify-between text-xs">
-                <span className="text-zinc-500 dark:text-zinc-500">
-                  {breakdown.interval === 'month' ? 'Monthly' :
-                    breakdown.interval === 'lifetime' ? 'Lifetime' :
-                      breakdown.interval}
-                </span>
-                <div className="flex items-center gap-2 font-mono">
-                  <span className="text-zinc-900 dark:text-zinc-100">
-                    ${(breakdown.balance / 100).toFixed(2)}
-                  </span>
-                  <span className="text-zinc-400 dark:text-zinc-600">/</span>
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    ${(breakdown.included_usage / 100).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* All Features Section - Compact Table */}
-      {autumnData?.features && Object.keys(autumnData.features).filter(id => id !== 'gpu-credit').length > 0 && (
-        <div className="mb-6">
-          <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
-                  <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Feature</TableHead>
-                  <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Usage</TableHead>
-                  <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">Limit</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {Object.entries(autumnData.features)
-                  .filter(([id]) => id !== 'gpu-credit') // GPU credit is already shown above
-                  .map(([id, feature]) => (
-                    <TableRow key={id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
-                      <TableCell className="py-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                            {feature.name}
-                          </span>
-                          {feature.overage_allowed && (
-                            <Badge variant="outline" className="h-3.5 px-1 text-[9px]">
-                              Overage
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-1">
-                        <div className="flex items-center gap-2">
-                          {feature.unlimited ? (
-                            <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
-                          ) : (
-                            <>
-                              <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
-                                {feature.usage}
-                              </span>
-                              {feature.included_usage > 0 && !feature.unlimited && (
-                                <Progress
-                                  value={(feature.usage / feature.included_usage) * 100}
-                                  className="h-1 w-16"
-                                />
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="py-1 text-right">
-                        {feature.unlimited ? (
-                          <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
-                            Unlimited
-                          </Badge>
-                        ) : feature.type === 'continuous_use' && feature.balance !== null ? (
-                          <span className="font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                            {feature.balance}
-                          </span>
-                        ) : (
-                          <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
-                            {feature.included_usage}
-                          </span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-              </TableBody>
-            </Table>
-          </Card>
         </div>
-      )}
-
-      {/* Period Selection - Compact */}
-      <div className="flex gap-2 w-full justify-end mb-2 mt-6">
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
@@ -458,7 +537,7 @@ function RouteComponent() {
             value={selectedPeriod ?? undefined}
             onValueChange={(value) => setSelectedPeriod(value)}
           >
-            <SelectTrigger className="h-8 w-[180px] border-zinc-200/50 text-xs dark:border-zinc-800/50 sm:w-[240px]">
+            <SelectTrigger className="h-8 w-[180px] border-zinc-200/50 text-xs dark:border-zinc-800/50 sm:w-[240px] rounded-none">
               <SelectValue placeholder="Select billing period" />
             </SelectTrigger>
             <SelectContent>
@@ -485,7 +564,7 @@ function RouteComponent() {
                       const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
                       return (
                         <>
-                          Current Period
+                          Current
                           <span className="ml-2 text-zinc-500 dark:text-zinc-500">
                             ({startStr} - {endStr})
                           </span>
@@ -533,11 +612,11 @@ function RouteComponent() {
         </div>
       </div>
 
-      <Card className="mb-4 overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
-        <div className="grid divide-x divide-zinc-200/50 dark:divide-zinc-800/50 sm:grid-cols-3">
+      <Card className="relative mb-0 border-zinc-200/50 shadow-sm dark:border-zinc-800/50 rounded-[2px]">
+        <div className="relative z-10 grid divide-x divide-zinc-200/50 dark:divide-zinc-800/50 sm:grid-cols-3">
           <div className="px-4 py-3">
-            <div className="text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Usage</div>
-            <div className="mt-0.5 text-sm font-mono font-medium text-zinc-900 dark:text-zinc-100">
+            <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">Usage</div>
+            <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
               ${is_displaying_invoice
                 ? (usage?.total_cost?.toFixed(2) ?? "0.00")
                 : (used?.toFixed(2) ?? "0.00")}
@@ -545,17 +624,17 @@ function RouteComponent() {
           </div>
           {!is_displaying_invoice && (
             <div className="px-4 py-3">
-              <div className="text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+              <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
                 Credit Balance
               </div>
-              <div className="mt-0.5 text-sm font-mono font-medium text-green-600 dark:text-green-400">
+              <div className="mt-0.5 text-base font-mono font-medium text-green-600 dark:text-green-400">
                 ${(credit ?? 0).toFixed(2)}
               </div>
             </div>
           )}
           <div className="px-4 py-3">
-            <div className="text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Final Usage</div>
-            <div className="mt-0.5 text-sm font-mono font-medium text-zinc-900 dark:text-zinc-100">
+            <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">Final Usage</div>
+            <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
               ${is_displaying_invoice
                 ? (usage?.final_cost?.toFixed(2) ?? "0.00")
                 : Math.max(0, (used ?? 0) - (credit ?? 0)).toFixed(2)}
@@ -563,62 +642,38 @@ function RouteComponent() {
           </div>
         </div>
       </Card>
-      {/* Graph/Table section */}
-      <div className="relative mt-8">
-        {/* View toggle centered on top */}
-        <div className="absolute left-1/2 -translate-x-1/2 -top-4 z-10">
-          <div className="flex items-center rounded border border-zinc-200/50 bg-white p-0.5 shadow-sm dark:border-zinc-800/50 dark:bg-zinc-900">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setViewMode("graph")}
-              className={`h-6 w-6 rounded-[3px] ${viewMode === "graph"
-                ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
-                }`}
-            >
-              <BarChart2 className="h-3 w-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setViewMode("grid")}
-              className={`h-6 w-6 rounded-[3px] ${viewMode === "grid"
-                ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100"
-                : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
-                }`}
-            >
-              <Grid2X2 className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+      {/* Graph/Table section with subtle grid background */}
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
 
         {/* Graph/Table content */}
-        <Suspense fallback={<Skeleton className="h-[400px]" />}>
-          {viewMode === "graph" ? (
-            <UsageBreakdownMemo
-              startTimeOverride={selectedInvoice?.period_start_timestamp}
-              endTimeOverride={selectedInvoice?.period_end_timestamp}
-            />
-          ) : (
-            <UsageTable
-              invoice={selectedInvoice}
-              startTimeOverride={
-                selectedInvoice
-                  ? new Date(selectedInvoice.period_start_timestamp * 1000)
-                  : undefined
-              }
-              endTimeOverride={
-                selectedInvoice
-                  ? new Date(selectedInvoice.period_end_timestamp * 1000)
-                  : undefined
-              }
-            />
-          )}
-        </Suspense>
+        <div className="relative z-10">
+          <Suspense fallback={<Skeleton className="h-[400px]" />}>
+            {viewMode === "graph" ? (
+              <UsageBreakdownMemo
+                startTimeOverride={selectedInvoice?.period_start_timestamp}
+                endTimeOverride={selectedInvoice?.period_end_timestamp}
+              />
+            ) : (
+              <UsageTable
+                invoice={selectedInvoice}
+                startTimeOverride={
+                  selectedInvoice
+                    ? new Date(selectedInvoice.period_start_timestamp * 1000)
+                    : undefined
+                }
+                endTimeOverride={
+                  selectedInvoice
+                    ? new Date(selectedInvoice.period_end_timestamp * 1000)
+                    : undefined
+                }
+              />
+            )}
+          </Suspense>
+        </div>
 
         {selectedInvoice && (
-          <div className="mt-8">
+          <div className="relative z-10 mt-8">
             <InvoiceDetails invoice={selectedInvoice} />
           </div>
         )}
@@ -714,7 +769,7 @@ export function UsageTable(props: {
   });
 
   return (
-    <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+    <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50 rounded-[2px]">
       <ScrollArea className="h-[400px]">
         <Table>
           <TableHeader className="bg-background top-0 sticky">
@@ -1017,7 +1072,7 @@ function UnpaidInvoices() {
     <Card className="mb-4 overflow-hidden border-red-200/50 bg-red-50/30 shadow-sm dark:border-red-900/20 dark:bg-red-900/10">
       <div className="px-4 py-3">
         <div className="flex items-start gap-2">
-          <div className="flex h-4 w-4 items-center justify-center rounded bg-red-100 dark:bg-red-900/30">
+          <div className="flex h-4 w-4 items-center justify-center bg-red-100 dark:bg-red-900/30">
             <AlertCircle className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
           </div>
           <div className="flex-1">
@@ -1026,7 +1081,7 @@ function UnpaidInvoices() {
               {unpaidInvoices.map((invoice: Invoice) => (
                 <div
                   key={invoice.id}
-                  className="flex items-center justify-between rounded bg-white/60 px-2 py-1 dark:bg-zinc-900/40"
+                  className="flex items-center justify-between bg-white/60 px-2 py-1 dark:bg-zinc-900/40"
                 >
                   <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
                     {invoice.period_start} - {invoice.period_end}

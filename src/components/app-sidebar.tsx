@@ -23,6 +23,7 @@ import {
   LogIn,
   MessageCircle,
   Moon,
+  Plus,
   Receipt,
   Rss,
   Search,
@@ -85,6 +86,7 @@ import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
+import { TopUpButton } from "./pricing/TopUpButton";
 
 // Add Session type
 export interface Session {
@@ -719,9 +721,20 @@ function PlanBadge() {
     return (
       <div className="flex items-center gap-1 text-2xs">
         {/* <span className="text-zinc-500 dark:text-zinc-400">Balance:</span> */}
-        <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+        <Link
+          to="/usage"
+          className="font-mono font-medium text-zinc-900 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+        >
           ${totalBalance.toFixed(2)}
-        </span>
+        </Link>
+        <TopUpButton
+          size="sm"
+          variant="ghost"
+          className="h-4 w-4 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+          showIcon={false}
+        >
+          <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400" />
+        </TopUpButton>
       </div>
     );
   }
