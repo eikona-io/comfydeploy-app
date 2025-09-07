@@ -109,6 +109,35 @@ export function getMachineLimits(
 }
 
 /**
+ * Check if self-hosted machines are allowed based on autumn data
+ */
+export function getSelfHostedMachinesAllowed(
+  planStatus?: PlanStatusResponse,
+  autumnResp?: AutumnDataV2Response
+): boolean {
+  // Prioritize autumnResp over planStatus
+  const selfHostedFeature = getAutumnFeature("self_hosted_machines", planStatus, autumnResp);
+  
+  // Debug logging
+  console.log("getSelfHostedMachinesAllowed debug:", {
+    selfHostedFeature,
+    hasFeature: !!selfHostedFeature,
+    featureType: selfHostedFeature?.type,
+    planStatus: planStatus?.plans?.autumn_data?.features?.["self_hosted_machines"],
+    autumnResp: autumnResp?.autumn_data?.features?.["self_hosted_machines"]
+  });
+  
+  // For boolean/static features, the presence of the feature indicates access
+  // Static features in Autumn don't use balance - they're either present or not
+  if (!selfHostedFeature) {
+    return false;
+  }
+  
+  // For static/boolean features, if the feature exists, the user has access
+  return selfHostedFeature.type === "static" || selfHostedFeature.type === "boolean";
+}
+
+/**
  * Get credit balance for a feature
  */
 export function getFeatureCredits(

@@ -18,6 +18,7 @@ import {
   Copy,
   ChevronDown,
   ChevronUp,
+  Lock,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -26,11 +27,14 @@ export function GlobalErrorDialog() {
   const [showDetails, setShowDetails] = useState(false);
 
   const showTopUp = error?.kind === "insufficient_credit";
+  const showUpgrade = error?.kind === "upgrade_required";
 
   const icon = useMemo(() => {
     switch (error?.kind) {
       case "insufficient_credit":
         return <CircleAlert className="h-5 w-5 text-rose-500" />;
+      case "upgrade_required":
+        return <Lock className="h-5 w-5 text-amber-500" />;
       case "forbidden":
         return <ShieldX className="h-5 w-5 text-rose-500" />;
       case "network":
@@ -91,7 +95,12 @@ export function GlobalErrorDialog() {
             <div className="space-y-2 text-primary">
               {error?.message && (
                 <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">
-                  {error.kind === "insufficient_credit" ? "You’re out of credits." : error.message}
+                  {error.kind === "insufficient_credit"
+                    ? "You're out of credits."
+                    : error.kind === "upgrade_required"
+                      ? "This feature is not available in your current plan."
+                      : error.message
+                  }
                 </p>
               )}
             </div>
@@ -101,6 +110,30 @@ export function GlobalErrorDialog() {
         {showTopUp ? (
           <div className="mt-2 rounded-xl border p-4 bg-muted/30">
             <TopUpInline />
+          </div>
+        ) : null}
+
+        {showUpgrade ? (
+          <div className="mt-2 rounded-xl border p-4 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Upgrade to access this feature</p>
+                <p className="text-xs text-muted-foreground">
+                  Choose a plan that includes the features you need.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => {
+                  clear();
+                  window.open('/pricing', '_blank');
+                }}
+                className="flex items-center gap-1"
+              >
+                <Lock className="h-4 w-4" />
+                View Plans
+              </Button>
+            </div>
           </div>
         ) : null}
 
@@ -137,7 +170,7 @@ export function GlobalErrorDialog() {
                 </div>
                 <div className="relative">
                   <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-background p-2 text-[11px] font-mono">
-{prettyBody}
+                    {prettyBody}
                   </pre>
                   <div className="absolute right-2 top-2">
                     <Button variant="outline" size="sm" onClick={copyDetails} className="h-7 gap-1 px-2">

@@ -62,12 +62,28 @@ function prettifyErrorMessage(rawMessage: string | undefined, body: unknown): st
 
 function detectInsufficientCredit(message: string | undefined, body: unknown) {
   const lc = (message || "").toLowerCase();
+  
+  // Inspect structured body to get feature_id
+  const obj =
+    typeof body === "string" ? tryParseJsonString(body) : typeof body === "object" ? body : undefined;
+  
+  let featureId: string | undefined;
+  if (obj) {
+    try {
+      const detail = (obj as any).detail || (obj as any).error || {};
+      featureId = detail?.feature_id;
+    } catch {}
+  }
+  
+  // Only show insufficient credit UI for gpu-credit feature
+  if (featureId !== "gpu-credit") {
+    return false;
+  }
+  
   if (lc.includes("insufficient") && (lc.includes("credit") || lc.includes("balance"))) {
     return true;
   }
-  // Inspect structured body
-  const obj =
-    typeof body === "string" ? tryParseJsonString(body) : typeof body === "object" ? body : undefined;
+  
   if (obj) {
     const nested = extractTextFromObject(obj);
     const ln = (nested || "").toLowerCase();
@@ -83,8 +99,31 @@ function detectInsufficientCredit(message: string | undefined, body: unknown) {
   return false;
 }
 
+function detectUpgradeRequired(message: string | undefined, body: unknown) {
+  // Inspect structured body to get feature_id and allowed status
+  const obj =
+    typeof body === "string" ? tryParseJsonString(body) : typeof body === "object" ? body : undefined;
+  
+  if (obj) {
+    try {
+      const detail = (obj as any).detail || (obj as any).error || {};
+      const featureId = detail?.feature_id;
+      const allowed = detail?.allowed;
+      
+      // If there's a feature_id and user is not allowed, and it's not gpu-credit
+      // (gpu-credit is handled by detectInsufficientCredit)
+      if (featureId && allowed === false && featureId !== "gpu-credit") {
+        return true;
+      }
+    } catch {}
+  }
+  
+  return false;
+}
+
 export type ErrorKind =
   | "insufficient_credit"
+  | "upgrade_required"
   | "forbidden"
   | "network"
   | "not_found"
@@ -143,6 +182,8 @@ export function sustainApiError(err: unknown, ctx?: { path?: string }) {
     const lc = message.toLowerCase();
     if (detectInsufficientCredit(message, err.body)) {
       kind = "insufficient_credit";
+    } else if (detectUpgradeRequired(message, err.body)) {
+      kind = "upgrade_required";
     } else if (status === 0) kind = "network";
     else if (status === 403) kind = lc.includes("forbidden") ? "forbidden" : "forbidden";
     else if (status === 404) kind = "not_found";
@@ -155,6 +196,7 @@ export function sustainApiError(err: unknown, ctx?: { path?: string }) {
 
   const titleByKind: Record<ErrorKind, string> = {
     insufficient_credit: "Insufficient Credit",
+    upgrade_required: "Upgrade Required",
     forbidden: "Access Forbidden",
     network: "Network Error",
     not_found: "Not Found",
@@ -176,11 +218,13 @@ export function sustainApiError(err: unknown, ctx?: { path?: string }) {
     const simplified =
       kind === "insufficient_credit"
         ? "Not enough credits"
-        : kind === "forbidden"
-          ? "Access denied"
-          : kind === "network"
-            ? "Network error"
-            : undefined;
+        : kind === "upgrade_required"
+          ? "This feature requires a plan upgrade"
+          : kind === "forbidden"
+            ? "Access denied"
+            : kind === "network"
+              ? "Network error"
+              : undefined;
 
     sustainError({
       title: titleByKind[kind],

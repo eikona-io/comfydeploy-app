@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useCurrentPlan, useCurrentPlanWithStatus, useIsBusinessAllowed } from "@/hooks/use-current-plan";
+import { useCurrentPlan, useCurrentPlanWithStatus, useIsBusinessAllowed, useIsSelfHostedAllowed } from "@/hooks/use-current-plan";
 import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -139,6 +139,7 @@ export function MachineList() {
     : sub?.features?.machineLimited;
   const hasActiveSub = !sub || !!sub?.sub;
   const isBusinessAllowed = useIsBusinessAllowed();
+  const isSelfHostedAllowed = useIsSelfHostedAllowed();
 
   const query = useMachines(
     debouncedSearchValue ?? undefined,
@@ -237,6 +238,8 @@ export function MachineList() {
       setIsImporting(false);
     }
   };
+
+  console.log(isSelfHostedAllowed);
 
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
@@ -548,8 +551,14 @@ export function MachineList() {
         mutateFn={query.refetch}
         setOpen={setOpenCustomDialog}
         title="Self Hosted Machine"
-        disabled={!hasActiveSub}
-        tooltip={!hasActiveSub ? "Upgrade in pricing tab!" : ""}
+        disabled={!hasActiveSub || !isSelfHostedAllowed}
+        tooltip={!hasActiveSub
+          ? "Upgrade in pricing tab!"
+          : !isSelfHostedAllowed
+            ? (!isBusinessAllowed
+              ? "Upgrade to Business plan to create self-hosted machines."
+              : "Self-hosted machines feature not available in your plan. Contact support for access.")
+            : ""}
         description="Add self hosted comfyui machines to your account."
         serverAction={async (data) => {
           console.log("custom machine", data);
@@ -699,17 +708,15 @@ export function MachineList() {
             name: "Self Hosted Machine",
             icon: Server,
             onClick: () => {
-              if (!machineLimited && isBusinessAllowed) {
+              if (!machineLimited && isSelfHostedAllowed) {
                 setOpenCustomDialog(true);
               }
             },
             disabled: {
-              disabled: !isBusinessAllowed || machineLimited,
-              disabledText: machineLimited
-                ? (machineLimit !== undefined
-                    ? `Max ${machineLimit} Self-hosted machines for your account. Upgrade to create more machines.`
-                    : `Max Self-hosted machines for your account. Upgrade to create more machines.`)
-                : "Upgrade to Business plan to create self-hosted machines.",
+              disabled: !isSelfHostedAllowed,
+              disabledText: (!isBusinessAllowed
+                ? "Upgrade to Business plan to create self-hosted machines."
+                : "Self-hosted machines feature not available in your plan. Contact support for access."),
             },
           },
           {
