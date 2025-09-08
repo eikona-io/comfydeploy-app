@@ -1,5 +1,5 @@
-import { api } from "@/lib/api";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 export async function uploadFile(file: File) {
   // Ensure upload folder exists
@@ -223,7 +223,15 @@ export async function uploadFileToVolume({
     throw error;
   }
 }
-export async function initiateMultipartUpload(filename: string, contentType: string, size: number): Promise<{ uploadId: string; key: string; partSize?: number; maxConcurrency?: number }> {
+export async function initiateMultipartUpload(
+  filename: string,
+  contentType: string,
+  size: number,
+): Promise<{
+  uploadId: string;
+  key: string;
+  partSize: number;
+}> {
   return api({
     url: "volume/file/initiate-multipart-upload",
     init: {
@@ -233,7 +241,11 @@ export async function initiateMultipartUpload(filename: string, contentType: str
   });
 }
 
-export async function getPartUploadUrl(uploadId: string, key: string, partNumber: number): Promise<{ uploadUrl: string }> {
+export async function getPartUploadUrl(
+  uploadId: string,
+  key: string,
+  partNumber: number,
+): Promise<{ uploadUrl: string }> {
   return api({
     url: "volume/file/generate-part-upload-url",
     init: {
@@ -243,7 +255,11 @@ export async function getPartUploadUrl(uploadId: string, key: string, partNumber
   });
 }
 
-export async function completeMultipartUpload(uploadId: string, key: string, parts: { partNumber: number; eTag: string }[]): Promise<{ status: string; key: string }> {
+export async function completeMultipartUpload(
+  uploadId: string,
+  key: string,
+  parts: { partNumber: number; eTag: string }[],
+): Promise<{ status: string; key: string }> {
   return api({
     url: "volume/file/complete-multipart-upload",
     init: {
@@ -253,7 +269,10 @@ export async function completeMultipartUpload(uploadId: string, key: string, par
   });
 }
 
-export async function abortMultipartUpload(uploadId: string, key: string): Promise<{ status: string }> {
+export async function abortMultipartUpload(
+  uploadId: string,
+  key: string,
+): Promise<{ status: string }> {
   return api({
     url: "volume/file/abort-multipart-upload",
     init: {
@@ -269,17 +288,28 @@ const RETRY_CONFIG = {
   retryMultiplier: 2,
 };
 
-
 export async function uploadLargeFileToS3(
   file: File,
-  onProgress?: (pct: number, uploaded: number, total: number, etaSeconds: number) => void
+  onProgress?: (
+    pct: number,
+    uploaded: number,
+    total: number,
+    etaSeconds: number,
+  ) => void,
 ): Promise<{ key: string; uploadId: string }> {
-  const init = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
+  const init = await initiateMultipartUpload(
+    file.name,
+    file.type || "application/octet-stream",
+    file.size,
+  );
   const partSize = init.partSize || 50 * 1024 * 1024;
   const totalParts = Math.ceil(file.size / partSize);
-  if (totalParts > 10000) throw new Error(`File creates too many parts (${totalParts}). Increase part size.`);
+  if (totalParts > 10000)
+    throw new Error(
+      `File creates too many parts (${totalParts}). Increase part size.`,
+    );
   const { uploadId, key } = init;
-  let cancelled = false;
+  const cancelled = false;
 
   const started = Date.now();
   const etags: { partNumber: number; eTag: string }[] = [];
@@ -312,7 +342,11 @@ export async function uploadLargeFileToS3(
           const e2 = xhr.getResponseHeader("etag");
           const tag = (e1 || e2 || "").replaceAll('"', "");
           if (!tag) {
-            reject(new Error("Missing ETag from S3 response. Please ensure your bucket CORS ExposeHeaders includes ETag."));
+            reject(
+              new Error(
+                "Missing ETag from S3 response. Please ensure your bucket CORS ExposeHeaders includes ETag.",
+              ),
+            );
             return;
           }
           progressByPart.set(partNumber, blob.size);
@@ -345,27 +379,43 @@ export async function uploadLargeFileToS3(
   };
 
   try {
-    const inFlight: Promise<void>[] = [];
-    const MAX_CONCURRENCY = Math.min(init.maxConcurrency ?? 10, 20);
+    const promises: Promise<void>[] = [];
+    const MAX_CONCURRENCY = 4; // Hardcoded optimal value
+    let activeParts = 0;
+
     for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
       const start = (partNumber - 1) * partSize;
       const end = Math.min(start + partSize, file.size);
       const blob = file.slice(start, end);
       progressByPart.set(partNumber, 0);
-      inFlight.push(uploadPartWithRetry(partNumber, blob));
-      if (inFlight.length >= MAX_CONCURRENCY) {
-        await Promise.all(inFlight);
-        inFlight.length = 0;
+
+      // Wait if we're at max concurrency
+      while (activeParts >= MAX_CONCURRENCY) {
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
+
+      const wrappedUpload = async () => {
+        activeParts++;
+        try {
+          await uploadPartWithRetry(partNumber, blob);
+        } finally {
+          activeParts--;
+        }
+      };
+
+      promises.push(wrappedUpload());
     }
-    if (inFlight.length) await Promise.all(inFlight);
+
+    await Promise.all(promises);
 
     etags.sort((a, b) => a.partNumber - b.partNumber);
     await completeMultipartUpload(uploadId, key, etags);
     if (onProgress) onProgress(100, file.size, file.size, 0);
     return { key, uploadId };
   } catch (err) {
-    try { await abortMultipartUpload(uploadId, key); } catch {}
+    try {
+      await abortMultipartUpload(uploadId, key);
+    } catch {}
     throw err;
   }
 }
