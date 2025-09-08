@@ -229,7 +229,6 @@ export async function initiateMultipartUpload(filename: string, contentType: str
     url: "volume/file/initiate-multipart-upload",
     init: {
       method: "POST",
-      headers: { "content-type": "application/json" },
       body: JSON.stringify({ filename, contentType, size }),
     },
   });
@@ -240,7 +239,6 @@ export async function getPartUploadUrl(uploadId: string, key: string, partNumber
     url: "volume/file/generate-part-upload-url",
     init: {
       method: "POST",
-      headers: { "content-type": "application/json" },
       body: JSON.stringify({ uploadId, key, partNumber }),
     },
   });
@@ -251,7 +249,6 @@ export async function completeMultipartUpload(uploadId: string, key: string, par
     url: "volume/file/complete-multipart-upload",
     init: {
       method: "POST",
-      headers: { "content-type": "application/json" },
       body: JSON.stringify({ uploadId, key, parts }),
     },
   });
@@ -262,7 +259,6 @@ export async function abortMultipartUpload(uploadId: string, key: string): Promi
     url: "volume/file/abort-multipart-upload",
     init: {
       method: "POST",
-      headers: { "content-type": "application/json" },
       body: JSON.stringify({ uploadId, key }),
     },
   });
