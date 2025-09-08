@@ -99,7 +99,15 @@ export async function api({
             body: parsed ?? xhr.responseText,
             code: parsed?.code,
           });
-          emitApiError(err);
+          // Don't emit token-related errors
+          const isTokenError = xhr.status === 401 || 
+            message.toLowerCase().includes('invalid or missing token') ||
+            message.toLowerCase().includes('token expired') ||
+            message.toLowerCase().includes('authentication failed') ||
+            message.toLowerCase().includes('unauthorized');
+          if (!isTokenError) {
+            emitApiError(err);
+          }
           reject(err);
         }
       };
@@ -107,6 +115,7 @@ export async function api({
       // Handle error
       xhr.onerror = () => {
         const err = new ApiError("Network error occurred", { status: 0, url: finalUrl });
+        // Network errors are not token-related, so emit them
         emitApiError(err);
         reject(err);
       };
@@ -159,7 +168,15 @@ export async function api({
         body: parsed ?? bodyText,
         code,
       });
-      emitApiError(err);
+      // Don't emit token-related errors
+      const isTokenError = res.status === 401 || 
+        message.toLowerCase().includes('invalid or missing token') ||
+        message.toLowerCase().includes('token expired') ||
+        message.toLowerCase().includes('authentication failed') ||
+        message.toLowerCase().includes('unauthorized');
+      if (!isTokenError) {
+        emitApiError(err);
+      }
       throw err;
     }
     if (raw) {

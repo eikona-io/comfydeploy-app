@@ -246,7 +246,20 @@ export function sustainApiError(err: unknown, ctx?: { path?: string }) {
 
 // Register global handler so every ApiError opens the dialog
 // Bypass 404s (common for "not found" lookups we handle in UI)
+// Bypass token-related errors (401, authentication failures)
 setApiErrorHandler((err) => {
   if (err.status === 404) return;
+  
+  // Don't show dialog for token-related errors
+  if (err.status === 401) return;
+  
+  const message = err.message?.toLowerCase() || '';
+  const isTokenError = message.includes('invalid or missing token') ||
+    message.includes('token expired') ||
+    message.includes('authentication failed') ||
+    message.includes('unauthorized');
+  
+  if (isTokenError) return;
+  
   sustainApiError(err);
 });
