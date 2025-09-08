@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useUploadsProgressStore } from "@/stores/uploads-progress";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type { DownloadingModel } from "@/types/models";
@@ -77,8 +76,6 @@ export function DownloadingModels() {
 
       <CollapsibleContent>
         <div className="space-y-2 px-3 pb-3">
-          <UploadingList />
-
           {visibleModels.map((model) => (
             <DownloadingModelItem key={model.id} model={model} />
           ))}
@@ -289,42 +286,6 @@ function DownloadingModelItem({
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function UploadingList() {
-  const uploads = useUploadsProgressStore((s) => Object.values(s.items));
-  if (!uploads.length) return null;
-  return (
-    <div className="space-y-1">
-      {uploads.map((u: any) => (
-        <div
-          key={u.id}
-          className="flex items-center justify-between gap-2 rounded-md border px-2 py-1"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm">{u.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {Math.round(u.percent)}% • {(u.uploaded / 1024 / 1024).toFixed(1)}MB / {(u.size / 1024 / 1024).toFixed(1)}MB
-              {u.eta > 0 ? ` • ${Math.max(0, Math.round(u.eta))}s left` : ""}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Progress value={u.percent} className="w-28" />
-            {u.status === "uploading" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2"
-                onClick={() => useUploadsProgressStore.getState().cancelById(u.id)}
-              >
-                Cancel
-              </Button>
-            )}
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
