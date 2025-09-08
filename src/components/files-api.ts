@@ -1,4 +1,3 @@
-import { useUploadsProgressStore } from "@/stores/uploads-progress";
 import { api } from "@/lib/api";
 import { toast } from "sonner";
 
@@ -275,21 +274,12 @@ export async function uploadLargeFileToS3(
   file: File,
   onProgress?: (pct: number, uploaded: number, total: number, etaSeconds: number) => void
 ): Promise<{ key: string; uploadId: string }> {
-  const store = useUploadsProgressStore.getState();
-  const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
-  store.add({ id, name: file.name, size: file.size, uploaded: 0, percent: 0, eta: 0, status: "uploading" });
   const init = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
   const partSize = init.partSize || 50 * 1024 * 1024;
   const totalParts = Math.ceil(file.size / partSize);
   if (totalParts > 10000) throw new Error(`File creates too many parts (${totalParts}). Increase part size.`);
   const { uploadId, key } = init;
   let cancelled = false;
-  store.attachCancel(id, async () => {
-    if (cancelled) return;
-    cancelled = true;
-    try { await abortMultipartUpload(uploadId, key); } catch {}
-    store.update(id, { status: "aborted" });
-  });
 
   const started = Date.now();
   const etags: { partNumber: number; eTag: string }[] = [];
@@ -303,7 +293,6 @@ export async function uploadLargeFileToS3(
     const elapsed = (Date.now() - started) / 1000;
     const speed = uploaded / Math.max(elapsed, 0.001);
     const eta = (file.size - uploaded) / Math.max(speed, 1);
-    store.update(id, { uploaded, percent: pct, eta });
     if (onProgress) onProgress(pct, uploaded, file.size, eta);
   };
 
@@ -373,11 +362,9 @@ export async function uploadLargeFileToS3(
 
     etags.sort((a, b) => a.partNumber - b.partNumber);
     await completeMultipartUpload(uploadId, key, etags);
-    store.update(id, { percent: 100, eta: 0, status: "completed", uploadId, s3Key: key });
     if (onProgress) onProgress(100, file.size, file.size, 0);
     return { key, uploadId };
   } catch (err) {
-    if (!cancelled) store.update(id, { status: "error" });
     try { await abortMultipartUpload(uploadId, key); } catch {}
     throw err;
   }
