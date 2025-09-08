@@ -257,10 +257,7 @@ function DownloadingModelItem({
         {/* Progress bar for non-failed downloads */}
         {model.status !== "failed" && (
           <div className="mt-2 flex items-center gap-2">
-            <Progress
-              value={model.download_progress}
-              className="h-1.5 flex-1"
-            />
+            <Progress value={model.download_progress} className="h-1.5 flex-1" />
             <span className="min-w-[2.5rem] text-right text-muted-foreground text-xs">
               {model.download_progress}%
             </span>
@@ -270,15 +267,9 @@ function DownloadingModelItem({
         {/* Error section for failed downloads */}
         {model.status === "failed" && model.error_log && (
           <div className="mt-2">
-            <Collapsible
-              open={showErrorDetails}
-              onOpenChange={setShowErrorDetails}
-            >
+            <Collapsible open={showErrorDetails} onOpenChange={setShowErrorDetails}>
               <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="flex h-6 flex-row items-center gap-1 px-0 text-destructive text-xs"
-                >
+                <button type="button" className="flex h-6 flex-row items-center gap-1 px-0 text-destructive text-xs">
                   {showErrorDetails ? (
                     <ChevronDown className="h-3 w-3" />
                   ) : (
@@ -296,45 +287,27 @@ function DownloadingModelItem({
               </CollapsibleContent>
             </Collapsible>
           </div>
-function UploadingList() {
-function UploadingList() {
-function UploadingList() {
-  const uploads = useUploadsProgressStore((s) => Object.values(s.items));
-  if (!uploads.length) return null;
-  return (
-    <div className="space-y-1">
-      {uploads.map((u) => (
-        <div key={u.id} className="flex items-center justify-between gap-2 rounded-md border px-2 py-1">
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm">{u.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {Math.round(u.percent)}% • {(u.uploaded/1024/1024).toFixed(1)}MB / {(u.size/1024/1024).toFixed(1)}MB{u.eta>0 ? ` • ${Math.max(0, Math.round(u.eta))}s left` : ""}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Progress value={u.percent} className="w-28" />
-            {u.status === "uploading" && (
-              <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => useUploadsProgressStore.getState().cancelById(u.id)}>
-                Cancel
-              </Button>
-            )}
-          </div>
-        </div>
-      ))}
+        )}
+      </div>
     </div>
   );
 }
 
+function UploadingList() {
   const uploads = useUploadsProgressStore((s) => Object.values(s.items));
   if (!uploads.length) return null;
   return (
     <div className="space-y-1">
-      {uploads.map((u) => (
-        <div key={u.id} className="flex items-center justify-between gap-2 rounded-md border px-2 py-1">
+      {uploads.map((u: any) => (
+        <div
+          key={u.id}
+          className="flex items-center justify-between gap-2 rounded-md border px-2 py-1"
+        >
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm">{u.name}</div>
             <div className="text-xs text-muted-foreground">
-              {Math.round(u.percent)}% • {(u.uploaded / 1024 / 1024).toFixed(1)}MB / {(u.size / 1024 / 1024).toFixed(1)}MB{u.eta > 0 ? ` • ${Math.max(0, Math.round(u.eta))}s left` : ""}
+              {Math.round(u.percent)}% • {(u.uploaded / 1024 / 1024).toFixed(1)}MB / {(u.size / 1024 / 1024).toFixed(1)}MB
+              {u.eta > 0 ? ` • ${Math.max(0, Math.round(u.eta))}s left` : ""}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -353,62 +326,5 @@ function UploadingList() {
         </div>
       ))}
     </div>
-  );
-}
-
-  const uploads = useUploadsProgressStore((s) => Object.values(s.items));
-  if (!uploads.length) return null;
-  return (
-    <div className="space-y-1">
-      {uploads.map((u) => (
-        <div key={u.id} className="flex items-center justify-between gap-2 rounded-md border px-2 py-1">
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm">{u.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {Math.round(u.percent)}% • {(u.uploaded/1024/1024).toFixed(1)}MB / {(u.size/1024/1024).toFixed(1)}MB{u.eta>0 ? ` • ${Math.max(0, Math.round(u.eta))}s left` : ""}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Progress value={u.percent} className="w-28" />
-            {u.status === "uploading" && (
-              <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => useUploadsProgressStore.getState().cancelById(u.id)}>
-                Cancel
-              </Button>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-        )}
-      </div>
-    </div>
-function UploadingList() {
-  const uploads = useUploadsProgressStore((s) => Object.values(s.items));
-  if (!uploads.length) return null;
-  return (
-    <div className="space-y-1">
-      {uploads.map((u) => (
-        <div key={u.id} className="flex items-center justify-between gap-2 rounded-md border px-2 py-1">
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm">{u.name}</div>
-            <div className="text-xs text-muted-foreground">
-              {Math.round(u.percent)}% • {(u.uploaded/1024/1024).toFixed(1)}MB / {(u.size/1024/1024).toFixed(1)}MB{u.eta>0 ? ` • ${Math.max(0, Math.round(u.eta))}s left` : ""}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Progress value={u.percent} className="w-28" />
-            {u.status === "uploading" && (
-              <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => useUploadsProgressStore.getState().cancelById(u.id)}>
-                Cancel
-              </Button>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
   );
 }

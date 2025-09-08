@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 type Status = "uploading" | "completed" | "aborted" | "error";
 
@@ -45,6 +45,17 @@ export const useUploadsProgressStore = create<Store>()(
         it?.cancel?.();
       },
     }),
-    { name: "uploads-progress-v1" }
+    {
+      name: "uploads-progress-v1",
+      storage: {
+        getItem: (name: string) => (typeof window !== "undefined" ? localStorage.getItem(name) : null),
+        setItem: (name: string, value: string) => {
+          if (typeof window !== "undefined") localStorage.setItem(name, value);
+        },
+        removeItem: (name: string) => {
+          if (typeof window !== "undefined") localStorage.removeItem(name);
+        },
+      } as any,
+    }
   )
 );

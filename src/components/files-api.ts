@@ -225,7 +225,7 @@ export async function uploadFileToVolume({
     throw error;
   }
 }
-export async function initiateMultipartUpload(filename: string, contentType: string, size: number): Promise<{ uploadId: string; key: string }> {
+export async function initiateMultipartUpload(filename: string, contentType: string, size: number): Promise<{ uploadId: string; key: string; partSize?: number; maxConcurrency?: number }> {
   return api({
     url: "volume/file/initiate-multipart-upload",
     init: {
@@ -285,10 +285,11 @@ export async function uploadLargeFileToS3(
   const store = useUploadsProgressStore.getState();
   const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
   store.add({ id, name: file.name, size: file.size, uploaded: 0, percent: 0, eta: 0, status: "uploading" });
-  const partSize = getPartSize(file.size);
+  const init = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
+  const partSize = init.partSize || getPartSize(file.size);
   const totalParts = Math.ceil(file.size / partSize);
   if (totalParts > 10000) throw new Error(`File creates too many parts (${totalParts}). Increase part size.`);
-  const { uploadId, key } = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
+  const { uploadId, key } = init;
   let cancelled = false;
   store.attachCancel(id, async () => {
     if (cancelled) return;
@@ -363,7 +364,7 @@ export async function uploadLargeFileToS3(
 
   try {
     const inFlight: Promise<void>[] = [];
-    const MAX_CONCURRENCY = 10;
+    const MAX_CONCURRENCY = Math.min(init.maxConcurrency ?? 10, 20);
     for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
       const start = (partNumber - 1) * partSize;
       const end = Math.min(start + partSize, file.size);
