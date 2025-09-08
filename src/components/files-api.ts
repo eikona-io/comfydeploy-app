@@ -224,3 +224,127 @@ export async function uploadFileToVolume({
     throw error;
   }
 }
+export async function initiateMultipartUpload(filename: string, contentType: string, size: number): Promise<{ uploadId: string; key: string }> {
+  return api({
+    url: "volume/file/initiate-multipart-upload",
+    init: {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ filename, contentType, size }),
+    },
+  });
+}
+
+export async function getPartUploadUrl(uploadId: string, key: string, partNumber: number): Promise<{ uploadUrl: string }> {
+  return api({
+    url: "volume/file/generate-part-upload-url",
+    init: {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ uploadId, key, partNumber }),
+    },
+  });
+}
+
+export async function completeMultipartUpload(uploadId: string, key: string, parts: { partNumber: number; eTag: string }[]): Promise<{ status: string; key: string }> {
+  return api({
+    url: "volume/file/complete-multipart-upload",
+    init: {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ uploadId, key, parts }),
+    },
+  });
+}
+
+export async function abortMultipartUpload(uploadId: string, key: string): Promise<{ status: string }> {
+  return api({
+    url: "volume/file/abort-multipart-upload",
+    init: {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ uploadId, key }),
+    },
+  });
+}
+
+const RETRY_CONFIG = {
+  maxRetries: 3,
+  retryDelay: 1000,
+  retryMultiplier: 2,
+};
+
+function getPartSize(fileSize: number) {
+  if (fileSize < 1 * 1024 * 1024 * 1024) return 5 * 1024 * 1024;
+  if (fileSize < 5 * 1024 * 1024 * 1024) return 10 * 1024 * 1024;
+  if (fileSize < 15 * 1024 * 1024 * 1024) return 25 * 1024 * 1024;
+  if (fileSize < 50 * 1024 * 1024 * 1024) return 50 * 1024 * 1024;
+  return 100 * 1024 * 1024;
+}
+
+export async function uploadLargeFileToS3(
+  file: File,
+  onProgress?: (pct: number, uploaded: number, total: number, etaSeconds: number) => void
+): Promise<{ key: string; uploadId: string }> {
+  const partSize = getPartSize(file.size);
+  const totalParts = Math.ceil(file.size / partSize);
+
+  const { uploadId, key } = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
+
+  let uploadedBytes = 0;
+  const etags: { partNumber: number; eTag: string }[] = [];
+  const started = Date.now();
+
+  const uploadPartWithRetry = async (partNumber: number, blob: Blob) => {
+    let attempt = 0;
+    let delay = RETRY_CONFIG.retryDelay;
+    while (true) {
+      try {
+        const { uploadUrl } = await getPartUploadUrl(uploadId, key, partNumber);
+        const res = await fetch(uploadUrl, { method: "PUT", body: blob });
+        if (!res.ok) throw new Error(`Part ${partNumber} upload failed with ${res.status}`);
+        const eTag = res.headers.get("ETag") || res.headers.get("etag");
+        if (!eTag) throw new Error("Missing ETag from S3 response");
+        etags.push({ partNumber, eTag: eTag.replaceAll('"', "") });
+        uploadedBytes += blob.size;
+        if (onProgress) {
+          const elapsed = (Date.now() - started) / 1000;
+          const speed = uploadedBytes / Math.max(elapsed, 0.001);
+          const remaining = file.size - uploadedBytes;
+          const eta = remaining / Math.max(speed, 1);
+          onProgress((uploadedBytes / file.size) * 100, uploadedBytes, file.size, eta);
+        }
+        return;
+      } catch (err) {
+        attempt++;
+        if (attempt >= RETRY_CONFIG.maxRetries) throw err as any;
+        await new Promise((r) => setTimeout(r, delay));
+        delay *= RETRY_CONFIG.retryMultiplier;
+      }
+    }
+  };
+
+  try {
+    const inFlight: Promise<void>[] = [];
+    for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
+      const start = (partNumber - 1) * partSize;
+      const end = Math.min(start + partSize, file.size);
+      const blob = file.slice(start, end);
+      inFlight.push(uploadPartWithRetry(partNumber, blob));
+      if (inFlight.length >= 6) {
+        await Promise.all(inFlight);
+        inFlight.length = 0;
+      }
+    }
+    if (inFlight.length) await Promise.all(inFlight);
+
+    etags.sort((a, b) => a.partNumber - b.partNumber);
+    await completeMultipartUpload(uploadId, key, etags);
+    return { key, uploadId };
+  } catch (err) {
+    try {
+      await abortMultipartUpload(uploadId, key);
+    } catch {}
+    throw err;
+  }
+}
