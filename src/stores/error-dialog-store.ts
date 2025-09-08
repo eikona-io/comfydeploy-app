@@ -63,34 +63,31 @@ function prettifyErrorMessage(rawMessage: string | undefined, body: unknown): st
 function detectInsufficientCredit(message: string | undefined, body: unknown) {
   const lc = (message || "").toLowerCase();
   
-  // Inspect structured body to get feature_id
-  const obj =
-    typeof body === "string" ? tryParseJsonString(body) : typeof body === "object" ? body : undefined;
-  
-  let featureId: string | undefined;
-  if (obj) {
-    try {
-      const detail = (obj as any).detail || (obj as any).error || {};
-      featureId = detail?.feature_id;
-    } catch {}
-  }
-  
-  // Only show insufficient credit UI for gpu-credit feature
-  if (featureId !== "gpu-credit") {
-    return false;
-  }
-  
-  if (lc.includes("insufficient") && (lc.includes("credit") || lc.includes("balance"))) {
+  // Check for insufficient balance message pattern (simplified detection)
+  if (lc.includes("insufficient") && lc.includes("balance")) {
     return true;
   }
   
+  // Legacy support: inspect structured body to get feature_id (for backward compatibility)
+  const obj =
+    typeof body === "string" ? tryParseJsonString(body) : typeof body === "object" ? body : undefined;
+  
   if (obj) {
-    const nested = extractTextFromObject(obj);
-    const ln = (nested || "").toLowerCase();
-    if (ln.includes("insufficient") && (ln.includes("credit") || ln.includes("balance"))) return true;
-    // Heuristics on fields
     try {
       const detail = (obj as any).detail || (obj as any).error || {};
+      const featureId = detail?.feature_id;
+      
+      // Only show insufficient credit UI for gpu-credit feature
+      if (featureId === "gpu-credit") {
+        if (lc.includes("insufficient") && (lc.includes("credit") || lc.includes("balance"))) {
+          return true;
+        }
+      }
+      
+      const nested = extractTextFromObject(obj);
+      const ln = (nested || "").toLowerCase();
+      if (ln.includes("insufficient") && (ln.includes("credit") || ln.includes("balance"))) return true;
+      // Heuristics on fields
       const allowed = (detail as any).allowed;
       const balances = (detail as any).balances;
       if (allowed === false && Array.isArray(balances)) return true;
@@ -100,7 +97,15 @@ function detectInsufficientCredit(message: string | undefined, body: unknown) {
 }
 
 function detectUpgradeRequired(message: string | undefined, body: unknown) {
-  // Inspect structured body to get feature_id and allowed status
+  const lc = (message || "").toLowerCase();
+  
+  // Check for access denied message pattern (simplified detection)
+  // This indicates a feature limit that requires upgrade (not insufficient balance)
+  if (lc.includes("access denied") && !lc.includes("insufficient") && !lc.includes("balance")) {
+    return true;
+  }
+  
+  // Legacy support: inspect structured body to get feature_id and allowed status (for backward compatibility)
   const obj =
     typeof body === "string" ? tryParseJsonString(body) : typeof body === "object" ? body : undefined;
   
