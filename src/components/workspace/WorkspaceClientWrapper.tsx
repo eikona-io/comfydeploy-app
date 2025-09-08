@@ -200,8 +200,106 @@ export function WorkspaceClientWrapper({
   // Only block the entire workspace if the workflow itself hasn't loaded yet.
   if (isLoadingWorkflow && !workflow) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
-        <LoadingIcon />
+      <div className="h-full w-full bg-gray-50 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+        {/* Workflow Loading Skeleton */}
+        <div className="flex h-full flex-col">
+          {/* Top navigation area skeleton */}
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-32 animate-pulse rounded-lg bg-gray-200 dark:bg-zinc-700" />
+              <div className="h-6 w-16 animate-pulse rounded-full bg-gray-200 dark:bg-zinc-700" />
+            </div>
+            <div className="flex gap-2">
+              <div className="h-8 w-24 animate-pulse rounded-full bg-gray-200 dark:bg-zinc-700" />
+              <div className="h-8 w-28 animate-pulse rounded-full bg-gray-200 dark:bg-zinc-700" />
+            </div>
+          </div>
+
+          {/* Main workflow canvas area */}
+          <div className="flex-1 p-4">
+            <div className="relative h-full w-full rounded-xl border-2 border-dashed border-gray-200 bg-white/50 dark:border-zinc-700 dark:bg-zinc-800/30">
+              {/* Scattered workflow node skeletons */}
+              <div className="absolute top-12 left-12">
+                <div className="h-24 w-48 animate-pulse rounded-lg bg-gray-200 shadow-sm dark:bg-zinc-700" />
+              </div>
+              <div className="absolute top-32 right-16">
+                <div className="h-32 w-56 animate-pulse rounded-lg bg-gray-200 shadow-sm dark:bg-zinc-700" />
+              </div>
+              <div className="absolute bottom-24 left-1/4">
+                <div className="h-28 w-52 animate-pulse rounded-lg bg-gray-200 shadow-sm dark:bg-zinc-700" />
+              </div>
+              <div className="absolute bottom-16 right-1/3">
+                <div className="h-20 w-44 animate-pulse rounded-lg bg-gray-200 shadow-sm dark:bg-zinc-700" />
+              </div>
+
+              {/* Loading text in center */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400" />
+                  <span className="text-muted-foreground text-sm">Loading workflow...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom form area skeleton */}
+          <div className="p-4">
+            <div className="mx-auto max-w-lg rounded-t-xl bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-800/40">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-zinc-700" />
+                <div className="h-10 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-zinc-700" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-full w-full bg-gray-50 dark:bg-gradient-to-br dark:from-zinc-900 dark:to-zinc-950">
+        {/* Machine Loading Skeleton */}
+        <div className="flex h-full flex-col items-center justify-center gap-8 p-8">
+          <div className="flex flex-col items-center gap-4">
+            <div className="h-16 w-16 animate-pulse rounded-2xl bg-gray-200 dark:bg-zinc-700" />
+            <div className="text-center">
+              <div className="mb-2 h-6 w-48 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+              <div className="h-4 w-64 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+            </div>
+          </div>
+
+          {/* Machine info cards skeleton */}
+          <div className="grid w-full max-w-2xl gap-4 md:grid-cols-2">
+            <div className="rounded-lg border bg-white/60 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/60">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-5 w-5 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+                <div className="h-5 w-24 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+                <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-white/60 p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/60">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="h-5 w-5 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+                <div className="h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-full animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+                <div className="h-4 w-2/3 animate-pulse rounded bg-gray-200 dark:bg-zinc-700" />
+              </div>
+            </div>
+          </div>
+
+          {/* Loading spinner and text */}
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400" />
+            <span className="text-muted-foreground text-sm">Loading machine information...</span>
+          </div>
+        </div>
       </div>
     );
   }
@@ -352,16 +450,16 @@ export function WorkspaceClientWrapper({
               }}
             >
               <div className="rounded-lg bg-white/80 p-4 shadow-lg backdrop-blur-md dark:bg-zinc-800/40">
-            <SessionCreatorForm
-              workflowId={props.workflow_id}
-              version={versions?.[0]?.version ?? 0}
-              defaultMachineId={workflow?.selected_machine_id}
-              defaultMachineVersionId={
-                workflow?.selected_machine_version_id
-              }
-              onShareWorkflow={props.onShareWorkflow}
-              mode="description-only"
-            />
+                <SessionCreatorForm
+                  workflowId={props.workflow_id}
+                  version={versions?.[0]?.version ?? 0}
+                  defaultMachineId={workflow?.selected_machine_id}
+                  defaultMachineVersionId={
+                    workflow?.selected_machine_version_id
+                  }
+                  onShareWorkflow={props.onShareWorkflow}
+                  mode="description-only"
+                />
               </div>
             </motion.div>
 
