@@ -1,6 +1,5 @@
 import { useUploadsProgressStore } from "@/stores/uploads-progress";
 import { api } from "@/lib/api";
-import { useAuthStore } from "@/lib/auth-store";
 import { toast } from "sonner";
 
 export async function uploadFile(file: File) {
@@ -271,12 +270,6 @@ const RETRY_CONFIG = {
   retryMultiplier: 2,
 };
 
-function getPartSize(fileSize: number) {
-  if (fileSize < 1 * 1024 * 1024 * 1024) return 5 * 1024 * 1024;
-  if (fileSize < 5 * 1024 * 1024 * 1024) return 25 * 1024 * 1024;
-  if (fileSize < 20 * 1024 * 1024 * 1024) return 50 * 1024 * 1024;
-  return 100 * 1024 * 1024;
-}
 
 export async function uploadLargeFileToS3(
   file: File,
@@ -286,7 +279,7 @@ export async function uploadLargeFileToS3(
   const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
   store.add({ id, name: file.name, size: file.size, uploaded: 0, percent: 0, eta: 0, status: "uploading" });
   const init = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
-  const partSize = init.partSize || getPartSize(file.size);
+  const partSize = init.partSize || 50 * 1024 * 1024;
   const totalParts = Math.ceil(file.size / partSize);
   if (totalParts > 10000) throw new Error(`File creates too many parts (${totalParts}). Increase part size.`);
   const { uploadId, key } = init;
