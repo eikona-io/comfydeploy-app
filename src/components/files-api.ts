@@ -1,3 +1,4 @@
+import { useUploadsProgressStore } from "@/stores/uploads-progress";
 import { api } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
 import { toast } from "sonner";
@@ -272,9 +273,8 @@ const RETRY_CONFIG = {
 
 function getPartSize(fileSize: number) {
   if (fileSize < 1 * 1024 * 1024 * 1024) return 5 * 1024 * 1024;
-  if (fileSize < 5 * 1024 * 1024 * 1024) return 10 * 1024 * 1024;
-  if (fileSize < 15 * 1024 * 1024 * 1024) return 25 * 1024 * 1024;
-  if (fileSize < 50 * 1024 * 1024 * 1024) return 50 * 1024 * 1024;
+  if (fileSize < 5 * 1024 * 1024 * 1024) return 25 * 1024 * 1024;
+  if (fileSize < 20 * 1024 * 1024 * 1024) return 50 * 1024 * 1024;
   return 100 * 1024 * 1024;
 }
 
@@ -282,30 +282,35 @@ export async function uploadLargeFileToS3(
   file: File,
   onProgress?: (pct: number, uploaded: number, total: number, etaSeconds: number) => void
 ): Promise<{ key: string; uploadId: string }> {
+  const store = useUploadsProgressStore.getState();
+  const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+  store.add({ id, name: file.name, size: file.size, uploaded: 0, percent: 0, eta: 0, status: "uploading" });
   const partSize = getPartSize(file.size);
   const totalParts = Math.ceil(file.size / partSize);
-
-  const { uploadId, key } = await initiateMultipartUpload(
-    file.name,
-    file.type || "application/octet-stream",
-    file.size
-  );
+  if (totalParts > 10000) throw new Error(`File creates too many parts (${totalParts}). Increase part size.`);
+  const { uploadId, key } = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
+  let cancelled = false;
+  store.attachCancel(id, async () => {
+    if (cancelled) return;
+    cancelled = true;
+    try { await abortMultipartUpload(uploadId, key); } catch {}
+    store.update(id, { status: "aborted" });
+  });
 
   const started = Date.now();
   const etags: { partNumber: number; eTag: string }[] = [];
   const progressByPart = new Map<number, number>();
 
   const reportProgress = () => {
-    if (!onProgress) return;
     let uploaded = 0;
     for (const v of progressByPart.values()) uploaded += v;
     uploaded = Math.min(uploaded, file.size);
     const pct = (uploaded / file.size) * 100;
     const elapsed = (Date.now() - started) / 1000;
     const speed = uploaded / Math.max(elapsed, 0.001);
-    const remaining = file.size - uploaded;
-    const eta = remaining / Math.max(speed, 1);
-    onProgress(pct, uploaded, file.size, eta);
+    const eta = (file.size - uploaded) / Math.max(speed, 1);
+    store.update(id, { uploaded, percent: pct, eta });
+    if (onProgress) onProgress(pct, uploaded, file.size, eta);
   };
 
   const putPartXHR = (url: string, blob: Blob, partNumber: number) =>
@@ -324,11 +329,7 @@ export async function uploadLargeFileToS3(
           const e2 = xhr.getResponseHeader("etag");
           const tag = (e1 || e2 || "").replaceAll('"', "");
           if (!tag) {
-            reject(
-              new Error(
-                "Missing ETag from S3 response. Please ensure your bucket CORS ExposeHeaders includes ETag."
-              )
-            );
+            reject(new Error("Missing ETag from S3 response. Please ensure your bucket CORS ExposeHeaders includes ETag."));
             return;
           }
           progressByPart.set(partNumber, blob.size);
@@ -362,13 +363,14 @@ export async function uploadLargeFileToS3(
 
   try {
     const inFlight: Promise<void>[] = [];
+    const MAX_CONCURRENCY = 10;
     for (let partNumber = 1; partNumber <= totalParts; partNumber++) {
       const start = (partNumber - 1) * partSize;
       const end = Math.min(start + partSize, file.size);
       const blob = file.slice(start, end);
       progressByPart.set(partNumber, 0);
       inFlight.push(uploadPartWithRetry(partNumber, blob));
-      if (inFlight.length >= 6) {
+      if (inFlight.length >= MAX_CONCURRENCY) {
         await Promise.all(inFlight);
         inFlight.length = 0;
       }
@@ -377,12 +379,12 @@ export async function uploadLargeFileToS3(
 
     etags.sort((a, b) => a.partNumber - b.partNumber);
     await completeMultipartUpload(uploadId, key, etags);
+    store.update(id, { percent: 100, eta: 0, status: "completed", uploadId, s3Key: key });
     if (onProgress) onProgress(100, file.size, file.size, 0);
     return { key, uploadId };
   } catch (err) {
-    try {
-      await abortMultipartUpload(uploadId, key);
-    } catch {}
+    if (!cancelled) store.update(id, { status: "error" });
+    try { await abortMultipartUpload(uploadId, key); } catch {}
     throw err;
   }
 }
