@@ -285,11 +285,62 @@ export async function uploadLargeFileToS3(
   const partSize = getPartSize(file.size);
   const totalParts = Math.ceil(file.size / partSize);
 
-  const { uploadId, key } = await initiateMultipartUpload(file.name, file.type || "application/octet-stream", file.size);
+  const { uploadId, key } = await initiateMultipartUpload(
+    file.name,
+    file.type || "application/octet-stream",
+    file.size
+  );
 
-  let uploadedBytes = 0;
-  const etags: { partNumber: number; eTag: string }[] = [];
   const started = Date.now();
+  const etags: { partNumber: number; eTag: string }[] = [];
+  const progressByPart = new Map<number, number>();
+
+  const reportProgress = () => {
+    if (!onProgress) return;
+    let uploaded = 0;
+    for (const v of progressByPart.values()) uploaded += v;
+    uploaded = Math.min(uploaded, file.size);
+    const pct = (uploaded / file.size) * 100;
+    const elapsed = (Date.now() - started) / 1000;
+    const speed = uploaded / Math.max(elapsed, 0.001);
+    const remaining = file.size - uploaded;
+    const eta = remaining / Math.max(speed, 1);
+    onProgress(pct, uploaded, file.size, eta);
+  };
+
+  const putPartXHR = (url: string, blob: Blob, partNumber: number) =>
+    new Promise<string>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("PUT", url);
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          progressByPart.set(partNumber, e.loaded);
+          reportProgress();
+        }
+      };
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          const e1 = xhr.getResponseHeader("ETag");
+          const e2 = xhr.getResponseHeader("etag");
+          const tag = (e1 || e2 || "").replaceAll('"', "");
+          if (!tag) {
+            reject(
+              new Error(
+                "Missing ETag from S3 response. Please ensure your bucket CORS ExposeHeaders includes ETag."
+              )
+            );
+            return;
+          }
+          progressByPart.set(partNumber, blob.size);
+          reportProgress();
+          resolve(tag);
+        } else {
+          reject(new Error(`Part upload failed with ${xhr.status}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error("Network error during part upload"));
+      xhr.send(blob);
+    });
 
   const uploadPartWithRetry = async (partNumber: number, blob: Blob) => {
     let attempt = 0;
@@ -297,19 +348,8 @@ export async function uploadLargeFileToS3(
     while (true) {
       try {
         const { uploadUrl } = await getPartUploadUrl(uploadId, key, partNumber);
-        const res = await fetch(uploadUrl, { method: "PUT", body: blob });
-        if (!res.ok) throw new Error(`Part ${partNumber} upload failed with ${res.status}`);
-        const eTag = res.headers.get("ETag") || res.headers.get("etag");
-        if (!eTag) throw new Error("Missing ETag from S3 response");
-        etags.push({ partNumber, eTag: eTag.replaceAll('"', "") });
-        uploadedBytes += blob.size;
-        if (onProgress) {
-          const elapsed = (Date.now() - started) / 1000;
-          const speed = uploadedBytes / Math.max(elapsed, 0.001);
-          const remaining = file.size - uploadedBytes;
-          const eta = remaining / Math.max(speed, 1);
-          onProgress((uploadedBytes / file.size) * 100, uploadedBytes, file.size, eta);
-        }
+        const eTag = await putPartXHR(uploadUrl, blob, partNumber);
+        etags.push({ partNumber, eTag });
         return;
       } catch (err) {
         attempt++;
@@ -326,6 +366,7 @@ export async function uploadLargeFileToS3(
       const start = (partNumber - 1) * partSize;
       const end = Math.min(start + partSize, file.size);
       const blob = file.slice(start, end);
+      progressByPart.set(partNumber, 0);
       inFlight.push(uploadPartWithRetry(partNumber, blob));
       if (inFlight.length >= 6) {
         await Promise.all(inFlight);
@@ -336,6 +377,7 @@ export async function uploadLargeFileToS3(
 
     etags.sort((a, b) => a.partNumber - b.partNumber);
     await completeMultipartUpload(uploadId, key, etags);
+    if (onProgress) onProgress(100, file.size, file.size, 0);
     return { key, uploadId };
   } catch (err) {
     try {
