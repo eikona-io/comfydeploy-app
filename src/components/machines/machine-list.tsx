@@ -1,3 +1,19 @@
+import { useNavigate } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Cloud,
+  CloudCog,
+  EllipsisVertical,
+  LoaderCircle,
+  Plus,
+  RefreshCcw,
+  Server,
+  Upload,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useDebounce } from "use-debounce";
 import { InsertModal } from "@/components/auto-form/auto-form-dialog";
 import { Fab } from "@/components/fab";
 import {
@@ -5,8 +21,8 @@ import {
   serverlessFormSchema,
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
-import { MachineListItem } from "@/components/machines/machine-list-item";
 import { BulkUpdateDialog } from "@/components/machines/bulk-upgrade-dialog";
+import { MachineListItem } from "@/components/machines/machine-list-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,38 +34,22 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useCurrentPlan, useCurrentPlanWithStatus, useIsBusinessAllowed, useIsSelfHostedAllowed } from "@/hooks/use-current-plan";
-import { useMachines } from "@/hooks/use-machine";
-import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { cn } from "@/lib/utils";
-import { useLatestHashes } from "@/utils/comfydeploy-hash";
-import { useNavigate } from "@tanstack/react-router";
-import {
-  Cloud,
-  CloudCog,
-  EllipsisVertical,
-  Plus,
-  RefreshCcw,
-  Server,
-  Upload,
-  LoaderCircle,
-} from "lucide-react";
-import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useState, useMemo, useRef } from "react";
-import { toast } from "sonner";
-import { useDebounce } from "use-debounce";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
+import { useAutumnData, useIsBusinessAllowed, useIsSelfHostedAllowed } from "@/hooks/use-current-plan";
+import { useMachines } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { queryClient } from "@/lib/providers";
+import { cn } from "@/lib/utils";
 import type { Feature as AutumnFeature } from "@/types/autumn-v2";
+import { useLatestHashes } from "@/utils/comfydeploy-hash";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 interface Machine {
   id: string;
@@ -128,16 +128,11 @@ export function MachineList() {
     });
   };
 
-  const sub = useCurrentPlan();
-  const { data: planStatus } = useCurrentPlanWithStatus();
-  const autumnData = planStatus?.plans?.autumn_data;
-  const machineLimitFeature = (autumnData?.features?.["machine_limit"] ?? null) as (AutumnFeature | null);
-  const machineLimit = machineLimitFeature?.included_usage ?? sub?.features?.machineLimit;
-  const currentMachineCount = machineLimitFeature?.usage ?? sub?.features?.currentMachineCount;
-  const machineLimited = machineLimitFeature
-    ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0
-    : sub?.features?.machineLimited;
-  const hasActiveSub = !sub || !!sub?.sub;
+  const { data: autumnData } = useAutumnData();
+  const machineLimitFeature = autumnData?.autumn_data?.features?.["machine_limit"] as (AutumnFeature | null) ?? null;
+  const machineLimit = machineLimitFeature?.included_usage;
+  const currentMachineCount = machineLimitFeature?.usage;
+  const machineLimited = machineLimitFeature ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0 : false;
   const isBusinessAllowed = useIsBusinessAllowed();
   const isSelfHostedAllowed = useIsSelfHostedAllowed();
 
@@ -474,13 +469,13 @@ export function MachineList() {
             ) : (
               <Button
                 onClick={() => {
-                  if (!sub?.features.machineLimited) {
+                  if (!machineLimited) {
                     navigate({
                       search: { view: "create" },
                     });
                   }
                 }}
-                disabled={sub?.features.machineLimited}
+                disabled={machineLimited}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Create Machine
@@ -551,14 +546,12 @@ export function MachineList() {
         mutateFn={query.refetch}
         setOpen={setOpenCustomDialog}
         title="Self Hosted Machine"
-        disabled={!hasActiveSub || !isSelfHostedAllowed}
-        tooltip={!hasActiveSub
-          ? "Upgrade in pricing tab!"
-          : !isSelfHostedAllowed
-            ? (!isBusinessAllowed
-              ? "Upgrade to Business plan to create self-hosted machines."
-              : "Self-hosted machines feature not available in your plan. Contact support for access.")
-            : ""}
+        disabled={!isSelfHostedAllowed}
+        tooltip={!isSelfHostedAllowed
+          ? (!isBusinessAllowed
+            ? "Upgrade to Business plan to create self-hosted machines."
+            : "Self-hosted machines feature not available in your plan. Contact support for access.")
+          : ""}
         description="Add self hosted comfyui machines to your account."
         serverAction={async (data) => {
           console.log("custom machine", data);
@@ -593,13 +586,13 @@ export function MachineList() {
         open={openServerlessDialog}
         mutateFn={query.refetch}
         setOpen={setOpenServerlessDialog}
-        disabled={sub?.features.machineLimited}
+        disabled={machineLimited}
         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
         containerClassName="flex-col"
         tooltip={
-          sub?.features.machineLimited
-            ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
-            : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
+          machineLimited
+            ? `Max ${machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${machineLimit} ComfyUI machine for your account`
         }
         title="Create New Machine"
         description="Create a new serverless ComfyUI machine based on the analyzed workflow."
