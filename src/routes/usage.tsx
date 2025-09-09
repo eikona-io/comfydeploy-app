@@ -450,7 +450,12 @@ function RouteComponent() {
                                 </div>
                               </TableCell>
                               <TableCell className="py-1 w-[45%]">
-                                {feature.unlimited ? (
+                                {feature.type === 'static' ? (
+                                  <div className="flex items-center gap-1">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">Available</span>
+                                  </div>
+                                ) : feature.unlimited ? (
                                   <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
                                 ) : (
                                   <div className="flex flex-col gap-1">
@@ -473,7 +478,11 @@ function RouteComponent() {
                                 )}
                               </TableCell>
                               <TableCell className="py-1 text-right">
-                                {feature.unlimited ? (
+                                {feature.type === 'static' ? (
+                                  <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
+                                    Enabled
+                                  </Badge>
+                                ) : feature.unlimited ? (
                                   <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
                                     Unlimited
                                   </Badge>
