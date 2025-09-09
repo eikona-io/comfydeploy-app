@@ -1,37 +1,5 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TableBody, TableCell } from "@/components/ui/table";
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { UsageGraph } from "@/components/usage/UsageGraph";
-import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { getDuration } from "@/lib/get-relative-time";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   BarChart2,
@@ -42,16 +10,45 @@ import {
   CreditCard,
   ExternalLink,
   Grid2X2,
-  Wallet,
   Plus,
+  Wallet,
 } from "lucide-react";
-import { type ReactNode, Suspense, memo, useMemo, useEffect } from "react";
-import { useState } from "react";
-import type { AutumnDataV2Response, Product, Feature } from "@/types/autumn-v2";
-import { isFeatureItem, isPricedFeatureItem } from "@/types/autumn-v2";
-import { TopUpButton } from "@/components/pricing/TopUpButton";
-import { BlueprintOutline } from "@/components/ui/custom/blueprint-outline";
+import { memo, type ReactNode, Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { TopUpButton } from "@/components/pricing/TopUpButton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { BlueprintOutline } from "@/components/ui/custom/blueprint-outline";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { UsageGraph } from "@/components/usage/UsageGraph";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { getDuration } from "@/lib/get-relative-time";
+import type { AutumnDataV2Response, Feature, Product } from "@/types/autumn-v2";
+import { isFeatureItem, isPricedFeatureItem } from "@/types/autumn-v2";
 
 export const Route = createFileRoute("/usage")({
   component: RouteComponent,
@@ -458,12 +455,10 @@ function RouteComponent() {
                                 ) : feature.unlimited ? (
                                   <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
                                 ) : (
-                                  <div className="flex flex-col gap-1">
-                                    <div className="flex items-center justify-between">
-                                      <span className="font-mono text-[11px] text-zinc-900 dark:text-zinc-100">
-                                        {feature.usage} / {feature.included_usage}
-                                      </span>
-                                    </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-mono text-[11px] text-zinc-900 dark:text-zinc-100 whitespace-nowrap min-w-[60px]">
+                                      {feature.usage} / {feature.included_usage}
+                                    </span>
                                     {/* Progress bar to visualize usage vs limit */}
                                     <Progress
                                       value={(() => {
@@ -472,7 +467,7 @@ function RouteComponent() {
                                         const pct = (feature.usage / limit) * 100;
                                         return Math.min(Math.max(pct, 0), 100);
                                       })()}
-                                      className="h-1.5 rounded-sm bg-zinc-200 dark:bg-zinc-800"
+                                      className="h-1.5 rounded-sm bg-zinc-200 dark:bg-zinc-800 w-[120px]"
                                     />
                                   </div>
                                 )}
