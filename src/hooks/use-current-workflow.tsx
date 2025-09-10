@@ -6,7 +6,6 @@ export function useCurrentWorkflow(workflow_id: string | null) {
   const {
     data: workflow,
     isLoading,
-    isFetching,
     refetch: mutate,
     status,
   } = useQuery<any>({

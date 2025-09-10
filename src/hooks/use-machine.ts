@@ -60,10 +60,6 @@ export function useMachine(machine_id?: string) {
   return useQuery<Machine>({
     enabled: !!machine_id,
     queryKey: ["machine", machine_id],
-    retry: (count, error: any) => {
-      if (isApiError(error) && error.status === 404) return false;
-      return count < 2;
-    },
   });
 }
 

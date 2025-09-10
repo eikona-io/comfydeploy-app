@@ -836,6 +836,9 @@ export function DeleteMachineDialog({
               );
 
               await customerRefetch();
+              await queryClient.resetQueries({
+                predicate: (query) => query.queryKey.includes(machine.id),
+              });
               await refetch();
               setDialogOpen(false);
 

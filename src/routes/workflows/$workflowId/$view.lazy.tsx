@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/nursery/useSortedClasses: <explanation> */
+
+import { useQuery } from "@tanstack/react-query";
 import { createLazyFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowLeft, Copy } from "lucide-react";
@@ -49,7 +51,6 @@ import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { StoragePage } from "@/routes/models";
 import { PricingPage } from "@/routes/pricing";
-import { useQuery } from "@tanstack/react-query";
 
 export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
   component: WorkflowPageComponent,
@@ -63,12 +64,10 @@ function WorkflowPageComponent() {
     new Set([currentView]),
   );
 
-  // Call all hooks first before any conditional logic
   const { workflow, mutateWorkflow } = useCurrentWorkflow(workflowId);
-  const [suppressMachineFetch, setSuppressMachineFetch] = useState(false);
-  const { data: machine, isLoading: isMachineLoading } = useMachine(
-    suppressMachineFetch ? undefined : workflow?.selected_machine_id,
-  );
+
+  const { data: machine } = useMachine(workflow?.selected_machine_id);
+
   const { value: version } = useSelectedVersion(workflowId);
   const isAdminAndMember = useIsAdminAndMember();
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
@@ -83,26 +82,21 @@ function WorkflowPageComponent() {
 
     return (
       machine?.machine_version_id !== null &&
-      machineVersionsAll[0]?.id === machine.machine_version_id
+      machineVersionsAll[0]?.id === machine?.machine_version_id
     );
   }, [machine?.machine_version_id, machineVersionsAll, isLoadingVersions]);
-
-  // Temporarily disable auto-clear of stale machine selection to avoid UI flicker
-  useEffect(() => {
-    return;
-  }, [workflow?.selected_machine_id, isMachineLoading, machine, workflowId, mutateWorkflow]);
 
   // Define allowed views based on permissions
   const allowedViews = isAdminAndMember
     ? [
-      "workspace",
-      "playground",
-      "gallery",
-      "machine",
-      "model",
-      "requests",
-      "deployment",
-    ]
+        "workspace",
+        "playground",
+        "gallery",
+        "machine",
+        "model",
+        "requests",
+        "deployment",
+      ]
     : ["playground", "gallery"];
 
   // Permission check and redirect - do this after all hooks are called
@@ -176,7 +170,7 @@ function WorkflowPageComponent() {
     case "playground":
       view = (
         <PaddingLayout>
-          <div className={cn("h-full w-full")}> 
+          <div className={cn("h-full w-full")}>
             {workflow?.selected_machine_id && version?.id ? (
               <RealtimeWorkflowProvider workflowId={workflowId}>
                 <Playground runOrigin={"manual"} workflow={workflow} />

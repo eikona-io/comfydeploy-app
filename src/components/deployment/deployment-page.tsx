@@ -381,19 +381,19 @@ export function DeploymentDialog({
     }
   }, [selectedDeployment]);
 
-  const { organization } = useOrganization();
   const showCommunity = true;
-  // const showCommunity = organization?.id === "org_2am4LjkQ5IaWGRYMHxGXfHdHcjA";
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
     null,
   );
   const [isPromoting, setIsPromoting] = useState(false);
-  const { workflow, isLoading: isWorkflowLoading } =
-    useCurrentWorkflow(workflowId);
-  const { data: machine } = useMachine(workflow?.selected_machine_id);
+  const { workflow } = useCurrentWorkflow(workflowId);
+
   const { data: deployments, refetch: refetchDeployments } =
     useWorkflowDeployments(workflowId);
-  const final_machine = useMachine(selectedMachineId ?? machine?.id);
+  const final_machine = useMachine(
+    selectedMachineId ?? workflow?.selected_machine_id,
+  );
+  const machine = final_machine.data;
 
   useEffect(() => {
     if (publicLinkOnly && machine?.id) {

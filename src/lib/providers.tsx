@@ -5,10 +5,9 @@ import { NuqsAdapter } from "nuqs/adapters/react";
 import posthog from "posthog-js";
 import { PostHogProvider, usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
-
+import { GlobalErrorDialog } from "@/components/global-error-dialog";
 import { api } from "./api";
 import { isApiError } from "./api-error";
-import { GlobalErrorDialog } from "@/components/global-error-dialog";
 import { useAuthStore } from "./auth-store";
 
 function PostHogUserIdentify() {
@@ -89,6 +88,7 @@ export const queryClient = new QueryClient({
     queries: {
       retry: (count: number, error: Error) => {
         if (isApiError(error) && error.status === 403) return false;
+        if (isApiError(error) && error.status === 404) return false;
         if (error.message.includes("403")) return false;
 
         if (error.message.includes("Waiting for auth to be online")) {

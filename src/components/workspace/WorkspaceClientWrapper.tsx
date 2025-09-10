@@ -1,25 +1,23 @@
-import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
-import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { easeOut } from "framer-motion";
-import { AnimatePresence, motion } from "framer-motion";
-import { ChevronUp, Server, TextSearch } from "lucide-react";
+import { useRouter, useSearch } from "@tanstack/react-router";
+import { AnimatePresence, easeOut, motion } from "framer-motion";
+import { ChevronUp, RefreshCw, Server, TextSearch } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { lazy, useEffect, useState } from "react";
+import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
+import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { cn } from "@/lib/utils";
 import { MyDrawer } from "../drawer";
+import { ErrorBoundary } from "../error-boundary";
 import { VersionChecker } from "../machine/version-checker";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { LoadingIcon } from "../ui/custom/loading-icon";
+import { MachineSelect } from "./MachineSelect";
 import { SessionCreator } from "./SessionView";
-import { WorkspaceMachineLoading } from "./WorkspaceLoading";
 import { SessionCreationDialog } from "./session-creator-dialog";
 import { SessionCreatorForm } from "./session-creator-form";
-import { ErrorBoundary } from "../error-boundary";
-import { RefreshCw } from "lucide-react";
-import { useRouter, useSearch } from "@tanstack/react-router";
-import { useIsDeploymentAllowed } from "@/hooks/use-current-plan";
-import { MachineSelect } from "./MachineSelect";
+import { WorkspaceMachineLoading } from "./WorkspaceLoading";
 
 const ComfyUIFlow = lazy(() =>
   import("../workflow-preview/comfyui-flow").then((mod) => ({
@@ -142,9 +140,7 @@ export function WorkspaceClientWrapper({
     data: versions,
     isLoading: isLoadingVersions,
     isError: isVersionsError,
-  } = useQuery<
-    WorkflowVersion[]
-  >({
+  } = useQuery<WorkflowVersion[]>({
     enabled: !!props.workflow_id,
     queryKey: ["workflow", props.workflow_id, "versions"],
     queryKeyHashFn: (queryKey) => [...queryKey, "latest"].toString(),
@@ -236,7 +232,9 @@ export function WorkspaceClientWrapper({
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400" />
-                  <span className="text-muted-foreground text-sm">Loading workflow...</span>
+                  <span className="text-muted-foreground text-sm">
+                    Loading workflow...
+                  </span>
                 </div>
               </div>
             </div>
@@ -297,32 +295,34 @@ export function WorkspaceClientWrapper({
           {/* Loading spinner and text */}
           <div className="flex flex-col items-center gap-3">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 dark:border-zinc-600 dark:border-t-blue-400" />
-            <span className="text-muted-foreground text-sm">Loading machine information...</span>
+            <span className="text-muted-foreground text-sm">
+              Loading machine information...
+            </span>
           </div>
         </div>
       </div>
     );
   }
 
-  // If there's no selected machine or the selected machine was not found (404),
-  // render the inline machine picker instead of a full-screen spinner.
-  if (!workflow?.selected_machine_id || !machine)
-    return (
-      <div
-        className={cn(
-          "flex h-full w-full flex-col items-center justify-center gap-4",
-          props.className,
-        )}
-      >
-        <span className="text-muted-foreground text-sm">
-          No machine selected, please select a machine.
-        </span>
-        <MachineSelect
-          workflow_id={props.workflow_id}
-          className="max-w-md rounded-md border bg-background"
-        />
-      </div>
-    );
+  // // If there's no selected machine or the selected machine was not found (404),
+  // // render the inline machine picker instead of a full-screen spinner.
+  // if (!workflow?.selected_machine_id || !machine)
+  //   return (
+  //     <div
+  //       className={cn(
+  //         "flex h-full w-full flex-col items-center justify-center gap-4",
+  //         props.className,
+  //       )}
+  //     >
+  //       <span className="text-muted-foreground text-sm">
+  //         No machine selected, please select a machine.
+  //       </span>
+  //       <MachineSelect
+  //         workflow_id={props.workflow_id}
+  //         className="max-w-md rounded-md border bg-background"
+  //       />
+  //     </div>
+  //   );
 
   if (
     machine?.type === "comfy-deploy-serverless" &&
