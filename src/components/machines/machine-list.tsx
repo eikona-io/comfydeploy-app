@@ -42,7 +42,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useAutumnData, useIsBusinessAllowed, useIsSelfHostedAllowed } from "@/hooks/use-current-plan";
+import {
+  useAutumnData,
+  useIsBusinessAllowed,
+  useIsSelfHostedAllowed,
+} from "@/hooks/use-current-plan";
 import { useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
@@ -129,30 +133,13 @@ export function MachineList() {
     });
   };
 
-  // const { data: autumnData } = useAutumnData();
-  // const machineLimitFeature = autumnData?.autumn_data?.features?.["machine_limit"] as (AutumnFeature | null) ?? null;
-  // const machineLimit = machineLimitFeature?.included_usage;
-  // const currentMachineCount = machineLimitFeature?.usage;
-  // const machineLimited = machineLimitFeature ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0 : false;
-  // const isBusinessAllowed = useIsBusinessAllowed();
-  // const isSelfHostedAllowed = useIsSelfHostedAllowed();
-
-  // Using the official Autumn useCustomer hook
-  const { check, isLoading: isLoadingCustomer } = useCustomer();
+  const { check } = useCustomer();
   const machineCheckResult = check({ featureId: "machine_limit" });
   const canCreateMachine = machineCheckResult.data?.allowed;
 
   // You can also check other features
   const selfHostedCheckResult = check({ featureId: "self_hosted_machines" });
   const canCreateSelfHosted = selfHostedCheckResult.data?.allowed;
-
-  console.log(isLoadingCustomer, machineCheckResult, selfHostedCheckResult);
-
-  // useEffect(() => {
-  //   if (isLoadingCustomer) {
-  //     console.log("isLoadingCustomer", isLoadingCustomer);
-  //   }
-  // }, [isLoadingCustomer]);
 
   const query = useMachines(
     debouncedSearchValue ?? undefined,
@@ -565,11 +552,13 @@ export function MachineList() {
         setOpen={setOpenCustomDialog}
         title="Self Hosted Machine"
         disabled={!canCreateSelfHosted}
-        tooltip={!canCreateSelfHosted
-          ? (!canCreateSelfHosted
-            ? "Upgrade to Business plan to create self-hosted machines."
-            : "Self-hosted machines feature not available in your plan. Contact support for access.")
-          : ""}
+        tooltip={
+          !canCreateSelfHosted
+            ? !canCreateSelfHosted
+              ? "Upgrade to Business plan to create self-hosted machines."
+              : "Self-hosted machines feature not available in your plan. Contact support for access."
+            : ""
+        }
         description="Add self hosted comfyui machines to your account."
         serverAction={async (data) => {
           console.log("custom machine", data);
@@ -697,9 +686,11 @@ export function MachineList() {
         }}
         subItems={[
           {
-            name: (machineCheckResult.data?.balance !== undefined && machineCheckResult.data?.included_usage !== undefined)
-              ? `Docker Machine (${machineCheckResult.data?.balance}/${machineCheckResult.data?.included_usage})`
-              : "Docker Machine",
+            name:
+              machineCheckResult.data?.balance !== undefined &&
+              machineCheckResult.data?.included_usage !== undefined
+                ? `Docker Machine (${machineCheckResult.data?.balance}/${machineCheckResult.data?.included_usage})`
+                : "Docker Machine",
             icon: Cloud,
             onClick: () => {
               if (canCreateMachine) {
@@ -710,9 +701,10 @@ export function MachineList() {
             },
             disabled: {
               disabled: !canCreateMachine,
-              disabledText: machineCheckResult.data?.included_usage !== undefined
-                ? `Max ${machineCheckResult.data?.included_usage} Docker machines for your account. Upgrade to create more machines.`
-                : `Max Docker machines for your account. Upgrade to create more machines.`,
+              disabledText:
+                machineCheckResult.data?.included_usage !== undefined
+                  ? `Max ${machineCheckResult.data?.included_usage} Docker machines for your account. Upgrade to create more machines.`
+                  : `Max Docker machines for your account. Upgrade to create more machines.`,
             },
           },
           {
@@ -725,9 +717,9 @@ export function MachineList() {
             },
             disabled: {
               disabled: !canCreateSelfHosted,
-              disabledText: (!canCreateSelfHosted
+              disabledText: !canCreateSelfHosted
                 ? "Upgrade to Business plan to create self-hosted machines."
-                : "Self-hosted machines feature not available in your plan. Contact support for access."),
+                : "Self-hosted machines feature not available in your plan. Contact support for access.",
             },
           },
           {
