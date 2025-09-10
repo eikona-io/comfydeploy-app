@@ -687,9 +687,9 @@ export function MachineList() {
         subItems={[
           {
             name:
-              machineCheckResult.data?.balance !== undefined &&
+              machineCheckResult.data?.usage !== undefined &&
               machineCheckResult.data?.included_usage !== undefined
-                ? `Docker Machine (${machineCheckResult.data?.balance}/${machineCheckResult.data?.included_usage})`
+                ? `Docker Machine (${machineCheckResult.data?.usage}/${machineCheckResult.data?.included_usage})`
                 : "Docker Machine",
             icon: Cloud,
             onClick: () => {
@@ -754,6 +754,8 @@ export function DeleteMachineDialog({
   setDialogOpen,
 }: MachineDialogProps & { planRefetch?: () => void }) {
   const navigate = useNavigate();
+
+  const { refetch: customerRefetch } = useCustomer();
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -833,6 +835,7 @@ export function DeleteMachineDialog({
                 },
               );
 
+              await customerRefetch();
               await refetch();
               setDialogOpen(false);
 
