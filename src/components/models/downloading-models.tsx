@@ -75,7 +75,7 @@ export function DownloadingModels() {
       </div>
 
       <CollapsibleContent>
-        <div className="space-y-1 px-3 pb-3">
+        <div className="space-y-2 px-3 pb-3">
           {visibleModels.map((model) => (
             <DownloadingModelItem key={model.id} model={model} />
           ))}
@@ -254,10 +254,7 @@ function DownloadingModelItem({
         {/* Progress bar for non-failed downloads */}
         {model.status !== "failed" && (
           <div className="mt-2 flex items-center gap-2">
-            <Progress
-              value={model.download_progress}
-              className="h-1.5 flex-1"
-            />
+            <Progress value={model.download_progress} className="h-1.5 flex-1" />
             <span className="min-w-[2.5rem] text-right text-muted-foreground text-xs">
               {model.download_progress}%
             </span>
@@ -267,15 +264,9 @@ function DownloadingModelItem({
         {/* Error section for failed downloads */}
         {model.status === "failed" && model.error_log && (
           <div className="mt-2">
-            <Collapsible
-              open={showErrorDetails}
-              onOpenChange={setShowErrorDetails}
-            >
+            <Collapsible open={showErrorDetails} onOpenChange={setShowErrorDetails}>
               <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="flex h-6 flex-row items-center gap-1 px-0 text-destructive text-xs"
-                >
+                <button type="button" className="flex h-6 flex-row items-center gap-1 px-0 text-destructive text-xs">
                   {showErrorDetails ? (
                     <ChevronDown className="h-3 w-3" />
                   ) : (
