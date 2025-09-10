@@ -1,15 +1,19 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
+import { AlertCircle, Info } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  generateUploadUrl,
+  uploadFileToVolume,
+  uploadLargeFileToS3,
+} from "@/components/files-api";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { FolderPathDisplay } from "./folder-path-display";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { uploadFileToVolume, generateUploadUrl } from "@/components/files-api";
 import { api } from "@/lib/api";
-import type { AddModelRequest } from "@/types/models";
 import { formatBytes, formatTime } from "@/lib/utils";
-import { AlertCircle, Info } from "lucide-react";
+import type { AddModelRequest } from "@/types/models";
+import { FolderPathDisplay } from "./folder-path-display";
 
 interface LocalUploadFormProps {
   onSubmit: (request: AddModelRequest) => void;
@@ -102,79 +106,104 @@ export function LocalUploadForm({
       setUploadProgress(0);
       setUploadStats(null);
 
-      const { uploadUrl, objectKey } = await generateUploadUrl(
-        file.name,
-        file.type || 'application/octet-stream',
-        file.size
-      );
+      const THRESHOLD = 500 * 1024 * 1024;
 
-      const xhr = new XMLHttpRequest();
-      let uploadStartTime = Date.now();
-      let lastLoaded = 0;
-      let lastTime = uploadStartTime;
-      
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const percentComplete = Math.round((event.loaded / event.total) * 100);
-          
-          // Calculate estimated time remaining
-          const currentTime = Date.now();
-          const timeElapsed = currentTime - lastTime;
-          
-          if (timeElapsed > 1000) { // Update every second
-            const loadDiff = event.loaded - lastLoaded;
-            const timePerByte = timeElapsed / loadDiff;
-            const bytesRemaining = event.total - event.loaded;
-            const estimatedTimeRemaining = bytesRemaining * timePerByte / 1000; // in seconds
-            
-            setUploadProgress(percentComplete);
-            setUploadStats({
-              uploadedSize: event.loaded,
-              totalSize: event.total,
-              estimatedTime: estimatedTimeRemaining
-            });
-            
-            lastLoaded = event.loaded;
-            lastTime = currentTime;
-          } else {
-            setUploadProgress(percentComplete);
-            setUploadStats({
-              uploadedSize: event.loaded,
-              totalSize: event.total,
-              estimatedTime: uploadStats?.estimatedTime || 0
-            });
-          }
-        }
-      };
+      if (file.size >= THRESHOLD) {
+        const res = await uploadLargeFileToS3(
+          file,
+          (progress, uploadedSize, totalSize, estimatedTime) => {
+            setUploadProgress(progress);
+            setUploadStats({ uploadedSize, totalSize, estimatedTime });
+          },
+        );
 
-      await new Promise<void>((resolve, reject) => {
-        xhr.open('PUT', uploadUrl);
-        xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-        
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve();
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+        onSubmit({
+          source: "link",
+          folderPath,
+          filename: filename || file.name,
+          downloadLink: `s3://${res.key}`,
+          isTemporaryUpload: true,
+          s3ObjectKey: res.key,
+        });
+      } else {
+        const { uploadUrl, objectKey } = await generateUploadUrl(
+          file.name,
+          file.type || "application/octet-stream",
+          file.size,
+        );
+
+        const xhr = new XMLHttpRequest();
+        const uploadStartTime = Date.now();
+        let lastLoaded = 0;
+        let lastTime = uploadStartTime;
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = Math.round(
+              (event.loaded / event.total) * 100,
+            );
+
+            const currentTime = Date.now();
+            const timeElapsed = currentTime - lastTime;
+
+            if (timeElapsed > 1000) {
+              const loadDiff = event.loaded - lastLoaded;
+              const timePerByte = timeElapsed / loadDiff;
+              const bytesRemaining = event.total - event.loaded;
+              const estimatedTimeRemaining =
+                (bytesRemaining * timePerByte) / 1000;
+
+              setUploadProgress(percentComplete);
+              setUploadStats({
+                uploadedSize: event.loaded,
+                totalSize: event.total,
+                estimatedTime: estimatedTimeRemaining,
+              });
+
+              lastLoaded = event.loaded;
+              lastTime = currentTime;
+            } else {
+              setUploadProgress(percentComplete);
+              setUploadStats({
+                uploadedSize: event.loaded,
+                totalSize: event.total,
+                estimatedTime: uploadStats?.estimatedTime || 0,
+              });
+            }
           }
         };
-        
-        xhr.onerror = () => {
-          reject(new Error('Network error during upload'));
-        };
-        
-        xhr.send(file);
-      });
 
-      // After successful upload to S3, notify parent component to handle the model creation
-      onSubmit({
-        source: "link", // Changed from "local" to "link" since we're using the link endpoint
-        folderPath,
-        filename: filename || file.name,
-        downloadLink: uploadUrl.split('?')[0],
-        isTemporaryUpload: true,
-        s3ObjectKey: objectKey
-      });
+        await new Promise<void>((resolve, reject) => {
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader(
+            "Content-Type",
+            file.type || "application/octet-stream",
+          );
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              resolve();
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          };
+
+          xhr.onerror = () => {
+            reject(new Error("Network error during upload"));
+          };
+
+          xhr.send(file);
+        });
+
+        onSubmit({
+          source: "link",
+          folderPath,
+          filename: filename || file.name,
+          downloadLink: uploadUrl.split("?")[0],
+          isTemporaryUpload: true,
+          s3ObjectKey: objectKey,
+        });
+      }
     } catch (err) {
       console.error("Upload error:", err);
       setError(err instanceof Error ? err.message : "Failed to upload file");
