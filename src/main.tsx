@@ -5,11 +5,11 @@ import {
   useOrganizationList,
 } from "@clerk/clerk-react";
 import {
-  type Route as RouteType,
-  RouterProvider,
   createFileRoute,
   createRoute,
   createRouter,
+  RouterProvider,
+  type Route as RouteType,
   redirect,
   useLocation,
   useRouter,
@@ -17,18 +17,18 @@ import {
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import "./globals.css";
+import { AutumnProvider } from "autumn-js/react";
+import { AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 import { getOrgPathInfo } from "@/utils/org-path";
-import { useEffect } from "react";
+import { LoadingProgress } from "./components/ui/loading-progress";
+import { SidebarProvider } from "./components/ui/sidebar";
+import { SidebarGhost } from "./components/ui/sidebar-ghost";
+import { Providers } from "./lib/providers";
 import { orgPrefixPaths } from "./orgPrefixPaths";
 // Set up a Router instance
 import { type RootRouteContext, Route } from "./routes/__root";
-import { SidebarProvider } from "./components/ui/sidebar";
-import { Providers } from "./lib/providers";
-import { SidebarGhost } from "./components/ui/sidebar-ghost";
-import { LoadingProgress } from "./components/ui/loading-progress";
-import { AnimatePresence } from "framer-motion";
-
 
 // Add this function before creating the orgRoute
 function updateRoutePaths(route: RouteType) {
@@ -243,20 +243,24 @@ function InnerApp() {
   publicClerk = clerk;
 
   return (
-    <div className="animate-in" style={{ animationDuration: "300ms" }}>
-      <div className="pointer-events-none fixed inset-0 z-[-1] flex flex-row bg-white">
-        <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-        <SidebarGhost />
-        <AnimatePresence mode="wait">
-          {!auth.isLoaded && <LoadingProgress key="loading" />}
-        </AnimatePresence>
+    <AutumnProvider
+      includeCredentials
+    >
+      <div className="animate-in" style={{ animationDuration: "300ms" }}>
+        <div className="pointer-events-none fixed inset-0 z-[-1] flex flex-row bg-white">
+          <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+          <SidebarGhost />
+          <AnimatePresence mode="wait">
+            {!auth.isLoaded && <LoadingProgress key="loading" />}
+          </AnimatePresence>
+        </div>
+        <SidebarProvider>
+          <Providers>
+            <RouterProvider router={router} context={{ auth, clerk }} />
+          </Providers>
+        </SidebarProvider>
       </div>
-      <SidebarProvider>
-        <Providers>
-          <RouterProvider router={router} context={{ auth, clerk }} />
-        </Providers>
-      </SidebarProvider>
-    </div>
+    </AutumnProvider>
   );
 }
 

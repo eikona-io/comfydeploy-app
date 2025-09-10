@@ -1,4 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Cloud,
@@ -128,13 +129,30 @@ export function MachineList() {
     });
   };
 
-  const { data: autumnData } = useAutumnData();
-  const machineLimitFeature = autumnData?.autumn_data?.features?.["machine_limit"] as (AutumnFeature | null) ?? null;
-  const machineLimit = machineLimitFeature?.included_usage;
-  const currentMachineCount = machineLimitFeature?.usage;
-  const machineLimited = machineLimitFeature ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0 : false;
-  const isBusinessAllowed = useIsBusinessAllowed();
-  const isSelfHostedAllowed = useIsSelfHostedAllowed();
+  // const { data: autumnData } = useAutumnData();
+  // const machineLimitFeature = autumnData?.autumn_data?.features?.["machine_limit"] as (AutumnFeature | null) ?? null;
+  // const machineLimit = machineLimitFeature?.included_usage;
+  // const currentMachineCount = machineLimitFeature?.usage;
+  // const machineLimited = machineLimitFeature ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0 : false;
+  // const isBusinessAllowed = useIsBusinessAllowed();
+  // const isSelfHostedAllowed = useIsSelfHostedAllowed();
+
+  // Using the official Autumn useCustomer hook
+  const { check, isLoading: isLoadingCustomer } = useCustomer();
+  const machineCheckResult = check({ featureId: "machine_limit" });
+  const canCreateMachine = machineCheckResult.data?.allowed;
+
+  // You can also check other features
+  const selfHostedCheckResult = check({ featureId: "self_hosted_machines" });
+  const canCreateSelfHosted = selfHostedCheckResult.data?.allowed;
+
+  console.log(isLoadingCustomer, machineCheckResult, selfHostedCheckResult);
+
+  // useEffect(() => {
+  //   if (isLoadingCustomer) {
+  //     console.log("isLoadingCustomer", isLoadingCustomer);
+  //   }
+  // }, [isLoadingCustomer]);
 
   const query = useMachines(
     debouncedSearchValue ?? undefined,
@@ -234,7 +252,7 @@ export function MachineList() {
     }
   };
 
-  console.log(isSelfHostedAllowed);
+  // console.log(isSelfHostedAllowed);
 
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
@@ -469,13 +487,13 @@ export function MachineList() {
             ) : (
               <Button
                 onClick={() => {
-                  if (!machineLimited) {
+                  if (canCreateMachine) {
                     navigate({
                       search: { view: "create" },
                     });
                   }
                 }}
-                disabled={machineLimited}
+                disabled={!canCreateMachine}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Create Machine
@@ -546,9 +564,9 @@ export function MachineList() {
         mutateFn={query.refetch}
         setOpen={setOpenCustomDialog}
         title="Self Hosted Machine"
-        disabled={!isSelfHostedAllowed}
-        tooltip={!isSelfHostedAllowed
-          ? (!isBusinessAllowed
+        disabled={!canCreateSelfHosted}
+        tooltip={!canCreateSelfHosted
+          ? (!canCreateSelfHosted
             ? "Upgrade to Business plan to create self-hosted machines."
             : "Self-hosted machines feature not available in your plan. Contact support for access.")
           : ""}
@@ -586,13 +604,13 @@ export function MachineList() {
         open={openServerlessDialog}
         mutateFn={query.refetch}
         setOpen={setOpenServerlessDialog}
-        disabled={machineLimited}
+        disabled={!canCreateMachine}
         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
         containerClassName="flex-col"
         tooltip={
-          machineLimited
-            ? `Max ${machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
-            : `Max ${machineLimit} ComfyUI machine for your account`
+          !canCreateMachine
+            ? `Max ${machineCheckResult.data?.included_usage} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${machineCheckResult.data?.included_usage} ComfyUI machine for your account`
         }
         title="Create New Machine"
         description="Create a new serverless ComfyUI machine based on the analyzed workflow."
@@ -674,26 +692,26 @@ export function MachineList() {
           icon: Plus,
         }}
         disabled={{
-          disabled: machineLimited,
+          disabled: !canCreateMachine,
           disabledText: "Max Machines Exceeded. ",
         }}
         subItems={[
           {
-            name: (currentMachineCount !== undefined && machineLimit !== undefined)
-              ? `Docker Machine (${currentMachineCount}/${machineLimit})`
+            name: (machineCheckResult.data?.balance !== undefined && machineCheckResult.data?.included_usage !== undefined)
+              ? `Docker Machine (${machineCheckResult.data?.balance}/${machineCheckResult.data?.included_usage})`
               : "Docker Machine",
             icon: Cloud,
             onClick: () => {
-              if (!machineLimited) {
+              if (canCreateMachine) {
                 navigate({
                   search: { view: "create" },
                 });
               }
             },
             disabled: {
-              disabled: machineLimited,
-              disabledText: machineLimit !== undefined
-                ? `Max ${machineLimit} Docker machines for your account. Upgrade to create more machines.`
+              disabled: !canCreateMachine,
+              disabledText: machineCheckResult.data?.included_usage !== undefined
+                ? `Max ${machineCheckResult.data?.included_usage} Docker machines for your account. Upgrade to create more machines.`
                 : `Max Docker machines for your account. Upgrade to create more machines.`,
             },
           },
@@ -701,13 +719,13 @@ export function MachineList() {
             name: "Self Hosted Machine",
             icon: Server,
             onClick: () => {
-              if (!machineLimited && isSelfHostedAllowed) {
+              if (canCreateSelfHosted) {
                 setOpenCustomDialog(true);
               }
             },
             disabled: {
-              disabled: !isSelfHostedAllowed,
-              disabledText: (!isBusinessAllowed
+              disabled: !canCreateSelfHosted,
+              disabledText: (!canCreateSelfHosted
                 ? "Upgrade to Business plan to create self-hosted machines."
                 : "Self-hosted machines feature not available in your plan. Contact support for access."),
             },
