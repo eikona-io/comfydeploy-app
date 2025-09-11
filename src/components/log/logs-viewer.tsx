@@ -30,7 +30,6 @@ function LogContent({
   const [isAutoScroll, setIsAutoScroll] = useState(initialStickToBottom);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
   const isProgrammaticScroll = useRef(false);
-  const logCount = (logs && "length" in logs ? logs.length : 0) as number;
 
   // Handle auto-scroll
   useEffect(() => {
@@ -48,7 +47,7 @@ function LogContent({
         isProgrammaticScroll.current = false;
       });
     }
-  }, [logCount, isAutoScroll]);
+  }, [logs, isAutoScroll]);
 
   // Detect manual scroll
   useEffect(() => {
@@ -114,9 +113,8 @@ function LogContent({
       >
         {"map" in logs &&
           logs?.map((x, i) => (
-            <button
-              key={`${x.machine_id ?? "m"}-${x.timestamp ?? i}-${i}`}
-              type="button"
+            <div
+              key={i}
               className="flex flex-row items-center gap-2 hover:bg-stone-700"
               onClick={() => {
                 toast.success("Copied to clipboard");
@@ -132,7 +130,7 @@ function LogContent({
                 </>
               )}
               <div>{x.logs}</div>
-            </button>
+            </div>
           ))}
       </div>
     </div>
