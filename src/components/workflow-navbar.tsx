@@ -193,7 +193,9 @@ function CenterNavigation() {
 
   const shouldHideDeploymentFeatures = false; //!isPlanLoading && !isDeploymentAllowed;
 
-  const { data: machine } = useMachine(workflow?.selected_machine_id);
+  const { data: machine, isLoading: isMachineLoading } = useMachine(
+    workflow?.selected_machine_id,
+  );
 
   // Detect machine-not-found (404) without hiding UI
   const isMachineNotFound = Boolean(workflow?.selected_machine_id && !machine);
@@ -203,10 +205,11 @@ function CenterNavigation() {
 
   // Auto-redirect to machine settings when machine is not found
   useEffect(() => {
+    if (isMachineLoading) return;
     if (isMachineNotFound && view !== "machine") {
       navigateToView("machine");
     }
-  }, [isMachineNotFound, view, navigateToView]);
+  }, [isMachineNotFound, view, navigateToView, isMachineLoading]);
 
   // Unified helper functions for disabled state
   const isButtonDisabled = (buttonView: string) => {
