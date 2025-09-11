@@ -118,6 +118,7 @@ function MachineBuildLogDisplay({
           logs={logs}
           containerClassName="h-full w-full bg-transparent"
           className="h-full w-full p-4 bg-transparent text-gray-600 dark:text-gray-400"
+          inWorkspace={true}
         />
 
         {/* Gradient overlays for collapsed state */}

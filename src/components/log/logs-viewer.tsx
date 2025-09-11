@@ -18,6 +18,7 @@ interface LogContentProps {
   hideTimestamp?: boolean;
   className?: string;
   initialStickToBottom?: boolean;
+  inWorkspace?: boolean;
 }
 
 function LogContent({
@@ -25,6 +26,7 @@ function LogContent({
   hideTimestamp,
   className,
   initialStickToBottom = true,
+  inWorkspace = false,
 }: LogContentProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const [isAutoScroll, setIsAutoScroll] = useState(initialStickToBottom);
@@ -115,7 +117,12 @@ function LogContent({
           logs?.map((x, i) => (
             <div
               key={i}
-              className="flex flex-row items-center gap-2 hover:bg-stone-700"
+              className={cn(
+                "flex flex-row items-center gap-2",
+                inWorkspace
+                  ? "hover:bg-stone-200 dark:hover:bg-stone-700"
+                  : "hover:bg-stone-700",
+              )}
               onClick={() => {
                 toast.success("Copied to clipboard");
                 navigator.clipboard.writeText(x.logs);
