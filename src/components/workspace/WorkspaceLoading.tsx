@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { LogsViewer } from "@/components/log/logs-viewer";
 import { TextShimmer } from "@/components/motion-ui/text-shimmer";
 import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   getMachineBuildProgress,
   useMachineBuildProgress,
@@ -94,7 +93,7 @@ function MachineBuildLogDisplay({
     getToken().then(setAuthToken);
   }, [getToken]);
 
-  const { logs, finished, status } = useMachineBuildProgress({
+  const { logs } = useMachineBuildProgress({
     machine_version_id: machine.machine_version_id || "",
     endpoint,
     instance_id: machine.build_machine_instance_id || "",
@@ -107,51 +106,24 @@ function MachineBuildLogDisplay({
 
   return (
     <div className="w-full max-w-2xl">
-      <ScrollArea
+      <div
         className={cn(
-          "group relative h-[120px] bg-transparent p-4 font-mono text-gray-400 text-xs transition-all duration-300 hover:h-[400px]",
-          "rounded-lg border border-gray-200/20 dark:border-zinc-700/30",
+          "group relative bg-transparent font-mono text-gray-400 text-xs transition-all duration-300",
+          "rounded-lg overflow-hidden",
+          "h-[120px] hover:h-[400px]",
         )}
       >
-        {logs.length > 0 ? (
-          <LogsViewer
-            stickToBottom
-            logs={logs}
-            containerClassName="h-full"
-            className="overflow-auto"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <p className="text-muted-foreground text-sm">
-              Waiting for build logs...
-            </p>
-          </div>
-        )}
+        <LogsViewer
+          stickToBottom={true}
+          logs={logs}
+          containerClassName="h-full w-full bg-transparent"
+          className="h-full w-full p-4 bg-transparent text-gray-600 dark:text-gray-400"
+        />
 
         {/* Gradient overlays for collapsed state */}
-        <div className="pointer-events-none absolute top-0 right-0 left-0 h-28 bg-gradient-to-t from-transparent to-[#141414] opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
-        <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-b from-transparent to-[#141414] opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
-
-        {/* Status indicator */}
-        <div className="absolute top-2 right-2">
-          {finished ? (
-            <div
-              className={cn(
-                "rounded-full px-2 py-1 text-xs",
-                status === "success"
-                  ? "bg-green-500/20 text-green-400"
-                  : "bg-red-500/20 text-red-400",
-              )}
-            >
-              {status === "success" ? "Complete" : "Failed"}
-            </div>
-          ) : (
-            <div className="rounded-full bg-blue-500/20 px-2 py-1 text-xs text-blue-400">
-              Building...
-            </div>
-          )}
-        </div>
-      </ScrollArea>
+        <div className="pointer-events-none absolute top-0 right-0 left-0 h-28 bg-gradient-to-t from-transparent dark:to-zinc-800/50 to-stone-100/50 opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+        <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-b from-transparent dark:to-zinc-800/50 to-stone-100/50 opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+      </div>
     </div>
   );
 }

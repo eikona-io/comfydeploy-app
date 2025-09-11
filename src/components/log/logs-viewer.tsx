@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import { ArrowDownToLine, Expand } from "lucide-react";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export type LogsType = {
   machine_id?: string;
@@ -29,6 +29,8 @@ function LogContent({
   const container = useRef<HTMLDivElement | null>(null);
   const [isAutoScroll, setIsAutoScroll] = useState(initialStickToBottom);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const isProgrammaticScroll = useRef(false);
+  const logCount = (logs && "length" in logs ? logs.length : 0) as number;
 
   // Handle auto-scroll
   useEffect(() => {
@@ -36,22 +38,34 @@ function LogContent({
 
     if (container.current) {
       const scrollHeight = container.current.scrollHeight;
+      isProgrammaticScroll.current = true;
       container.current.scrollTo({
         top: scrollHeight,
-        behavior: "instant",
+        behavior: "auto",
+      });
+      // Allow the scroll event to fire, then re-enable handling
+      requestAnimationFrame(() => {
+        isProgrammaticScroll.current = false;
       });
     }
-  }, [logs?.length, isAutoScroll]);
+  }, [logCount, isAutoScroll]);
 
   // Detect manual scroll
   useEffect(() => {
     const handleScroll = () => {
       if (!container.current) return;
+      if (isProgrammaticScroll.current) return;
 
-      const isAtBottom =
-        container.current.scrollHeight - container.current.scrollTop ===
+      const distanceToBottom =
+        container.current.scrollHeight -
+        container.current.scrollTop -
         container.current.clientHeight;
-      if (!isAtBottom) {
+      const atBottom = distanceToBottom <= 2; // tolerate sub-pixel rounding
+
+      if (atBottom) {
+        setIsAutoScroll(true);
+        setUserHasScrolled(false);
+      } else {
         setIsAutoScroll(false);
         setUserHasScrolled(true);
       }
@@ -75,10 +89,16 @@ function LogContent({
         onClick={() => {
           setIsAutoScroll(true);
           setUserHasScrolled(false);
-          container.current?.scrollTo({
-            top: container.current.scrollHeight,
-            behavior: "instant",
-          });
+          if (container.current) {
+            isProgrammaticScroll.current = true;
+            container.current.scrollTo({
+              top: container.current.scrollHeight,
+              behavior: "auto",
+            });
+            requestAnimationFrame(() => {
+              isProgrammaticScroll.current = false;
+            });
+          }
         }}
       >
         <ArrowDownToLine className="h-4 w-4" />
@@ -94,8 +114,9 @@ function LogContent({
       >
         {"map" in logs &&
           logs?.map((x, i) => (
-            <div
-              key={i}
+            <button
+              key={`${x.machine_id ?? "m"}-${x.timestamp ?? i}-${i}`}
+              type="button"
               className="flex flex-row items-center gap-2 hover:bg-stone-700"
               onClick={() => {
                 toast.success("Copied to clipboard");
@@ -111,7 +132,7 @@ function LogContent({
                 </>
               )}
               <div>{x.logs}</div>
-            </div>
+            </button>
           ))}
       </div>
     </div>
