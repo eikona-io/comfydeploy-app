@@ -1,14 +1,19 @@
+import { useAuth } from "@clerk/clerk-react";
+import { useNavigate } from "@tanstack/react-router";
+import { AnimatePresence, easeOut, motion } from "framer-motion";
+import { ChevronLeft, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogsViewer } from "@/components/log/logs-viewer";
 import { TextShimmer } from "@/components/motion-ui/text-shimmer";
 import { Progress } from "@/components/ui/progress";
-import { getMachineBuildProgress } from "@/hooks/use-machine-build-progress";
-import { AnimatePresence, easeOut, motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { LogDisplay } from "./LogDisplay";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  getMachineBuildProgress,
+  useMachineBuildProgress,
+} from "@/hooks/use-machine-build-progress";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
-import { useNavigate } from "@tanstack/react-router";
-import { Badge } from "../ui/badge";
+import { LogDisplay } from "./LogDisplay";
 
 interface MessageProgress {
   message: string;
@@ -69,6 +74,88 @@ export function getSessionStatus(session: any, isLive: boolean | undefined) {
   };
 }
 
+interface MachineBuildLogDisplayProps {
+  machine: {
+    machine_version_id?: string;
+    build_machine_instance_id?: string;
+    [key: string]: any;
+  };
+  endpoint: string;
+}
+
+function MachineBuildLogDisplay({
+  machine,
+  endpoint,
+}: MachineBuildLogDisplayProps) {
+  const { getToken } = useAuth();
+  const [authToken, setAuthToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    getToken().then(setAuthToken);
+  }, [getToken]);
+
+  const { logs, finished, status } = useMachineBuildProgress({
+    machine_version_id: machine.machine_version_id || "",
+    endpoint,
+    instance_id: machine.build_machine_instance_id || "",
+    auth_token: authToken,
+  });
+
+  if (!authToken || !logs || logs.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="w-full max-w-2xl">
+      <ScrollArea
+        className={cn(
+          "group relative h-[120px] bg-transparent p-4 font-mono text-gray-400 text-xs transition-all duration-300 hover:h-[400px]",
+          "rounded-lg border border-gray-200/20 dark:border-zinc-700/30",
+        )}
+      >
+        {logs.length > 0 ? (
+          <LogsViewer
+            stickToBottom
+            logs={logs}
+            containerClassName="h-full"
+            className="overflow-auto"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-muted-foreground text-sm">
+              Waiting for build logs...
+            </p>
+          </div>
+        )}
+
+        {/* Gradient overlays for collapsed state */}
+        <div className="pointer-events-none absolute top-0 right-0 left-0 h-28 bg-gradient-to-t from-transparent to-[#141414] opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+        <div className="pointer-events-none absolute right-0 bottom-0 left-0 h-28 bg-gradient-to-b from-transparent to-[#141414] opacity-100 transition-opacity duration-300 group-hover:opacity-0" />
+
+        {/* Status indicator */}
+        <div className="absolute top-2 right-2">
+          {finished ? (
+            <div
+              className={cn(
+                "rounded-full px-2 py-1 text-xs",
+                status === "success"
+                  ? "bg-green-500/20 text-green-400"
+                  : "bg-red-500/20 text-red-400",
+              )}
+            >
+              {status === "success" ? "Complete" : "Failed"}
+            </div>
+          ) : (
+            <div className="rounded-full bg-blue-500/20 px-2 py-1 text-xs text-blue-400">
+              Building...
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+}
+
 export function WorkspaceLoading({
   messages = [{ message: "Please wait", startProgress: 0 }],
   progress = 0,
@@ -126,7 +213,7 @@ export function WorkspaceLoading({
                   });
                 } else {
                   navigate({
-                    to: "/home",
+                    to: "/",
                   });
                 }
               }}
@@ -209,7 +296,16 @@ export function WorkspaceMachineLoading({
   machine,
   endpoint,
 }: {
-  machine: any;
+  machine: {
+    name?: string;
+    machine_version_id?: string;
+    build_machine_instance_id?: string;
+    type?: string;
+    status?: string;
+    docker_command_steps?: { steps: any[] } | null;
+    updated_at?: string;
+    [key: string]: any;
+  };
   endpoint: string;
 }) {
   const messages = [
@@ -221,10 +317,15 @@ export function WorkspaceMachineLoading({
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 
   const progress = getMachineBuildProgress({
-    machine_version_id: machine.machine_version_id!,
+    machine_version_id: machine.machine_version_id || "",
     endpoint,
-    instance_id: machine.build_machine_instance_id!,
-    machine,
+    instance_id: machine.build_machine_instance_id || "",
+    machine: {
+      type: machine.type || "",
+      status: machine.status || "",
+      docker_command_steps: machine.docker_command_steps,
+      updated_at: machine.updated_at,
+    },
   });
 
   useEffect(() => {
@@ -233,7 +334,7 @@ export function WorkspaceMachineLoading({
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
 
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-50 to-stone-200 dark:from-zinc-900 dark:to-zinc-700">
@@ -294,6 +395,8 @@ export function WorkspaceMachineLoading({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           className="dark:opacity-80"
+          role="img"
+          aria-label="Building machine animation"
         >
           <circle
             cx="30"
@@ -347,7 +450,7 @@ export function WorkspaceMachineLoading({
                 animation: "shimmer 3s infinite linear",
               }}
             />
-            <style jsx>{`
+            <style>{`
               @keyframes shimmer {
                 0% {
                   background-position: 200% 0;
@@ -358,6 +461,11 @@ export function WorkspaceMachineLoading({
               }
             `}</style>
           </div>
+        </div>
+
+        {/* Machine Build Log Display */}
+        <div className="mt-8">
+          <MachineBuildLogDisplay machine={machine} endpoint={endpoint} />
         </div>
       </div>
     </div>
