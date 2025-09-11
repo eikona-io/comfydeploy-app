@@ -150,6 +150,7 @@ export function LogsViewer({
   className,
   containerClassName,
   stickToBottom = true,
+  inWorkspace = false,
   children,
 }: {
   logs: LogsType;
@@ -157,6 +158,7 @@ export function LogsViewer({
   containerClassName?: string;
   className?: string;
   stickToBottom?: boolean;
+  inWorkspace?: boolean;
   children?: React.ReactNode;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -184,6 +186,7 @@ export function LogsViewer({
           hideTimestamp={hideTimestamp}
           className={className}
           initialStickToBottom={stickToBottom}
+          inWorkspace={inWorkspace}
         />
       </div>
 
