@@ -330,7 +330,7 @@ function PricingTier({
         className,
       )}
     >
-      {isCurrentPlan && tier.id !== "free" && (
+      {/* {isCurrentPlan && tier.id !== "free" && (
         <div className="absolute top-4 right-4">
           <Button
             variant="outline"
@@ -352,12 +352,42 @@ function PricingTier({
             Manage Subscription
           </Button>
         </div>
-      )}
+      )} */}
       <div className="flex flex-1 flex-col">
         {tier.name === "Business" ? (
           <div className="flex flex-1 flex-col min-h-0">
             <div className="flex-shrink-0 mb-6 pt-4 px-4">
               <h3 className="font-bold text-3xl">{tier.name}</h3>
+              <div className="flex items-baseline mt-1">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={isYearly ? "yearly" : "monthly"}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="font-bold text-3xl"
+                  >
+                    {getMonthlyPrice(tier.priceMonthly)}
+                  </motion.span>
+                </AnimatePresence>
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={isYearly ? "yearly" : "monthly"}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    className="ml-1 text-gray-500 dark:text-zinc-400"
+                  >
+                    /month
+                  </motion.span>
+                </AnimatePresence>
+              </div>
+              {isYearly && (
+                <div className="text-sm text-gray-500 mt-1 dark:text-zinc-400">
+                  Billed yearly: {getYearlyTotal(tier.priceMonthly)}{" "}
+                  <span className="ml-1 text-green-600">(2 months free)</span>
+                </div>
+              )}
               <p className="mt-2 text-sm  text-gray-900 dark:text-zinc-200 leading-relaxed text-balance">
                 <div className="text-secondary-foreground">
                   Looking to invite your teams? Start scaling your GPUs?
@@ -982,7 +1012,7 @@ export function PricingPage() {
   const [isYearly, setIsYearly] = useState(false);
 
   // Feature flags
-  const showBusinessUpgradeButton = false;
+  const showBusinessUpgradeButton = true;
 
   // Determine user's current plan
   const userPlans = _sub?.plans?.plans || [];
