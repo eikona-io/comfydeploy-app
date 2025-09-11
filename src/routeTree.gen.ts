@@ -31,7 +31,6 @@ import { Route as MachinesIndexImport } from './routes/machines/index'
 import { Route as AnalyticsIndexImport } from './routes/analytics/index'
 import { Route as AuthSignUpImport } from './routes/auth/sign-up'
 import { Route as AuthSignInImport } from './routes/auth/sign-in'
-import { Route as SessionsSessionIdIndexImport } from './routes/sessions/$sessionId/index'
 import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
 import { Route as MachinesMachineIdIndexImport } from './routes/machines/$machineId/index'
 import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
@@ -167,12 +166,6 @@ const AuthSignUpRoute = AuthSignUpImport.update({
 const AuthSignInRoute = AuthSignInImport.update({
   id: '/auth/sign-in',
   path: '/auth/sign-in',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const SessionsSessionIdIndexRoute = SessionsSessionIdIndexImport.update({
-  id: '/sessions/$sessionId/',
-  path: '/sessions/$sessionId/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -440,13 +433,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexImport
       parentRoute: typeof rootRoute
     }
-    '/sessions/$sessionId/': {
-      id: '/sessions/$sessionId/'
-      path: '/sessions/$sessionId'
-      fullPath: '/sessions/$sessionId'
-      preLoaderRoute: typeof SessionsSessionIdIndexImport
-      parentRoute: typeof rootRoute
-    }
     '/share/playground/$user/$slug': {
       id: '/share/playground/$user/$slug'
       path: '/share/playground/$user/$slug'
@@ -508,7 +494,6 @@ export interface FileRoutesByFullPath {
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
-  '/sessions/$sessionId': typeof SessionsSessionIdIndexRoute
   '/share/playground/$user/$slug': typeof SharePlaygroundUserSlugRoute
   '/share/workflow/$user/$slug': typeof ShareWorkflowUserSlugRoute
   '/auth/request/$requestId': typeof AuthRequestRequestIdIndexRoute
@@ -543,7 +528,6 @@ export interface FileRoutesByTo {
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members': typeof OrganizationProfileOrganizationMembersIndexRoute
-  '/sessions/$sessionId': typeof SessionsSessionIdIndexRoute
   '/share/playground/$user/$slug': typeof SharePlaygroundUserSlugRoute
   '/share/workflow/$user/$slug': typeof ShareWorkflowUserSlugRoute
   '/auth/request/$requestId': typeof AuthRequestRequestIdIndexRoute
@@ -579,7 +563,6 @@ export interface FileRoutesById {
   '/workflows/$workflowId/$view': typeof WorkflowsWorkflowIdViewRoute
   '/machines/$machineId/': typeof MachinesMachineIdIndexRoute
   '/organization-profile/organization-members/': typeof OrganizationProfileOrganizationMembersIndexRoute
-  '/sessions/$sessionId/': typeof SessionsSessionIdIndexRoute
   '/share/playground/$user/$slug': typeof SharePlaygroundUserSlugRoute
   '/share/workflow/$user/$slug': typeof ShareWorkflowUserSlugRoute
   '/auth/request/$requestId/': typeof AuthRequestRequestIdIndexRoute
@@ -616,7 +599,6 @@ export interface FileRouteTypes {
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
-    | '/sessions/$sessionId'
     | '/share/playground/$user/$slug'
     | '/share/workflow/$user/$slug'
     | '/auth/request/$requestId'
@@ -650,7 +632,6 @@ export interface FileRouteTypes {
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId'
     | '/organization-profile/organization-members'
-    | '/sessions/$sessionId'
     | '/share/playground/$user/$slug'
     | '/share/workflow/$user/$slug'
     | '/auth/request/$requestId'
@@ -684,7 +665,6 @@ export interface FileRouteTypes {
     | '/workflows/$workflowId/$view'
     | '/machines/$machineId/'
     | '/organization-profile/organization-members/'
-    | '/sessions/$sessionId/'
     | '/share/playground/$user/$slug'
     | '/share/workflow/$user/$slug'
     | '/auth/request/$requestId/'
@@ -720,7 +700,6 @@ export interface RootRouteChildren {
   WorkflowsWorkflowIdViewRoute: typeof WorkflowsWorkflowIdViewRoute
   MachinesMachineIdIndexRoute: typeof MachinesMachineIdIndexRoute
   OrganizationProfileOrganizationMembersIndexRoute: typeof OrganizationProfileOrganizationMembersIndexRoute
-  SessionsSessionIdIndexRoute: typeof SessionsSessionIdIndexRoute
   SharePlaygroundUserSlugRoute: typeof SharePlaygroundUserSlugRoute
   ShareWorkflowUserSlugRoute: typeof ShareWorkflowUserSlugRoute
   AuthRequestRequestIdIndexRoute: typeof AuthRequestRequestIdIndexRoute
@@ -757,7 +736,6 @@ const rootRouteChildren: RootRouteChildren = {
   MachinesMachineIdIndexRoute: MachinesMachineIdIndexRoute,
   OrganizationProfileOrganizationMembersIndexRoute:
     OrganizationProfileOrganizationMembersIndexRoute,
-  SessionsSessionIdIndexRoute: SessionsSessionIdIndexRoute,
   SharePlaygroundUserSlugRoute: SharePlaygroundUserSlugRoute,
   ShareWorkflowUserSlugRoute: ShareWorkflowUserSlugRoute,
   AuthRequestRequestIdIndexRoute: AuthRequestRequestIdIndexRoute,
@@ -801,7 +779,6 @@ export const routeTree = rootRoute
         "/workflows/$workflowId/$view",
         "/machines/$machineId/",
         "/organization-profile/organization-members/",
-        "/sessions/$sessionId/",
         "/share/playground/$user/$slug",
         "/share/workflow/$user/$slug",
         "/auth/request/$requestId/",
@@ -888,9 +865,6 @@ export const routeTree = rootRoute
     },
     "/organization-profile/organization-members/": {
       "filePath": "organization-profile/organization-members/index.tsx"
-    },
-    "/sessions/$sessionId/": {
-      "filePath": "sessions/$sessionId/index.tsx"
     },
     "/share/playground/$user/$slug": {
       "filePath": "share/playground/$user/$slug.tsx"
