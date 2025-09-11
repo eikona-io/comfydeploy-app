@@ -1,34 +1,36 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { AnimatePresence, motion } from "framer-motion";
 import { Check, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "@tanstack/react-router";
-import { cn } from "@/lib/utils";
-import { ENTERPRISE_TIER } from "@/components/pricing/tiers";
-import { motion, AnimatePresence } from "framer-motion";
 import type { ReactNode } from "react";
+import { useId, useState } from "react";
 import { AnimatedLogoCard } from "@/components/AnimatedLogoCard";
-
-import { useGPUPricing } from "@/components/pricing/GPUPriceSimulator";
-import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  GPUPriceSimulator,
+  useGPUCreditSchema,
+  useGPUPricing,
+} from "@/components/pricing/GPUPriceSimulator";
 import { UpgradeButton } from "@/components/pricing/plan-button";
+import { TopUpButton } from "@/components/pricing/TopUpButton";
+import { ENTERPRISE_TIER } from "@/components/pricing/tiers";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { BlueprintOutline } from "@/components/ui/custom/blueprint-outline";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
-import { TopUpButton } from "@/components/pricing/TopUpButton";
-import { BlueprintOutline } from "@/components/ui/custom/blueprint-outline";
-
+import { cn } from "@/lib/utils";
+import BennyPhoto from "@/logos/benny.png";
 // Import customer logos
 import BuckLogo from "@/logos/buck.svg";
+// Import team member photos
+import NickPhoto from "@/logos/nick.png";
 import SliversideLogo from "@/logos/sliverside.svg";
 import VizcomLogo from "@/logos/vizcom.svg";
 import WildlifeLogo from "@/logos/wildlife.svg";
-
-// Import team member photos
-import NickPhoto from "@/logos/nick.png";
-import BennyPhoto from "@/logos/benny.png";
 
 export const Route = createFileRoute("/pricing")({
   component: RouteComponent,
@@ -82,7 +84,8 @@ const tiers: Tier[] = [
     id: "business",
     priceMonthly: "from $998",
     priceYearly: "from $9980",
-    description: "Enterprise-grade AI infrastructure trusted by industry leaders",
+    description:
+      "Enterprise-grade AI infrastructure trusted by industry leaders",
   },
   {
     name: "Enterprise",
@@ -321,7 +324,12 @@ function PricingTier({
   );
 
   return (
-    <div className={cn("border-gray-200 flex flex-col relative lg:h-[500px]", className)}>
+    <div
+      className={cn(
+        "border-gray-200 flex flex-col relative lg:h-[500px]",
+        className,
+      )}
+    >
       {isCurrentPlan && tier.id !== "free" && (
         <div className="absolute top-4 right-4">
           <Button
@@ -351,8 +359,12 @@ function PricingTier({
             <div className="flex-shrink-0 mb-6 pt-4 px-4">
               <h3 className="font-bold text-3xl">{tier.name}</h3>
               <p className="mt-2 text-sm  text-gray-900 dark:text-zinc-200 leading-relaxed text-balance">
-                <div className="text-secondary-foreground">Looking to invite your teams? Start scaling your GPUs?</div>
-                <div>Join these creative teams to push the boundaries of GenAI.</div>
+                <div className="text-secondary-foreground">
+                  Looking to invite your teams? Start scaling your GPUs?
+                </div>
+                <div>
+                  Join these creative teams to push the boundaries of GenAI.
+                </div>
               </p>
             </div>
             <div className="flex-1 min-h-0">
@@ -387,7 +399,11 @@ function PricingTier({
         ) : (
           <div className="flex flex-1 flex-col p-4">
             <div>
-              <h3 className={`font-bold ${tier.id === "free" ? "text-3xl" : "text-lg"}`}>{tier.name}</h3>
+              <h3
+                className={`font-bold ${tier.id === "free" ? "text-3xl" : "text-lg"}`}
+              >
+                {tier.name}
+              </h3>
               {tier.id !== "free" && (
                 <div className="flex items-baseline mt-1">
                   <AnimatePresence mode="wait">
@@ -469,7 +485,7 @@ function PricingTier({
                           variant="secondary"
                           className="ml-1 rounded-[4px] text-[10px]"
                         >
-                          Max 1
+                          Max 3
                         </Badge>
                       </span>
                     </li>
@@ -485,19 +501,15 @@ function PricingTier({
                         Full API Access
                       </span>
                     </li>
-                    <li className="flex items-center">
-                      <Check className="h-4 w-4 flex-shrink-0 text-green-500" />
-                      <span className="ml-2 text-gray-600 dark:text-zinc-400">
-                        Unlimited Workflows
-                      </span>
-                    </li>
                   </>
                 )}
 
-                {tier.name !== "Business" && tier.id !== "free" &&
+                {tier.name !== "Business" &&
+                  tier.id !== "free" &&
                   getAvailableFeatures(tier.name)
                     .filter((feature) => {
-                      const value = feature.tiers[tier.name as keyof TierFeature];
+                      const value =
+                        feature.tiers[tier.name as keyof TierFeature];
                       const prevTierValue =
                         tier.name === "Creator"
                           ? feature.tiers.Basic
@@ -512,7 +524,8 @@ function PricingTier({
                       );
                     })
                     .map((feature) => {
-                      const value = feature.tiers[tier.name as keyof TierFeature];
+                      const value =
+                        feature.tiers[tier.name as keyof TierFeature];
                       return (
                         <li key={feature.name} className="flex items-center">
                           <Check className="h-4 w-4 flex-shrink-0 text-green-500" />
@@ -529,11 +542,9 @@ function PricingTier({
                           </span>
                         </li>
                       );
-                    })
-                }
+                    })}
               </ul>
             )}
-
           </div>
         )}
 
@@ -551,7 +562,12 @@ function PricingTier({
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
                 </svg>
               </a>
             </div>
@@ -567,7 +583,12 @@ function PricingTier({
         {tier.id !== "free" && (
           <div className="">
             {tier.name === "Business" ? (
-              <div className={cn("grid gap-px", showBusinessUpgradeButton ? "grid-cols-2" : "grid-cols-1")}>
+              <div
+                className={cn(
+                  "grid gap-px",
+                  showBusinessUpgradeButton ? "grid-cols-2" : "grid-cols-1",
+                )}
+              >
                 {showBusinessUpgradeButton && (
                   <UpgradeButton
                     plan={`${tier.id}_${isYearly ? "yearly" : "monthly"}`}
@@ -589,7 +610,11 @@ function PricingTier({
                   className="border-b-0 border-t border-x-0 hover:bg-purple-900 hover:text-white p-6 rounded-none text-gray-900 transition-colors w-full dark:hover:bg-purple-900/50 dark:hover:text-zinc-100 dark:text-purple-400"
                   variant="outline"
                 >
-                  <Link to="https://comfydeploy.link/l-call" target="_blank" className="flex items-center justify-center gap-3">
+                  <Link
+                    to="https://comfydeploy.link/l-call"
+                    target="_blank"
+                    className="flex items-center justify-center gap-3"
+                  >
                     <div className="flex -space-x-2">
                       <img
                         src={NickPhoto}
@@ -614,7 +639,11 @@ function PricingTier({
                   className="border-b-0 border-t border-x-0 hover:bg-indigo-900 hover:text-white p-6 rounded-none text-gray-900 transition-colors w-full dark:hover:bg-indigo-900/50 dark:hover:text-zinc-100 dark:text-indigo-400"
                   variant="outline"
                 >
-                  <Link to="https://comfydeploy.link/l-call" target="_blank" className="flex items-center justify-center gap-3">
+                  <Link
+                    to="https://comfydeploy.link/l-call"
+                    target="_blank"
+                    className="flex items-center justify-center gap-3"
+                  >
                     <div className="flex -space-x-2">
                       <img
                         src={NickPhoto}
@@ -659,16 +688,86 @@ function GPUPricingTable() {
   const [activeTab, setActiveTab] = useState<"per_sec" | "per_hour">(
     "per_hour",
   );
-  const { data: gpuPricing, isLoading: gpuPricingLoading } = useGPUPricing();
+  const [useTopupPricing, setUseTopupPricing] = useState(false);
+  const pricingToggleId = useId();
+
+  const { data: oldPricingData, isLoading: gpuPricingLoading } =
+    useGPUPricing();
+  const { data: creditSchemaData, isLoading: isLoadingSchema } =
+    useGPUCreditSchema();
+
+  // Convert credit schema to pricing format for backward compatibility
+  const getPricingFromSchema = (
+    schemaType: "gpu-credit" | "gpu-credit-topup",
+  ) => {
+    if (!creditSchemaData?.[schemaType]?.schema) return {};
+
+    const pricing: Record<string, number> = {};
+    creditSchemaData[schemaType].schema.forEach((item) => {
+      // Convert metered_feature_id to display format (gpu-t4 -> T4)
+      const displayName = item.metered_feature_id
+        .replace(/^gpu-/, "")
+        .replace(/^cpu$/, "CPU")
+        .toUpperCase()
+        .replace(/-80GB$/, "-80GB")
+        .replace(/-/, "");
+
+      pricing[displayName] = item.credit_cost / 100; // Convert from cents to dollars
+    });
+
+    return pricing;
+  };
+
+  // Use either old pricing data or new credit schema data
+  const gpuPricing = creditSchemaData
+    ? getPricingFromSchema(useTopupPricing ? "gpu-credit-topup" : "gpu-credit")
+    : oldPricingData;
+
+  const isLoading = gpuPricingLoading || isLoadingSchema;
 
   return (
     <div className="mt-12 mx-auto max-w-2xl">
       <div className="relative bg-white dark:bg-zinc-900 p-4 rounded-sm">
         <BlueprintOutline />
         <div className="relative z-10">
+          {/* Pricing Plan Toggle */}
+          {creditSchemaData && (
+            <div className="absolute -top-8 inset-x-4 mx-auto w-fit z-20">
+              <motion.div className="inline-flex items-center rounded-md bg-white/95 p-0.5 shadow-sm ring-1 ring-gray-200/50 backdrop-blur-sm dark:bg-zinc-900 dark:ring-zinc-700/50">
+                <Button
+                  variant="ghost"
+                  onClick={() => setUseTopupPricing(true)}
+                  className={cn(
+                    "h-6 font-medium px-2 py-0.5 rounded-md text-[10px] transition-all",
+                    useTopupPricing
+                      ? "bg-gradient-to-b from-white to-green-200 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
+                      : "hover:bg-gray-100 text-gray-600 dark:text-zinc-400 dark:hover:bg-zinc-700/50",
+                  )}
+                >
+                  Pay as you go
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => setUseTopupPricing(false)}
+                  className={cn(
+                    "h-6 font-medium px-2 py-0.5 rounded-md text-[10px] transition-all",
+                    !useTopupPricing
+                      ? "bg-gradient-to-b from-white to-purple-200 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
+                      : "hover:bg-gray-100 text-gray-600 dark:text-zinc-400 dark:hover:bg-zinc-700/50",
+                  )}
+                >
+                  Business
+                </Button>
+              </motion.div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 id="gpu-price" className="font-bold text-xl text-gray-900 dark:text-zinc-200">
+              <h2
+                id="gpu-price"
+                className="font-bold text-xl text-gray-900 dark:text-zinc-200"
+              >
                 GPU Pricing
               </h2>
               <p className="mt-1 text-gray-500 text-xs dark:text-zinc-400">
@@ -705,64 +804,56 @@ function GPUPricingTable() {
           <div className="relative w-full overflow-hidden">
             <Table>
               <TableBody>
-                {gpuPricingLoading
+                {isLoading
                   ? // Skeleton loading state
-                  Array.from({ length: 6 }).map((_, index) => (
-                    <TableRow key={index} className="border-0">
-                      <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-3 w-16" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="border-0 px-1 py-0.5 text-right">
-                        <Skeleton className="h-3 w-12 ml-auto" />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                    Array.from({ length: 6 }).map((_, index) => (
+                      <TableRow key={index} className="border-0">
+                        <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="border-0 px-1 py-0.5 text-right">
+                          <Skeleton className="h-3 w-12 ml-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))
                   : Object.entries(gpuPricing || {}).map(([gpu, price]) => (
-                    <TableRow key={gpu} className="border-0">
-                      <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
-                        <div className="flex items-center gap-1">
-                          {gpu}
-                          {(gpu === "H200" || gpu === "B200") && (
-                            <Badge
-                              variant="secondary"
-                              className="bg-blue-50 h-3 px-1 py-0 text-[8px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
-                            >
-                              NEW
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="border-0 px-1 py-0.5 text-right">
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            className="font-medium inline-block"
-                          >
-                            {activeTab === "per_sec" ? (
-                              <span className="text-xs">
-                                ${price as number}
-                                <span className="ml-1 text-gray-500">
-                                  / sec
-                                </span>
-                              </span>
-                            ) : (
-                              <span className="text-xs">
-                                ${((price as number) * 60 * 60).toFixed(2)}
-                                <span className="ml-1 text-gray-500">
-                                  / hour
-                                </span>
-                              </span>
+                      <TableRow key={gpu} className="border-0">
+                        <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
+                          <div className="flex items-center gap-1">
+                            {gpu}
+                            {(gpu === "H200" || gpu === "B200") && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-blue-50 h-3 px-1 py-0 text-[8px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
+                              >
+                                NEW
+                              </Badge>
                             )}
-                          </motion.div>
-                        </AnimatePresence>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                          </div>
+                        </TableCell>
+                        <TableCell className="border-0 px-1 py-0.5 text-right">
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={`${activeTab}-${useTopupPricing}`}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              className="font-medium inline-block"
+                            >
+                              <GPUPriceDisplay
+                                gpu={gpu}
+                                price={price as number}
+                                activeTab={activeTab}
+                                useTopupPricing={useTopupPricing}
+                                creditSchemaData={creditSchemaData}
+                              />
+                            </motion.div>
+                          </AnimatePresence>
+                        </TableCell>
+                      </TableRow>
+                    ))}
               </TableBody>
             </Table>
           </div>
@@ -770,6 +861,116 @@ function GPUPricingTable() {
       </div>
     </div>
   );
+}
+
+function GPUPriceDisplay({
+  gpu,
+  price,
+  activeTab,
+  useTopupPricing,
+  creditSchemaData,
+}: {
+  gpu: string;
+  price: number;
+  activeTab: "per_sec" | "per_hour";
+  useTopupPricing: boolean;
+  creditSchemaData:
+    | {
+        "gpu-credit": {
+          name: string;
+          display: { plural: string; singular: string };
+          schema: Array<{
+            credit_cost: number;
+            metered_feature_id: string;
+          }>;
+        };
+        "gpu-credit-topup": {
+          name: string;
+          display: { plural: string; singular: string };
+          schema: Array<{
+            credit_cost: number;
+            metered_feature_id: string;
+          }>;
+        };
+      }
+    | null
+    | undefined;
+}) {
+  // Get both pricing data for comparison
+  const getPricingFromSchema = (
+    schemaType: "gpu-credit" | "gpu-credit-topup",
+  ) => {
+    if (!creditSchemaData?.[schemaType]?.schema) return {};
+
+    const pricing: Record<string, number> = {};
+    creditSchemaData[schemaType].schema.forEach((item) => {
+      const displayName = item.metered_feature_id
+        .replace(/^gpu-/, "")
+        .replace(/^cpu$/, "CPU")
+        .toUpperCase()
+        .replace(/-80GB$/, "-80GB")
+        .replace(/-/, "");
+
+      pricing[displayName] = item.credit_cost / 100;
+    });
+
+    return pricing;
+  };
+
+  const businessPricing = creditSchemaData
+    ? getPricingFromSchema("gpu-credit")
+    : null;
+  const topupPricing = creditSchemaData
+    ? getPricingFromSchema("gpu-credit-topup")
+    : null;
+
+  // Calculate savings if Business pricing is available and cheaper
+  const businessPrice = businessPricing?.[gpu];
+  const topupPrice = topupPricing?.[gpu];
+  const hasSavings = businessPrice && topupPrice && businessPrice < topupPrice;
+  const savingsPercentage = hasSavings
+    ? Math.round(((topupPrice - businessPrice) / topupPrice) * 100)
+    : 0;
+
+  const formatPrice = (priceValue: number, suffix: string) => (
+    <span className="text-xs">
+      $
+      {activeTab === "per_sec"
+        ? priceValue.toFixed(6)
+        : (priceValue * 60 * 60).toFixed(4)}
+      <span className="ml-1 text-gray-500">{suffix}</span>
+    </span>
+  );
+
+  const currentSuffix = activeTab === "per_sec" ? "/ sec" : "/ hour";
+
+  // Show savings when on Business pricing and there are savings
+  if (!useTopupPricing && hasSavings && businessPrice && topupPrice) {
+    const originalPrice =
+      activeTab === "per_sec" ? topupPrice : topupPrice * 60 * 60;
+
+    return (
+      <div className="flex items-center gap-1">
+        <motion.span
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="line-through text-[10px] text-gray-400"
+        >
+          ${originalPrice.toFixed(activeTab === "per_sec" ? 6 : 4)}
+        </motion.span>
+        {formatPrice(price, currentSuffix)}
+        <Badge
+          variant="secondary"
+          className="h-3 bg-green-50 px-1 py-0 text-[8px] text-green-700 dark:bg-green-900/50 dark:text-green-400"
+        >
+          -{savingsPercentage}%
+        </Badge>
+      </div>
+    );
+  }
+
+  // Default price display
+  return formatPrice(price, currentSuffix);
 }
 
 function RouteComponent() {
@@ -785,9 +986,9 @@ export function PricingPage() {
 
   // Determine user's current plan
   const userPlans = _sub?.plans?.plans || [];
-  const isOnFreePlan = userPlans.some((plan: string) =>
-    plan.startsWith("free"),
-  ) || userPlans.length === 0;
+  const isOnFreePlan =
+    userPlans.some((plan: string) => plan.startsWith("free")) ||
+    userPlans.length === 0;
   const isOnCreatorPlan = userPlans.some((plan: string) =>
     plan.startsWith("creator"),
   );
@@ -819,7 +1020,9 @@ export function PricingPage() {
   });
 
   // Show billing toggle only when creator or deployment tiers are present
-  const showBillingToggle = filteredTiers.some(tier => tier.id === "creator" || tier.id === "deployment");
+  const showBillingToggle = filteredTiers.some(
+    (tier) => tier.id === "creator" || tier.id === "deployment",
+  );
 
   const isCancelled = _sub?.sub?.cancel_at_period_end;
 
@@ -951,10 +1154,10 @@ export function PricingPage() {
                     plans={_sub?.plans?.plans ?? []}
                     className={cn(
                       "lg:border-r bg-gradient-to-bl from-gray-50/10 via-gray-50/80 to-gray-100 dark:lg:border-zinc-700 dark:from-zinc-800/10 dark:via-zinc-800/80 dark:to-zinc-700",
-                      (filteredTiers.some((tier) => tier.id === "creator") ||
-                        filteredTiers.some((tier) => tier.id === "deployment"))
+                      filteredTiers.some((tier) => tier.id === "creator") ||
+                        filteredTiers.some((tier) => tier.id === "deployment")
                         ? "rounded-tl-sm"
-                        : "rounded-l-sm"
+                        : "rounded-l-sm",
                     )}
                     isYearly={isYearly}
                     showCreatorTier={filteredTiers.some(
@@ -975,10 +1178,10 @@ export function PricingPage() {
                     plans={_sub?.plans?.plans ?? []}
                     className={cn(
                       "bg-gradient-to-bl from-purple-50/10 via-purple-50/80 to-purple-100 dark:from-purple-900/10 dark:via-purple-900/30 dark:to-purple-800/50",
-                      (filteredTiers.some((tier) => tier.id === "creator") ||
-                        filteredTiers.some((tier) => tier.id === "deployment"))
+                      filteredTiers.some((tier) => tier.id === "creator") ||
+                        filteredTiers.some((tier) => tier.id === "deployment")
                         ? "rounded-tr-sm"
-                        : "rounded-r-sm"
+                        : "rounded-r-sm",
                     )}
                     isYearly={isYearly}
                     showCreatorTier={filteredTiers.some(
@@ -995,59 +1198,58 @@ export function PricingPage() {
               {/* Creator and Deployment Tiers */}
               {(filteredTiers.some((tier) => tier.id === "creator") ||
                 filteredTiers.some((tier) => tier.id === "deployment")) && (
-                  <div
-                    className={cn(
-                      "grid border border-gray-200 border-t-0 dark:border-zinc-700",
-                      filteredTiers.some((tier) => tier.id === "creator") &&
+                <div
+                  className={cn(
+                    "grid border border-gray-200 border-t-0 dark:border-zinc-700",
+                    filteredTiers.some((tier) => tier.id === "creator") &&
+                      filteredTiers.some((tier) => tier.id === "deployment")
+                      ? "grid-cols-1 lg:grid-cols-2"
+                      : "grid-cols-1",
+                  )}
+                >
+                  {filteredTiers.find((tier) => tier.id === "creator") && (
+                    <PricingTier
+                      tier={
+                        filteredTiers.find((tier) => tier.id === "creator")!
+                      }
+                      isLoading={isLoading}
+                      plans={_sub?.plans?.plans ?? []}
+                      className={cn(
+                        "bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100 dark:from-amber-900/10 dark:via-amber-900/30 dark:to-amber-800/50",
                         filteredTiers.some((tier) => tier.id === "deployment")
-                        ? "grid-cols-1 lg:grid-cols-2"
-                        : "grid-cols-1",
-                    )}
-                  >
-                    {filteredTiers.find((tier) => tier.id === "creator") && (
-                      <PricingTier
-                        tier={
-                          filteredTiers.find((tier) => tier.id === "creator")!
-                        }
-                        isLoading={isLoading}
-                        plans={_sub?.plans?.plans ?? []}
-                        className={cn(
-                          "bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100 dark:from-amber-900/10 dark:via-amber-900/30 dark:to-amber-800/50",
-                          filteredTiers.some((tier) => tier.id === "deployment")
-                            ? "rounded-bl-sm lg:border-r dark:lg:border-zinc-700"
-                            : "rounded-b-sm",
-                        )}
-                        isYearly={isYearly}
-                        showCreatorTier={filteredTiers.some(
-                          (tier) => tier.id === "creator",
-                        )}
-                        showDeploymentTier={filteredTiers.some(
-                          (tier) => tier.id === "deployment",
-                        )}
-                        showBusinessUpgradeButton={showBusinessUpgradeButton}
-                      />
-                    )}
-                    {filteredTiers.find((tier) => tier.id === "deployment") && (
-                      <PricingTier
-                        tier={
-                          filteredTiers.find((tier) => tier.id === "deployment")!
-                        }
-                        isLoading={isLoading}
-                        plans={_sub?.plans?.plans ?? []}
-                        className="rounded-br-sm bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100 dark:from-blue-900/10 dark:via-blue-900/30 dark:to-blue-800/50"
-                        isYearly={isYearly}
-                        showCreatorTier={filteredTiers.some(
-                          (tier) => tier.id === "creator",
-                        )}
-                        showDeploymentTier={filteredTiers.some(
-                          (tier) => tier.id === "deployment",
-                        )}
-                        showBusinessUpgradeButton={showBusinessUpgradeButton}
-                      />
-                    )}
-                  </div>
-                )}
-
+                          ? "rounded-bl-sm lg:border-r dark:lg:border-zinc-700"
+                          : "rounded-b-sm",
+                      )}
+                      isYearly={isYearly}
+                      showCreatorTier={filteredTiers.some(
+                        (tier) => tier.id === "creator",
+                      )}
+                      showDeploymentTier={filteredTiers.some(
+                        (tier) => tier.id === "deployment",
+                      )}
+                      showBusinessUpgradeButton={showBusinessUpgradeButton}
+                    />
+                  )}
+                  {filteredTiers.find((tier) => tier.id === "deployment") && (
+                    <PricingTier
+                      tier={
+                        filteredTiers.find((tier) => tier.id === "deployment")!
+                      }
+                      isLoading={isLoading}
+                      plans={_sub?.plans?.plans ?? []}
+                      className="rounded-br-sm bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100 dark:from-blue-900/10 dark:via-blue-900/30 dark:to-blue-800/50"
+                      isYearly={isYearly}
+                      showCreatorTier={filteredTiers.some(
+                        (tier) => tier.id === "creator",
+                      )}
+                      showDeploymentTier={filteredTiers.some(
+                        (tier) => tier.id === "deployment",
+                      )}
+                      showBusinessUpgradeButton={showBusinessUpgradeButton}
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] bg-white dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] dark:bg-zinc-900" />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCustomer } from "autumn-js/react";
 import { CreditCard, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -54,16 +55,26 @@ export function TopUpButton({
   variant = "default",
   size = "default",
   showIcon = true,
-  children
+  children,
 }: TopUpButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [amount, setAmount] = useState("25");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [previewData, setPreviewData] = useState<TopUpPreviewResponse | null>(null);
+  const [previewData, setPreviewData] = useState<TopUpPreviewResponse | null>(
+    null,
+  );
   const queryClient = useQueryClient();
 
+  const { refetch } = useCustomer();
+
   const topUpMutation = useMutation({
-    mutationFn: async ({ topUpAmount, confirmed = false }: { topUpAmount: number; confirmed?: boolean }) => {
+    mutationFn: async ({
+      topUpAmount,
+      confirmed = false,
+    }: {
+      topUpAmount: number;
+      confirmed?: boolean;
+    }) => {
       return api({
         url: "platform/topup",
         init: {
@@ -76,7 +87,11 @@ export function TopUpButton({
       if (data?.url) {
         // Has checkout URL - redirect immediately
         window.location.href = data.url;
-      } else if (!data?.url && data?.lines && !topUpMutation.variables?.confirmed) {
+      } else if (
+        !data?.url &&
+        data?.lines &&
+        !topUpMutation.variables?.confirmed
+      ) {
         // Preview response - show confirmation dialog
         setPreviewData(data);
         setShowConfirmDialog(true);
@@ -87,11 +102,12 @@ export function TopUpButton({
         setShowConfirmDialog(false);
         setPreviewData(null);
         setIsOpen(false);
+        refetch();
       }
     },
     onError: () => {
       toast.error("Failed to initiate top-up. Please try again.");
-    }
+    },
   });
 
   const confirmMutation = useMutation({
@@ -113,8 +129,11 @@ export function TopUpButton({
         setPreviewData(null);
         setIsOpen(false);
         // Invalidate queries to refresh credit balance and plan data
-        queryClient.invalidateQueries({ queryKey: ["platform", "autumn-data"] });
+        queryClient.invalidateQueries({
+          queryKey: ["platform", "autumn-data"],
+        });
         queryClient.invalidateQueries({ queryKey: ["platform", "plan"] });
+        refetch();
       }
     },
     onError: () => {
@@ -168,7 +187,9 @@ export function TopUpButton({
               {quickAmounts.map((quickAmount) => (
                 <Badge
                   key={quickAmount}
-                  variant={amount === quickAmount.toString() ? "default" : "outline"}
+                  variant={
+                    amount === quickAmount.toString() ? "default" : "outline"
+                  }
                   className="cursor-pointer hover:bg-primary/90 hover:text-white"
                   onClick={() => setAmount(quickAmount.toString())}
                 >
@@ -198,7 +219,12 @@ export function TopUpButton({
 
           <Button
             onClick={handleTopUp}
-            disabled={topUpMutation.isPending || confirmMutation.isPending || !amount || parseFloat(amount) < 10}
+            disabled={
+              topUpMutation.isPending ||
+              confirmMutation.isPending ||
+              !amount ||
+              parseFloat(amount) < 10
+            }
             className="w-full"
           >
             {topUpMutation.isPending || confirmMutation.isPending ? (

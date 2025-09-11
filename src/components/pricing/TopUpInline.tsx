@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useCustomer } from "autumn-js/react";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -44,11 +45,21 @@ interface TopUpPreviewResponse {
 export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
   const [amount, setAmount] = useState("25");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [previewData, setPreviewData] = useState<TopUpPreviewResponse | null>(null);
+  const [previewData, setPreviewData] = useState<TopUpPreviewResponse | null>(
+    null,
+  );
   const queryClient = useQueryClient();
 
+  const { refetch } = useCustomer();
+
   const topUpMutation = useMutation({
-    mutationFn: async ({ topUpAmount, confirmed = false }: { topUpAmount: number; confirmed?: boolean }) => {
+    mutationFn: async ({
+      topUpAmount,
+      confirmed = false,
+    }: {
+      topUpAmount: number;
+      confirmed?: boolean;
+    }) => {
       return api({
         url: "platform/topup",
         init: {
@@ -61,7 +72,11 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
       if (data?.url) {
         // Has checkout URL - redirect immediately
         window.location.href = data.url;
-      } else if (!data?.url && data?.lines && !topUpMutation.variables?.confirmed) {
+      } else if (
+        !data?.url &&
+        data?.lines &&
+        !topUpMutation.variables?.confirmed
+      ) {
         // Preview response - show confirmation dialog
         setPreviewData(data);
         setShowConfirmDialog(true);
@@ -70,6 +85,7 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
         toast.success("Credit added successfully!");
         setShowConfirmDialog(false);
         setPreviewData(null);
+        refetch();
         onSuccess?.();
       }
     },
@@ -98,6 +114,7 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
         // Invalidate queries to refresh credit balance and plan data
         queryClient.invalidateQueries({ queryKey: ["autumn-data"] });
         queryClient.invalidateQueries({ queryKey: ["platform", "plan"] });
+        refetch();
         onSuccess?.();
       }
     },
@@ -157,7 +174,12 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
 
       <Button
         onClick={handleTopUp}
-        disabled={topUpMutation.isPending || confirmMutation.isPending || !amount || parseFloat(amount) < 10}
+        disabled={
+          topUpMutation.isPending ||
+          confirmMutation.isPending ||
+          !amount ||
+          parseFloat(amount) < 10
+        }
         className="w-full"
       >
         {topUpMutation.isPending || confirmMutation.isPending ? (
@@ -180,4 +202,3 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
     </div>
   );
 }
-

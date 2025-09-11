@@ -1,5 +1,6 @@
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
 import {
   AlertCircle,
   BarChart2,
@@ -13,7 +14,14 @@ import {
   Plus,
   Wallet,
 } from "lucide-react";
-import { memo, type ReactNode, Suspense, useEffect, useMemo, useState } from "react";
+import {
+  memo,
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { TopUpButton } from "@/components/pricing/TopUpButton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -37,7 +45,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Tooltip,
   TooltipContent,
@@ -45,6 +60,11 @@ import {
 } from "@/components/ui/tooltip";
 import { UsageGraph } from "@/components/usage/UsageGraph";
 import { api } from "@/lib/api";
+import {
+  useCredit,
+  useCreditInDollars,
+  useFreePlan,
+} from "@/lib/autumn-helpers";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { getDuration } from "@/lib/get-relative-time";
 import type { AutumnDataV2Response, Feature, Product } from "@/types/autumn-v2";
@@ -60,15 +80,19 @@ function RouteComponent() {
   const [showAddons, setShowAddons] = useState(false);
   const [featuresExpanded, setFeaturesExpanded] = useState(false);
 
+  const { isFreePlan, isLoading: isFreePlanLoading } = useFreePlan();
+
+  const { openBillingPortal } = useCustomer();
+
   // Handle topup success from URL params
   const searchParams = new URLSearchParams(window.location.search);
   useEffect(() => {
-    if (searchParams.get('topup') === 'success') {
-      toast.success('Credits added successfully!');
+    if (searchParams.get("topup") === "success") {
+      toast.success("Credits added successfully!");
       // Clean up the URL
       const url = new URL(window.location.href);
-      url.searchParams.delete('topup');
-      window.history.replaceState({}, '', url.pathname);
+      url.searchParams.delete("topup");
+      window.history.replaceState({}, "", url.pathname);
     }
   }, []);
   const { data: invoices, isLoading: invoicesLoading } = useQuery<Invoice[]>({
@@ -79,31 +103,22 @@ function RouteComponent() {
     queryKey: ["platform", "plan"],
   });
 
-  const { data: autumnDataResponse, isLoading: autumnLoading } = useQuery<AutumnDataV2Response>({
+  const { data: raw } = useQuery<AutumnDataV2Response>({
     queryKey: ["platform", "autumn-data"],
   });
+  const autumnData = raw?.autumn_data;
 
-  const autumnData = autumnDataResponse?.autumn_data;
+  // const { customer } = useCustomer();
+  // const autumnData = data;
 
-  // const { data: userSettings } = useQuery<{
-  //   credit?: number;
-  // }>({
-  //   queryKey: ["platform", "user-settings"],
-  // });
+  const { credit: creditFeature, isLoading: autumnLoading } = useCredit();
+  const gpuCreditFeature = creditFeature?.data;
 
-  // Get GPU credit feature from autumn data v2
-  const gpuCreditFeature = autumnData?.features?.["gpu-credit"];
+  const usage_display = (creditFeature?.data?.usage ?? 0) / 100;
+  const credit = usage_display + (creditFeature?.data?.balance ?? 0) / 100; // Remaining credit balance
 
-  // Calculate totals from the feature data (convert cents to dollars)
-  const totalUsed = (gpuCreditFeature?.usage ?? 0) / 100;
-  const totalBalance = (gpuCreditFeature?.balance ?? 0) / 100;
-  const totalIncluded = (gpuCreditFeature?.included_usage ?? 0) / 100;
-
-  const used = totalUsed;
-  const balance = totalBalance;
-  const credit = totalBalance;
-
-  // console.log(currnetGPUCredit);
+  // Final usage should be usage minus available credit (but not negative)
+  const finalUsed = Math.max(0, usage_display - credit);
 
   // Get current period from the last invoice timestamp in current plan
   const currentPeriod = useMemo(() => {
@@ -122,7 +137,7 @@ function RouteComponent() {
     };
   }, [sub]);
 
-  console.log(sub);
+  // console.log(sub);
 
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(
     "current",
@@ -149,8 +164,8 @@ function RouteComponent() {
       params: {
         start_time: selectedInvoice?.period_start_timestamp
           ? new Date(
-            selectedInvoice.period_start_timestamp * 1000,
-          ).toISOString()
+              selectedInvoice.period_start_timestamp * 1000,
+            ).toISOString()
           : undefined,
         end_time: selectedInvoice?.period_end_timestamp
           ? new Date(selectedInvoice.period_end_timestamp * 1000).toISOString()
@@ -226,73 +241,187 @@ function RouteComponent() {
         {/* Plan */}
         <div className="mb-6">
           <div className="mb-2 px-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">Plan</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              Plan
+            </h2>
           </div>
           {/* GPU Credits - Compact (moved above plan) */}
-          <Card className="relative mb-0 rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
-            <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
-            <button
-              type="button"
-              onClick={() => {
-                if (gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0) {
-                  setCreditsExpanded(!creditsExpanded);
-                }
-              }}
-              className="relative z-10 w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-                  <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
-                </div>
-                <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">GPU Credits</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-zinc-500 dark:text-zinc-500">Balance</span>
-                  <span className="text-sm font-mono font-semibold text-zinc-900 dark:text-zinc-100">
-                    ${gpuCreditFeature ? totalBalance.toFixed(2) : "0.00"}
+          {isFreePlan && (
+            <Card className="relative mb-0 rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+              <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0
+                  ) {
+                    setCreditsExpanded(!creditsExpanded);
+                  }
+                }}
+                className="relative z-10 w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                    <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
+                  </div>
+                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                    GPU Credits
                   </span>
                 </div>
-                <TopUpButton
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-xs font-medium rounded-[2px] bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm hover:bg-gray-100 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
-                  showIcon={true}
-                >
-                  Add Credits
-                </TopUpButton>
-                {gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""}`}
-                  />
-                )}
-              </div>
-            </button>
 
-            {creditsExpanded && gpuCreditFeature?.breakdown && gpuCreditFeature.breakdown.length > 0 && (
-              <div className="relative z-10 border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
-                {gpuCreditFeature.breakdown.map((breakdown, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-xs">
                     <span className="text-zinc-500 dark:text-zinc-500">
-                      {breakdown.interval === 'month' ? 'Monthly' :
-                        breakdown.interval === 'lifetime' ? 'Lifetime' :
-                          breakdown.interval}
+                      Balance
                     </span>
-                    <div className="flex items-center gap-2 font-mono">
-                      <span className="text-zinc-900 dark:text-zinc-100">
-                        ${(breakdown.balance / 100).toFixed(2)}
-                      </span>
-                      <span className="text-zinc-400 dark:text-zinc-600">/</span>
-                      <span className="text-zinc-600 dark:text-zinc-400">
-                        ${(breakdown.included_usage / 100).toFixed(2)}
-                      </span>
-                    </div>
+                    <span className="text-sm font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      $
+                      {gpuCreditFeature
+                        ? (gpuCreditFeature.balance / 100).toFixed(3)
+                        : "0.00"}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-          </Card>
+                  <TopUpButton
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs font-medium rounded-[2px] bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm hover:bg-gray-100 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
+                    showIcon={true}
+                  >
+                    Add Credits
+                  </TopUpButton>
+                  {gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0 && (
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""}`}
+                      />
+                    )}
+                </div>
+              </button>
+
+              {creditsExpanded &&
+                gpuCreditFeature?.breakdown &&
+                gpuCreditFeature.breakdown.length > 0 && (
+                  <div className="relative z-10 border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+                    {gpuCreditFeature.breakdown.map((breakdown, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="text-zinc-500 dark:text-zinc-500">
+                          {breakdown.interval === "month"
+                            ? "Monthly"
+                            : breakdown.interval === "lifetime"
+                              ? "Lifetime"
+                              : breakdown.interval}
+                        </span>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="text-zinc-900 dark:text-zinc-100">
+                            ${(breakdown.balance / 100).toFixed(2)}
+                          </span>
+                          <span className="text-zinc-400 dark:text-zinc-600">
+                            /
+                          </span>
+                          <span className="text-zinc-600 dark:text-zinc-400">
+                            ${(breakdown.included_usage / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </Card>
+          )}
+          {!isFreePlan && (
+            <Card className="relative mb-0 rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+              <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0
+                  ) {
+                    setCreditsExpanded(!creditsExpanded);
+                  }
+                }}
+                className="relative z-10 w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                    <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
+                  </div>
+                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                    On Demand Billing
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-zinc-500 dark:text-zinc-500">
+                      Billable Usage
+                    </span>
+                    <span className="text-sm font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      ${gpuCreditFeature ? finalUsed.toFixed(2) : "0.00"}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      const result = await openBillingPortal({
+                        openInNewTab: true,
+                      });
+                      // result.data?.url &&
+                      // window.open(result.data.url, "_blank");
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs font-medium rounded-[2px] bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm hover:bg-gray-100 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
+                    // showIcon={true}
+                  >
+                    Manage
+                  </Button>
+                  {/* {gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0 && (
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""}`}
+                      />
+                    )} */}
+                </div>
+              </button>
+
+              {creditsExpanded &&
+                gpuCreditFeature?.breakdown &&
+                gpuCreditFeature.breakdown.length > 0 && (
+                  <div className="relative z-10 border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+                    {gpuCreditFeature.breakdown.map((breakdown, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="text-zinc-500 dark:text-zinc-500">
+                          {breakdown.interval === "month"
+                            ? "Monthly"
+                            : breakdown.interval === "lifetime"
+                              ? "Lifetime"
+                              : breakdown.interval}
+                        </span>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="text-zinc-900 dark:text-zinc-100">
+                            ${(breakdown.balance / 100).toFixed(2)}
+                          </span>
+                          <span className="text-zinc-400 dark:text-zinc-600">
+                            /
+                          </span>
+                          <span className="text-zinc-600 dark:text-zinc-400">
+                            ${(breakdown.included_usage / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </Card>
+          )}
           <Card className="relative rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
             <div className="relative z-10">
               <Table>
@@ -301,7 +430,10 @@ function RouteComponent() {
                   {autumnLoading && (
                     <>
                       {Array.from({ length: 2 }).map((_, i) => (
-                        <TableRow key={`plan-skel-${i}`} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
+                        <TableRow
+                          key={`plan-skel-${i}`}
+                          className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                        >
                           <TableCell className="py-2">
                             <div className="flex items-center gap-2">
                               <Skeleton className="h-4 w-4 rounded-[2px]" />
@@ -323,178 +455,261 @@ function RouteComponent() {
                       ))}
                     </>
                   )}
-                  {(autumnData?.products ?? []).filter(p => !p.is_add_on).map((product: Product, idx: number) => {
-                    const priceItem = product.items.find(item => item.type === 'price');
-                    const hasAddons = (autumnData?.products ?? []).some(p => p.is_add_on);
-                    return (
-                      <TableRow key={product.id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
-                        <TableCell className="py-1">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-                              <CreditCard className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
-                            </div>
-                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{product.name}</span>
-                            {hasAddons && idx === 0 && (
-                              <button
-                                type="button"
-                                onClick={() => setShowAddons(v => !v)}
-                                className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800"
-                                aria-label="Toggle add-ons"
-                                aria-expanded={showAddons}
-                              >
-                                <ChevronDown className={`h-3 w-3 transition-transform ${showAddons ? 'rotate-180' : ''}`} />
-                              </button>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-1">
-                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">Plan</span>
-                        </TableCell>
-                        <TableCell className="py-1">
-                          <div className="flex items-center gap-1">
-                            <div className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-green-500' : 'bg-zinc-400'}`} />
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{product.status}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-1 text-right">
-                          {priceItem && (
-                            <div className="text-xs">
-                              <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">${priceItem.price.toFixed(2)}</span>
-                              {priceItem.interval && (
-                                <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">/{priceItem.interval === 'month' ? 'mo' : priceItem.interval}</span>
+                  {(autumnData?.products ?? [])
+                    .filter((p) => !p.is_add_on)
+                    .filter((p) => p.id !== "credit")
+                    .map((product, idx) => {
+                      const priceItem = product.items?.find(
+                        (item) => item.type === "price",
+                      );
+                      console.log(product.items);
+
+                      const hasAddons = (autumnData?.products ?? []).some(
+                        (p) => p.is_add_on,
+                      );
+                      return (
+                        <TableRow
+                          key={product.id}
+                          className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                        >
+                          <TableCell className="py-1">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                                <CreditCard className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
+                              </div>
+                              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                                {product.name}
+                              </span>
+                              {hasAddons && idx === 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddons((v) => !v)}
+                                  className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800"
+                                  aria-label="Toggle add-ons"
+                                  aria-expanded={showAddons}
+                                >
+                                  <ChevronDown
+                                    className={`h-3 w-3 transition-transform ${showAddons ? "rotate-180" : ""}`}
+                                  />
+                                </button>
                               )}
                             </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                          </TableCell>
+                          <TableCell className="py-1">
+                            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">
+                              Plan
+                            </span>
+                          </TableCell>
+                          <TableCell className="py-1">
+                            <div className="flex items-center gap-1">
+                              <div
+                                className={`h-1.5 w-1.5 rounded-full ${product.status === "active" ? "bg-green-500" : "bg-zinc-400"}`}
+                              />
+                              <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                                {product.status}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-1 text-right">
+                            {priceItem && (
+                              <div className="text-xs">
+                                <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                                  ${priceItem.price.toFixed(2)}
+                                </span>
+                                {priceItem.interval && (
+                                  <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">
+                                    /
+                                    {priceItem.interval === "month"
+                                      ? "mo"
+                                      : priceItem.interval}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
 
                   {/* Add-on products (collapsible) */}
-                  {showAddons && (autumnData?.products ?? []).filter(p => p.is_add_on).map((product: Product) => {
-                    const priceItem = product.items.find(item => item.type === 'price');
-                    return (
-                      <TableRow key={product.id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
-                        <TableCell className="py-1">
-                          <div className="flex items-center gap-2">
-                            <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
-                              <Plus className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
-                            </div>
-                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">{product.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-1">
-                          <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">Add-on</span>
-                        </TableCell>
-                        <TableCell className="py-1">
-                          <div className="flex items-center gap-1">
-                            <div className={`h-1.5 w-1.5 rounded-full ${product.status === 'active' ? 'bg-green-500' : 'bg-zinc-400'}`} />
-                            <span className="text-[10px] text-zinc-600 dark:text-zinc-400">{product.status}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-1 text-right">
-                          {priceItem && (
-                            <div className="text-xs">
-                              <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">${priceItem.price.toFixed(2)}</span>
-                              {priceItem.interval && (
-                                <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">/{priceItem.interval === 'month' ? 'mo' : priceItem.interval}</span>
+                  {showAddons &&
+                    (autumnData?.products ?? [])
+                      .filter((p) => p.is_add_on)
+                      .map((product) => {
+                        const priceItem = product.items.find(
+                          (item) => item.type === "price",
+                        );
+                        return (
+                          <TableRow
+                            key={product.id}
+                            className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                          >
+                            <TableCell className="py-1">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                                  <Plus className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
+                                </div>
+                                <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                                  {product.name}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-1">
+                              <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">
+                                Add-on
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-1">
+                              <div className="flex items-center gap-1">
+                                <div
+                                  className={`h-1.5 w-1.5 rounded-full ${product.status === "active" ? "bg-green-500" : "bg-zinc-400"}`}
+                                />
+                                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                                  {product.status}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-1 text-right">
+                              {priceItem && (
+                                <div className="text-xs">
+                                  <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                                    ${priceItem.price.toFixed(2)}
+                                  </span>
+                                  {priceItem.interval && (
+                                    <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">
+                                      /
+                                      {priceItem.interval === "month"
+                                        ? "mo"
+                                        : priceItem.interval}
+                                    </span>
+                                  )}
+                                </div>
                               )}
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                 </TableBody>
               </Table>
             </div>
             {/* Collapsible Features Section - Bottom Right */}
-            {autumnData?.features && Object.keys(autumnData.features).filter(id => id !== 'gpu-credit').length > 0 && (
-              <div className="relative px-4 py-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => setFeaturesExpanded(!featuresExpanded)}
-                    className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline underline-offset-2"
-                  >
-                    {featuresExpanded ? 'Hide Details' : 'View Details'}
-                  </button>
-                </div>
-                {featuresExpanded && (
-                  <div className="absolute top-full right-4 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg p-4 min-w-[380px] sm:min-w-[420px] z-50">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
-                          <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Feature</TableHead>
-                          <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Usage</TableHead>
-                          <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">Limit</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {Object.entries(autumnData.features)
-                          .filter(([id]) => id !== 'gpu-credit')
-                          .map(([id, feature]) => (
-                            <TableRow key={id} className="border-b border-zinc-100/50 dark:border-zinc-800/30">
-                              <TableCell className="py-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
-                                    {feature.name}
-                                  </span>
-                                  {feature.overage_allowed && (
-                                    <Badge variant="outline" className="h-3.5 px-1 text-[9px]">
-                                      Overage
-                                    </Badge>
-                                  )}
-                                </div>
-                              </TableCell>
-                              <TableCell className="py-1 w-[45%]">
-                                {feature.type === 'static' ? (
-                                  <div className="flex items-center gap-1">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
-                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">Available</span>
-                                  </div>
-                                ) : feature.unlimited ? (
-                                  <span className="text-xs text-zinc-600 dark:text-zinc-400">—</span>
-                                ) : (
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-mono text-[11px] text-zinc-900 dark:text-zinc-100 whitespace-nowrap min-w-[60px]">
-                                      {feature.usage} / {feature.included_usage}
-                                    </span>
-                                    {/* Progress bar to visualize usage vs limit */}
-                                    <Progress
-                                      value={(() => {
-                                        const limit = feature.included_usage || 0;
-                                        if (limit <= 0) return 100;
-                                        const pct = (feature.usage / limit) * 100;
-                                        return Math.min(Math.max(pct, 0), 100);
-                                      })()}
-                                      className="h-1.5 rounded-sm bg-zinc-200 dark:bg-zinc-800 w-[120px]"
-                                    />
-                                  </div>
-                                )}
-                              </TableCell>
-                              <TableCell className="py-1 text-right">
-                                {feature.type === 'static' ? (
-                                  <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
-                                    Enabled
-                                  </Badge>
-                                ) : feature.unlimited ? (
-                                  <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">
-                                    Unlimited
-                                  </Badge>
-                                ) : (
-                                  <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
-                                    {feature.included_usage}
-                                  </span>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                      </TableBody>
-                    </Table>
+            {autumnData?.features &&
+              Object.keys(autumnData.features).filter(
+                (id) => !id.includes("gpu-credit"),
+              ).length > 0 && (
+                <div className="relative px-4 py-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setFeaturesExpanded(!featuresExpanded)}
+                      className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline underline-offset-2"
+                    >
+                      {featuresExpanded ? "Hide Details" : "View Details"}
+                    </button>
                   </div>
-                )}
-              </div>
-            )}
+                  {featuresExpanded && (
+                    <div className="absolute top-full right-4 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg p-4 min-w-[380px] sm:min-w-[420px] z-50">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
+                            <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                              Feature
+                            </TableHead>
+                            <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                              Usage
+                            </TableHead>
+                            <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">
+                              Limit
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Object.entries(autumnData.features)
+                            .filter(([id]) => !id.includes("gpu-credit"))
+                            .map(([id, feature]) => (
+                              <TableRow
+                                key={id}
+                                className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                              >
+                                <TableCell className="py-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                                      {feature.name}
+                                    </span>
+                                    {feature.overage_allowed && (
+                                      <Badge
+                                        variant="outline"
+                                        className="h-3.5 px-1 text-[9px]"
+                                      >
+                                        Overage
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-1 w-[45%]">
+                                  {feature.type === "static" ? (
+                                    <div className="flex items-center gap-1">
+                                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                                        Available
+                                      </span>
+                                    </div>
+                                  ) : feature.unlimited ? (
+                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                                      —
+                                    </span>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-[11px] text-zinc-900 dark:text-zinc-100 whitespace-nowrap min-w-[60px]">
+                                        {feature.usage} /{" "}
+                                        {feature.included_usage}
+                                      </span>
+                                      {/* Progress bar to visualize usage vs limit */}
+                                      <Progress
+                                        value={(() => {
+                                          const limit =
+                                            feature.included_usage || 0;
+                                          if (limit <= 0) return 100;
+                                          const pct =
+                                            (feature.usage / limit) * 100;
+                                          return Math.min(
+                                            Math.max(pct, 0),
+                                            100,
+                                          );
+                                        })()}
+                                        className="h-1.5 rounded-sm bg-zinc-200 dark:bg-zinc-800 w-[120px]"
+                                      />
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="py-1 text-right">
+                                  {feature.type === "static" ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="h-4 px-1.5 text-[9px]"
+                                    >
+                                      Enabled
+                                    </Badge>
+                                  ) : feature.unlimited ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="h-4 px-1.5 text-[9px]"
+                                    >
+                                      Unlimited
+                                    </Badge>
+                                  ) : (
+                                    <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                                      {feature.included_usage}
+                                    </span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              )}
           </Card>
         </div>
       </div>
@@ -502,7 +717,9 @@ function RouteComponent() {
       {/* Usage + Period Selection */}
       <div className="flex w-full items-center justify-between mb-2 mt-6 px-1">
         <div className="flex items-center gap-2">
-          <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">Usage</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            Usage
+          </h2>
           <div className="flex items-center rounded border border-zinc-200/50 bg-white p-0.5 shadow-sm dark:border-zinc-800/50 dark:bg-zinc-900">
             <Button
               variant="ghost"
@@ -533,7 +750,7 @@ function RouteComponent() {
               (selectedPeriod !== "current" &&
                 invoices &&
                 invoices.findIndex((inv) => inv.id === selectedPeriod) ===
-                invoices.length - 1)
+                  invoices.length - 1)
             }
           >
             <ChevronLeft className="h-3.5 w-3.5" />
@@ -558,9 +775,7 @@ function RouteComponent() {
                     {(() => {
                       if (!currentPeriod) return null;
                       const startDate = currentPeriod.period_start_timestamp
-                        ? new Date(
-                          currentPeriod.period_start_timestamp * 1000,
-                        )
+                        ? new Date(currentPeriod.period_start_timestamp * 1000)
                         : new Date();
                       const endDate = currentPeriod.period_end_timestamp
                         ? new Date(currentPeriod.period_end_timestamp * 1000)
@@ -593,7 +808,11 @@ function RouteComponent() {
                     const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
                     const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
                     return (
-                      <SelectItem key={invoice.id} value={invoice.id} className="text-xs">
+                      <SelectItem
+                        key={invoice.id}
+                        value={invoice.id}
+                        className="text-xs"
+                      >
                         {monthName}
                         <span className="ml-2 text-zinc-500 dark:text-zinc-500">
                           ({startStr} - {endStr})
@@ -617,36 +836,44 @@ function RouteComponent() {
         </div>
       </div>
 
-      <Card className="relative mb-0 border-zinc-200/50 shadow-sm dark:border-zinc-800/50 rounded-[2px]">
-        <div className="relative z-10 grid divide-x divide-zinc-200/50 dark:divide-zinc-800/50 sm:grid-cols-3">
-          <div className="px-4 py-3">
-            <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">Usage</div>
-            <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
-              ${is_displaying_invoice
-                ? (usage?.total_cost?.toFixed(2) ?? "0.00")
-                : (used?.toFixed(2) ?? "0.00")}
-            </div>
-          </div>
-          {!is_displaying_invoice && (
+      {!isFreePlan && (
+        <Card className="relative mb-0 border-zinc-200/50 shadow-sm dark:border-zinc-800/50 rounded-[2px]">
+          <div className="relative z-10 grid divide-x divide-zinc-200/50 dark:divide-zinc-800/50 sm:grid-cols-3">
             <div className="px-4 py-3">
               <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
-                Credit Balance
+                Usage
               </div>
-              <div className="mt-0.5 text-base font-mono font-medium text-green-600 dark:text-green-400">
-                ${(credit ?? 0).toFixed(2)}
+              <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                $
+                {is_displaying_invoice
+                  ? (usage?.total_cost?.toFixed(2) ?? "0.00")
+                  : (usage_display?.toFixed(2) ?? "0.00")}
               </div>
             </div>
-          )}
-          <div className="px-4 py-3">
-            <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">Final Usage</div>
-            <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
-              ${is_displaying_invoice
-                ? (usage?.final_cost?.toFixed(2) ?? "0.00")
-                : Math.max(0, (used ?? 0) - (credit ?? 0)).toFixed(2)}
+            {!is_displaying_invoice && (
+              <div className="px-4 py-3">
+                <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
+                  Credit Balance
+                </div>
+                <div className="mt-0.5 text-base font-mono font-medium text-green-600 dark:text-green-400">
+                  ${(credit ?? 0).toFixed(2)}
+                </div>
+              </div>
+            )}
+            <div className="px-4 py-3">
+              <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
+                Billable Usage
+              </div>
+              <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                $
+                {is_displaying_invoice
+                  ? (usage?.final_cost?.toFixed(2) ?? "0.00")
+                  : finalUsed?.toFixed(2)}
+              </div>
             </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
       {/* Graph/Table section with subtle grid background */}
       <div className="relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
@@ -779,10 +1006,18 @@ export function UsageTable(props: {
         <Table>
           <TableHeader className="bg-background top-0 sticky">
             <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
-              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Machine</TableHead>
-              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">GPU</TableHead>
-              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">Duration</TableHead>
-              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">Cost</TableHead>
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                Machine
+              </TableHead>
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                GPU
+              </TableHead>
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                Duration
+              </TableHead>
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">
+                Cost
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody key={props.invoice?.id}>
@@ -817,7 +1052,9 @@ export function UsageTable(props: {
                           )}
                         </TooltipTrigger>
                         <TooltipContent>
-                          <div className="font-mono text-xs">{x.machine_id}</div>
+                          <div className="font-mono text-xs">
+                            {x.machine_id}
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
@@ -903,8 +1140,9 @@ export function InvoiceItem({
       void: { color: "bg-zinc-400", label: "Void" },
     };
 
-    const config = statusConfig[invoice.status as keyof typeof statusConfig] ||
-      { color: "bg-zinc-400", label: invoice.status };
+    const config = statusConfig[
+      invoice.status as keyof typeof statusConfig
+    ] || { color: "bg-zinc-400", label: invoice.status };
 
     return (
       <div className="flex items-center gap-1">
@@ -952,8 +1190,9 @@ export function InvoiceItem({
             </Tooltip>
           )}
           <ChevronDown
-            className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""
-              }`}
+            className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${
+              isExpanded ? "rotate-180" : ""
+            }`}
           />
         </div>
       </button>
@@ -1009,19 +1248,21 @@ function InvoiceDetails({ invoice }: { invoice: Invoice | CurrentPeriod }) {
   return (
     <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
       <div className="px-4 py-3">
-        <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 mb-2">Invoice Details</h3>
+        <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+          Invoice Details
+        </h3>
         <ul className="space-y-1">
           {invoice.line_items.map((item, index) => (
             <li
               key={item.description || index}
               className="flex justify-between text-xs"
             >
-              <span className="text-zinc-600 dark:text-zinc-400">{item.description}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">
+                {item.description}
+              </span>
               <span className="font-mono text-zinc-900 dark:text-zinc-100">
                 ${item.amount.toFixed(2)}
-                {item.quantity && item.quantity > 1
-                  ? ` ×${item.quantity}`
-                  : ""}
+                {item.quantity && item.quantity > 1 ? ` ×${item.quantity}` : ""}
               </span>
             </li>
           ))}
@@ -1029,17 +1270,27 @@ function InvoiceDetails({ invoice }: { invoice: Invoice | CurrentPeriod }) {
         <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-1">
           <div className="flex justify-between text-xs">
             <span className="text-zinc-500 dark:text-zinc-500">Subtotal</span>
-            <span className="font-mono text-zinc-600 dark:text-zinc-400">${invoice.subtotal.toFixed(2)}</span>
+            <span className="font-mono text-zinc-600 dark:text-zinc-400">
+              ${invoice.subtotal.toFixed(2)}
+            </span>
           </div>
           {invoice.subtotal > invoice.total && (
             <div className="flex justify-between text-xs">
-              <span className="text-green-600 dark:text-green-400">Discount</span>
-              <span className="font-mono text-green-600 dark:text-green-400">-${(invoice.subtotal - invoice.total).toFixed(2)}</span>
+              <span className="text-green-600 dark:text-green-400">
+                Discount
+              </span>
+              <span className="font-mono text-green-600 dark:text-green-400">
+                -${(invoice.subtotal - invoice.total).toFixed(2)}
+              </span>
             </div>
           )}
           <div className="flex justify-between text-xs pt-1 border-t border-zinc-100 dark:border-zinc-800">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">Total</span>
-            <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">${invoice.total.toFixed(2)}</span>
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              Total
+            </span>
+            <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+              ${invoice.total.toFixed(2)}
+            </span>
           </div>
         </div>
         {invoice.hosted_invoice_url && (
@@ -1081,7 +1332,9 @@ function UnpaidInvoices() {
             <AlertCircle className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
           </div>
           <div className="flex-1">
-            <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">Unpaid Invoices</h3>
+            <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+              Unpaid Invoices
+            </h3>
             <div className="mt-1.5 space-y-1">
               {unpaidInvoices.map((invoice: Invoice) => (
                 <div

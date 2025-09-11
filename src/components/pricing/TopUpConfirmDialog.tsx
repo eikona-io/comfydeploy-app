@@ -54,8 +54,8 @@ export function TopUpConfirmDialog({
 }: TopUpConfirmDialogProps) {
   if (!preview) return null;
 
-  const creditLine = preview.lines.find(line =>
-    line.item.feature_id === "gpu-credit"
+  const creditLine = preview.lines.find(
+    (line) => line.item.feature_id === "gpu-credit-topup",
   );
 
   const creditAmount = creditLine?.item.quantity || 0;
@@ -82,7 +82,9 @@ export function TopUpConfirmDialog({
               </div>
               <div>
                 <div className="text-2xl font-bold">${dollarAmount}</div>
-                <div className="text-sm text-muted-foreground">Credit Purchase</div>
+                <div className="text-sm text-muted-foreground">
+                  Credit Purchase
+                </div>
               </div>
             </div>
           </CardContent>

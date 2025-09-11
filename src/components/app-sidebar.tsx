@@ -5,8 +5,8 @@ import {
   useClerk,
 } from "@clerk/clerk-react";
 import { dark } from "@clerk/themes";
-import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -76,17 +76,18 @@ import {
   InfoCardTitle,
 } from "@/kl-ui/info-card";
 import { api } from "@/lib/api";
+import { useCreditInDollars } from "@/lib/autumn-helpers";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn, isDarkTheme } from "@/lib/utils";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { getOrgPathInfo } from "@/utils/org-path";
 import { Icon } from "./icon-word";
+import { TopUpButton } from "./pricing/TopUpButton";
 import { useTheme } from "./theme-provider";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
 import { VersionSelectV2 } from "./version-select";
 import { MachineSelect } from "./workspace/MachineSelect";
-import { TopUpButton } from "./pricing/TopUpButton";
 
 // Add Session type
 export interface Session {
@@ -194,12 +195,12 @@ function usePages() {
     // },
     ...(isAdminAndMember
       ? [
-        {
-          name: "Machines",
-          path: "/machines",
-          icon: Server,
-        },
-      ]
+          {
+            name: "Machines",
+            path: "/machines",
+            icon: Server,
+          },
+        ]
       : []),
     {
       name: "Sessions",
@@ -221,32 +222,32 @@ function usePages() {
   const metaPages = [
     ...(isAdminAndMember
       ? [
-        {
-          name: "Settings",
-          path: "/settings",
-          icon: Settings,
-        },
-        {
-          name: "API Keys",
-          path: "/api-keys",
-          icon: Key,
-        },
-        // {
-        //   name: "Secrets",
-        //   path: "/secrets",
-        //   icon: LockKeyhole,
-        // },
-      ]
+          {
+            name: "Settings",
+            path: "/settings",
+            icon: Settings,
+          },
+          {
+            name: "API Keys",
+            path: "/api-keys",
+            icon: Key,
+          },
+          // {
+          //   name: "Secrets",
+          //   path: "/secrets",
+          //   icon: LockKeyhole,
+          // },
+        ]
       : []),
 
     ...(isAdminOnly
       ? [
-        {
-          name: "Usage",
-          path: "/usage",
-          icon: CircleGauge,
-        },
-      ]
+          {
+            name: "Usage",
+            path: "/usage",
+            icon: CircleGauge,
+          },
+        ]
       : []),
 
     // ...(sub?.plans?.plans
@@ -527,7 +528,7 @@ export function AppSidebar() {
                           className={cn(
                             "transition-colors dark:hover:bg-zinc-700/40",
                             item.url === `/${parentPath}` &&
-                            "dark:bg-zinc-800/40",
+                              "dark:bg-zinc-800/40",
                           )}
                         >
                           <Link href={item.url}>
@@ -535,14 +536,14 @@ export function AppSidebar() {
                               className={cn(
                                 "transition-colors dark:text-gray-400",
                                 item.url === `/${parentPath}` &&
-                                "dark:text-white",
+                                  "dark:text-white",
                               )}
                             />
                             <span
                               className={cn(
                                 "transition-colors dark:text-gray-400",
                                 item.url === `/${parentPath}` &&
-                                "dark:text-white",
+                                  "dark:text-white",
                               )}
                             >
                               {item.title}
@@ -583,7 +584,7 @@ export function AppSidebar() {
                           className={cn(
                             "transition-colors dark:hover:bg-zinc-700/40",
                             item.url === `/${parentPath}` &&
-                            "dark:bg-zinc-800/40",
+                              "dark:bg-zinc-800/40",
                           )}
                         >
                           <Link href={item.url}>
@@ -591,14 +592,14 @@ export function AppSidebar() {
                               className={cn(
                                 "transition-colors dark:text-gray-400",
                                 item.url === `/${parentPath}` &&
-                                "dark:text-white",
+                                  "dark:text-white",
                               )}
                             />
                             <span
                               className={cn(
                                 "transition-colors dark:text-gray-400",
                                 item.url === `/${parentPath}` &&
-                                "dark:text-white",
+                                  "dark:text-white",
                               )}
                             >
                               {item.title}
@@ -680,17 +681,15 @@ export function AppSidebar() {
 
 function PlanBadge() {
   const { data: plan, isLoading } = useCurrentPlanWithStatus();
-  const { data: autumnDataResponse, isLoading: isAutumnDataLoading } = useQuery<any>({
-    queryKey: ["platform", "autumn-data"],
-  });
 
-  const autumnData = autumnDataResponse?.autumn_data;
-  const gpuCreditFeature = autumnData?.features?.["gpu-credit"];
-  const totalBalance = (gpuCreditFeature?.balance ?? 0) / 100;
+  const { credit: totalBalance, isLoading: isAutumnDataLoading } =
+    useCreditInDollars();
 
   const { displayPlan, badgeColor, isFreePlan } = useMemo(() => {
     const planId = plan?.plans?.plans[0] || "";
-    const isFreePlan = !plan?.plans?.plans?.length || plan?.plans?.plans?.some((p: string) => p.startsWith("free"));
+    const isFreePlan =
+      !plan?.plans?.plans?.length ||
+      plan?.plans?.plans?.some((p: string) => p.startsWith("free"));
 
     let displayPlan = "Pay as you go";
     let badgeColor = "secondary";
@@ -836,8 +835,8 @@ export function GuestSidebar() {
                     className={cn(
                       "transition-colors dark:hover:bg-zinc-700/40",
                       item.internal &&
-                      item.url === location.pathname &&
-                      "dark:bg-zinc-800/40",
+                        item.url === location.pathname &&
+                        "dark:bg-zinc-800/40",
                     )}
                   >
                     {item.internal ? (
@@ -846,16 +845,16 @@ export function GuestSidebar() {
                           className={cn(
                             "transition-colors dark:text-gray-400",
                             item.internal &&
-                            item.url === location.pathname &&
-                            "dark:text-white",
+                              item.url === location.pathname &&
+                              "dark:text-white",
                           )}
                         />
                         <span
                           className={cn(
                             "transition-colors dark:text-gray-400",
                             item.internal &&
-                            item.url === location.pathname &&
-                            "dark:text-white",
+                              item.url === location.pathname &&
+                              "dark:text-white",
                           )}
                         >
                           {item.title}

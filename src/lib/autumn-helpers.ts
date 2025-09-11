@@ -1,4 +1,35 @@
-import type { Feature as AutumnFeature, AutumnDataV2Response } from "@/types/autumn-v2";
+import { useCustomer } from "autumn-js/react";
+import type {
+  AutumnDataV2Response,
+  Feature as AutumnFeature,
+} from "@/types/autumn-v2";
+
+export function useCredit() {
+  const { check, customer, isLoading } = useCustomer();
+
+  const isFreePlan = customer?.products.find((x) => x.id === "free");
+  const credit = isFreePlan
+    ? check({ featureId: "gpu-credit-topup" })
+    : check({ featureId: "gpu-credit" });
+
+  return { credit, isLoading };
+}
+
+export function useFreePlan() {
+  const { check, customer, isLoading } = useCustomer();
+
+  const isFreePlan = customer?.products.find((x) => x.id === "free");
+
+  return { isFreePlan, isLoading };
+}
+
+export function useCreditInDollars() {
+  const { credit, isLoading } = useCredit();
+
+  if (!credit || !credit.data?.balance) return { credit: 0, isLoading };
+
+  return { credit: credit?.data?.balance / 100, isLoading };
+}
 
 /**
  * Helper functions for working with Autumn Data V2 features
@@ -17,7 +48,7 @@ export interface PlanStatusResponse {
  */
 export function getAutumnData(
   planStatus?: PlanStatusResponse,
-  autumnResp?: AutumnDataV2Response
+  autumnResp?: AutumnDataV2Response,
 ) {
   return autumnResp?.autumn_data ?? planStatus?.plans?.autumn_data;
 }
@@ -28,7 +59,7 @@ export function getAutumnData(
 export function getAutumnFeature(
   featureId: string,
   planStatus?: PlanStatusResponse,
-  autumnResp?: AutumnDataV2Response
+  autumnResp?: AutumnDataV2Response,
 ): AutumnFeature | null {
   const autumnData = getAutumnData(planStatus, autumnResp);
   return (autumnData?.features?.[featureId] ?? null) as AutumnFeature | null;
@@ -46,22 +77,32 @@ export function getWorkflowLimits(
       workflowLimit?: number;
       currentWorkflowCount?: number;
     };
-  }
+  },
 ) {
   // Prioritize autumnResp over planStatus
-  const workflowLimitFeature = getAutumnFeature("workflow_limit", planStatus, autumnResp);
-  
+  const workflowLimitFeature = getAutumnFeature(
+    "workflow_limit",
+    planStatus,
+    autumnResp,
+  );
+
   const isUnlimited = workflowLimitFeature?.unlimited === true;
   const isLimited = workflowLimitFeature
-    ? !workflowLimitFeature.unlimited && (workflowLimitFeature.balance ?? 0) <= 0
-    : fallbackSub?.features?.workflowLimited ?? false;
-  
+    ? !workflowLimitFeature.unlimited &&
+      (workflowLimitFeature.balance ?? 0) <= 0
+    : (fallbackSub?.features?.workflowLimited ?? false);
+
   const limit = isUnlimited
     ? "Unlimited"
-    : (workflowLimitFeature?.included_usage ?? fallbackSub?.features?.workflowLimit ?? 0);
-  
-  const currentCount = workflowLimitFeature?.usage ?? fallbackSub?.features?.currentWorkflowCount ?? 0;
-  
+    : (workflowLimitFeature?.included_usage ??
+      fallbackSub?.features?.workflowLimit ??
+      0);
+
+  const currentCount =
+    workflowLimitFeature?.usage ??
+    fallbackSub?.features?.currentWorkflowCount ??
+    0;
+
   return {
     isUnlimited,
     isLimited,
@@ -83,22 +124,31 @@ export function getMachineLimits(
       machineLimit?: number;
       currentMachineCount?: number;
     };
-  }
+  },
 ) {
   // Prioritize autumnResp over planStatus
-  const machineLimitFeature = getAutumnFeature("machine_limit", planStatus, autumnResp);
-  
+  const machineLimitFeature = getAutumnFeature(
+    "machine_limit",
+    planStatus,
+    autumnResp,
+  );
+
   const isUnlimited = machineLimitFeature?.unlimited === true;
   const isLimited = machineLimitFeature
     ? !machineLimitFeature.unlimited && (machineLimitFeature.balance ?? 0) <= 0
-    : fallbackSub?.features?.machineLimited ?? false;
-  
+    : (fallbackSub?.features?.machineLimited ?? false);
+
   const limit = isUnlimited
     ? "Unlimited"
-    : (machineLimitFeature?.included_usage ?? fallbackSub?.features?.machineLimit ?? 0);
-  
-  const currentCount = machineLimitFeature?.usage ?? fallbackSub?.features?.currentMachineCount ?? 0;
-  
+    : (machineLimitFeature?.included_usage ??
+      fallbackSub?.features?.machineLimit ??
+      0);
+
+  const currentCount =
+    machineLimitFeature?.usage ??
+    fallbackSub?.features?.currentMachineCount ??
+    0;
+
   return {
     isUnlimited,
     isLimited,
@@ -113,28 +163,35 @@ export function getMachineLimits(
  */
 export function getSelfHostedMachinesAllowed(
   planStatus?: PlanStatusResponse,
-  autumnResp?: AutumnDataV2Response
+  autumnResp?: AutumnDataV2Response,
 ): boolean {
   // Prioritize autumnResp over planStatus
-  const selfHostedFeature = getAutumnFeature("self_hosted_machines", planStatus, autumnResp);
-  
+  const selfHostedFeature = getAutumnFeature(
+    "self_hosted_machines",
+    planStatus,
+    autumnResp,
+  );
+
   // Debug logging
   console.log("getSelfHostedMachinesAllowed debug:", {
     selfHostedFeature,
     hasFeature: !!selfHostedFeature,
     featureType: selfHostedFeature?.type,
-    planStatus: planStatus?.plans?.autumn_data?.features?.["self_hosted_machines"],
-    autumnResp: autumnResp?.autumn_data?.features?.["self_hosted_machines"]
+    planStatus:
+      planStatus?.plans?.autumn_data?.features?.["self_hosted_machines"],
+    autumnResp: autumnResp?.autumn_data?.features?.["self_hosted_machines"],
   });
-  
+
   // For boolean/static features, the presence of the feature indicates access
   // Static features in Autumn don't use balance - they're either present or not
   if (!selfHostedFeature) {
     return false;
   }
-  
+
   // For static/boolean features, if the feature exists, the user has access
-  return selfHostedFeature.type === "static" || selfHostedFeature.type === "boolean";
+  return (
+    selfHostedFeature.type === "static" || selfHostedFeature.type === "boolean"
+  );
 }
 
 /**
@@ -143,7 +200,7 @@ export function getSelfHostedMachinesAllowed(
 export function getFeatureCredits(
   featureId: string,
   planStatus?: PlanStatusResponse,
-  autumnResp?: AutumnDataV2Response
+  autumnResp?: AutumnDataV2Response,
 ) {
   const feature = getAutumnFeature(featureId, planStatus, autumnResp);
   return {
