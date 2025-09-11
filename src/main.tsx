@@ -22,6 +22,7 @@ import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
 import { getOrgPathInfo } from "@/utils/org-path";
+import { OrgSelector } from "./components/OrgSelector";
 import { LoadingProgress } from "./components/ui/loading-progress";
 import { SidebarProvider } from "./components/ui/sidebar";
 import { SidebarGhost } from "./components/ui/sidebar-ghost";
@@ -243,9 +244,7 @@ function InnerApp() {
   publicClerk = clerk;
 
   return (
-    <AutumnProvider
-      includeCredentials
-    >
+    <AutumnProvider includeCredentials>
       <div className="animate-in" style={{ animationDuration: "300ms" }}>
         <div className="pointer-events-none fixed inset-0 z-[-1] flex flex-row bg-white">
           <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
@@ -275,10 +274,18 @@ if (!rootElement.innerHTML) {
       }}
       publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
       afterSignOutUrl="/"
-      afterSignUpUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL || "/workflows"}
-      afterSignInUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL || "/workflows"}
-      signUpFallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL}
-      signInFallbackRedirectUrl={process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL}
+      afterSignUpUrl={
+        process.env.NEXT_PUBLIC_CLERK_SIGN_UP_FORCE_REDIRECT_URL || "/workflows"
+      }
+      afterSignInUrl={
+        process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FORCE_REDIRECT_URL || "/workflows"
+      }
+      signUpFallbackRedirectUrl={
+        process.env.NEXT_PUBLIC_CLERK_SIGN_UP_FALLBACK_REDIRECT_URL
+      }
+      signInFallbackRedirectUrl={
+        process.env.NEXT_PUBLIC_CLERK_SIGN_IN_FALLBACK_REDIRECT_URL
+      }
     >
       <InnerApp />
     </ClerkProvider>,

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { useIsBusinessAllowed } from "../hooks/use-current-plan";
-import { useCurrentPlanQuery } from "../hooks/use-current-plan";
+import {
+  useCurrentPlanQuery,
+  useIsBusinessAllowed,
+} from "../hooks/use-current-plan";
 
 type Theme = "dark" | "light" | "system";
 
