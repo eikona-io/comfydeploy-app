@@ -1,4 +1,8 @@
+import { AnimatePresence, motion } from "framer-motion";
+import { CircleAlert, Dice6, HelpCircle, Plus, Trash } from "lucide-react";
+import * as React from "react";
 import { SDAudioInput } from "@/components/SDInputs/SDAudioInput";
+import { SDFileInput } from "@/components/SDInputs/SDFileInput";
 import { SDImageInput } from "@/components/SDInputs/SDImageInput";
 import { SDInput } from "@/components/SDInputs/SDInput";
 import { SDTextarea } from "@/components/SDInputs/SDTextarea";
@@ -19,9 +23,6 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import type { customInputNodes } from "@/lib/customInputNodes";
-import { AnimatePresence, motion } from "framer-motion";
-import { CircleAlert, Dice6, HelpCircle, Plus, Trash } from "lucide-react";
-import * as React from "react";
 
 export type RGBColor = {
   r: number;
@@ -462,7 +463,7 @@ export function SDInputsRender({
           {...genericProps}
         />
       );
-    case "ComfyUIDeployExternalImageBatch":
+    case "ComfyUIDeployExternalImageBatch": {
       let images = [] as any[];
       if (typeof inputValue === "string") {
         images = JSON.parse(inputValue);
@@ -535,6 +536,7 @@ export function SDInputsRender({
           })}
         </>
       );
+    }
 
     case "ComfyUIDeployExternalBoolean":
       return (
@@ -588,7 +590,7 @@ export function SDInputsRender({
         </div>
       );
 
-    case "ComfyUIDeployExternalColor":
+    case "ComfyUIDeployExternalColor": {
       // Convert RGB array to hex for display
       const displayValue =
         Array.isArray(inputValue) && inputValue[0]
@@ -614,6 +616,7 @@ export function SDInputsRender({
           />
         </div>
       );
+    }
 
     case "ComfyUIDeployExternalSeed": {
       const minValue = inputNode.min_value || 0;
@@ -658,6 +661,30 @@ export function SDInputsRender({
       );
     }
 
+    case "ComfyUIDeployExternalFile":
+      return (
+        <SDFileInput
+          key={inputNode.input_id}
+          file={inputValue}
+          inputClasses="mt-1"
+          header={header(genericProps)}
+          accept={inputNode.options ? inputNode.options : "*/*"}
+          {...genericProps}
+          onChange={(file: File | string | undefined | FileList) => {
+            if (
+              file &&
+              typeof file === "object" &&
+              "length" in file &&
+              typeof file.length === "number"
+            ) {
+              updateInput(inputNode.input_id, (file as FileList)[0]);
+              return;
+            }
+            updateInput(inputNode.input_id, file);
+          }}
+        />
+      );
+
     default:
       return (
         <Alert>
@@ -685,9 +712,6 @@ export function SDInputsRender({
 }
 
 import { Check, ChevronsUpDown, Pencil, X } from "lucide-react";
-
-import { useModels } from "@/hooks/use-model";
-
 import {
   Command,
   CommandEmpty,
@@ -701,6 +725,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useModels } from "@/hooks/use-model";
 import { cn } from "@/lib/utils";
 import { SDAssetInput } from "./sd-asset-input";
 
