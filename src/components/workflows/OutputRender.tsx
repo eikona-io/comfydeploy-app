@@ -317,12 +317,15 @@ function _FileURLRender({
     );
   }
 
-  return isSmallView ? (
+  return (
     <div className="flex h-full w-full items-center justify-center">
-      <FileDown className="h-4 w-4 text-muted-foreground" />
+      <FileDown
+        className={cn(
+          isSmallView ? "h-4 w-4" : "h-6 w-6",
+          "text-muted-foreground",
+        )}
+      />
     </div>
-  ) : (
-    <DownloadButton filename={filename} href={url} />
   );
 }
 
