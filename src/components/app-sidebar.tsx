@@ -622,7 +622,7 @@ export function AppSidebar() {
           )}
         </SidebarContent>
         <SidebarFooter>
-          <WorkspaceUpdateInfoCard20250724 />
+          {/* <WorkspaceUpdateInfoCard20250724 /> */}
           <div className="flex w-full flex-col justify-center gap-2 pb-4">
             {!(workflow_id && parentPath === "workflows") && (
               <div className="grid grid-cols-2 gap-2 px-2">
