@@ -1617,6 +1617,20 @@ function SessionTimerButton({
       })()
     : false;
 
+  // Format countdown to show hours only when necessary
+  const formattedCountdown = countdown
+    ? (() => {
+        const parts = countdown.split(":");
+        const hours = parseInt(parts[0], 10);
+        return hours > 0 ? countdown : parts.slice(1).join(":");
+      })()
+    : "00:00";
+
+  // Check if hours are being displayed
+  const showsHours = countdown
+    ? parseInt(countdown.split(":")[0], 10) > 0
+    : false;
+
   const handleDeleteSession = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -1692,7 +1706,12 @@ function SessionTimerButton({
                   : "border border-gray-200 bg-gradient-to-br from-white to-white shadow-md dark:border-zinc-800/50 dark:from-gray-700 dark:to-gray-800 dark:shadow-gray-700/25 dark:hover:shadow-gray-700/40"
               }`}
               style={{
-                width: isHovered || urlSessionId ? "134px" : "42px",
+                width:
+                  isHovered || urlSessionId
+                    ? showsHours
+                      ? "150px"
+                      : "134px"
+                    : "42px",
                 paddingLeft: isHovered || urlSessionId ? "6px" : "0px",
                 paddingRight: isHovered || urlSessionId ? "12px" : "0px",
                 transitionTimingFunction:
@@ -1800,9 +1819,7 @@ function SessionTimerButton({
                     isLowTime ? "text-white" : "text-gray-900 dark:text-white"
                   }`}
                 >
-                  {countdown
-                    ? countdown.split(":").slice(1).join(":")
-                    : "00:00"}
+                  {formattedCountdown}
                 </span>
 
                 <ImageInputsTooltip tooltipText="End session">
