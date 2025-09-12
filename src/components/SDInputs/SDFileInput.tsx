@@ -1,9 +1,5 @@
 "use client";
 
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
 import { File as FileIcon, Paperclip, Trash } from "lucide-react";
 import React, {
   type ChangeEvent,
@@ -12,6 +8,10 @@ import React, {
   useEffect,
   useRef,
 } from "react";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type SDFileInputProps = {
   label?: string;
@@ -72,11 +72,13 @@ export function SDFileInput({
     onChange(undefined);
   }
 
-  // Check if there's text in the input (URL string)
-  const hasTextInput = typeof file === "string" && String(file).trim().length > 0;
-  
   // Check if there's a file selected
-  const hasFileInput = file && typeof file === 'object' && 'name' in file && 'size' in file && 'type' in file;
+  const hasFileInput =
+    file &&
+    typeof file === "object" &&
+    "name" in file &&
+    "size" in file &&
+    "type" in file;
 
   return (
     <div className={className} ref={dropRef}>
@@ -121,40 +123,17 @@ export function SDFileInput({
                 type="file"
               />
             </div>
-
-            {/* URL Display */}
-            {hasTextInput && (
-              <div className="flex items-center gap-3 rounded-[8px] border border-gray-200 p-2 dark:border-gray-700">
-                <FileIcon className="h-4 w-4 text-gray-400" />
-                <div className="flex flex-auto items-center justify-between">
-                  <p className="line-clamp-1 font-medium text-xs">
-                    File URL: {String(file).substring(0, 50)}...
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    type="button"
-                    onClick={onDelete}
-                  >
-                    <Trash
-                      className="text-red-700 hover:text-red-600"
-                      size={16}
-                    />
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         )}
-        
+
         {hasFileInput && (
           <div className="flex w-full items-center justify-between rounded-[8px] border border-gray-200 px-2 py-1 dark:border-gray-700">
             <div className="flex flex-auto items-center gap-2">
-              <FileIcon className="h-4 w-4 text-gray-400" />
+              <FileIcon className="h-4 w-4 text-gray-400 shrink-0" />
               <p className="line-clamp-1 font-medium text-xs">
                 {(file as File).name}
               </p>
-              <span className="text-gray-500 text-xs">
+              <span className="text-gray-500 text-xs whitespace-nowrap">
                 ({Math.round(((file as File).size || 0) / 1024)} KB)
               </span>
             </div>
@@ -171,10 +150,7 @@ export function SDFileInput({
                   }
                 }}
               >
-                <Trash
-                  className="text-red-700 hover:text-red-600"
-                  size={16}
-                />
+                <Trash className="text-red-700 hover:text-red-600" size={16} />
               </Button>
             </div>
           </div>
