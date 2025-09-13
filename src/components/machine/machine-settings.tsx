@@ -2103,10 +2103,19 @@ export function MaxAlwaysOnSlider({
   value: number;
   onChange: (value: number) => void;
 }) {
-  const sub = useCurrentPlan();
+  const { check, isLoading: isCustomerLoading } = useCustomer();
 
-  const minAlwaysOn = 0;
-  const maxAlwaysOn = sub?.features.alwaysOnMachineLimit ?? 0;
+  const maxAlwaysOnCheckResult = check({ featureId: "max_always_on_machine" });
+  const maxAlwaysOn = maxAlwaysOnCheckResult.data?.included_usage ?? 0;
+
+  if (isCustomerLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-6" />
+        <Skeleton className="h-5 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div>
