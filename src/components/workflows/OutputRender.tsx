@@ -66,7 +66,7 @@ const isFileType = (filename: string, category: FileTypeCategory): boolean => {
 };
 
 const getFileTypeCategory = (filename: string): FileTypeCategory | null => {
-  for (const [category, extensions] of Object.entries(FILE_TYPES)) {
+  for (const [category] of Object.entries(FILE_TYPES)) {
     if (isFileType(filename, category as FileTypeCategory)) {
       return category as FileTypeCategory;
     }
@@ -442,6 +442,15 @@ export function FileURLRender(props: fileURLRenderProps) {
     return !(filename && isFileType(filename, "AUDIO"));
   }, [props.canDownload, props.url]);
 
+  // Check if file type category is null to apply gray background
+  const fileTypeCategory = useMemo(() => {
+    const filename = new URL(props.url).pathname.split("/").pop();
+    return filename ? getFileTypeCategory(filename) : null;
+  }, [props.url]);
+
+  const shouldApplyGrayBackground =
+    shouldShowDownloadButton && fileTypeCategory === null;
+
   return (
     <ErrorBoundary
       fallback={(e) => (
@@ -457,34 +466,37 @@ export function FileURLRender(props: fileURLRenderProps) {
       )}
     >
       {props.canFullScreen ? (
-        <>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger className="h-full w-full">
-              <_FileURLRender {...props} />
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger className="h-full w-full">
+            <_FileURLRender {...props} />
+          </DialogTrigger>
 
-            <DialogContent
-              className="h-screen max-w-full border-none bg-transparent shadow-none"
-              onClick={() => {
-                setOpen(false);
-              }}
-            >
-              <DialogTitle className="hidden" />
-              <div className="flex h-full w-full items-center justify-center">
-                <_FileURLRender
-                  isAssetBrowser={props.isAssetBrowser}
-                  url={props.url}
-                  imgClasses="drop-shadow-md max-w-[90vw] max-h-[90vh] object-contain"
-                  lazyLoading={props.lazyLoading}
-                  showFullResolution={true}
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
-        </>
+          <DialogContent
+            className="h-screen max-w-full border-none bg-transparent shadow-none"
+            onClick={() => {
+              setOpen(false);
+            }}
+          >
+            <DialogTitle className="hidden" />
+            <div className="flex h-full w-full items-center justify-center">
+              <_FileURLRender
+                isAssetBrowser={props.isAssetBrowser}
+                url={props.url}
+                imgClasses="drop-shadow-md max-w-[90vw] max-h-[90vh] object-contain"
+                lazyLoading={props.lazyLoading}
+                showFullResolution={true}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
       ) : (
         <div
-          className={cn("group !drop-shadow-none relative", props.imgClasses)}
+          className={cn(
+            "group !drop-shadow-none relative",
+            shouldApplyGrayBackground &&
+              "min-w-[200px] aspect-square bg-gradient-to-br from-zinc-50/90 to-zinc-200/90 dark:from-zinc-700/90 dark:to-zinc-900/90 rounded-md",
+            props.imgClasses,
+          )}
         >
           <_FileURLRender {...props} />
           {shouldShowDownloadButton && (
@@ -501,7 +513,7 @@ export function FileURLRender(props: fileURLRenderProps) {
                   });
                 }}
               >
-                <Download className="h-4 w-4 " />
+                <Download className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -520,6 +532,7 @@ function FileURLRenderMulti({
   canDownload,
   columns = 1,
   isMainView = false,
+  isSmallView = false,
 }: {
   runId?: string;
   urls: {
@@ -537,6 +550,7 @@ function FileURLRenderMulti({
   canDownload: boolean;
   columns?: number;
   isMainView?: boolean;
+  isSmallView?: boolean;
 }) {
   if (!canExpandToView) {
     if (columns > 1 && urls.length > 1) {
@@ -549,6 +563,7 @@ function FileURLRenderMulti({
               imgClasses={imgClasses}
               isMainView={isMainView}
               canDownload={canDownload}
+              isSmallView={isSmallView}
             />
           ))}
         </div>
@@ -564,6 +579,7 @@ function FileURLRenderMulti({
             imgClasses={imgClasses}
             isMainView={isMainView}
             canDownload={canDownload}
+            isSmallView={isSmallView}
           />
         ))}
       </>
@@ -1030,10 +1046,7 @@ export function PlaygroundOutputRenderRun({
   imgClasses: string;
   isSelected?: boolean;
 }) {
-  const { total: totalUrlCount, urls: urlList } = getTotalUrlCountAndUrls(
-    run.outputs || [],
-    run.id,
-  );
+  const { urls: urlList } = getTotalUrlCountAndUrls(run.outputs || [], run.id);
   const urlsToDisplay = urlList.length > 0 ? urlList.slice(0, 1) : [];
 
   return (
@@ -1078,6 +1091,7 @@ export function PlaygroundOutputRenderRun({
             canDownload={false}
             columns={1}
             isMainView={false}
+            isSmallView={true}
           />
           <div className="absolute right-0 bottom-0 left-0 h-8 w-[105px] shrink-0 rounded-b-[6px] bg-gradient-to-t from-black/50 to-transparent" />
         </>

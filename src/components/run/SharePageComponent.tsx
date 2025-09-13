@@ -1,31 +1,3 @@
-import { RunWorkflowInline } from "@/components/run/RunWorkflowInline";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  FileURLRender,
-  OutputRenderRun,
-  PlaygroundOutputRenderRun,
-  getTotalUrlCountAndUrls,
-} from "@/components/workflows/OutputRender";
-import { useRuns } from "@/components/workflows/RunsTable";
-import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
-import { api } from "@/lib/api";
-import { customInputNodes } from "@/lib/customInputNodes";
-import { getDuration, getRelativeTime } from "@/lib/get-relative-time";
-import {
-  getDefaultValuesFromWorkflow,
-  getInputsFromWorkflow,
-} from "@/lib/getInputsFromWorkflow";
-import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import { motion } from "framer-motion";
@@ -49,6 +21,34 @@ import {
   useState,
 } from "react";
 import { toast } from "sonner";
+import { RunWorkflowInline } from "@/components/run/RunWorkflowInline";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  FileURLRender,
+  getTotalUrlCountAndUrls,
+  OutputRenderRun,
+  PlaygroundOutputRenderRun,
+} from "@/components/workflows/OutputRender";
+import { useRuns } from "@/components/workflows/RunsTable";
+import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
+import { api } from "@/lib/api";
+import { customInputNodes } from "@/lib/customInputNodes";
+import { getDuration, getRelativeTime } from "@/lib/get-relative-time";
+import {
+  getDefaultValuesFromWorkflow,
+  getInputsFromWorkflow,
+} from "@/lib/getInputsFromWorkflow";
+import { cn } from "@/lib/utils";
 import { MyDrawer } from "../drawer";
 import { Fab } from "../fab";
 import { LogsViewer } from "../log/logs-viewer";
@@ -810,55 +810,53 @@ function ArrowIndicator({
   disableRight: boolean;
 }) {
   return (
-    <>
-      <div className="absolute right-2 bottom-8 flex flex-col items-center gap-1">
-        {/* Instructions */}
-        <span className="hidden flex-col gap-0.5 text-2xs text-muted-foreground lg:flex">
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
-              aria-label="Up"
-              disabled={disableTop}
-            >
-              <ChevronUp size={16} />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
-              aria-label="Down"
-              disabled={disableDown}
-            >
-              <ChevronDown size={16} />
-            </Button>
-            <span>Navigate Gallery</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
-              aria-label="Left"
-              disabled={disableLeft}
-            >
-              <ChevronLeft size={16} />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
-              aria-label="Right"
-              disabled={disableRight}
-            >
-              <ChevronRight size={16} />
-            </Button>
-            <span>Navigate Images list</span>
-          </div>
-        </span>
-      </div>
-    </>
+    <div className="absolute right-2 bottom-8 flex flex-col items-center gap-1">
+      {/* Instructions */}
+      <span className="hidden flex-col gap-0.5 text-2xs text-muted-foreground lg:flex">
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Up"
+            disabled={disableTop}
+          >
+            <ChevronUp size={16} />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Down"
+            disabled={disableDown}
+          >
+            <ChevronDown size={16} />
+          </Button>
+          <span>Navigate Gallery</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Left"
+            disabled={disableLeft}
+          >
+            <ChevronLeft size={16} />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-6 w-6 rounded-[6px] bg-white/90 shadow-sm backdrop-blur-sm"
+            aria-label="Right"
+            disabled={disableRight}
+          >
+            <ChevronRight size={16} />
+          </Button>
+          <span>Navigate Images list</span>
+        </div>
+      </span>
+    </div>
   );
 }
 
@@ -928,7 +926,8 @@ export function getFormattedInputs(run: any): Record<string, any> {
     return Object.entries(run.workflow_api).reduce(
       (acc, [nodeId, node]) => {
         if (
-          customInputNodes.hasOwnProperty(
+          Object.hasOwn(
+            customInputNodes,
             node.class_type as keyof typeof customInputNodes,
           )
         ) {
