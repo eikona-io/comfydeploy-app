@@ -34,11 +34,11 @@
             transport http {
                 tls
             }
-            header_up Host {host}
-            header_up X-Forwarded-Host {host}
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {upstream_hostport}
             header_up X-Forwarded-Proto {scheme}
             header_up X-Forwarded-For {remote}
-            header_up Forwarded "proto={scheme};host={host}"
+            header_up Forwarded "proto={scheme};host={upstream_hostport}"
         }
 
         # Static file serving with SPA fallback
