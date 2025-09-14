@@ -30,8 +30,15 @@
     # This prevents try_files from running before reverse_proxy
     route {
         # API proxy - must come first
-        reverse_proxy /api/* https://prod-staging.api.comfydeploy.com {
-            header_up Host {upstream_hostport}
+        reverse_proxy /api/* prod-staging.api.comfydeploy.com:443 {
+            transport http {
+                tls
+            }
+            header_up Host {host}
+            header_up X-Forwarded-Host {host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-For {remote}
+            header_up Forwarded "proto={scheme};host={host}"
         }
 
         # Static file serving with SPA fallback
