@@ -23,9 +23,11 @@
     # health check for railway
     rewrite /health /*
 
-    # API proxy - rewrite to external API
-    reverse_proxy /api/* https://prod-staging.api.comfydeploy.com {
-        header_up Host {upstream_hostport}
+    # API proxy - handle all API routes first before static files
+    handle /api/* {
+        reverse_proxy https://prod-staging.api.comfydeploy.com {
+            header_up Host {upstream_hostport}
+        }
     }
 
     # serve from the 'dist' folder (Vite builds into the 'dist' folder)
