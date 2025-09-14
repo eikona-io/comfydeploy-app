@@ -23,9 +23,12 @@
     # health check for railway
     rewrite /health /*
 
-    # API proxy - explicit order to ensure it comes first
-    reverse_proxy /api/* https://prod-staging.api.comfydeploy.com {
-        header_up Host {upstream_hostport}
+    # API routing with guaranteed execution order
+    route /api/* {
+        # Forward to backend API with original path
+        reverse_proxy https://prod-staging.api.comfydeploy.com {
+            header_up Host {upstream_hostport}
+        }
     }
 
     # Static files - served only if not an API route
