@@ -244,14 +244,7 @@ function InnerApp() {
   publicClerk = clerk;
 
   return (
-    <AutumnProvider
-      includeCredentials
-      baseUrl={
-        process.env.NODE_ENV === "development"
-          ? process.env.NEXT_PUBLIC_CD_API_URL
-          : undefined // Use relative URLs in production (goes through proxy)
-      }
-    >
+    <AutumnProvider includeCredentials>
       <div className="animate-in" style={{ animationDuration: "300ms" }}>
         <div className="pointer-events-none fixed inset-0 z-[-1] flex flex-row bg-white">
           <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
