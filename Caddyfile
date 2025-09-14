@@ -23,19 +23,20 @@
     # health check for railway
     rewrite /health /*
 
-    # API routing with guaranteed execution order
-    route /api/* {
-        # Forward to backend API with original path
-        reverse_proxy https://prod-staging.api.comfydeploy.com {
+    # Serve from 'dist' folder
+    root * dist
+
+    # Route block to control directive execution order
+    # This prevents try_files from running before reverse_proxy
+    route {
+        # API proxy - must come first
+        reverse_proxy /api/* https://prod-staging.api.comfydeploy.com {
             header_up Host {upstream_hostport}
         }
-    }
 
-    # Static files - served only if not an API route
-    handle {
-        root * dist
+        # Static file serving with SPA fallback
         encode gzip
-        file_server
         try_files {path} /index.html
+        file_server
     }
 }
