@@ -23,8 +23,8 @@
     # health check for railway
     rewrite /health /*
 
-    # API proxy - handle all API routes first before static files
-    handle /api/* {
+    # API proxy - must come before file_server to take precedence
+    route /api/* {
         reverse_proxy https://prod-staging.api.comfydeploy.com {
             header_up Host {upstream_hostport}
         }
