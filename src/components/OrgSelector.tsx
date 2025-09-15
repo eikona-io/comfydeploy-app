@@ -21,14 +21,18 @@ export function useOrgSelector() {
   const { check, isLoading } = useCustomer();
   const workflowLimit = check({ featureId: "workflow_limit" });
 
-  if (isLoading || !isLoaded || !isOrganizationLoaded) {
-    return (
-      <div className="h-full flex w-full flex-col items-center justify-center p-8 bg-background z-50">
-        <Skeleton className="h-4 w-6" />
-        <Skeleton className="h-5 w-full" />
-      </div>
-    );
-  }
+  console.log("isLoading", isLoading);
+  console.log("isLoaded", isLoaded);
+  console.log("isOrganizationLoaded", isOrganizationLoaded);
+  console.log("workflowLimit", workflowLimit);
+
+  // if (isLoading || !isLoaded || !isOrganizationLoaded) {
+  // return (
+  //   <div className="h-full flex w-full flex-col items-center justify-center p-8 bg-background z-50">
+  //     Loading...
+  //   </div>
+  // );
+  // }
 
   //   The user is in a personal org, has other org, no workflows, show the org list
   if (
@@ -63,6 +67,7 @@ export function useOrgSelector() {
           <CreateOrganization
             afterCreateOrganizationUrl="/org/:slug/workflows"
             //   afterCreateOrganizationUrl="/pricing"
+            hideSlug
             appearance={{
               baseTheme: isDarkTheme(theme) ? dark : undefined,
               elements: {

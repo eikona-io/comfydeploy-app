@@ -17,7 +17,7 @@ import {
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import "./globals.css";
-import { AutumnProvider } from "autumn-js/react";
+import { AutumnProvider, useCustomer } from "autumn-js/react";
 import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
