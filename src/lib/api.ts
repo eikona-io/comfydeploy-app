@@ -103,14 +103,17 @@ export async function api({
             body: parsed ?? xhr.responseText,
             code: parsed?.code,
           });
-          // Don't emit token-related errors
+          // Don't emit token-related errors or internal server errors
           const isTokenError =
             xhr.status === 401 ||
             message.toLowerCase().includes("invalid or missing token") ||
             message.toLowerCase().includes("token expired") ||
             message.toLowerCase().includes("authentication failed") ||
             message.toLowerCase().includes("unauthorized");
-          if (!isTokenError) {
+          const isInternalServerError =
+            xhr.status === 500 ||
+            message.toLowerCase().includes("internal server error");
+          if (!isTokenError && !isInternalServerError) {
             emitApiError(err);
           }
           reject(err);
@@ -176,15 +179,17 @@ export async function api({
         body: parsed ?? bodyText,
         code,
       });
-      // Don't emit token-related errors
+      // Don't emit token-related errors or internal server errors
       const isTokenError =
         res.status === 401 ||
         message.toLowerCase().includes("invalid or missing token") ||
         message.toLowerCase().includes("token expired") ||
         message.toLowerCase().includes("authentication failed") ||
-        message.toLowerCase().includes("unauthorized") ||
-        message.toLowerCase().includes("Internal Server Error");
-      if (!isTokenError) {
+        message.toLowerCase().includes("unauthorized");
+      const isInternalServerError =
+        res.status === 500 ||
+        message.toLowerCase().includes("internal server error");
+      if (!isTokenError && !isInternalServerError) {
         emitApiError(err);
       }
       throw err;
