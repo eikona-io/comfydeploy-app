@@ -61,6 +61,7 @@ export function useOrgSelector() {
       <div className="h-full inset-0 flex flex-col items-center justify-center p-8 bg-background  z-50">
         <div className="text-center">
           <CreateOrganization
+            afterCreateOrganizationUrl="/org/:slug/workflows"
             //   afterCreateOrganizationUrl="/pricing"
             appearance={{
               baseTheme: isDarkTheme(theme) ? dark : undefined,
