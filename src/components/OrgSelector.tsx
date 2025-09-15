@@ -13,15 +13,15 @@ import { Skeleton } from "./ui/skeleton";
 export function useOrgSelector() {
   const { theme } = useTheme();
 
-  const { organization } = useOrganization();
-  const { userMemberships } = useOrganizationList({
+  const { organization, isLoaded: isOrganizationLoaded } = useOrganization();
+  const { userMemberships, isLoaded } = useOrganizationList({
     userMemberships: true,
   });
 
   const { check, isLoading } = useCustomer();
   const workflowLimit = check({ featureId: "workflow_limit" });
 
-  if (isLoading) {
+  if (isLoading || !isLoaded || !isOrganizationLoaded) {
     return (
       <div className="h-full flex w-full flex-col items-center justify-center p-8 bg-background z-50">
         <Skeleton className="h-4 w-6" />
