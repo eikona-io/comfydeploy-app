@@ -26,13 +26,14 @@ import {
   useAuth,
   type useClerk,
 } from "@clerk/clerk-react";
+import { AutumnProvider } from "autumn-js/react";
 import { Toaster } from "sonner";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { AppSidebar, GuestSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { Icon } from "@/components/icon-word";
 import { LocalGitDisplay } from "@/components/local-git-display";
-import { OrgSelector, useOrgSelector } from "@/components/OrgSelector";
+import { useOrgSelector } from "@/components/OrgSelector";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { WorkflowNavbar } from "@/components/workflow-navbar";
@@ -55,7 +56,7 @@ const publicRoutes = [
 ];
 
 export const Route = createRootRouteWithContext<RootRouteContext>()({
-  component: RootComponent,
+  component: AutumnProviderComponent,
   beforeLoad: async ({ context, location }) => {
     while (!context.clerk?.loaded) {
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -86,6 +87,20 @@ export const Route = createRootRouteWithContext<RootRouteContext>()({
   },
 });
 
+function AutumnProviderComponent() {
+  const auth = useAuth();
+
+  if (!auth.isSignedIn) {
+    return <RootComponent />;
+  }
+
+  return (
+    <AutumnProvider includeCredentials>
+      <RootComponent />
+    </AutumnProvider>
+  );
+}
+
 function RootComponent() {
   const auth = useAuth();
 
@@ -112,8 +127,6 @@ function RootComponent() {
     return route.wildcard && pathname.startsWith(route.path);
   });
 
-  const orgSelector = useOrgSelector();
-
   return (
     <ThemeProvider defaultTheme="system">
       <PageViewTracker />
@@ -130,28 +143,30 @@ function RootComponent() {
           </SignedIn>
         )
       )}
-      {isWorkflowPage && <WorkflowNavbar />}
-      {!isWorkflowPage && (
-        <div className="fixed top-0 z-50 flex h-[40px] w-full flex-row items-center gap-2 border-gray-200 border-b bg-transparent p-1 md:hidden dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-md">
-          <SidebarTrigger className="h-8 w-8 rounded-none border-gray-200 border-r p-2 dark:border-zinc-700" />
-          <Link href="/" className="flex flex-row items-center justify-center">
-            <Icon />
-          </Link>
-        </div>
-      )}
+      <SignedIn>
+        {isWorkflowPage && <WorkflowNavbar />}
+        {!isWorkflowPage && (
+          <div className="fixed top-0 z-50 flex h-[40px] w-full flex-row items-center gap-2 border-gray-200 border-b bg-transparent p-1 md:hidden dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-md">
+            <SidebarTrigger className="h-8 w-8 rounded-none border-gray-200 border-r p-2 dark:border-zinc-700" />
+            <Link
+              href="/"
+              className="flex flex-row items-center justify-center"
+            >
+              <Icon />
+            </Link>
+          </div>
+        )}
+      </SignedIn>
       <div
         className={cn(
           "flex w-full flex-col items-center justify-start overflow-x-auto md:mt-0 md:max-h-[100dvh]",
           !isWorkflowPage && "mt-[40px] max-h-[calc(100dvh-40px)]",
         )}
       >
-        {!orgSelector && !isAuthPage && (
-          <SignedIn>
-            <Outlet />
-          </SignedIn>
-        )}
-        {orgSelector}
-        {!orgSelector && isAuthPage && <Outlet />}
+        <SignedIn>
+          <OrgSelectorComponent />
+        </SignedIn>
+        {isAuthPage && <Outlet />}
         {!isAuthPage && (
           <SignedOut>
             <div className="flex h-full flex-col items-center justify-center">
@@ -165,5 +180,24 @@ function RootComponent() {
         <AssetsBrowserPopup isPlayground />
       </div>
     </ThemeProvider>
+  );
+}
+
+function OrgSelectorComponent() {
+  const { pathname } = useLocation();
+  const isAuthPage = publicRoutes.some((route) => {
+    if (typeof route === "string") {
+      return pathname === route;
+    }
+    return route.wildcard && pathname.startsWith(route.path);
+  });
+
+  const orgSelector = useOrgSelector();
+
+  return (
+    <>
+      {!orgSelector && !isAuthPage && <Outlet />}
+      {orgSelector}
+    </>
   );
 }

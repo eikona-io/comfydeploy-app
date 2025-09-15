@@ -8,7 +8,7 @@ import {
 } from "@clerk/clerk-react";
 import { dark } from "@clerk/themes";
 import { useCustomer } from "autumn-js/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { isDarkTheme } from "@/lib/utils";
 import { useTheme } from "./theme-provider";
 import { Button } from "./ui/button";
@@ -29,7 +29,18 @@ export function useOrgSelector() {
   const clerk = useClerk();
 
   const { check, isLoading } = useCustomer();
-  const workflowLimit = check({ featureId: "workflow_limit" });
+
+  const [workflowLimit, setWorkflowLimit] = useState<ReturnType<
+    typeof check
+  > | null>(null);
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+    const workflowLimit = check({ featureId: "workflow_limit" });
+    setWorkflowLimit(workflowLimit);
+  }, [isLoading]);
 
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
 
@@ -39,6 +50,8 @@ export function useOrgSelector() {
   // console.log("isOrganizationLoaded", isOrganizationLoaded);
   // console.log("workflowLimit", workflowLimit);
 
+  console.log("auth.isSignedIn", auth.isSignedIn);
+
   if (!auth.isLoaded || !auth.isSignedIn) {
     return null;
   }
@@ -47,7 +60,9 @@ export function useOrgSelector() {
     isLoading ||
     !isLoaded ||
     !isOrganizationLoaded ||
-    userMemberships.isFetching
+    userMemberships.isFetching ||
+    workflowLimit?.data.customer_id === undefined ||
+    workflowLimit?.data.customer_id === ""
   ) {
     return (
       <>
@@ -86,7 +101,13 @@ export function useOrgSelector() {
 
     //   The user is in a personal org, no workflows, show the create org form
     const dontHaveAnyOrgs = userMemberships?.count === 0;
-    // console.log("dontHaveAnyOrgs", dontHaveAnyOrgs, userMemberships);
+    console.log(
+      "dontHaveAnyOrgs",
+      dontHaveAnyOrgs,
+      userMemberships,
+      workflowLimit.data.usage,
+      workflowLimit,
+    );
     if (dontHaveAnyOrgs && workflowLimit.data.usage === 0) {
       const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

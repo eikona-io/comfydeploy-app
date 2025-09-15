@@ -17,7 +17,7 @@ import {
 import ReactDOM from "react-dom/client";
 import { routeTree } from "./routeTree.gen";
 import "./globals.css";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { AutumnProvider } from "autumn-js/react";
 import { AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
 import { LoadingIcon } from "@/components/ui/custom/loading-icon";
@@ -113,6 +113,12 @@ routeTree.update({
     if (inPathWithOrgPrefix && currentRouteIncomingOrg !== currentOrg) {
       // If org doesn't exist and it's not personal org, redirect to org-not-found
       if (!isValidOrg && notPersonalOrg) {
+        if (currentRouteIncomingOrg === "personal") {
+          throw redirect({
+            to: "/",
+          });
+        }
+
         throw redirect({
           to: "/org-not-found",
           search: {
@@ -244,22 +250,22 @@ function InnerApp() {
   publicClerk = clerk;
 
   return (
-    <AutumnProvider includeCredentials>
-      <div className="animate-in" style={{ animationDuration: "300ms" }}>
-        <div className="pointer-events-none fixed inset-0 z-[-1] flex flex-row bg-white">
-          <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-          <SidebarGhost />
-          <AnimatePresence mode="wait">
-            {!auth.isLoaded && <LoadingProgress key="loading" />}
-          </AnimatePresence>
-        </div>
-        <SidebarProvider>
-          <Providers>
-            <RouterProvider router={router} context={{ auth, clerk }} />
-          </Providers>
-        </SidebarProvider>
+    // <AutumnProvider includeCredentials>
+    <div className="animate-in" style={{ animationDuration: "300ms" }}>
+      <div className="pointer-events-none fixed inset-0 z-[-1] flex flex-row bg-white">
+        <div className="absolute h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+        <SidebarGhost />
+        <AnimatePresence mode="wait">
+          {!auth.isLoaded && <LoadingProgress key="loading" />}
+        </AnimatePresence>
       </div>
-    </AutumnProvider>
+      <SidebarProvider>
+        <Providers>
+          <RouterProvider router={router} context={{ auth, clerk }} />
+        </Providers>
+      </SidebarProvider>
+    </div>
+    // </AutumnProvider>
   );
 }
 
