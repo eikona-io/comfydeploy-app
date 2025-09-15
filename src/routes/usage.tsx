@@ -278,7 +278,7 @@ function RouteComponent() {
                     <span className="text-sm font-mono font-semibold text-zinc-900 dark:text-zinc-100">
                       $
                       {gpuCreditFeature
-                        ? (gpuCreditFeature.balance / 100).toFixed(3)
+                        ? ((gpuCreditFeature.balance ?? 0) / 100).toFixed(3)
                         : "0.00"}
                     </span>
                   </div>
