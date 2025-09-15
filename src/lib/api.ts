@@ -1,6 +1,6 @@
-import { useAuthStore } from "./auth-store";
 import { ApiError } from "./api-error";
 import { emitApiError } from "./api-error-bus";
+import { useAuthStore } from "./auth-store";
 
 export async function api({
   url,
@@ -67,7 +67,9 @@ export async function api({
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
-            const response = xhr.responseText ? JSON.parse(xhr.responseText) : null;
+            const response = xhr.responseText
+              ? JSON.parse(xhr.responseText)
+              : null;
             resolve(convertDateFields(response));
           } catch {
             resolve(null);
@@ -86,7 +88,9 @@ export async function api({
             parsed?.error?.message,
             parsed?.msg,
             parsed?.reason,
-          ].filter((v) => typeof v === "string" && v.trim().length > 0) as string[];
+          ].filter(
+            (v) => typeof v === "string" && v.trim().length > 0,
+          ) as string[];
           const message =
             candidateStrings[0] ||
             (parsed?.error && typeof parsed.error === "object"
@@ -100,11 +104,12 @@ export async function api({
             code: parsed?.code,
           });
           // Don't emit token-related errors
-          const isTokenError = xhr.status === 401 || 
-            message.toLowerCase().includes('invalid or missing token') ||
-            message.toLowerCase().includes('token expired') ||
-            message.toLowerCase().includes('authentication failed') ||
-            message.toLowerCase().includes('unauthorized');
+          const isTokenError =
+            xhr.status === 401 ||
+            message.toLowerCase().includes("invalid or missing token") ||
+            message.toLowerCase().includes("token expired") ||
+            message.toLowerCase().includes("authentication failed") ||
+            message.toLowerCase().includes("unauthorized");
           if (!isTokenError) {
             emitApiError(err);
           }
@@ -114,7 +119,10 @@ export async function api({
 
       // Handle error
       xhr.onerror = () => {
-        const err = new ApiError("Network error occurred", { status: 0, url: finalUrl });
+        const err = new ApiError("Network error occurred", {
+          status: 0,
+          url: finalUrl,
+        });
         // Network errors are not token-related, so emit them
         emitApiError(err);
         reject(err);
@@ -139,7 +147,7 @@ export async function api({
       } catch {
         bodyText = "";
       }
-      let parsed: any = undefined;
+      let parsed: any;
       if (contentType.includes("application/json")) {
         try {
           parsed = bodyText ? JSON.parse(bodyText) : undefined;
@@ -169,11 +177,13 @@ export async function api({
         code,
       });
       // Don't emit token-related errors
-      const isTokenError = res.status === 401 || 
-        message.toLowerCase().includes('invalid or missing token') ||
-        message.toLowerCase().includes('token expired') ||
-        message.toLowerCase().includes('authentication failed') ||
-        message.toLowerCase().includes('unauthorized');
+      const isTokenError =
+        res.status === 401 ||
+        message.toLowerCase().includes("invalid or missing token") ||
+        message.toLowerCase().includes("token expired") ||
+        message.toLowerCase().includes("authentication failed") ||
+        message.toLowerCase().includes("unauthorized") ||
+        message.toLowerCase().includes("Internal Server Error");
       if (!isTokenError) {
         emitApiError(err);
       }
