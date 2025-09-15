@@ -23,15 +23,27 @@
     # health check for railway
     rewrite /health /*
 
-    # serve from the 'dist' folder (Vite builds into the 'dist' folder)
+    # Serve from 'dist' folder
     root * dist
 
-    # enable gzipping responses
-    encode gzip
+    # Route block to control directive execution order
+    # This prevents try_files from running before reverse_proxy
+    route {
+        # API proxy - must come first
+        reverse_proxy /api/* https://prod-staging.api.comfydeploy.com {
+            transport http {
+                tls
+            }
+            header_up Host {upstream_hostport}
+            header_up X-Forwarded-Host {upstream_hostport}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-For {remote}
+            header_up Forwarded "proto={scheme};host={upstream_hostport}"
+        }
 
-    # serve files from 'dist'
-    file_server
-
-    # if path doesn't exist, redirect it to 'index.html' for client side routing
-    try_files {path} /index.html
+        # Static file serving with SPA fallback
+        encode gzip
+        try_files {path} /index.html
+        file_server
+    }
 }

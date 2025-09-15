@@ -1,3 +1,20 @@
+import { useNavigate } from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Cloud,
+  CloudCog,
+  EllipsisVertical,
+  LoaderCircle,
+  Plus,
+  RefreshCcw,
+  Server,
+  Upload,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { useDebounce } from "use-debounce";
 import { InsertModal } from "@/components/auto-form/auto-form-dialog";
 import { Fab } from "@/components/fab";
 import {
@@ -5,8 +22,8 @@ import {
   serverlessFormSchema,
   sharedMachineConfig,
 } from "@/components/machine/machine-schema";
-import { MachineListItem } from "@/components/machines/machine-list-item";
 import { BulkUpdateDialog } from "@/components/machines/bulk-upgrade-dialog";
+import { MachineListItem } from "@/components/machines/machine-list-item";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -18,37 +35,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useCurrentPlan, useIsBusinessAllowed } from "@/hooks/use-current-plan";
-import { useMachines } from "@/hooks/use-machine";
-import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { cn } from "@/lib/utils";
-import { useLatestHashes } from "@/utils/comfydeploy-hash";
-import { useNavigate } from "@tanstack/react-router";
-import {
-  Cloud,
-  CloudCog,
-  EllipsisVertical,
-  Plus,
-  RefreshCcw,
-  Server,
-  Upload,
-  LoaderCircle,
-} from "lucide-react";
-import { useQueryState } from "nuqs";
-import { useCallback, useEffect, useState, useMemo, useRef } from "react";
-import { toast } from "sonner";
-import { useDebounce } from "use-debounce";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
+import {
+  useAutumnData,
+  useIsBusinessAllowed,
+  useIsSelfHostedAllowed,
+} from "@/hooks/use-current-plan";
+import { useMachines } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { queryClient } from "@/lib/providers";
+import { cn } from "@/lib/utils";
+import type { Feature as AutumnFeature } from "@/types/autumn-v2";
+import { useLatestHashes } from "@/utils/comfydeploy-hash";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 
 interface Machine {
   id: string;
@@ -127,9 +133,13 @@ export function MachineList() {
     });
   };
 
-  const sub = useCurrentPlan();
-  const hasActiveSub = !sub || !!sub?.sub;
-  const isBusinessAllowed = useIsBusinessAllowed();
+  const { check } = useCustomer();
+  const machineCheckResult = check({ featureId: "machine_limit" });
+  const canCreateMachine = machineCheckResult.data?.allowed;
+
+  // You can also check other features
+  const selfHostedCheckResult = check({ featureId: "self_hosted_machines" });
+  const canCreateSelfHosted = selfHostedCheckResult.data?.allowed;
 
   const query = useMachines(
     debouncedSearchValue ?? undefined,
@@ -228,6 +238,8 @@ export function MachineList() {
       setIsImporting(false);
     }
   };
+
+  // console.log(isSelfHostedAllowed);
 
   return (
     <div className="mx-auto h-[calc(100vh-100px)] max-h-full w-full p-4">
@@ -462,13 +474,13 @@ export function MachineList() {
             ) : (
               <Button
                 onClick={() => {
-                  if (!sub?.features.machineLimited) {
+                  if (canCreateMachine) {
                     navigate({
                       search: { view: "create" },
                     });
                   }
                 }}
-                disabled={sub?.features.machineLimited}
+                disabled={!canCreateMachine}
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Create Machine
@@ -539,8 +551,14 @@ export function MachineList() {
         mutateFn={query.refetch}
         setOpen={setOpenCustomDialog}
         title="Self Hosted Machine"
-        disabled={!hasActiveSub}
-        tooltip={!hasActiveSub ? "Upgrade in pricing tab!" : ""}
+        disabled={!canCreateSelfHosted}
+        tooltip={
+          !canCreateSelfHosted
+            ? !canCreateSelfHosted
+              ? "Upgrade to Business plan to create self-hosted machines."
+              : "Self-hosted machines feature not available in your plan. Contact support for access."
+            : ""
+        }
         description="Add self hosted comfyui machines to your account."
         serverAction={async (data) => {
           console.log("custom machine", data);
@@ -563,7 +581,7 @@ export function MachineList() {
             });
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
-            toast.error(`Failed to create: ${error}`);
+            toast.error("Failed to create");
             throw error;
           }
         }}
@@ -575,13 +593,13 @@ export function MachineList() {
         open={openServerlessDialog}
         mutateFn={query.refetch}
         setOpen={setOpenServerlessDialog}
-        disabled={sub?.features.machineLimited}
+        disabled={!canCreateMachine}
         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
         containerClassName="flex-col"
         tooltip={
-          sub?.features.machineLimited
-            ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
-            : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
+          !canCreateMachine
+            ? `Max ${machineCheckResult.data?.included_usage} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${machineCheckResult.data?.included_usage} ComfyUI machine for your account`
         }
         title="Create New Machine"
         description="Create a new serverless ComfyUI machine based on the analyzed workflow."
@@ -606,7 +624,7 @@ export function MachineList() {
 
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
-            toast.error(`Failed to create: ${error}`);
+            toast.error("Failed to create");
             throw error;
           }
         }}
@@ -663,40 +681,45 @@ export function MachineList() {
           icon: Plus,
         }}
         disabled={{
-          disabled: sub?.features.machineLimited,
+          disabled: !canCreateMachine,
           disabledText: "Max Machines Exceeded. ",
         }}
         subItems={[
           {
-            name: sub
-              ? `Docker Machine (${sub.features.currentMachineCount}/${sub.features.machineLimit})`
-              : "Docker Machine",
+            name:
+              machineCheckResult.data?.usage !== undefined &&
+              machineCheckResult.data?.included_usage !== undefined
+                ? `Docker Machine (${machineCheckResult.data?.usage}/${machineCheckResult.data?.included_usage})`
+                : "Docker Machine",
             icon: Cloud,
             onClick: () => {
-              if (!sub?.features.machineLimited) {
+              if (canCreateMachine) {
                 navigate({
                   search: { view: "create" },
                 });
               }
             },
             disabled: {
-              disabled: sub?.features.machineLimited,
-              disabledText: `Max ${sub?.features.machineLimit} Docker machines for your account. Upgrade to create more machines.`,
+              disabled: !canCreateMachine,
+              disabledText:
+                machineCheckResult.data?.included_usage !== undefined
+                  ? `Max ${machineCheckResult.data?.included_usage} Docker machines for your account. Upgrade to create more machines.`
+                  : `Max Docker machines for your account. Upgrade to create more machines.`,
             },
           },
           {
             name: "Self Hosted Machine",
             icon: Server,
             onClick: () => {
-              if (!sub?.features.machineLimited && isBusinessAllowed) {
+              if (canCreateSelfHosted) {
                 setOpenCustomDialog(true);
               }
             },
             disabled: {
-              disabled: !isBusinessAllowed || sub?.features.machineLimited,
-              disabledText: sub?.features.machineLimited
-                ? `Max ${sub?.features.machineLimit} Self-hosted machines for your account. Upgrade to create more machines.`
-                : "Upgrade to Business plan to create self-hosted machines.",
+              disabled: !canCreateSelfHosted,
+              disabledText: !canCreateSelfHosted
+                ? "Upgrade to Business plan to create self-hosted machines."
+                : "Self-hosted machines feature not available in your plan. Contact support for access.",
             },
           },
           {
@@ -731,6 +754,8 @@ export function DeleteMachineDialog({
   setDialogOpen,
 }: MachineDialogProps & { planRefetch?: () => void }) {
   const navigate = useNavigate();
+
+  const { refetch: customerRefetch } = useCustomer();
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -810,6 +835,10 @@ export function DeleteMachineDialog({
                 },
               );
 
+              await customerRefetch();
+              await queryClient.resetQueries({
+                predicate: (query) => query.queryKey.includes(machine.id),
+              });
               await refetch();
               setDialogOpen(false);
 

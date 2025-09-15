@@ -9,6 +9,8 @@ import {
   type StepValidation,
   useImportWorkflowStore,
 } from "@/components/onboarding/workflow-import";
+import { useCurrentPlan, useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Local type definitions
 interface CustomNodeData {
@@ -51,8 +53,10 @@ const CustomNodesLoadingSkeleton = () => (
 );
 
 import { useQuery } from "@tanstack/react-query";
+import type { Feature as AutumnFeature } from "@/types/autumn-v2";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
+  AlertCircle,
   AlertTriangle,
   CheckCircle,
   ChevronDown,
@@ -98,7 +102,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { getBranchInfo } from "@/hooks/use-github-branch-info";
 import { useMachine, useMachines } from "@/hooks/use-machine";
 import { api } from "@/lib/api";
@@ -279,7 +282,16 @@ export function WorkflowImportSelectedMachine() {
   const setValidation = validation.setValidation;
 
   const sub = useCurrentPlan();
-  const MACHINE_LIMIT_REACHED = sub?.features.machineLimited;
+  // Autumn machine limit for gating creation inside the import flow via plan status
+  // Use the existing plan status hook to avoid extra queries
+  const { data: planStatus } = useCurrentPlanWithStatus();
+  const autumnData = planStatus?.plans?.autumn_data;
+  const machineLimitFeature = (autumnData?.features?.["machine_limit"] ?? null) as (AutumnFeature | null);
+  const machineLimit = machineLimitFeature?.included_usage ?? sub?.features?.machineLimit;
+  const MACHINE_LIMIT_REACHED = machineLimitFeature
+    ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0
+    : sub?.features?.machineLimited;
+  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Clear machine config when switching between new/existing machine
   const prevMachineOption = React.useRef(validation.machineOption);
@@ -706,7 +718,7 @@ function ExistingMachineDialog({
                             "w-full text-left border rounded-md p-2 transition-all",
                             "hover:border-primary/50 hover:bg-muted/30",
                             isSelected &&
-                              "border-primary bg-primary/10 ring-1 ring-primary/20",
+                            "border-primary bg-primary/10 ring-1 ring-primary/20",
                             !isSelected && "border-border",
                           )}
                         >
@@ -770,15 +782,15 @@ function ExistingMachineDialog({
                                     node.type === "custom-node" ||
                                     node.type === "custom-node-manager",
                                 ).length > 3 && (
-                                  <span className="text-[9px] text-muted-foreground shrink-0">
-                                    +
-                                    {item.docker_command_steps.steps.filter(
-                                      (node: any) =>
-                                        node.type === "custom-node" ||
-                                        node.type === "custom-node-manager",
-                                    ).length - 3}
-                                  </span>
-                                )}
+                                    <span className="text-[9px] text-muted-foreground shrink-0">
+                                      +
+                                      {item.docker_command_steps.steps.filter(
+                                        (node: any) =>
+                                          node.type === "custom-node" ||
+                                          node.type === "custom-node-manager",
+                                      ).length - 3}
+                                    </span>
+                                  )}
                               </div>
                             </div>
                           )}
@@ -972,6 +984,8 @@ function DetectedCustomNodesSection({
     "simplified",
   );
   const { data: latestHashes } = useLatestHashes();
+  const sub = useCurrentPlan();
+  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Auto-generate machine name and set default GPU if not set
   useEffect(() => {
@@ -1034,7 +1048,7 @@ function DetectedCustomNodesSection({
         (step: any) =>
           step.type === "custom-node" &&
           (step.data as CustomNodeData)?.url?.toLowerCase() ===
-            url.toLowerCase(),
+          url.toLowerCase(),
       );
     },
     [existingMachineSteps],
@@ -1153,8 +1167,12 @@ function DetectedCustomNodesSection({
     );
   }
 
+  // Free plan now supports all custom nodes
+
   return (
     <>
+      {/* All custom nodes allowed on Free plan - no warning */}
+
       {isConfigured ? (
         <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/20">
           <div className="flex items-center gap-2">
@@ -1920,9 +1938,8 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
           variant={"expandIcon"}
           iconPlacement="right"
           Icon={Settings2}
-          className={`${
-            sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-          }`}
+          className={`${sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
+            }`}
           onClick={() => {
             if (sub?.plans?.plans) {
               setOpenAdvanceSettings(true);
@@ -1936,9 +1953,8 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
         <Button
           size={"icon"}
           variant={"outline"}
-          className={`${
-            sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-          }`}
+          className={`${sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
+            }`}
           onClick={() => {
             if (sub?.plans?.plans) {
               setOpenAdvanceSettings(true);
@@ -1951,16 +1967,16 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
 
       <InsertModal
         hideButton
-        open={openAdvanceSettings && !sub?.features.machineLimited}
+        open={openAdvanceSettings && !MACHINE_LIMIT_REACHED}
         mutateFn={query.refetch}
         setOpen={setOpenAdvanceSettings}
-        disabled={sub?.features.machineLimited}
+        disabled={MACHINE_LIMIT_REACHED}
         dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
         containerClassName="flex-col"
         tooltip={
-          sub?.features.machineLimited
-            ? `Max ${sub?.features.machineLimit} ComfyUI machine for your account, upgrade to unlock more configuration.`
-            : `Max ${sub?.features.machineLimit} ComfyUI machine for your account`
+          MACHINE_LIMIT_REACHED
+            ? `Max ${machineLimit ?? ""} ComfyUI machine for your account, upgrade to unlock more configuration.`
+            : `Max ${machineLimit ?? ""} ComfyUI machine for your account`
         }
         title="Create New Machine"
         description="Create a new serverless ComfyUI machine based on the analyzed workflow."
@@ -1992,7 +2008,7 @@ function AdvanceSettings({ validation }: { validation: StepValidation }) {
 
             return {}; // Return empty object since we're handling navigation manually
           } catch (error) {
-            toast.error(`Failed to create: ${error}`);
+            toast.error("Failed to create");
             throw error;
           }
         }}
@@ -2115,9 +2131,9 @@ function NodeListItem({
       className={cn(
         "flex items-center gap-3 rounded-sm border px-3 py-2 hover:bg-gray-50",
         !hasHash &&
-          "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
+        "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
         isUrlDuplicate &&
-          "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
+        "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
       )}
     >
       {checkbox}

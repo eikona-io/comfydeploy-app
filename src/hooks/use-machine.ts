@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { isApiError } from "@/lib/api-error";
 import type { Machine, MachineListItem } from "@/types/machine";
 
 const BATCH_SIZE = 20;

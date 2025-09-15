@@ -1,4 +1,7 @@
 import { Info } from "lucide-react";
+import { ApiError } from "@/lib/api-error";
+import { emitApiError } from "@/lib/api-error-bus";
+import { withErrorContext } from "@/lib/error-context";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Badge } from "./ui/badge";
@@ -493,19 +496,72 @@ export const ApiPlayground: React.FC<ApiPlaygroundProps> = ({
         headers["Authorization"] = `Bearer ${currentApiKey}`;
       }
 
-      const response = await fetch(urlWithParams, {
-        method: selectedMethod.toUpperCase(),
-        headers,
-        body: ["POST", "PUT", "PATCH"].includes(selectedMethod.toUpperCase())
-          ? requestBody
-          : undefined,
-      });
+      const doRequest = async () => {
+        const res = await fetch(urlWithParams, {
+          method: selectedMethod.toUpperCase(),
+          headers,
+          body: ["POST", "PUT", "PATCH"].includes(selectedMethod.toUpperCase())
+            ? requestBody
+            : undefined,
+        });
 
-      const data = await response.json();
-      setResponse(JSON.stringify(data, null, 2));
+        const contentType = res.headers.get("content-type") || "";
+        const text = await res.text();
+        const parsed = contentType.includes("application/json")
+          ? (() => {
+              try {
+                return text ? JSON.parse(text) : undefined;
+              } catch {
+                return undefined;
+              }
+            })()
+          : undefined;
+
+        if (!res.ok) {
+          const candidateStrings = [
+            parsed?.message,
+            parsed?.error,
+            parsed?.detail,
+            parsed?.error?.message,
+            parsed?.msg,
+            parsed?.reason,
+          ].filter((v) => typeof v === "string" && v.trim().length > 0) as string[];
+          const message =
+            candidateStrings[0] ||
+            (parsed?.error && typeof parsed.error === "object"
+              ? JSON.stringify(parsed.error)
+              : undefined) ||
+            (text ? text.slice(0, 500) : `HTTP error ${res.status}`);
+
+          const err = new ApiError(message, {
+            status: res.status,
+            url: urlWithParams,
+            body: parsed ?? text,
+            code: parsed?.code || parsed?.error?.code,
+          });
+          emitApiError(err);
+          // Also surface in the response view
+          setResponse(JSON.stringify(parsed ?? { error: message }, null, 2));
+          return;
+        }
+
+        setResponse(
+          JSON.stringify(parsed ?? (text || ""), null, 2) || (text || ""),
+        );
+      };
+
+      await withErrorContext({ action: "Send API request" }, doRequest);
     } catch (error: any) {
+      const err =
+        error instanceof ApiError
+          ? error
+          : new ApiError(error?.message || "Network error", {
+              status: 0,
+              url: `${selectedServer}${selectedPath}`,
+            });
+      emitApiError(err);
       setResponse(
-        JSON.stringify({ error: error.message || "Unknown error" }, null, 2),
+        JSON.stringify({ error: err.message || "Unknown error" }, null, 2),
       );
     } finally {
       setIsLoading(false);

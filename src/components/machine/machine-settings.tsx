@@ -1,3 +1,40 @@
+import { useAuth, useUser } from "@clerk/clerk-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Link,
+  useBlocker,
+  useMatch,
+  useNavigate,
+} from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
+import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
+import { isEqual } from "lodash";
+import {
+  AlertCircle,
+  ArchiveX,
+  ExternalLinkIcon,
+  Info,
+  Loader2,
+  Lock,
+  PencilIcon,
+  Play,
+  Save,
+  TestTubeDiagonal,
+  Wrench,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import type { z } from "zod";
 import AutoForm from "@/components/auto-form";
 import {
   customFormSchema,
@@ -21,40 +58,13 @@ import {
   useCurrentPlan,
   useCurrentPlanWithStatus,
 } from "@/hooks/use-current-plan";
+import { useSessionAPI } from "@/hooks/use-session-api";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { api } from "@/lib/api";
 import { callServerPromise } from "@/lib/call-server-promise";
+import { queryClient } from "@/lib/providers";
 import { useCachedQuery } from "@/lib/use-cached-query";
 import { cn } from "@/lib/utils";
-import { useAuth, useUser } from "@clerk/clerk-react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery } from "@tanstack/react-query";
-import { useBlocker, useMatch, useNavigate } from "@tanstack/react-router";
-import { AnimatePresence, easeOut, motion, useAnimation } from "framer-motion";
-import { isEqual } from "lodash";
-import {
-  ArchiveX,
-  ExternalLinkIcon,
-  Info,
-  Loader2,
-  Lock,
-  PencilIcon,
-  Play,
-  Save,
-  TestTubeDiagonal,
-  Wrench,
-} from "lucide-react";
-import { useQueryState } from "nuqs";
-import {
-  type ReactNode,
-  type RefObject,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import type { z } from "zod";
 import { CustomNodeSetup } from "../onboarding/custom-node-setup";
 import type { StepValidation } from "../onboarding/workflow-import";
 import {
@@ -63,6 +73,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "../ui/accordion";
+import { Alert, AlertDescription } from "../ui/alert";
 import { Badge } from "../ui/badge";
 import {
   Form,
@@ -93,13 +104,11 @@ import {
   UnsavedChangesWarning,
   useUnsavedChangesWarning,
 } from "../unsaved-changes-warning";
+import { getCurrentEffectiveSessionIdFromMachineId } from "../workspace/session-creator-form";
 import { ExtraDockerCommands } from "./extra-docker-commands";
+import { ModelPathSelector } from "./model-path-selector";
 import { SecretsSelector } from "./secrets-selector";
 import { VersionChecker } from "./version-checker";
-import { ModelPathSelector } from "./model-path-selector";
-import { useSessionAPI } from "@/hooks/use-session-api";
-import { getCurrentEffectiveSessionIdFromMachineId } from "../workspace/session-creator-form";
-import { queryClient } from "@/lib/providers";
 
 export function MachineSettingsWrapper({
   machine,
@@ -350,6 +359,8 @@ function ServerlessSettings({
   const isBusiness = sub?.plans?.plans?.some((plan) =>
     plan.includes("business"),
   );
+  const isFreePlan =
+    !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Session check hooks and data
   const [showSessionDialog, setShowSessionDialog] = useState(false);
@@ -553,10 +564,10 @@ function ServerlessSettings({
               const showError = (message: string, field?: string) => {
                 const displayField = field
                   ? field
-                    .replace(/_/g, " ")
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())
-                    .trim()
+                      .replace(/_/g, " ")
+                      .replace(/([A-Z])/g, " $1")
+                      .replace(/^./, (str) => str.toUpperCase())
+                      .trim()
                   : "Form";
                 toast.error(`${displayField}: ${message}`);
               };
@@ -754,11 +765,19 @@ function ServerlessSettings({
                                     placeholder="nvidia/cuda:12.8.0-devel-ubuntu22.04"
                                     value={field.value ?? ""}
                                     onChange={field.onChange}
+                                    disabled={
+                                      isFreePlan && machine.id !== "new"
+                                    }
                                   />
                                 </FormControl>
                                 <FormDescription>
                                   Specify a custom base Docker image for your
                                   machine
+                                  {isFreePlan && machine.id !== "new" && (
+                                    <span className="text-amber-600 ml-2">
+                                      Disabled on Free plan
+                                    </span>
+                                  )}
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
@@ -775,6 +794,9 @@ function ServerlessSettings({
                                     id="install_custom_node_with_gpu"
                                     checked={field.value}
                                     onCheckedChange={field.onChange}
+                                    disabled={
+                                      isFreePlan && machine.id !== "new"
+                                    }
                                   />
                                 </FormControl>
                                 <div>
@@ -784,6 +806,11 @@ function ServerlessSettings({
                                   <FormDescription>
                                     Enable GPU support for custom node
                                     installation
+                                    {isFreePlan && machine.id !== "new" && (
+                                      <span className="text-amber-600 ml-2">
+                                        Enforced on Free plan
+                                      </span>
+                                    )}
                                   </FormDescription>
                                 </div>
                               </FormItem>
@@ -1638,6 +1665,8 @@ function CustomNodeSetupWrapper({
   onChange: (value: any) => void;
   readonly?: boolean;
 }) {
+  // Free plan now supports all custom nodes; no gating required
+
   const [validation, setValidation] = useState<StepValidation>(() => ({
     docker_command_steps: value || { steps: [] },
     machineName: "",
@@ -1671,11 +1700,13 @@ function CustomNodeSetupWrapper({
   };
 
   return (
-    <CustomNodeSetup
-      validation={validation}
-      setValidation={handleValidationChange}
-      readonly={readonly}
-    />
+    <div className="space-y-4">
+      <CustomNodeSetup
+        validation={validation}
+        setValidation={handleValidationChange}
+        readonly={readonly}
+      />
+    </div>
   );
 }
 
@@ -1824,36 +1855,12 @@ export function MaxParallelGPUSlider({
   value: number;
   onChange: (value: number) => void;
 }) {
-  const { data: sub, isLoading: isSubLoading } = useCurrentPlanWithStatus();
-  const { data: userSettings, isLoading: isUserSettingsLoading } =
-    useUserSettings();
-  const plan = sub?.plans?.plans.filter(
-    (plan: string) => !plan.includes("ws"),
-  )?.[0];
+  const { check, isLoading: isCustomerLoading } = useCustomer();
+  const concurrencyLimit = check({ featureId: "gpu_concurrency_limit" });
 
-  const planHierarchy: Record<string, { max: number }> = {
-    basic: { max: 1 },
-    pro: { max: 3 },
-    business: { max: 10 },
-    enterprise: { max: 10 },
-    creator: { max: 10 },
-    // for new plans
-    creator_legacy_monthly: { max: 3 },
-    creator_monthly: { max: 1 },
-    creator_yearly: { max: 1 },
-    deployment: { max: 5 },
-    deployment_monthly: { max: 5 },
-    deployment_yearly: { max: 5 },
-    business_monthly: { max: 10 },
-    business_yearly: { max: 10 },
-  };
+  const maxGPU = concurrencyLimit?.data?.included_usage || 1;
 
-  let maxGPU = planHierarchy[plan as keyof typeof planHierarchy]?.max || 1;
-  if (userSettings?.max_gpu) {
-    maxGPU = Math.max(maxGPU, userSettings.max_gpu);
-  }
-
-  if (isUserSettingsLoading || isSubLoading) {
+  if (isCustomerLoading) {
     return (
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -1869,15 +1876,7 @@ export function MaxParallelGPUSlider({
     );
   }
 
-  return (
-    <RangeSlider
-      value={value}
-      onChange={onChange}
-      min={1}
-      max={maxGPU}
-    // description=""
-    />
-  );
+  return <RangeSlider value={value} onChange={onChange} min={1} max={maxGPU} />;
 }
 
 interface TimeSelectOption {
@@ -2026,7 +2025,10 @@ function TimeSelect({
 export function WorkflowTimeOut({
   value,
   onChange,
-}: { value: number; onChange: (value: number) => void }) {
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
   const { orgId } = useAuth();
 
   const options: TimeSelectOption[] = [
@@ -2068,7 +2070,10 @@ export function WorkflowTimeOut({
 export function WarmTime({
   value,
   onChange,
-}: { value: number; onChange: (value: number) => void }) {
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
   const options: TimeSelectOption[] = [
     { seconds: 2 },
     { seconds: 15 },
@@ -2086,7 +2091,7 @@ export function WarmTime({
       onChange={onChange}
       options={options}
       placeholder="Select Warm Time"
-    // description="The warm time is the seconds before the container will be stopped after the run is finished. So the next request will reuse the warm container."
+      // description="The warm time is the seconds before the container will be stopped after the run is finished. So the next request will reuse the warm container."
     />
   );
 }
@@ -2094,11 +2099,23 @@ export function WarmTime({
 export function MaxAlwaysOnSlider({
   value,
   onChange,
-}: { value: number; onChange: (value: number) => void }) {
-  const sub = useCurrentPlan();
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
+  const { check, isLoading: isCustomerLoading } = useCustomer();
 
-  const minAlwaysOn = 0;
-  const maxAlwaysOn = sub?.features.alwaysOnMachineLimit ?? 0;
+  const maxAlwaysOnCheckResult = check({ featureId: "max_always_on_machine" });
+  const maxAlwaysOn = maxAlwaysOnCheckResult.data?.included_usage ?? 0;
+
+  if (isCustomerLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-6" />
+        <Skeleton className="h-5 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -2132,7 +2149,10 @@ export function MaxAlwaysOnSlider({
 function WebSocketTimeout({
   value,
   onChange,
-}: { value: number; onChange: (value: number) => void }) {
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) {
   const options: TimeSelectOption[] = [
     { minutes: 2 },
     { minutes: 5, requiredPlan: "pro" },
@@ -2194,7 +2214,7 @@ function BuilderVersionSelectBox({
                   <Badge
                     variant={
                       builderVersions.find((v) => v.value === value)?.status ===
-                        "deprecated"
+                      "deprecated"
                         ? "destructive"
                         : "green"
                     }

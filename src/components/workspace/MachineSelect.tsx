@@ -51,7 +51,8 @@ export function MachineSelect({
 
   const query = useMachines(debouncedSearchValue);
 
-  const userSessionCount = useUserSessionsCount(machineId || "");
+  // Only count sessions for a verified machine to avoid backend errors for stale IDs
+  const userSessionCount = useUserSessionsCount(valueData?.id || "");
 
   React.useEffect(() => {
     query.refetch();

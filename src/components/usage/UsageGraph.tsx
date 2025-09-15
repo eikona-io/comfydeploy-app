@@ -71,7 +71,7 @@ export function UsageGraph({
   // If no data or no active GPUs, show empty state
   if (!chartData?.length || activeGPUs.length === 0) {
     return (
-      <Card className="aspect-auto flex h-[250px] items-center justify-center text-muted-foreground w-full">
+      <Card className="aspect-auto flex h-[250px] items-center justify-center text-muted-foreground w-full rounded-[2px]">
         <div className="flex flex-col items-center gap-2">
           <BarChart2 className="h-8 w-8" />
           <CardDescription>No GPU usage data available</CardDescription>
@@ -91,7 +91,7 @@ export function UsageGraph({
     //   <CardContent className="px-2 sm:p-6">
     <ChartContainer
       config={filteredChartConfig}
-      className="aspect-auto h-[250px] w-full"
+      className="aspect-auto h-[250px] w-full rounded-[2px]"
     >
       <BarChart
         accessibilityLayer
@@ -138,6 +138,7 @@ export function UsageGraph({
             stackId="a"
             fill={`var(--color-${gpu})`}
             radius={[0, 0, 0, 0]}
+            maxBarSize={60}
           />
         ))}
       </BarChart>

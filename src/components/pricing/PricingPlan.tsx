@@ -72,11 +72,11 @@ const sections: Section[] = [
       {
         name: "GPU",
         tiers: {
-          Basic: "T4, L4, A10G",
-          Pro: "T4, L4, A10G",
-          Business: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
-          ["Deployment"]: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
-          Enterprise: "T4, L4, A10G, L40S, A100, A100-80GB, H100",
+          Basic: "Any GPU",
+          Pro: "Any GPU",
+          Business: "Any GPU",
+          ["Deployment"]: "Any GPU",
+          Enterprise: "Any GPU",
         },
       },
       {
@@ -85,9 +85,9 @@ const sections: Section[] = [
           Basic: (
             <Tooltip>
               <TooltipTrigger className="flex items-center justify-center gap-2">
-                $5 credit + usage <Info size={14} />
+                Credit base <Info size={14} />
               </TooltipTrigger>
-              <TooltipContent>See the GPU pricing table below</TooltipContent>
+              <TooltipContent>See GPU pricing table below</TooltipContent>
             </Tooltip>
           ),
           Pro: (
@@ -147,7 +147,7 @@ const sections: Section[] = [
       {
         name: "GPU Concurrency (Parallel GPU)",
         tiers: {
-          Basic: 10,
+          Basic: 1,
           Pro: 10,
           ["Deployment"]: 10,
           Business: "Custom",
@@ -336,14 +336,14 @@ export function PricingList(props: { trial?: boolean }) {
 
   const plansMapping = _sub?.plans?.plans
     ? _sub?.plans?.plans?.map((plan: string) => {
-        if (plan.includes("monthly")) {
-          return plan.replace("_monthly", "");
-        }
-        if (plan.includes("yearly")) {
-          return plan.replace("_yearly", "");
-        }
-        return plan;
-      })
+      if (plan.includes("monthly")) {
+        return plan.replace("_monthly", "");
+      }
+      if (plan.includes("yearly")) {
+        return plan.replace("_yearly", "");
+      }
+      return plan;
+    })
     : [];
 
   useEffect(() => {
@@ -459,17 +459,19 @@ export function PricingList(props: { trial?: boolean }) {
           >
             <h3
               id={tier.id}
-              className="font-semibold text-gray-900 text-sm leading-6"
+              className={`font-semibold text-gray-900 leading-6 ${tier.id === "basic" ? "text-2xl" : "text-sm"}`}
             >
               {tier.name}
             </h3>
-            <div className="mt-2 flex items-baseline gap-x-1 text-gray-900">
-              {tier.startingAt && (
-                <span className="font-semibold text-sm">starting</span>
-              )}
-              <span className="font-bold text-4xl">{tier.priceMonthly}</span>
-              <span className="font-semibold text-sm">/month + usage</span>
-            </div>
+            {tier.id !== "basic" && (
+              <div className="mt-2 flex items-baseline gap-x-1 text-gray-900">
+                {tier.startingAt && (
+                  <span className="font-semibold text-sm">starting</span>
+                )}
+                <span className="font-bold text-4xl">{tier.priceMonthly}</span>
+                <span className="font-semibold text-sm">/month + usage</span>
+              </div>
+            )}
             <br />
             <div className="font-semibold text-xl">{tier.description}</div>
             <UpgradeButton
@@ -610,7 +612,7 @@ export function PricingList(props: { trial?: boolean }) {
                     scope="col"
                     className="px-6 pt-6 xl:px-8 xl:pt-8"
                   >
-                    <div className="font-semibold text-gray-900 text-sm leading-7">
+                    <div className={`font-semibold text-gray-900 leading-7 ${tier.id === "basic" ? "text-xl" : "text-sm"}`}>
                       {tier.name}
                     </div>
                   </th>
@@ -624,22 +626,24 @@ export function PricingList(props: { trial?: boolean }) {
                 </th>
                 {tiers.map((tier) => (
                   <td key={tier.id} className="px-10 pt-2">
-                    <div className="flex flex-wrap items-baseline gap-x-1 text-gray-900">
-                      {tier.startingAt && (
-                        <>
-                          <span className="w-full font-semibold text-sm">
-                            starting
-                          </span>
-                          <br />
-                        </>
-                      )}
-                      <span className="font-bold text-4xl">
-                        {tier.priceMonthly}
-                      </span>
-                      <span className="font-semibold text-sm leading-6">
-                        /month + usage
-                      </span>
-                    </div>
+                    {tier.id !== "basic" && (
+                      <div className="flex flex-wrap items-baseline gap-x-1 text-gray-900">
+                        {tier.startingAt && (
+                          <>
+                            <span className="w-full font-semibold text-sm">
+                              starting
+                            </span>
+                            <br />
+                          </>
+                        )}
+                        <span className="font-bold text-4xl">
+                          {tier.priceMonthly}
+                        </span>
+                        <span className="font-semibold text-sm leading-6">
+                          /month + usage
+                        </span>
+                      </div>
+                    )}
                     <br />
                     <div className="font-semibold text-md">
                       {tier.description}
@@ -691,16 +695,16 @@ export function PricingList(props: { trial?: boolean }) {
                           {typeof feature.tiers[
                             tier.name as keyof TierFeature
                           ] === "string" ||
-                          typeof feature.tiers[
+                            typeof feature.tiers[
                             tier.name as keyof TierFeature
-                          ] === "object" ? (
+                            ] === "object" ? (
                             <div className="flex items-center justify-center text-center text-gray-500 text-sm leading-6">
                               {feature.tiers[tier.name as keyof TierFeature]}
                             </div>
                           ) : (
                             <>
                               {feature.tiers[tier.name as keyof TierFeature] ===
-                              true ? (
+                                true ? (
                                 <Check
                                   className="mx-auto h-5 w-5 text-indigo-600"
                                   aria-hidden="true"

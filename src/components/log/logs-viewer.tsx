@@ -1,11 +1,11 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
 import { ArrowDownToLine, Expand } from "lucide-react";
 import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
 
 export type LogsType = {
   machine_id?: string;
@@ -18,6 +18,7 @@ interface LogContentProps {
   hideTimestamp?: boolean;
   className?: string;
   initialStickToBottom?: boolean;
+  inWorkspace?: boolean;
 }
 
 function LogContent({
@@ -25,10 +26,12 @@ function LogContent({
   hideTimestamp,
   className,
   initialStickToBottom = true,
+  inWorkspace = false,
 }: LogContentProps) {
   const container = useRef<HTMLDivElement | null>(null);
   const [isAutoScroll, setIsAutoScroll] = useState(initialStickToBottom);
   const [userHasScrolled, setUserHasScrolled] = useState(false);
+  const isProgrammaticScroll = useRef(false);
 
   // Handle auto-scroll
   useEffect(() => {
@@ -36,22 +39,34 @@ function LogContent({
 
     if (container.current) {
       const scrollHeight = container.current.scrollHeight;
+      isProgrammaticScroll.current = true;
       container.current.scrollTo({
         top: scrollHeight,
-        behavior: "instant",
+        behavior: "auto",
+      });
+      // Allow the scroll event to fire, then re-enable handling
+      requestAnimationFrame(() => {
+        isProgrammaticScroll.current = false;
       });
     }
-  }, [logs?.length, isAutoScroll]);
+  }, [logs, isAutoScroll]);
 
   // Detect manual scroll
   useEffect(() => {
     const handleScroll = () => {
       if (!container.current) return;
+      if (isProgrammaticScroll.current) return;
 
-      const isAtBottom =
-        container.current.scrollHeight - container.current.scrollTop ===
+      const distanceToBottom =
+        container.current.scrollHeight -
+        container.current.scrollTop -
         container.current.clientHeight;
-      if (!isAtBottom) {
+      const atBottom = distanceToBottom <= 2; // tolerate sub-pixel rounding
+
+      if (atBottom) {
+        setIsAutoScroll(true);
+        setUserHasScrolled(false);
+      } else {
         setIsAutoScroll(false);
         setUserHasScrolled(true);
       }
@@ -75,10 +90,16 @@ function LogContent({
         onClick={() => {
           setIsAutoScroll(true);
           setUserHasScrolled(false);
-          container.current?.scrollTo({
-            top: container.current.scrollHeight,
-            behavior: "instant",
-          });
+          if (container.current) {
+            isProgrammaticScroll.current = true;
+            container.current.scrollTo({
+              top: container.current.scrollHeight,
+              behavior: "auto",
+            });
+            requestAnimationFrame(() => {
+              isProgrammaticScroll.current = false;
+            });
+          }
         }}
       >
         <ArrowDownToLine className="h-4 w-4" />
@@ -96,7 +117,12 @@ function LogContent({
           logs?.map((x, i) => (
             <div
               key={i}
-              className="flex flex-row items-center gap-2 hover:bg-stone-700"
+              className={cn(
+                "flex flex-row items-center gap-2",
+                inWorkspace
+                  ? "hover:bg-stone-200 dark:hover:bg-stone-700"
+                  : "hover:bg-stone-700",
+              )}
               onClick={() => {
                 toast.success("Copied to clipboard");
                 navigator.clipboard.writeText(x.logs);
@@ -124,6 +150,7 @@ export function LogsViewer({
   className,
   containerClassName,
   stickToBottom = true,
+  inWorkspace = false,
   children,
 }: {
   logs: LogsType;
@@ -131,6 +158,7 @@ export function LogsViewer({
   containerClassName?: string;
   className?: string;
   stickToBottom?: boolean;
+  inWorkspace?: boolean;
   children?: React.ReactNode;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -158,6 +186,7 @@ export function LogsViewer({
           hideTimestamp={hideTimestamp}
           className={className}
           initialStickToBottom={stickToBottom}
+          inWorkspace={inWorkspace}
         />
       </div>
 

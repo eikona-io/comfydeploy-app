@@ -1,4 +1,6 @@
 /** biome-ignore-all lint/nursery/useSortedClasses: <explanation> */
+
+import { useQuery } from "@tanstack/react-query";
 import { createLazyFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { ArrowLeft, Copy } from "lucide-react";
@@ -44,10 +46,11 @@ import {
 } from "@/hooks/use-current-plan";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
 import { useMachine, useMachineVersionsAll } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
 import { StoragePage } from "@/routes/models";
 import { PricingPage } from "@/routes/pricing";
-import { useQuery } from "@tanstack/react-query";
 
 export const Route = createLazyFileRoute("/workflows/$workflowId/$view")({
   component: WorkflowPageComponent,
@@ -61,9 +64,10 @@ function WorkflowPageComponent() {
     new Set([currentView]),
   );
 
-  // Call all hooks first before any conditional logic
-  const { workflow } = useCurrentWorkflow(workflowId);
+  const { workflow, mutateWorkflow } = useCurrentWorkflow(workflowId);
+
   const { data: machine } = useMachine(workflow?.selected_machine_id);
+
   const { value: version } = useSelectedVersion(workflowId);
   const isAdminAndMember = useIsAdminAndMember();
   const { isLoading: isPlanLoading } = useCurrentPlanQuery();
@@ -78,7 +82,7 @@ function WorkflowPageComponent() {
 
     return (
       machine?.machine_version_id !== null &&
-      machineVersionsAll[0]?.id === machine.machine_version_id
+      machineVersionsAll[0]?.id === machine?.machine_version_id
     );
   }, [machine?.machine_version_id, machineVersionsAll, isLoadingVersions]);
 
@@ -167,10 +171,26 @@ function WorkflowPageComponent() {
       view = (
         <PaddingLayout>
           <div className={cn("h-full w-full")}>
-            {workflow?.selected_machine_id && version?.id && (
+            {workflow?.selected_machine_id && version?.id ? (
               <RealtimeWorkflowProvider workflowId={workflowId}>
                 <Playground runOrigin={"manual"} workflow={workflow} />
               </RealtimeWorkflowProvider>
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+                <span className="text-muted-foreground text-sm">
+                  No machine selected. Please select or configure a machine.
+                </span>
+                <div className="w-full max-w-md">
+                  <MachineSelect
+                    workflow_id={workflowId}
+                    className="rounded-md border bg-background"
+                    showSettings={false}
+                  />
+                </div>
+                <Link href="/machines" search={{ view: "create" as const }}>
+                  <Button variant="default">Configure New Machine</Button>
+                </Link>
+              </div>
             )}
           </div>
         </PaddingLayout>
@@ -180,7 +200,7 @@ function WorkflowPageComponent() {
       view = <GalleryView workflowID={workflowId} />;
       break;
     case "machine":
-      view = machine && (
+      view = machine ? (
         <MachineView
           machine={machine}
           workflowId={workflowId}
@@ -188,6 +208,24 @@ function WorkflowPageComponent() {
           isLatestVersion={isLatestVersion}
           isAdminAndMember={isAdminAndMember}
         />
+      ) : (
+        <PaddingLayout>
+          <div className="flex h-full w-full flex-col items-center justify-center gap-4">
+            <span className="text-muted-foreground text-sm">
+              No machine found for this workflow. Select or create one below.
+            </span>
+            <div className="w-full max-w-md">
+              <MachineSelect
+                workflow_id={workflowId}
+                className="rounded-md border bg-background"
+                showSettings={false}
+              />
+            </div>
+            <Link href="/machines" search={{ view: "create" as const }}>
+              <Button variant="default">Configure New Machine</Button>
+            </Link>
+          </div>
+        </PaddingLayout>
       );
       break;
     case "model":

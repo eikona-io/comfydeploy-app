@@ -32,6 +32,7 @@ import { AppSidebar, GuestSidebar } from "@/components/app-sidebar";
 import { ComfyCommand } from "@/components/comfy-command";
 import { Icon } from "@/components/icon-word";
 import { LocalGitDisplay } from "@/components/local-git-display";
+import { OrgSelector, useOrgSelector } from "@/components/OrgSelector";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { WorkflowNavbar } from "@/components/workflow-navbar";
@@ -111,6 +112,8 @@ function RootComponent() {
     return route.wildcard && pathname.startsWith(route.path);
   });
 
+  const orgSelector = useOrgSelector();
+
   return (
     <ThemeProvider defaultTheme="system">
       <PageViewTracker />
@@ -142,12 +145,13 @@ function RootComponent() {
           !isWorkflowPage && "mt-[40px] max-h-[calc(100dvh-40px)]",
         )}
       >
-        {!isAuthPage && (
+        {!orgSelector && !isAuthPage && (
           <SignedIn>
             <Outlet />
           </SignedIn>
         )}
-        {isAuthPage && <Outlet />}
+        {orgSelector}
+        {!orgSelector && isAuthPage && <Outlet />}
         {!isAuthPage && (
           <SignedOut>
             <div className="flex h-full flex-col items-center justify-center">

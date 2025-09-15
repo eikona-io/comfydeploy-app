@@ -5,6 +5,7 @@ import {
   useClerk,
 } from "@clerk/clerk-react";
 import { dark } from "@clerk/themes";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useRouter } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
@@ -22,6 +23,7 @@ import {
   LogIn,
   MessageCircle,
   Moon,
+  Plus,
   Receipt,
   Rss,
   Search,
@@ -74,11 +76,13 @@ import {
   InfoCardTitle,
 } from "@/kl-ui/info-card";
 import { api } from "@/lib/api";
+import { useCreditInDollars } from "@/lib/autumn-helpers";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn, isDarkTheme } from "@/lib/utils";
 import { WorkflowsBreadcrumb } from "@/routes/workflows/$workflowId/$view.lazy";
 import { getOrgPathInfo } from "@/utils/org-path";
 import { Icon } from "./icon-word";
+import { TopUpButton } from "./pricing/TopUpButton";
 import { useTheme } from "./theme-provider";
 import { Badge } from "./ui/badge";
 import { Skeleton } from "./ui/skeleton";
@@ -403,285 +407,286 @@ export function AppSidebar() {
   }
 
   return (
-    <>
-      <Sidebar>
-        <SidebarHeader>
-          <div className="flex flex-row items-start justify-between pt-2.5">
-            <Link
-              href="/"
-              className="flex flex-row items-start justify-between"
-            >
-              <img
-                src="/icon-light.svg"
-                alt="comfydeploy"
-                className="ml-1 h-7 w-7 dark:hidden"
-              />
-              <img
-                src="/icon.svg"
-                alt="comfydeploy"
-                className="ml-1 hidden h-7 w-7 dark:block"
-              />
-            </Link>
-            <div className="flex items-center gap-1">
-              <PlanBadge />
-              <UserMenu />
-            </div>
+    <Sidebar>
+      <SidebarHeader>
+        <div className="flex flex-row items-start justify-between pt-2.5">
+          <Link href="/" className="flex flex-row items-start justify-between">
+            <img
+              src="/icon-light.svg"
+              alt="comfydeploy"
+              className="ml-1 h-7 w-7 dark:hidden"
+            />
+            <img
+              src="/icon.svg"
+              alt="comfydeploy"
+              className="ml-1 hidden h-7 w-7 dark:block"
+            />
+          </Link>
+          <div className="flex items-center gap-1">
+            <PlanBadge />
+            <UserMenu />
           </div>
+        </div>
 
-          {!(workflow_id && parentPath === "workflows") && (
-            <div className="mt-1 flex items-center justify-center gap-0 rounded-[8px] bg-gray-100 dark:bg-gradient-to-r dark:from-zinc-800 dark:to-zinc-900">
-              <div className="flex min-h-[44px] w-full items-center justify-center">
-                <OrganizationSwitcher
-                  organizationProfileUrl={`/org/${orgSlug}/organization-profile`}
-                  organizationProfileMode="navigation"
-                  afterSelectOrganizationUrl="/org/:slug/workflows"
-                  afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
-                  appearance={{
-                    baseTheme: isDarkTheme(theme) ? dark : undefined,
-                    elements: {
-                      rootBox: cn(
-                        "items-center justify-center p-0 w-full",
-                        orgId && "max-w-[221px] md:max-w-[190px]",
-                      ),
-                      organizationSwitcherPopoverRootBox: {
-                        pointerEvents: "initial",
-                      },
-                      organizationSwitcherTrigger: {
-                        width: "100%",
-                        justifyContent: "space-between",
-                        padding: "12px 12px",
-                      },
+        {!(workflow_id && parentPath === "workflows") && (
+          <div className="mt-1 flex items-center justify-center gap-0 rounded-[8px] bg-gray-100 dark:bg-gradient-to-r dark:from-zinc-800 dark:to-zinc-900">
+            <div className="flex min-h-[44px] w-full items-center justify-center">
+              <OrganizationSwitcher
+                organizationProfileUrl={`/org/${orgSlug}/organization-profile`}
+                organizationProfileMode="navigation"
+                afterSelectOrganizationUrl="/org/:slug/workflows"
+                afterSelectPersonalUrl={`/user/${personalOrg}/workflows`}
+                appearance={{
+                  baseTheme: isDarkTheme(theme) ? dark : undefined,
+                  elements: {
+                    rootBox: cn(
+                      "items-center justify-center p-0 w-full",
+                      orgId && "max-w-[221px] md:max-w-[190px]",
+                    ),
+                    organizationSwitcherPopoverRootBox: {
+                      pointerEvents: "initial",
                     },
-                  }}
+                    organizationSwitcherTrigger: {
+                      width: "100%",
+                      justifyContent: "space-between",
+                      padding: "12px 12px",
+                    },
+                  },
+                }}
+              />
+            </div>
+            {orgId && (
+              <Link
+                className="flex h-full items-center justify-center rounded-r-[8px] bg-gray-200/40 px-4 transition-colors hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
+                to="/organization-profile#/organization-members"
+              >
+                <Users className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
+        )}
+
+        {workflow_id && parentPath === "workflows" && (
+          <>
+            <WorkflowsBreadcrumb />
+            <div className="relative flex flex-col">
+              <div className="flex w-full flex-row gap-2 rounded-t-md rounded-b-none border bg-gray-100 p-2 dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-900">
+                <WorkflowDropdown
+                  workflow_id={workflow_id}
+                  className="min-w-0 flex-grow"
+                />
+                <VersionSelectV2
+                  workflow_id={workflow_id}
+                  className="w-20 flex-shrink-0"
                 />
               </div>
-              {orgId && (
-                <Link
-                  className="flex h-full items-center justify-center rounded-r-[8px] bg-gray-200/40 px-4 transition-colors hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"
-                  to="/organization-profile#/organization-members"
-                >
-                  <Users className="h-4 w-4" />
-                </Link>
-              )}
+              {workflow_id &&
+                parentPath === "workflows" &&
+                isAdminAndMember && (
+                  <MachineSelect
+                    workflow_id={workflow_id}
+                    onSettingsClick={(machineId) => {
+                      router.navigate({
+                        to: "/workflows/$workflowId/$view",
+                        params: { workflowId: workflow_id, view: "machine" },
+                      });
+                    }}
+                    className="rounded-t-none rounded-b-md border-x border-b bg-slate-100 dark:bg-gradient-to-tr dark:from-zinc-800 dark:to-zinc-900"
+                  />
+                )}
             </div>
-          )}
+          </>
+        )}
+      </SidebarHeader>
+      <SidebarContent className="gap-0">
+        <div id="sidebar-panel" />
 
-          {workflow_id && parentPath === "workflows" && (
-            <>
-              <WorkflowsBreadcrumb />
-              <div className="relative flex flex-col">
-                <div className="flex w-full flex-row gap-2 rounded-t-md rounded-b-none border bg-gray-100 p-2 dark:bg-gradient-to-br dark:from-zinc-800 dark:to-zinc-900">
-                  <WorkflowDropdown
-                    workflow_id={workflow_id}
-                    className="min-w-0 flex-grow"
-                  />
-                  <VersionSelectV2
-                    workflow_id={workflow_id}
-                    className="w-20 flex-shrink-0"
-                  />
-                </div>
-                {workflow_id &&
-                  parentPath === "workflows" &&
-                  isAdminAndMember && (
-                    <MachineSelect
-                      workflow_id={workflow_id}
-                      onSettingsClick={(machineId) => {
-                        router.navigate({
-                          to: "/workflows/$workflowId/$view",
-                          params: { workflowId: workflow_id, view: "machine" },
-                        });
-                      }}
-                      className="rounded-t-none rounded-b-md border-x border-b bg-slate-100 dark:bg-gradient-to-tr dark:from-zinc-800 dark:to-zinc-900"
-                    />
-                  )}
-              </div>
-            </>
-          )}
-        </SidebarHeader>
-        <SidebarContent className="gap-0">
-          <div id="sidebar-panel" />
-
-          {(!workflow_id || parentPath !== "workflows") && (
-            <>
-              <SidebarGroup className="pt-0">
-                {/* <SidebarGroupLabel>Application</SidebarGroupLabel> */}
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {items.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        {`/${parentPath}` === item.url && (
-                          <motion.div
-                            className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 30,
-                            }}
+        {(!workflow_id || parentPath !== "workflows") && (
+          <>
+            <SidebarGroup className="pt-0">
+              {/* <SidebarGroupLabel>Application</SidebarGroupLabel> */}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {items.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {`/${parentPath}` === item.url && (
+                        <motion.div
+                          className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      <SidebarMenuButton
+                        asChild
+                        className={cn(
+                          "transition-colors dark:hover:bg-zinc-700/40",
+                          item.url === `/${parentPath}` &&
+                            "dark:bg-zinc-800/40",
+                        )}
+                      >
+                        <Link href={item.url}>
+                          <item.icon
+                            className={cn(
+                              "transition-colors dark:text-gray-400",
+                              item.url === `/${parentPath}` &&
+                                "dark:text-white",
+                            )}
                           />
-                        )}
-                        <SidebarMenuButton
-                          asChild
-                          className={cn(
-                            "transition-colors dark:hover:bg-zinc-700/40",
-                            item.url === `/${parentPath}` &&
-                              "dark:bg-zinc-800/40",
-                          )}
-                        >
-                          <Link href={item.url}>
-                            <item.icon
-                              className={cn(
-                                "transition-colors dark:text-gray-400",
-                                item.url === `/${parentPath}` &&
-                                  "dark:text-white",
-                              )}
-                            />
-                            <span
-                              className={cn(
-                                "transition-colors dark:text-gray-400",
-                                item.url === `/${parentPath}` &&
-                                  "dark:text-white",
-                              )}
-                            >
-                              {item.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
+                          <span
+                            className={cn(
+                              "transition-colors dark:text-gray-400",
+                              item.url === `/${parentPath}` &&
+                                "dark:text-white",
+                            )}
+                          >
+                            {item.title}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
 
-                        {item.url === "/models" && (
-                          <div id="sidebar-panel-models" />
-                        )}
-                        {item.url === "/machines" && (
-                          <div id="sidebar-panel-machines" />
-                        )}
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
+                      {item.url === "/models" && (
+                        <div id="sidebar-panel-models" />
+                      )}
+                      {item.url === "/machines" && (
+                        <div id="sidebar-panel-machines" />
+                      )}
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-              <SidebarGroup>
-                <SidebarGroupLabel>Account</SidebarGroupLabel>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {metaItems.map((item) => (
-                      <SidebarMenuItem key={item.title}>
-                        {`/${parentPath}` === item.url && (
-                          <motion.div
-                            className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
-                            transition={{
-                              type: "spring",
-                              stiffness: 300,
-                              damping: 30,
-                            }}
+            <SidebarGroup>
+              <SidebarGroupLabel>Account</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {metaItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      {`/${parentPath}` === item.url && (
+                        <motion.div
+                          className="absolute top-[5px] left-0 z-10 h-[20px] w-[2px] rounded-r-full bg-primary"
+                          transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 30,
+                          }}
+                        />
+                      )}
+                      <SidebarMenuButton
+                        asChild
+                        className={cn(
+                          "transition-colors dark:hover:bg-zinc-700/40",
+                          item.url === `/${parentPath}` &&
+                            "dark:bg-zinc-800/40",
+                        )}
+                      >
+                        <Link href={item.url}>
+                          <item.icon
+                            className={cn(
+                              "transition-colors dark:text-gray-400",
+                              item.url === `/${parentPath}` &&
+                                "dark:text-white",
+                            )}
                           />
-                        )}
-                        <SidebarMenuButton
-                          asChild
-                          className={cn(
-                            "transition-colors dark:hover:bg-zinc-700/40",
-                            item.url === `/${parentPath}` &&
-                              "dark:bg-zinc-800/40",
-                          )}
-                        >
-                          <Link href={item.url}>
-                            <item.icon
-                              className={cn(
-                                "transition-colors dark:text-gray-400",
-                                item.url === `/${parentPath}` &&
-                                  "dark:text-white",
-                              )}
-                            />
-                            <span
-                              className={cn(
-                                "transition-colors dark:text-gray-400",
-                                item.url === `/${parentPath}` &&
-                                  "dark:text-white",
-                              )}
-                            >
-                              {item.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
+                          <span
+                            className={cn(
+                              "transition-colors dark:text-gray-400",
+                              item.url === `/${parentPath}` &&
+                                "dark:text-white",
+                            )}
+                          >
+                            {item.title}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-              {/* <SidebarGroup>
+            {/* <SidebarGroup>
                 <SidebarGroupLabel>Links</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu></SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup> */}
-            </>
-          )}
-        </SidebarContent>
-        <SidebarFooter>
-          {/* <WorkspaceUpdateInfoCard20250724 /> */}
-          <div className="flex w-full flex-col justify-center gap-2 pb-4">
-            {!(workflow_id && parentPath === "workflows") && (
-              <div className="grid grid-cols-2 gap-2 px-2">
-                {links.map((item, index) =>
-                  item.internal ? (
-                    <Link
-                      key={index}
-                      to={item.url}
-                      className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground"
-                    >
+          </>
+        )}
+      </SidebarContent>
+      <SidebarFooter>
+        {/* <WorkspaceUpdateInfoCard20250724 /> */}
+        <div className="flex w-full flex-col justify-center gap-2 pb-4">
+          {!(workflow_id && parentPath === "workflows") && (
+            <div className="grid grid-cols-2 gap-2 px-2">
+              {links.map((item, index) =>
+                item.internal ? (
+                  <Link
+                    key={index}
+                    to={item.url}
+                    className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground"
+                  >
+                    <item.icon size={16} className="w-3" />
+                    <span>{item.title}</span>
+                  </Link>
+                ) : (
+                  <a
+                    href={item.url}
+                    key={index}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
                       <item.icon size={16} className="w-3" />
                       <span>{item.title}</span>
-                    </Link>
-                  ) : (
-                    <a
-                      href={item.url}
-                      key={index}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <span className="justify flex w-full flex-row items-center gap-2 pr-2 text-2xs text-muted-foreground">
-                        <item.icon size={16} className="w-3" />
-                        <span>{item.title}</span>
-                      </span>
-                    </a>
-                  ),
-                )}
+                    </span>
+                  </a>
+                ),
+              )}
 
-                {/* Theme Switch Item */}
-                {isBusinessAllowed && (
-                  // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-                  <div
-                    className="flex w-full cursor-pointer flex-row items-center justify-between gap-2 pr-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
-                    onClick={() => {
-                      setTheme(isDarkTheme(theme) ? "light" : "dark");
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      {isDarkTheme(theme) ? (
-                        <Moon size={16} className="w-3" />
-                      ) : (
-                        <Sun size={16} className="w-3" />
-                      )}
-                      <span>Theme</span>
-                    </div>
+              {/* Theme Switch Item */}
+              {isBusinessAllowed && (
+                // biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+                <div
+                  className="flex w-full cursor-pointer flex-row items-center justify-between gap-2 pr-2 text-2xs text-muted-foreground transition-colors hover:text-foreground"
+                  onClick={() => {
+                    setTheme(isDarkTheme(theme) ? "light" : "dark");
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    {isDarkTheme(theme) ? (
+                      <Moon size={16} className="w-3" />
+                    ) : (
+                      <Sun size={16} className="w-3" />
+                    )}
+                    <span>Theme</span>
                   </div>
-                )}
-              </div>
-            )}
-          </div>
-        </SidebarFooter>
-      </Sidebar>
-    </>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </SidebarFooter>
+    </Sidebar>
   );
 }
 
 function PlanBadge() {
   const { data: plan, isLoading } = useCurrentPlanWithStatus();
 
-  const { displayPlan, badgeColor } = useMemo(() => {
-    const planId = plan?.plans?.plans[0] || "";
+  const { credit: totalBalance, isLoading: isAutumnDataLoading } =
+    useCreditInDollars();
 
-    let displayPlan = "Free";
+  const { displayPlan, badgeColor, isFreePlan } = useMemo(() => {
+    const planId = plan?.plans?.plans[0] || "";
+    const isFreePlan =
+      !plan?.plans?.plans?.length ||
+      plan?.plans?.plans?.some((p: string) => p.startsWith("free"));
+
+    let displayPlan = "Pay as you go";
     let badgeColor = "secondary";
 
     // Logic to determine which plan to display
@@ -698,11 +703,34 @@ function PlanBadge() {
       badgeColor = "purple";
     }
 
-    return { displayPlan, badgeColor };
+    return { displayPlan, badgeColor, isFreePlan };
   }, [plan?.plans?.plans]);
 
-  if (isLoading) {
+  if (isLoading || isAutumnDataLoading) {
     return <Skeleton className="h-5 w-12" />;
+  }
+
+  // For free plan users, show balance instead of plan badge
+  if (isFreePlan) {
+    return (
+      <div className="flex items-center gap-1 text-2xs">
+        {/* <span className="text-zinc-500 dark:text-zinc-400">Balance:</span> */}
+        <Link
+          to="/usage"
+          className="font-mono font-medium text-zinc-900 dark:text-zinc-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+        >
+          ${totalBalance.toFixed(2)}
+        </Link>
+        <TopUpButton
+          size="sm"
+          variant="ghost"
+          className="h-4 w-4 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+          showIcon={false}
+        >
+          <Plus className="h-3 w-3 text-zinc-500 dark:text-zinc-400 hover:text-blue-600 dark:hover:text-blue-400" />
+        </TopUpButton>
+      </div>
+    );
   }
 
   return (

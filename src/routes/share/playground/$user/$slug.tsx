@@ -7,6 +7,7 @@ import {
   parseInputValues,
 } from "@/components/run/RunWorkflowInline";
 import { UserIcon } from "@/components/run/SharePageComponent";
+import { withErrorContext } from "@/lib/error-context";
 import { publicRunStore } from "@/components/run/VersionSelect";
 import { Button } from "@/components/ui/button";
 import {
@@ -693,20 +694,25 @@ function RouteComponent() {
                     ...default_values,
                   });
                   const val = parseInputValues(valuesParsed);
-                  const run = await api({
-                    url: "run",
-                    init: {
-                      method: "POST",
-                      body: JSON.stringify({
-                        deployment_id: shareDeployment.id,
-                        origin: "public-share",
-                        inputs: val,
+                  const run = await withErrorContext(
+                    { action: "Start run" },
+                    () =>
+                      api({
+                        url: "run",
+                        init: {
+                          method: "POST",
+                          body: JSON.stringify({
+                            deployment_id: shareDeployment.id,
+                            origin: "public-share",
+                            inputs: val,
+                          }),
+                        },
                       }),
-                    },
-                  });
+                  );
                   setRunId(run.run_id);
                 } catch (error) {
-                  toast.error(`Failed to start run: ${error}`);
+                  // Global API error dialog will open; keep a lean toast
+                  toast.error("Failed to start run");
                 } finally {
                   setRunButtonLoading(false);
                 }

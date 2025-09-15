@@ -13,25 +13,25 @@ export const Route = createFileRoute("/organization-profile/")({
 
 function RouteComponent() {
   const { orgId } = useAuth();
-  const plan = useCurrentPlan();
+  // const plan = useCurrentPlan();
   const { theme } = useTheme();
 
   if (!orgId) {
     return <div>Not Found</div>;
   }
 
-  useQuery({
-    queryKey: ["seats", plan?.plans?.plans?.[0], orgId],
-    queryFn: () => {
-      return api({
-        url: "platform/seats",
-        init: {
-          method: "PATCH",
-        },
-      });
-    },
-    enabled: !!plan?.plans?.plans?.[0],
-  });
+  // useQuery({
+  //   queryKey: ["seats", plan?.plans?.plans?.[0], orgId],
+  //   queryFn: () => {
+  //     return api({
+  //       url: "platform/seats",
+  //       init: {
+  //         method: "PATCH",
+  //       },
+  //     });
+  //   },
+  //   enabled: !!plan?.plans?.plans?.[0],
+  // });
 
   return (
     <OrganizationProfile

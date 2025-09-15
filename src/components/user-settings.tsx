@@ -1,11 +1,13 @@
+import { Link } from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
+import { toast } from "sonner";
+import { z } from "zod";
 import { useCurrentPlan } from "@/hooks/use-current-plan";
 import { useUserSettings } from "@/hooks/use-user-settings";
 import { cn } from "@/lib/utils";
-import { Link } from "@tanstack/react-router";
-import { toast } from "sonner";
-import { z } from "zod";
 import { InlineAutoForm } from "./auto-form/auto-form-dialog";
 import { DependencyType } from "./auto-form/types";
+import { Skeleton } from "./ui/skeleton";
 import { updateUser } from "./user-api";
 
 export function UserSettings() {
@@ -14,7 +16,20 @@ export function UserSettings() {
   const DEFAULT_MAX_SPEND_LIMIT = sub?.plans ? 1000 : 5;
   const { data: userSettings } = useUserSettings();
 
-  const enableStorage = userSettings?.enable_custom_output_bucket;
+  // const enableStorage = userSettings?.enable_custom_output_bucket;
+
+  const { check, isLoading: isCustomerLoading } = useCustomer();
+  const customS3CheckResult = check({ featureId: "custom_s3" });
+  const enableStorage = customS3CheckResult.data.allowed;
+
+  if (isCustomerLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-6" />
+        <Skeleton className="h-5 w-full" />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("mx-auto w-full max-w-lg py-10")}>
@@ -253,7 +268,7 @@ export function UserSettings() {
           },
           hugging_face_token: {
             fieldType: "fallback",
-            group: "Hugging Face [Business]",
+            group: "Hugging Face",
             inputProps: {
               type: "password",
             },

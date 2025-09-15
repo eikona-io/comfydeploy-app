@@ -1,6 +1,7 @@
 import { useUser } from "@clerk/clerk-react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
 import {
   AlertCircle,
   Globe,
@@ -56,12 +57,21 @@ import {
   getEnvColor,
   useWorkflowDeployments,
 } from "@/components/workspace/ContainersTable";
-import { useCurrentPlan, useCurrentPlanQuery } from "@/hooks/use-current-plan";
+import {
+  useCurrentPlan,
+  useCurrentPlanQuery,
+  useCurrentPlanWithStatus,
+} from "@/hooks/use-current-plan";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { useMachine } from "@/hooks/use-machine";
+import { getWorkflowLimits } from "@/lib/autumn-helpers";
 import { callServerPromise } from "@/lib/call-server-promise";
 import { cn } from "@/lib/utils";
+import type {
+  AutumnDataV2Response,
+  Feature as AutumnFeature,
+} from "@/types/autumn-v2";
 import { useWorkflowList } from "../hooks/use-workflow-list";
 import { getRelativeTime } from "../lib/get-relative-time";
 import { UserIcon } from "./run/SharePageComponent";
@@ -107,7 +117,17 @@ export function WorkflowList() {
   );
 
   const user = useUser();
-  const sub = useCurrentPlan();
+
+  const { check, isLoading: isAutumnLoading } = useCustomer();
+  const workflowLimitFeature = check({ featureId: "workflow_limit" });
+  const workflowLimit = workflowLimitFeature.data.included_usage;
+  const isWorkflowLimited = workflowLimitFeature.data.allowed;
+  const currentWorkflowCount = workflowLimitFeature.data.usage;
+
+  // console.log(workflowLimitFeature);
+  // console.log(workflowLimit);
+  // console.log(isWorkflowLimited);
+  // console.log(currentWorkflowCount);
 
   // Convert to URL query parameters
   const [searchValue, setSearchValue] = useQueryState("search");
@@ -195,26 +215,30 @@ export function WorkflowList() {
           <AdminAndMember>
             <Tooltip>
               <TooltipTrigger>
-                {sub && (
-                  <Badge
-                    className={cn(
-                      "hidden sm:block",
-                      sub?.features.workflowLimited
-                        ? "border-gray-400 text-gray-500"
-                        : "",
-                    )}
-                  >
-                    <div className="flex items-center gap-2 px-2 text-xs">
-                      {sub?.features.currentWorkflowCount}/
-                      {sub?.features.workflowLimit}
-                    </div>
-                  </Badge>
+                {isAutumnLoading ? (
+                  <Skeleton className="hidden h-6 w-12 sm:block" />
+                ) : (
+                  workflowLimitFeature && (
+                    <Badge
+                      className={cn(
+                        "hidden sm:block",
+                        !isWorkflowLimited
+                          ? "border-gray-400 text-gray-500"
+                          : "",
+                      )}
+                    >
+                      <div className="flex items-center gap-2 px-2 text-xs">
+                        {currentWorkflowCount}/{workflowLimit}
+                      </div>
+                    </Badge>
+                  )
                 )}
               </TooltipTrigger>
               <TooltipContent>
                 <p>
-                  Current workflows: {sub?.features.currentWorkflowCount} / Max:{" "}
-                  {sub?.features.workflowLimit}
+                  {isAutumnLoading
+                    ? "Loading workflow limits..."
+                    : `Current workflows: ${currentWorkflowCount} / Max: ${workflowLimit}`}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -487,6 +511,7 @@ function WorkflowCard({
 
   const { refetch: refetchPlan } = useCurrentPlanQuery();
   const navigate = useNavigate();
+  const { refetch: refetchCustomer } = useCustomer();
 
   const openRenameDialog = (e: React.MouseEvent<HTMLDivElement>) => {
     e.stopPropagation();
@@ -591,6 +616,7 @@ function WorkflowCard({
                   successMessage: `${workflow.name} deleted successfully`,
                 });
                 await refetchPlan();
+                await refetchCustomer();
                 mutate();
                 setDeleteModalOpen(false);
               }}

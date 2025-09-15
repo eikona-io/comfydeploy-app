@@ -2,10 +2,13 @@ import { Fab } from "@/components/fab";
 import WorkflowImport from "@/components/onboarding/workflow-import";
 import { useIsAdminAndMember } from "@/components/permissions";
 import { WorkflowList } from "@/components/workflow-list";
-import { useCurrentPlan } from "@/hooks/use-current-plan";
+import { useCurrentPlan, useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
 import { useKeyboardShortcut } from "@/hooks/use-keyboard-shortcut";
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
+import type { Feature as AutumnFeature, AutumnDataV2Response } from "@/types/autumn-v2";
+import { useQuery } from "@tanstack/react-query";
+import { getWorkflowLimits } from "@/lib/autumn-helpers";
 
 export const Route = createLazyFileRoute("/workflows/")({
   component: RouteComponent,
@@ -15,12 +18,15 @@ function RouteComponent() {
   const navigate = useNavigate({ from: "/workflows" });
   const { view } = Route.useSearch();
   const sub = useCurrentPlan();
+  const { data: planStatus } = useCurrentPlanWithStatus();
+  const { data: autumnResp } = useQuery<AutumnDataV2Response>({ queryKey: ["platform", "autumn-data"] });
+  const { isLimited: workflowLimited } = getWorkflowLimits(planStatus, autumnResp, sub);
   const isAdminOrMember = useIsAdminAndMember();
 
   useKeyboardShortcut(
     "c",
     () => {
-      if (!sub?.features.workflowLimited) {
+      if (!workflowLimited) {
         navigate({
           search: { view: "import" },
         });
@@ -42,7 +48,7 @@ function RouteComponent() {
             name: "Create Workflow",
             icon: Plus,
             onClick: () => {
-              if (!sub?.features.workflowLimited && isAdminOrMember) {
+              if (!workflowLimited && isAdminOrMember) {
                 navigate({
                   search: { view: "import" },
                 });
@@ -50,7 +56,7 @@ function RouteComponent() {
             },
           }}
           disabled={{
-            disabled: sub?.features.workflowLimited || !isAdminOrMember,
+            disabled: workflowLimited || !isAdminOrMember,
             disabledText: "Workflows Limited Exceeded. ",
           }}
         />

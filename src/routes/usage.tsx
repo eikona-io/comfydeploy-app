@@ -1,36 +1,6 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Skeleton } from "@/components/ui/skeleton";
-import { TableBody, TableCell } from "@/components/ui/table";
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { UsageGraph } from "@/components/usage/UsageGraph";
-import { api } from "@/lib/api";
-import { callServerPromise } from "@/lib/call-server-promise";
-import { getDuration } from "@/lib/get-relative-time";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
-import { Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
 import {
   AlertCircle,
   BarChart2,
@@ -41,11 +11,64 @@ import {
   CreditCard,
   ExternalLink,
   Grid2X2,
+  Plus,
   Wallet,
 } from "lucide-react";
-import { type ReactNode, Suspense, memo, useMemo } from "react";
-import { useState } from "react";
-import { ErrorBoundary } from "react-error-boundary";
+import {
+  memo,
+  type ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { toast } from "sonner";
+import { TopUpButton } from "@/components/pricing/TopUpButton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { BlueprintOutline } from "@/components/ui/custom/blueprint-outline";
+import { Progress } from "@/components/ui/progress";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { UsageGraph } from "@/components/usage/UsageGraph";
+import { api } from "@/lib/api";
+import {
+  useCredit,
+  useCreditInDollars,
+  useFreePlan,
+} from "@/lib/autumn-helpers";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { getDuration } from "@/lib/get-relative-time";
+import type { AutumnDataV2Response, Feature, Product } from "@/types/autumn-v2";
+import { isFeatureItem, isPricedFeatureItem } from "@/types/autumn-v2";
 
 export const Route = createFileRoute("/usage")({
   component: RouteComponent,
@@ -53,29 +76,49 @@ export const Route = createFileRoute("/usage")({
 
 function RouteComponent() {
   const [viewMode, setViewMode] = useState<"graph" | "grid">("graph");
+  const [creditsExpanded, setCreditsExpanded] = useState(false);
+  const [showAddons, setShowAddons] = useState(false);
+  const [featuresExpanded, setFeaturesExpanded] = useState(false);
+
+  const { isFreePlan, isLoading: isFreePlanLoading } = useFreePlan();
+
+  const { openBillingPortal } = useCustomer();
+
+  // Handle topup success from URL params
+  const searchParams = new URLSearchParams(window.location.search);
+  useEffect(() => {
+    if (searchParams.get("topup") === "success") {
+      toast.success("Credits added successfully!");
+      // Clean up the URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("topup");
+      window.history.replaceState({}, "", url.pathname);
+    }
+  }, []);
   const { data: invoices, isLoading: invoicesLoading } = useQuery<Invoice[]>({
     queryKey: ["platform", "invoices"],
   });
 
-  const { data: sub } = useQuery<Subscription>({
+  const { data: sub, isLoading: subLoading } = useQuery<Subscription>({
     queryKey: ["platform", "plan"],
   });
 
-  // const { data: userSettings } = useQuery<{
-  //   credit?: number;
-  // }>({
-  //   queryKey: ["platform", "user-settings"],
-  // });
+  const { data: raw } = useQuery<AutumnDataV2Response>({
+    queryKey: ["platform", "autumn-data"],
+  });
+  const autumnData = raw?.autumn_data;
 
-  const currnetGPUCredit = sub?.plans?.autumn_data?.entitlements?.find(
-    (x) => x.feature_id === "gpu-credit",
-  );
+  // const { customer } = useCustomer();
+  // const autumnData = data;
 
-  const used = currnetGPUCredit?.used ?? 0;
-  const balance = currnetGPUCredit?.balance ?? 0;
-  const credit = (balance || 0) + (used || 0);
+  const { credit: creditFeature, isLoading: autumnLoading } = useCredit();
+  const gpuCreditFeature = creditFeature?.data;
 
-  // console.log(currnetGPUCredit);
+  const usage_display = (creditFeature?.data?.usage ?? 0) / 100;
+  const credit = usage_display + (creditFeature?.data?.balance ?? 0) / 100; // Remaining credit balance
+
+  // Final usage should be usage minus available credit (but not negative)
+  const finalUsed = Math.max(0, usage_display - credit);
 
   // Get current period from the last invoice timestamp in current plan
   const currentPeriod = useMemo(() => {
@@ -84,7 +127,7 @@ function RouteComponent() {
     const end = new Date();
     return {
       id: "current",
-      label: `Current Period (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`,
+      label: `Current (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`,
       start,
       end,
       period_start: start.toLocaleDateString(),
@@ -94,7 +137,7 @@ function RouteComponent() {
     };
   }, [sub]);
 
-  console.log(sub);
+  // console.log(sub);
 
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(
     "current",
@@ -182,8 +225,8 @@ function RouteComponent() {
   // console.log(selectedInvoice);
 
   return (
-    <div className="w-full bg-white py-4 dark:bg-transparent">
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+    <div className="py-8 mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
+      <div className=" w-full">
         {/* <Alert variant="warning" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Under Maintenance</AlertTitle>
@@ -195,211 +238,648 @@ function RouteComponent() {
         {/* <Suspense> */}
         <UnpaidInvoices />
         {/* </Suspense> */}
-        {/* Top row with plan, credit and date selection */}
-        <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left - Plan badges and Credit */}
-          <div className="flex flex-wrap items-center gap-2">
-            {sub?.plans?.plans?.map(
-              (x: keyof typeof pricingPlanNameMapping, i: number) => {
-                const charges = sub.plans?.charges?.[i];
-                const amount = sub.plans?.amount?.[i];
-                console.log(sub.plans?.charges, i);
-                return (
-                  <Badge
-                    key={i}
-                    variant="fuchsia"
-                    className="flex items-center gap-1.5 text-sm"
-                  >
-                    <CreditCard className="h-3.5 w-3.5" />
-                    <Link
-                      to="/pricing"
-                      className="flex items-center gap-1 text-sm"
-                    >
-                      {pricingPlanNameMapping[x]} Plan
-                      {charges !== undefined &&
-                      amount !== undefined &&
-                      charges !== amount ? (
-                        <span className="ml-1">
-                          (
-                          <span className="text-muted-foreground line-through">
-                            ${(amount ?? 0) / 100}
-                          </span>{" "}
-                          ${(charges ?? 0) / 100}/{" "}
-                          {sub.plans?.plans[0].split("_")[1]})
-                        </span>
-                      ) : (
-                        <span className="ml-1">
-                          (${(amount ?? 0) / 100}/
-                          {sub.plans?.plans[0].split("_")[1]})
-                        </span>
-                      )}
-                      <ExternalLink size={12} className="ml-1" />
-                    </Link>
-                  </Badge>
-                );
-              },
-            )}
-            {/* <div className="mx-2 hidden h-4 w-[1px] bg-border sm:block" />
-            <Badge
-              variant="green"
-              className="flex items-center gap-1.5 text-sm"
-            >
-              <Wallet className="h-3.5 w-3.5" />
-              Credit: ${(userSettings?.credit ?? 0).toFixed(3)}
-            </Badge> */}
+        {/* Plan */}
+        <div className="mb-6">
+          <div className="mb-2 px-1">
+            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+              Plan
+            </h2>
           </div>
+          {/* GPU Credits - Compact (moved above plan) */}
+          {isFreePlan && (
+            <Card className="relative mb-0 rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+              <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0
+                  ) {
+                    setCreditsExpanded(!creditsExpanded);
+                  }
+                }}
+                className="relative z-10 w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                    <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
+                  </div>
+                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                    GPU Credits
+                  </span>
+                </div>
 
-          {/* Right - Date selection */}
-          <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-zinc-500 dark:text-zinc-500">
+                      Balance
+                    </span>
+                    <span className="text-sm font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      $
+                      {gpuCreditFeature
+                        ? ((gpuCreditFeature.balance ?? 0) / 100).toFixed(3)
+                        : "0.00"}
+                    </span>
+                  </div>
+                  <TopUpButton
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs font-medium rounded-[2px] bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm hover:bg-gray-100 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
+                    showIcon={true}
+                  >
+                    Add Credits
+                  </TopUpButton>
+                  {gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0 && (
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""}`}
+                      />
+                    )}
+                </div>
+              </button>
+
+              {creditsExpanded &&
+                gpuCreditFeature?.breakdown &&
+                gpuCreditFeature.breakdown.length > 0 && (
+                  <div className="relative z-10 border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+                    {gpuCreditFeature.breakdown.map((breakdown, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="text-zinc-500 dark:text-zinc-500">
+                          {breakdown.interval === "month"
+                            ? "Monthly"
+                            : breakdown.interval === "lifetime"
+                              ? "Lifetime"
+                              : breakdown.interval}
+                        </span>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="text-zinc-900 dark:text-zinc-100">
+                            ${(breakdown.balance / 100).toFixed(2)}
+                          </span>
+                          <span className="text-zinc-400 dark:text-zinc-600">
+                            /
+                          </span>
+                          <span className="text-zinc-600 dark:text-zinc-400">
+                            ${(breakdown.included_usage / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </Card>
+          )}
+          {!isFreePlan && (
+            <Card className="relative mb-0 rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+              <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0
+                  ) {
+                    setCreditsExpanded(!creditsExpanded);
+                  }
+                }}
+                className="relative z-10 w-full px-4 py-3 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                    <Wallet className="h-2.5 w-2.5 text-zinc-600 dark:text-zinc-400" />
+                  </div>
+                  <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                    On Demand Billing
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-zinc-500 dark:text-zinc-500">
+                      Billable Usage
+                    </span>
+                    <span className="text-sm font-mono font-semibold text-zinc-900 dark:text-zinc-100">
+                      ${gpuCreditFeature ? finalUsed.toFixed(2) : "0.00"}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      const result = await openBillingPortal({
+                        openInNewTab: true,
+                      });
+                      // result.data?.url &&
+                      // window.open(result.data.url, "_blank");
+                    }}
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-3 text-xs font-medium rounded-[2px] bg-gradient-to-b from-white to-gray-100 ring-1 ring-gray-200/50 shadow-sm hover:bg-gray-100 dark:from-zinc-800 dark:to-zinc-700 dark:ring-zinc-700/50"
+                    // showIcon={true}
+                  >
+                    Manage
+                  </Button>
+                  {/* {gpuCreditFeature?.breakdown &&
+                    gpuCreditFeature.breakdown.length > 0 && (
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${creditsExpanded ? "rotate-180" : ""}`}
+                      />
+                    )} */}
+                </div>
+              </button>
+
+              {creditsExpanded &&
+                gpuCreditFeature?.breakdown &&
+                gpuCreditFeature.breakdown.length > 0 && (
+                  <div className="relative z-10 border-t border-zinc-100 dark:border-zinc-800 px-4 py-3 space-y-2">
+                    {gpuCreditFeature.breakdown.map((breakdown, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between text-xs"
+                      >
+                        <span className="text-zinc-500 dark:text-zinc-500">
+                          {breakdown.interval === "month"
+                            ? "Monthly"
+                            : breakdown.interval === "lifetime"
+                              ? "Lifetime"
+                              : breakdown.interval}
+                        </span>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="text-zinc-900 dark:text-zinc-100">
+                            ${(breakdown.balance / 100).toFixed(2)}
+                          </span>
+                          <span className="text-zinc-400 dark:text-zinc-600">
+                            /
+                          </span>
+                          <span className="text-zinc-600 dark:text-zinc-400">
+                            ${(breakdown.included_usage / 100).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </Card>
+          )}
+          <Card className="relative rounded-[2px] border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+            <div className="relative z-10">
+              <Table>
+                <TableBody>
+                  {/* Active plan products */}
+                  {autumnLoading && (
+                    <>
+                      {Array.from({ length: 2 }).map((_, i) => (
+                        <TableRow
+                          key={`plan-skel-${i}`}
+                          className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                        >
+                          <TableCell className="py-2">
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-4 w-4 rounded-[2px]" />
+                              <Skeleton className="h-3 w-24" />
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Skeleton className="h-3 w-10" />
+                          </TableCell>
+                          <TableCell className="py-2">
+                            <Skeleton className="h-3 w-12" />
+                          </TableCell>
+                          <TableCell className="py-2 text-right">
+                            <div className="flex justify-end">
+                              <Skeleton className="h-3 w-16" />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </>
+                  )}
+                  {(autumnData?.products ?? [])
+                    .filter((p) => !p.is_add_on)
+                    .filter((p) => p.id !== "credit")
+                    .map((product, idx) => {
+                      const priceItem = product.items?.find(
+                        (item) => item.type === "price",
+                      );
+                      console.log(product.items);
+
+                      const hasAddons = (autumnData?.products ?? []).some(
+                        (p) => p.is_add_on,
+                      );
+                      return (
+                        <TableRow
+                          key={product.id}
+                          className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                        >
+                          <TableCell className="py-1">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                                <CreditCard className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
+                              </div>
+                              <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                                {product.name}
+                              </span>
+                              {hasAddons && idx === 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAddons((v) => !v)}
+                                  className="ml-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 hover:text-zinc-800 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-200 dark:hover:bg-zinc-800"
+                                  aria-label="Toggle add-ons"
+                                  aria-expanded={showAddons}
+                                >
+                                  <ChevronDown
+                                    className={`h-3 w-3 transition-transform ${showAddons ? "rotate-180" : ""}`}
+                                  />
+                                </button>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-1">
+                            <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">
+                              Plan
+                            </span>
+                          </TableCell>
+                          <TableCell className="py-1">
+                            <div className="flex items-center gap-1">
+                              <div
+                                className={`h-1.5 w-1.5 rounded-full ${product.status === "active" ? "bg-green-500" : "bg-zinc-400"}`}
+                              />
+                              <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                                {product.status}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-1 text-right">
+                            {priceItem && (
+                              <div className="text-xs">
+                                <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                                  ${priceItem.price.toFixed(2)}
+                                </span>
+                                {priceItem.interval && (
+                                  <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">
+                                    /
+                                    {priceItem.interval === "month"
+                                      ? "mo"
+                                      : priceItem.interval}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+
+                  {/* Add-on products (collapsible) */}
+                  {showAddons &&
+                    (autumnData?.products ?? [])
+                      .filter((p) => p.is_add_on)
+                      .map((product) => {
+                        const priceItem = product.items.find(
+                          (item) => item.type === "price",
+                        );
+                        return (
+                          <TableRow
+                            key={product.id}
+                            className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                          >
+                            <TableCell className="py-1">
+                              <div className="flex items-center gap-2">
+                                <div className="flex h-4 w-4 items-center justify-center rounded bg-zinc-100 dark:bg-zinc-800">
+                                  <Plus className="h-2 w-2 text-zinc-600 dark:text-zinc-400" />
+                                </div>
+                                <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                                  {product.name}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-1">
+                              <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-500">
+                                Add-on
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-1">
+                              <div className="flex items-center gap-1">
+                                <div
+                                  className={`h-1.5 w-1.5 rounded-full ${product.status === "active" ? "bg-green-500" : "bg-zinc-400"}`}
+                                />
+                                <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                                  {product.status}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-1 text-right">
+                              {priceItem && (
+                                <div className="text-xs">
+                                  <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                                    ${priceItem.price.toFixed(2)}
+                                  </span>
+                                  {priceItem.interval && (
+                                    <span className="ml-1 text-[10px] text-zinc-500 dark:text-zinc-500">
+                                      /
+                                      {priceItem.interval === "month"
+                                        ? "mo"
+                                        : priceItem.interval}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                </TableBody>
+              </Table>
+            </div>
+            {/* Collapsible Features Section - Bottom Right */}
+            {autumnData?.features &&
+              Object.keys(autumnData.features).filter(
+                (id) => !id.includes("gpu-credit"),
+              ).length > 0 && (
+                <div className="relative px-4 py-2 border-t border-zinc-200/50 dark:border-zinc-800/50">
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => setFeaturesExpanded(!featuresExpanded)}
+                      className="text-xs text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 underline underline-offset-2"
+                    >
+                      {featuresExpanded ? "Hide Details" : "View Details"}
+                    </button>
+                  </div>
+                  {featuresExpanded && (
+                    <div className="absolute top-full right-4 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md shadow-lg p-4 min-w-[380px] sm:min-w-[420px] z-50">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
+                            <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                              Feature
+                            </TableHead>
+                            <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                              Usage
+                            </TableHead>
+                            <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">
+                              Limit
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {Object.entries(autumnData.features)
+                            .filter(([id]) => !id.includes("gpu-credit"))
+                            .map(([id, feature]) => (
+                              <TableRow
+                                key={id}
+                                className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                              >
+                                <TableCell className="py-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100 whitespace-nowrap">
+                                      {feature.name}
+                                    </span>
+                                    {feature.overage_allowed && (
+                                      <Badge
+                                        variant="outline"
+                                        className="h-3.5 px-1 text-[9px]"
+                                      >
+                                        Overage
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-1 w-[45%]">
+                                  {feature.type === "static" ? (
+                                    <div className="flex items-center gap-1">
+                                      <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                                        Available
+                                      </span>
+                                    </div>
+                                  ) : feature.unlimited ? (
+                                    <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                                      —
+                                    </span>
+                                  ) : (
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-mono text-[11px] text-zinc-900 dark:text-zinc-100 whitespace-nowrap min-w-[60px]">
+                                        {feature.usage} /{" "}
+                                        {feature.included_usage}
+                                      </span>
+                                      {/* Progress bar to visualize usage vs limit */}
+                                      <Progress
+                                        value={(() => {
+                                          const limit =
+                                            feature.included_usage || 0;
+                                          if (limit <= 0) return 100;
+                                          const pct =
+                                            (feature.usage / limit) * 100;
+                                          return Math.min(
+                                            Math.max(pct, 0),
+                                            100,
+                                          );
+                                        })()}
+                                        className="h-1.5 rounded-sm bg-zinc-200 dark:bg-zinc-800 w-[120px]"
+                                      />
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="py-1 text-right">
+                                  {feature.type === "static" ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="h-4 px-1.5 text-[9px]"
+                                    >
+                                      Enabled
+                                    </Badge>
+                                  ) : feature.unlimited ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className="h-4 px-1.5 text-[9px]"
+                                    >
+                                      Unlimited
+                                    </Badge>
+                                  ) : (
+                                    <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                                      {feature.included_usage}
+                                    </span>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </div>
+              )}
+          </Card>
+        </div>
+      </div>
+
+      {/* Usage + Period Selection */}
+      <div className="flex w-full items-center justify-between mb-2 mt-6 px-1">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-zinc-100">
+            Usage
+          </h2>
+          <div className="flex items-center rounded border border-zinc-200/50 bg-white p-0.5 shadow-sm dark:border-zinc-800/50 dark:bg-zinc-900">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9"
-              onClick={() => handlePeriodChange("prev")}
-              disabled={
-                !selectedPeriod ||
-                (selectedPeriod !== "current" &&
-                  invoices &&
-                  invoices.findIndex((inv) => inv.id === selectedPeriod) ===
-                    invoices.length - 1)
-              }
+              onClick={() => setViewMode("graph")}
+              className={`h-6 w-6 rounded-[3px] ${viewMode === "graph" ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"}`}
             >
-              <ChevronLeft className="h-4 w-4" />
+              <BarChart2 className="h-3 w-3" />
             </Button>
-            <Select
-              value={selectedPeriod ?? undefined}
-              onValueChange={(value) => setSelectedPeriod(value)}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              className={`h-6 w-6 rounded-[3px] ${viewMode === "grid" ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-100 dark:bg-zinc-800 dark:text-zinc-100" : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"}`}
             >
-              <SelectTrigger className="w-[200px] sm:w-[260px]">
-                <SelectValue placeholder="Select billing period" />
-              </SelectTrigger>
-              <SelectContent>
-                {invoicesLoading ? (
-                  <div className="px-4 py-2">
-                    <Skeleton className="h-6 w-full mb-2" />
-                    <Skeleton className="h-6 w-2/3 mb-2" />
-                    <Skeleton className="h-6 w-1/2" />
-                  </div>
-                ) : (
-                  <>
-                    <SelectItem value="current" className="font-medium">
-                      {(() => {
-                        if (!currentPeriod) return null;
-                        const startDate = currentPeriod.period_start_timestamp
-                          ? new Date(
-                              currentPeriod.period_start_timestamp * 1000,
-                            )
-                          : new Date();
-                        const endDate = currentPeriod.period_end_timestamp
-                          ? new Date(currentPeriod.period_end_timestamp * 1000)
-                          : new Date();
-                        const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
-                        const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
-                        return (
-                          <>
-                            Current Period
-                            <span className="ml-2 text-muted-foreground">
-                              ({startStr} - {endStr})
-                            </span>
-                          </>
-                        );
-                      })()}
-                    </SelectItem>
-                    <div className="px-2 py-1.5 text-muted-foreground text-xs">
-                      Past Periods
-                    </div>
-                    {invoices?.map((invoice) => {
-                      const startDate = invoice.period_start_timestamp
-                        ? new Date(invoice.period_start_timestamp * 1000)
+              <Grid2X2 className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            onClick={() => handlePeriodChange("prev")}
+            disabled={
+              !selectedPeriod ||
+              (selectedPeriod !== "current" &&
+                invoices &&
+                invoices.findIndex((inv) => inv.id === selectedPeriod) ===
+                  invoices.length - 1)
+            }
+          >
+            <ChevronLeft className="h-3.5 w-3.5" />
+          </Button>
+          <Select
+            value={selectedPeriod ?? undefined}
+            onValueChange={(value) => setSelectedPeriod(value)}
+          >
+            <SelectTrigger className="h-8 w-[180px] border-zinc-200/50 text-xs dark:border-zinc-800/50 sm:w-[240px] rounded-none">
+              <SelectValue placeholder="Select billing period" />
+            </SelectTrigger>
+            <SelectContent>
+              {invoicesLoading ? (
+                <div className="px-4 py-2">
+                  <Skeleton className="h-6 w-full mb-2" />
+                  <Skeleton className="h-6 w-2/3 mb-2" />
+                  <Skeleton className="h-6 w-1/2" />
+                </div>
+              ) : (
+                <>
+                  <SelectItem value="current" className="text-xs">
+                    {(() => {
+                      if (!currentPeriod) return null;
+                      const startDate = currentPeriod.period_start_timestamp
+                        ? new Date(currentPeriod.period_start_timestamp * 1000)
                         : new Date();
-                      const endDate = invoice.period_end_timestamp
-                        ? new Date(invoice.period_end_timestamp * 1000)
+                      const endDate = currentPeriod.period_end_timestamp
+                        ? new Date(currentPeriod.period_end_timestamp * 1000)
                         : new Date();
-                      const monthName = startDate.toLocaleString("default", {
-                        month: "long",
-                      });
                       const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
                       const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
                       return (
-                        <SelectItem key={invoice.id} value={invoice.id}>
-                          {monthName}
-                          <span className="ml-2 text-muted-foreground">
+                        <>
+                          Current
+                          <span className="ml-2 text-zinc-500 dark:text-zinc-500">
                             ({startStr} - {endStr})
                           </span>
-                        </SelectItem>
+                        </>
                       );
-                    })}
-                  </>
-                )}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => handlePeriodChange("next")}
-              disabled={selectedPeriod === "current"}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+                    })()}
+                  </SelectItem>
+                  <div className="px-2 py-1 text-[10px] font-medium text-zinc-500 dark:text-zinc-500">
+                    Past Periods
+                  </div>
+                  {invoices?.map((invoice) => {
+                    const startDate = invoice.period_start_timestamp
+                      ? new Date(invoice.period_start_timestamp * 1000)
+                      : new Date();
+                    const endDate = invoice.period_end_timestamp
+                      ? new Date(invoice.period_end_timestamp * 1000)
+                      : new Date();
+                    const monthName = startDate.toLocaleString("default", {
+                      month: "long",
+                    });
+                    const startStr = `${startDate.getMonth() + 1}/${startDate.getDate()}/${String(startDate.getFullYear()).slice(-2)}`;
+                    const endStr = `${endDate.getMonth() + 1}/${endDate.getDate()}/${String(endDate.getFullYear()).slice(-2)}`;
+                    return (
+                      <SelectItem
+                        key={invoice.id}
+                        value={invoice.id}
+                        className="text-xs"
+                      >
+                        {monthName}
+                        <span className="ml-2 text-zinc-500 dark:text-zinc-500">
+                          ({startStr} - {endStr})
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </>
+              )}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+            onClick={() => handlePeriodChange("next")}
+            disabled={selectedPeriod === "current"}
+          >
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Button>
         </div>
-        {/* Total Summary Card */}
-        <div className="mb-6 rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <div className="text-sm text-muted-foreground">Usage</div>
-              <div className="font-semibold text-2xl">
+      </div>
+
+      {!isFreePlan && (
+        <Card className="relative mb-0 border-zinc-200/50 shadow-sm dark:border-zinc-800/50 rounded-[2px]">
+          <div className="relative z-10 grid divide-x divide-zinc-200/50 dark:divide-zinc-800/50 sm:grid-cols-3">
+            <div className="px-4 py-3">
+              <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
+                Usage
+              </div>
+              <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
                 $
                 {is_displaying_invoice
-                  ? usage?.total_cost?.toFixed(4)
-                  : ((used / 100)?.toFixed(4) ?? "0.00")}
+                  ? (usage?.total_cost?.toFixed(2) ?? "0.00")
+                  : (usage_display?.toFixed(2) ?? "0.00")}
               </div>
             </div>
             {!is_displaying_invoice && (
-              <div>
-                <div className="text-sm text-muted-foreground">
+              <div className="px-4 py-3">
+                <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
                   Credit Balance
                 </div>
-                <div className="font-semibold mt-1 text-2xl text-green-600">
-                  ${(credit / 100).toFixed(4)}
+                <div className="mt-0.5 text-base font-mono font-medium text-green-600 dark:text-green-400">
+                  ${(credit ?? 0).toFixed(2)}
                 </div>
               </div>
             )}
-            <div>
-              <div className="text-muted-foreground text-sm">Final Usage</div>
-              <div className="mt-1 text-2xl font-semibold">
+            <div className="px-4 py-3">
+              <div className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
+                Billable Usage
+              </div>
+              <div className="mt-0.5 text-base font-mono font-medium text-zinc-900 dark:text-zinc-100">
                 $
                 {is_displaying_invoice
-                  ? usage?.final_cost?.toFixed(4)
-                  : (Math.max(0, -(credit - used)) / 100).toFixed(4)}
+                  ? (usage?.final_cost?.toFixed(2) ?? "0.00")
+                  : finalUsed?.toFixed(2)}
               </div>
             </div>
           </div>
-        </div>
-        {/* Graph/Table section */}
-        <div className="relative mt-8">
-          {/* View toggle centered on top */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-6 z-10">
-            <div className="flex rounded-md border bg-background shadow-sm">
-              <Button
-                variant={viewMode === "graph" ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("graph")}
-              >
-                <BarChart2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "grid" ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => setViewMode("grid")}
-              >
-                <Grid2X2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+        </Card>
+      )}
+      {/* Graph/Table section with subtle grid background */}
+      <div className="relative overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] opacity-40 dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)]" />
 
-          {/* Graph/Table content */}
+        {/* Graph/Table content */}
+        <div className="relative z-10">
           <Suspense fallback={<Skeleton className="h-[400px]" />}>
             {viewMode === "graph" ? (
               <UsageBreakdownMemo
@@ -422,13 +902,13 @@ function RouteComponent() {
               />
             )}
           </Suspense>
-
-          {selectedInvoice && (
-            <div className="mt-8">
-              <InvoiceDetails invoice={selectedInvoice} />
-            </div>
-          )}
         </div>
+
+        {selectedInvoice && (
+          <div className="relative z-10 mt-8">
+            <InvoiceDetails invoice={selectedInvoice} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -499,7 +979,7 @@ export function DevelopmentOnly(props: { children: ReactNode }) {
 }
 
 export function UsageTable(props: {
-  invoice?: Invoice;
+  invoice?: Invoice | CurrentPeriod | null;
   startTimeOverride?: Date;
   endTimeOverride?: Date;
 }) {
@@ -521,75 +1001,105 @@ export function UsageTable(props: {
   });
 
   return (
-    <Card className="flex flex-col gap-2 p-4">
-      <div className="flex flex-col gap-2">
-        {/* <DevelopmentOnly>
-          <SimulateChargeButton />
-        </DevelopmentOnly> */}
-        <ScrollArea>
-          <Table className="">
-            <TableHeader className="bg-background top-0 sticky">
-              <TableRow>
-                <TableHead>Machine</TableHead>
-                <TableHead>GPU</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Cost</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody key={props.invoice?.id}>
-              {usage.usage.length > 0 ? (
-                <>
-                  {usage.usage.map((x) => (
-                    <TableRow
-                      key={`${x.machine_id}-${x.cost_item_title ?? x.gpu ?? x.ws_gpu ?? "usage"}`}
-                    >
-                      <TableCell>
-                        <Tooltip>
-                          <TooltipTrigger>
-                            {x.cost_item_title ? (
-                              <Badge>{x.cost_item_title}</Badge>
-                            ) : (
+    <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50 rounded-[2px]">
+      <ScrollArea className="h-[400px]">
+        <Table>
+          <TableHeader className="bg-background top-0 sticky">
+            <TableRow className="border-b border-zinc-200/50 hover:bg-transparent dark:border-zinc-800/50">
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                Machine
+              </TableHead>
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                GPU
+              </TableHead>
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 dark:text-zinc-500">
+                Duration
+              </TableHead>
+              <TableHead className="h-7 text-[10px] font-normal text-zinc-500 text-right dark:text-zinc-500">
+                Cost
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody key={props.invoice?.id}>
+            {usage.usage.length > 0 ? (
+              <>
+                {usage.usage.map((x: any) => (
+                  <TableRow
+                    key={`${x.machine_id}-${x.cost_item_title ?? x.gpu ?? x.ws_gpu ?? "usage"}`}
+                    className="border-b border-zinc-100/50 dark:border-zinc-800/30"
+                  >
+                    <TableCell className="py-1.5">
+                      <Tooltip>
+                        <TooltipTrigger className="text-left">
+                          {x.cost_item_title ? (
+                            <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                              {x.cost_item_title}
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
                               <Link
-                                className="hover:underline"
+                                className="text-xs font-medium text-zinc-900 hover:text-zinc-700 dark:text-zinc-100 dark:hover:text-zinc-300"
                                 href={`/machines/${x.machine_id}`}
                               >
-                                {x.machine_name}{" "}
-                                {x.ws_gpu && <Badge>Workspace</Badge>}
+                                {x.machine_name}
                               </Link>
-                            )}
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div> {x.machine_id}</div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell>{x.gpu || x.ws_gpu}</TableCell>
-                      <TableCell>
-                        {x.cost_item_title ? (
-                          <></>
-                        ) : (
-                          getDuration(x.usage_in_sec)
-                        )}
-                      </TableCell>
-                      <TableCell>$ {x.cost.toFixed(4)}</TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow>
-                    <TableCell colSpan={3} className="font-bold text-right">
-                      Total Estimated Usage:
+                              {x.ws_gpu && (
+                                <span className="text-[9px] font-medium text-zinc-500 dark:text-zinc-500">
+                                  WS
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="font-mono text-xs">
+                            {x.machine_id}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
                     </TableCell>
-                    <TableCell className="font-bold">
-                      $ {usage.total_cost.toFixed(4)}
+                    <TableCell className="py-1.5">
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        {x.gpu || x.ws_gpu || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-1.5">
+                      <span className="text-xs text-zinc-600 dark:text-zinc-400">
+                        {x.cost_item_title ? "—" : getDuration(x.usage_in_sec)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="py-1.5 text-right">
+                      <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                        ${x.cost.toFixed(2)}
+                      </span>
                     </TableCell>
                   </TableRow>
-                </>
-              ) : (
-                <div className="p-4">No usage</div>
-              )}
-            </TableBody>
-          </Table>
-        </ScrollArea>
-      </div>
+                ))}
+                <TableRow className="border-t border-zinc-200 bg-zinc-50/50 dark:border-zinc-700 dark:bg-zinc-900/20">
+                  <TableCell colSpan={3} className="py-2 text-right">
+                    <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                      Total
+                    </span>
+                  </TableCell>
+                  <TableCell className="py-2 text-right">
+                    <span className="font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
+                      ${usage.total_cost.toFixed(2)}
+                    </span>
+                  </TableCell>
+                </TableRow>
+              </>
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="py-8 text-center">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-500">
+                    No usage recorded
+                  </span>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </ScrollArea>
     </Card>
   );
 }
@@ -622,38 +1132,42 @@ export function InvoiceItem({
     }
   };
 
-  const getStatusBadge = () => {
-    switch (invoice.status) {
-      case "paid":
-        return <Badge variant="success">Paid</Badge>;
-      case "open":
-        return <Badge variant="outline">Unpaid</Badge>;
-      case "uncollectible":
-        return <Badge variant="destructive">Failed</Badge>;
-      case "void":
-        return <Badge variant="secondary">Void</Badge>;
-      default:
-        return <Badge variant="secondary">{invoice.status}</Badge>;
-    }
+  const getStatusIndicator = () => {
+    const statusConfig = {
+      paid: { color: "bg-green-500", label: "Paid" },
+      open: { color: "bg-yellow-500", label: "Unpaid" },
+      uncollectible: { color: "bg-red-500", label: "Failed" },
+      void: { color: "bg-zinc-400", label: "Void" },
+    };
+
+    const config = statusConfig[
+      invoice.status as keyof typeof statusConfig
+    ] || { color: "bg-zinc-400", label: invoice.status };
+
+    return (
+      <div className="flex items-center gap-1">
+        <div className={`h-1.5 w-1.5 rounded-full ${config.color}`} />
+        <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+          {config.label}
+        </span>
+      </div>
+    );
   };
 
   return (
-    <div className="border rounded-lg p-4">
-      <div className="flex justify-between items-center w-full">
-        <button
-          type="button"
-          className="flex items-center gap-2"
-          onClick={() => setIsExpanded(!isExpanded)}
-        >
-          <span>
+    <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
             {invoice.period_start} - {invoice.period_end}
           </span>
-          <span className="transition-transform duration-300 ease-in-out transform">
-            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </span>
-        </button>
+          {getStatusIndicator()}
+        </div>
         <div className="flex items-center gap-2">
-          {getStatusBadge()}
           {invoice.hosted_invoice_url && (
             <Tooltip>
               <TooltipTrigger asChild>
@@ -661,30 +1175,33 @@ export function InvoiceItem({
                   type="button"
                   variant="ghost"
                   size="icon"
-                  onClick={handleViewInvoice}
+                  className="h-6 w-6"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewInvoice();
+                  }}
                 >
-                  <ExternalLink size={16} />
+                  <ExternalLink className="h-3 w-3" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
-                {invoice.status === "open"
-                  ? "View & Pay Invoice"
-                  : "View or Download Invoice"}
+              <TooltipContent className="text-xs">
+                {invoice.status === "open" ? "Pay Invoice" : "View Invoice"}
               </TooltipContent>
             </Tooltip>
           )}
+          <ChevronDown
+            className={`h-3.5 w-3.5 text-zinc-400 transition-transform duration-200 ${
+              isExpanded ? "rotate-180" : ""
+            }`}
+          />
         </div>
-      </div>
-      <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isExpanded
-            ? "max-h-[1000px] opacity-100 mt-4"
-            : "max-h-0 opacity-0 mt-0"
-        }`}
-      >
-        {children}
-      </div>
-    </div>
+      </button>
+      {isExpanded && (
+        <div className="border-t border-zinc-100 dark:border-zinc-800 p-4">
+          {children}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -712,7 +1229,7 @@ interface Invoice {
 }
 
 interface Subscription {
-  sub: {
+  sub?: {
     last_invoice_timestamp: number;
   };
   plans?: {
@@ -729,56 +1246,68 @@ function InvoiceDetails({ invoice }: { invoice: Invoice | CurrentPeriod }) {
   }
 
   return (
-    <div className="space-y-4 text-sm">
-      <div className="bg-muted/50 p-4 rounded-md border border-border/50">
-        <h3 className="text-sm font-medium mb-3">Invoice Breakdown</h3>
-        <ul className="space-y-1.5 text-muted-foreground">
+    <Card className="overflow-hidden border-zinc-200/50 shadow-sm dark:border-zinc-800/50">
+      <div className="px-4 py-3">
+        <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100 mb-2">
+          Invoice Details
+        </h3>
+        <ul className="space-y-1">
           {invoice.line_items.map((item, index) => (
             <li
               key={item.description || index}
-              className="flex justify-between"
+              className="flex justify-between text-xs"
             >
-              <span>{item.description}</span>
-              <span>
+              <span className="text-zinc-600 dark:text-zinc-400">
+                {item.description}
+              </span>
+              <span className="font-mono text-zinc-900 dark:text-zinc-100">
                 ${item.amount.toFixed(2)}
-                {item.quantity && item.quantity > 1
-                  ? ` (x${item.quantity})`
-                  : ""}
+                {item.quantity && item.quantity > 1 ? ` ×${item.quantity}` : ""}
               </span>
             </li>
           ))}
         </ul>
-        <div className="mt-4 pt-3 border-t border-border/50 space-y-1.5">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
-            <span>${invoice.subtotal.toFixed(2)}</span>
+        <div className="mt-3 pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-1">
+          <div className="flex justify-between text-xs">
+            <span className="text-zinc-500 dark:text-zinc-500">Subtotal</span>
+            <span className="font-mono text-zinc-600 dark:text-zinc-400">
+              ${invoice.subtotal.toFixed(2)}
+            </span>
           </div>
           {invoice.subtotal > invoice.total && (
-            <div className="flex justify-between text-green-600">
-              <span>Discount</span>
-              <span>-${(invoice.subtotal - invoice.total).toFixed(2)}</span>
+            <div className="flex justify-between text-xs">
+              <span className="text-green-600 dark:text-green-400">
+                Discount
+              </span>
+              <span className="font-mono text-green-600 dark:text-green-400">
+                -${(invoice.subtotal - invoice.total).toFixed(2)}
+              </span>
             </div>
           )}
-          <div className="flex justify-between font-medium text-foreground">
-            <span>Total Due</span>
-            <span>${invoice.total.toFixed(2)}</span>
+          <div className="flex justify-between text-xs pt-1 border-t border-zinc-100 dark:border-zinc-800">
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">
+              Total
+            </span>
+            <span className="font-mono font-medium text-zinc-900 dark:text-zinc-100">
+              ${invoice.total.toFixed(2)}
+            </span>
           </div>
         </div>
         {invoice.hosted_invoice_url && (
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-end mt-3">
             <Button
               variant="outline"
               size="sm"
               onClick={() => window.open(invoice.hosted_invoice_url, "_blank")}
-              className="text-xs"
+              className="h-6 px-2 text-[10px] font-medium"
             >
-              <ExternalLink className="mr-2 h-3 w-3" />
-              View Invoice
+              <ExternalLink className="mr-1 h-2.5 w-2.5" />
+              View
             </Button>
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -796,38 +1325,46 @@ function UnpaidInvoices() {
   if (unpaidInvoices.length === 0) return null;
 
   return (
-    <Card className="mb-6 w-full max-w-[800px] p-4">
-      <Alert variant="destructive" className="bg-destructive/5 border-none">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Unpaid Invoices</AlertTitle>
-        <AlertDescription>
-          <div className="mt-2 space-y-2">
-            {unpaidInvoices.map((invoice: Invoice) => (
-              <div
-                key={invoice.id}
-                className="flex items-center justify-between text-sm"
-              >
-                <span>
-                  {invoice.period_start} - {invoice.period_end}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span>${invoice.total.toFixed(2)}</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() =>
-                      window.open(invoice.hosted_invoice_url, "_blank")
-                    }
-                  >
-                    Pay Now
-                  </Button>
-                </div>
-              </div>
-            ))}
+    <Card className="mb-4 overflow-hidden border-red-200/50 bg-red-50/30 shadow-sm dark:border-red-900/20 dark:bg-red-900/10">
+      <div className="px-4 py-3">
+        <div className="flex items-start gap-2">
+          <div className="flex h-4 w-4 items-center justify-center bg-red-100 dark:bg-red-900/30">
+            <AlertCircle className="h-2.5 w-2.5 text-red-600 dark:text-red-400" />
           </div>
-        </AlertDescription>
-      </Alert>
+          <div className="flex-1">
+            <h3 className="text-xs font-medium text-zinc-900 dark:text-zinc-100">
+              Unpaid Invoices
+            </h3>
+            <div className="mt-1.5 space-y-1">
+              {unpaidInvoices.map((invoice: Invoice) => (
+                <div
+                  key={invoice.id}
+                  className="flex items-center justify-between bg-white/60 px-2 py-1 dark:bg-zinc-900/40"
+                >
+                  <span className="text-[10px] text-zinc-600 dark:text-zinc-400">
+                    {invoice.period_start} - {invoice.period_end}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-medium text-zinc-900 dark:text-zinc-100">
+                      ${invoice.total.toFixed(2)}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-5 border-red-200 px-1.5 text-[9px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                      onClick={() =>
+                        window.open(invoice.hosted_invoice_url, "_blank")
+                      }
+                    >
+                      Pay
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </Card>
   );
 }
