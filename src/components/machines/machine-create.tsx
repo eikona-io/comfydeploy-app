@@ -1,18 +1,22 @@
-import { Button } from "@/components/ui/button";
-import { useCurrentPlan, useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
-import { useMachine } from "@/hooks/use-machine";
-import { api } from "@/lib/api";
-import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useCustomer } from "autumn-js/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronRight } from "lucide-react";
 import { useQueryState } from "nuqs";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  useCurrentPlan,
+  useCurrentPlanWithStatus,
+} from "@/hooks/use-current-plan";
+import { useMachine } from "@/hooks/use-machine";
+import { api } from "@/lib/api";
+import type { Feature as AutumnFeature } from "@/types/autumn-v2";
+import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { MachineSettingsWrapper } from "../machine/machine-settings";
 import { LoadingIcon } from "../ui/custom/loading-icon";
 import { Input } from "../ui/input";
-import type { Feature as AutumnFeature } from "@/types/autumn-v2";
 
 const createNewMachine = (latestHashes: any) => ({
   name: "My New Machine",
@@ -81,15 +85,11 @@ export function filterMachineConfig(machine: any) {
 
 export function MachineCreate() {
   const navigate = useNavigate({ from: "/machines" });
-  const sub = useCurrentPlan();
-  // Use Autumn machine_limit to gate creation (via existing plan hook)
-  // Use status variant to access nested autumn_data
-  const { data: planStatus } = useCurrentPlanWithStatus();
-  const autumnData = planStatus?.plans?.autumn_data;
-  const machineLimitFeature = (autumnData?.features?.["machine_limit"] ?? null) as (AutumnFeature | null);
-  const machineLimited = machineLimitFeature
-    ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0
-    : sub?.features?.machineLimited;
+
+  const { check, isLoading: isAutumnLoading } = useCustomer();
+  const machineLimitedFeature = check({ featureId: "machine_limit" });
+  const machineLimited = !machineLimitedFeature.data?.allowed;
+
   const [cloneMachineId, setCloneMachineId] = useQueryState("machineId");
   const { data: machine, isLoading } = useMachine(cloneMachineId ?? undefined);
   const { data: latestHashes } = useLatestHashes();
@@ -108,12 +108,20 @@ export function MachineCreate() {
 
   // machine limit effect
   useEffect(() => {
-    if (machineLimited) {
+    if (machineLimited && !isAutumnLoading) {
       navigate({
         search: { view: undefined },
       });
     }
-  }, [machineLimited, navigate]);
+  }, [machineLimited, navigate, isAutumnLoading]);
+
+  if (isAutumnLoading) {
+    return (
+      <div>
+        <LoadingIcon />
+      </div>
+    );
+  }
 
   if (cloneMachineId && (!formValues || isLoading)) {
     return (

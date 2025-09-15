@@ -50,7 +50,7 @@ export function useOrgSelector() {
   // console.log("isOrganizationLoaded", isOrganizationLoaded);
   // console.log("workflowLimit", workflowLimit);
 
-  console.log("auth.isSignedIn", auth.isSignedIn);
+  // console.log("auth.isSignedIn", auth.isSignedIn);
 
   if (!auth.isLoaded || !auth.isSignedIn) {
     return null;
@@ -101,13 +101,13 @@ export function useOrgSelector() {
 
     //   The user is in a personal org, no workflows, show the create org form
     const dontHaveAnyOrgs = userMemberships?.count === 0;
-    console.log(
-      "dontHaveAnyOrgs",
-      dontHaveAnyOrgs,
-      userMemberships,
-      workflowLimit.data.usage,
-      workflowLimit,
-    );
+    // console.log(
+    //   "dontHaveAnyOrgs",
+    //   dontHaveAnyOrgs,
+    //   userMemberships,
+    //   workflowLimit.data.usage,
+    //   workflowLimit,
+    // );
     if (dontHaveAnyOrgs && workflowLimit.data.usage === 0) {
       const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
