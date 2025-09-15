@@ -100,14 +100,14 @@ routeTree.update({
       currentRouteIncomingOrg !== null;
 
     // log all items
-    console.log("shit", {
-      inPathWithOrgPrefix,
-      pathParts,
-      currentRouteIncomingOrg,
-      currentOrg,
-      isValidOrg,
-      notPersonalOrg,
-    });
+    // console.log("shit", {
+    //   inPathWithOrgPrefix,
+    //   pathParts,
+    //   currentRouteIncomingOrg,
+    //   currentOrg,
+    //   isValidOrg,
+    //   notPersonalOrg,
+    // });
 
     // To check org are valid, if not redirect to org-not-found, and apply incoming org to current org
     if (inPathWithOrgPrefix && currentRouteIncomingOrg !== currentOrg) {
