@@ -8,6 +8,7 @@ import { dark } from "@clerk/themes";
 import { useCustomer } from "autumn-js/react";
 import { isDarkTheme } from "@/lib/utils";
 import { useTheme } from "./theme-provider";
+import { Skeleton } from "./ui/skeleton";
 
 export function useOrgSelector() {
   const { theme } = useTheme();
@@ -17,8 +18,17 @@ export function useOrgSelector() {
     userMemberships: true,
   });
 
-  const { check } = useCustomer();
+  const { check, isLoading } = useCustomer();
   const workflowLimit = check({ featureId: "workflow_limit" });
+
+  if (isLoading) {
+    return (
+      <div className="h-full flex w-full flex-col items-center justify-center p-8 bg-background z-50">
+        <Skeleton className="h-4 w-6" />
+        <Skeleton className="h-5 w-full" />
+      </div>
+    );
+  }
 
   //   The user is in a personal org, has other org, no workflows, show the org list
   if (
