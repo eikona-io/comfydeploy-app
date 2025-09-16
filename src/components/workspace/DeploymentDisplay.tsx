@@ -1166,48 +1166,43 @@ export function DeploymentSettings({
           <ShareLinkDisplay deployment={deployment} />
         </div>
       ) : (
-        <>
-          <ApiPlaygroundDemo
-            key={deployment.id}
-            defaultInputs={
-              workflowInput
-                ? Object.fromEntries([
-                    ["deployment_id", deployment.id],
-                    [
-                      "inputs",
-                      Object.fromEntries(
-                        workflowInput.map((x) => {
-                          if (!x) return [""];
-                          // Check for specific class types that require a custom URL
-                          if (
-                            [
-                              "ComfyUIDeployExternalImage",
-                              "ComfyUIDeployExternalImageAlpha",
-                            ].includes(x.class_type)
-                          ) {
-                            return [
-                              x.input_id,
-                              "/* put your image url here */",
-                            ];
-                          }
-                          // Special case for batch images
-                          if (
-                            x.class_type === "ComfyUIDeployExternalImageBatch"
-                          ) {
-                            return [
-                              x.input_id,
-                              ["/* put your image url here */"],
-                            ];
-                          }
-                          return [x.input_id, x.default_value ?? ""];
-                        }),
-                      ),
-                    ],
-                  ])
-                : {}
-            }
-          />
-        </>
+        <ApiPlaygroundDemo
+          key={deployment.id}
+          defaultInputs={
+            workflowInput
+              ? Object.fromEntries([
+                  ["deployment_id", deployment.id],
+                  [
+                    "inputs",
+                    Object.fromEntries(
+                      workflowInput.map((x) => {
+                        if (!x) return [""];
+                        // Check for specific class types that require a custom URL
+                        if (
+                          [
+                            "ComfyUIDeployExternalImage",
+                            "ComfyUIDeployExternalImageAlpha",
+                          ].includes(x.class_type)
+                        ) {
+                          return [x.input_id, "/* put your image url here */"];
+                        }
+                        // Special case for batch images
+                        if (
+                          x.class_type === "ComfyUIDeployExternalImageBatch"
+                        ) {
+                          return [
+                            x.input_id,
+                            ["/* put your image url here */"],
+                          ];
+                        }
+                        return [x.input_id, x.default_value ?? ""];
+                      }),
+                    ),
+                  ],
+                ])
+              : {}
+          }
+        />
       )}
     </div>
   );
@@ -1225,7 +1220,16 @@ export function DeploymentDrawer(props: {
   });
 
   if (isLoading) {
-    return <></>;
+    return (
+      <MyDrawer
+        open={!!selectedDeployment}
+        onClose={() => setSelectedDeployment(null)}
+      >
+        <div className="flex h-full w-full items-center justify-center">
+          <LoadingIcon />
+        </div>
+      </MyDrawer>
+    );
   }
 
   if (
