@@ -214,7 +214,7 @@ function RecentRunsGallery({
     return (
       <div className="flex w-full items-center justify-center py-10">
         <span className="text-muted-foreground/80 text-sm">
-          Please sign in to view recent runs
+          No recent runs found
         </span>
       </div>
     );

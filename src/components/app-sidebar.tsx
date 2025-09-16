@@ -310,24 +310,22 @@ const links = [
 ];
 
 function ShareSidebar() {
-  const router = useRouter();
-
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex flex-row items-start justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              router.navigate({
-                to: "/",
-              });
-            }}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <Link href="/" className="flex flex-row items-start justify-between">
+            <img
+              src="/icon-light.svg"
+              alt="comfydeploy"
+              className="ml-0.5 h-7 w-7 dark:hidden"
+            />
+            <img
+              src="/icon.svg"
+              alt="comfydeploy"
+              className="ml-0.5 hidden h-7 w-7 dark:block"
+            />
+          </Link>
         </div>
         <UserMenu className="w-8" />
       </SidebarHeader>
@@ -735,6 +733,8 @@ function PlanBadge() {
 export function GuestSidebar() {
   const router = useRouter();
   const location = useLocation();
+  const { setOpen } = useSidebar();
+  const shareSlug = useShareSlug();
 
   const guestLinks = [
     {
@@ -769,6 +769,14 @@ export function GuestSidebar() {
       icon: Rss,
     },
   ];
+
+  useEffect(() => {
+    setOpen(!shareSlug);
+  }, [shareSlug]);
+
+  if (shareSlug) {
+    return <ShareSidebar />;
+  }
 
   return (
     <Sidebar>
