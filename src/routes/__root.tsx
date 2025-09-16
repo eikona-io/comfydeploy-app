@@ -197,7 +197,7 @@ function OrgSelectorComponent() {
   return (
     <>
       {!orgSelector && !isAuthPage && <Outlet />}
-      {orgSelector}
+      {!isAuthPage && orgSelector}
     </>
   );
 }

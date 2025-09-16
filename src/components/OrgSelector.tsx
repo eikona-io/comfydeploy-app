@@ -30,27 +30,9 @@ export function useOrgSelector() {
 
   const { check, isLoading } = useCustomer();
 
-  const [workflowLimit, setWorkflowLimit] = useState<ReturnType<
-    typeof check
-  > | null>(null);
-
-  useEffect(() => {
-    if (isLoading) {
-      return;
-    }
-    const workflowLimit = check({ featureId: "workflow_limit" });
-    setWorkflowLimit(workflowLimit);
-  }, [isLoading]);
+  const workflowLimit = check({ featureId: "workflow_limit" });
 
   const [isCreatingOrg, setIsCreatingOrg] = useState(false);
-
-  // console.log("organization", organization);
-  // console.log("isLoading", isLoading);
-  // console.log("isLoaded", isLoaded);
-  // console.log("isOrganizationLoaded", isOrganizationLoaded);
-  // console.log("workflowLimit", workflowLimit);
-
-  // console.log("auth.isSignedIn", auth.isSignedIn);
 
   if (!auth.isLoaded || !auth.isSignedIn) {
     return null;
