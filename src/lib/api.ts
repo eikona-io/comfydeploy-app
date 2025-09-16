@@ -113,12 +113,20 @@ export async function api({
           const isInternalServerError =
             xhr.status === 500 ||
             message.toLowerCase().includes("internal server error");
+          const isFolderExistsError =
+            xhr.status === 400 ||
+            message.toLowerCase().includes("Folder already exists");
           const isAccessDenied =
             xhr.status === 403 ||
             message
               .toLowerCase()
               .includes("You are not authorized to access this resource");
-          if (!isTokenError && !isInternalServerError && !isAccessDenied) {
+          if (
+            !isTokenError &&
+            isFolderExistsError &&
+            !isInternalServerError &&
+            !isAccessDenied
+          ) {
             emitApiError(err);
           }
           reject(err);
@@ -194,12 +202,20 @@ export async function api({
       const isInternalServerError =
         res.status === 500 ||
         message.toLowerCase().includes("internal server error");
+      const isFolderExistsError =
+        res.status === 400 ||
+        message.toLowerCase().includes("Folder already exists");
       const isAccessDenied =
         res.status === 403 ||
         message
           .toLowerCase()
           .includes("You are not authorized to access this resource");
-      if (!isTokenError && !isInternalServerError && !isAccessDenied) {
+      if (
+        !isTokenError &&
+        isFolderExistsError &&
+        !isInternalServerError &&
+        !isAccessDenied
+      ) {
         emitApiError(err);
       }
       throw err;
