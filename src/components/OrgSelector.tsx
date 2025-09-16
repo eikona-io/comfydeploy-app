@@ -64,13 +64,14 @@ export function useOrgSelector() {
     workflowLimit?.data.customer_id === undefined ||
     workflowLimit?.data.customer_id === ""
   ) {
-    return (
-      <>
-        <div className="h-full flex  w-full flex-col items-center justify-center p-8 bg-background z-50">
-          <LoadingIcon />
-        </div>
-      </>
-    );
+    return null;
+    // return (
+    //   <>
+    //     <div className="h-full flex  w-full flex-col items-center justify-center p-8 bg-background z-50">
+    //       <LoadingIcon />
+    //     </div>
+    //   </>
+    // );
   }
 
   //   The user is in a personal org, has other org, no workflows, show the org list
