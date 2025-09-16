@@ -1321,7 +1321,8 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
   const parts = deployment.share_slug?.split("_") ?? [];
   const slug = parts[0];
   const workflow_name = parts.slice(1).join("_");
-  const shareLink = `https://studio.comfydeploy.com/share/playground/${slug}/${workflow_name}`;
+  const commuityShareLink = `https://studio.comfydeploy.com/share/playground/${slug}/${workflow_name}`;
+  const shareLink = `https://app.comfydeploy.com/share/${slug}/${workflow_name}`;
 
   const handleCopy = async () => {
     if (!deployment.id) return;
@@ -1358,7 +1359,11 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
             onClick={() => {
               window.open(shareLink, "_blank");
             }}
-            value={shareLink}
+            value={
+              deployment.environment === "community-share"
+                ? commuityShareLink
+                : shareLink
+            }
             className="cursor-pointer border-zinc-200 bg-zinc-50 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-800"
           />
           <Button
