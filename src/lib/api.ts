@@ -113,7 +113,12 @@ export async function api({
           const isInternalServerError =
             xhr.status === 500 ||
             message.toLowerCase().includes("internal server error");
-          if (!isTokenError && !isInternalServerError) {
+          const isAccessDenied =
+            xhr.status === 403 ||
+            message
+              .toLowerCase()
+              .includes("You are not authorized to access this resource");
+          if (!isTokenError && !isInternalServerError && !isAccessDenied) {
             emitApiError(err);
           }
           reject(err);
@@ -189,7 +194,12 @@ export async function api({
       const isInternalServerError =
         res.status === 500 ||
         message.toLowerCase().includes("internal server error");
-      if (!isTokenError && !isInternalServerError) {
+      const isAccessDenied =
+        res.status === 403 ||
+        message
+          .toLowerCase()
+          .includes("You are not authorized to access this resource");
+      if (!isTokenError && !isInternalServerError && !isAccessDenied) {
         emitApiError(err);
       }
       throw err;
