@@ -1322,7 +1322,7 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
   const slug = parts[0];
   const workflow_name = parts.slice(1).join("_");
   const commuityShareLink = `https://studio.comfydeploy.com/share/playground/${slug}/${workflow_name}`;
-  const shareLink = `https://app.comfydeploy.com/share/${slug}/${workflow_name}`;
+  const shareLink = `${window.location.origin}/share/${slug}/${workflow_name}`;
 
   const handleCopy = async () => {
     if (!deployment.id) return;
