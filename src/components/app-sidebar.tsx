@@ -102,12 +102,14 @@ export interface Session {
   machine_version_id?: string;
 }
 
-function UserMenu() {
+function UserMenu({ className }: { className?: string }) {
   const isAdminAndMember = useIsAdminAndMember();
   const { theme } = useTheme();
 
   return (
-    <div className="flex h-full w-10 items-center justify-center">
+    <div
+      className={cn("flex h-full w-10 items-center justify-center", className)}
+    >
       <UserButton
         userProfileProps={{}}
         appearance={{
@@ -327,21 +329,8 @@ function ShareSidebar() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </div>
+        <UserMenu className="w-8" />
       </SidebarHeader>
-      {/* <SidebarContent>
-        <SidebarGroup className="p-1">
-          <SidebarMenu>
-            <SidebarMenuItem className="p-0">
-              <Link
-                href="/"
-                className="flex flex-row items-start justify-between"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent> */}
     </Sidebar>
   );
 }

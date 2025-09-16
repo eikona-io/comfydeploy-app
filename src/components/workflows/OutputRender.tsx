@@ -1025,15 +1025,14 @@ export function PlaygroundOutputRenderRun({
   run,
   imgClasses,
   isSelected = false,
+  isSharePage = false,
 }: {
   run: any;
   imgClasses: string;
   isSelected?: boolean;
+  isSharePage?: boolean;
 }) {
-  const { total: totalUrlCount, urls: urlList } = getTotalUrlCountAndUrls(
-    run.outputs || [],
-    run.id,
-  );
+  const { urls: urlList } = getTotalUrlCountAndUrls(run.outputs || [], run.id);
   const urlsToDisplay = urlList.length > 0 ? urlList.slice(0, 1) : [];
 
   return (
@@ -1042,7 +1041,7 @@ export function PlaygroundOutputRenderRun({
         "relative h-full transition-transform",
         isSelected
           ? "-translate-x-1 hover:-translate-x-1.5"
-          : "hover:-translate-x-1",
+          : !isSharePage && "hover:-translate-x-1",
       )}
     >
       <RunStatusIndicator status={run.status} />
@@ -1079,7 +1078,7 @@ export function PlaygroundOutputRenderRun({
             columns={1}
             isMainView={false}
           />
-          <div className="absolute right-0 bottom-0 left-0 h-8 w-[105px] shrink-0 rounded-b-[6px] bg-gradient-to-t from-black/50 to-transparent" />
+          <div className="absolute right-0 bottom-0 left-0 h-8 w-fulll shrink-0 rounded-b-[6px] bg-gradient-to-t from-black/50 to-transparent" />
         </>
       ) : (
         <>

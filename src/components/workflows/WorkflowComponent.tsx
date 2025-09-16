@@ -1,8 +1,28 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { EventSourcePolyfill } from "event-source-polyfill";
+import {
+  AlertCircle,
+  Archive,
+  CheckCircle,
+  ChevronDown,
+  Copy,
+  Expand,
+  ExternalLink,
+  Info,
+  LinkIcon,
+  Loader2,
+  Settings2Icon,
+  XCircle,
+  Zap,
+} from "lucide-react";
+import { parseAsString, useQueryState } from "nuqs";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { LogsViewer } from "@/components/log/logs-viewer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +31,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OutputRenderRun } from "@/components/workflows/OutputRender";
@@ -22,47 +43,27 @@ import {
 } from "@/components/workflows/RunOutputs";
 import { useRunsTableStore } from "@/components/workflows/RunsTable";
 import { StatusBadge } from "@/components/workflows/StatusBadge";
+import { useMachine } from "@/hooks/use-machine";
 import { useAuthStore } from "@/lib/auth-store";
-import {
-  AlertCircle,
-  Archive,
-  CheckCircle,
-  ChevronDown,
-  Expand,
-  ExternalLink,
-  Info,
-  LinkIcon,
-  Loader2,
-  Settings2Icon,
-  XCircle,
-  Zap,
-} from "lucide-react";
-import { parseAsString, useQueryState } from "nuqs";
-import { type ReactNode, useMemo } from "react";
-import { useEffect, useState } from "react";
-
 import { cn } from "@/lib/utils";
-import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { EventSourcePolyfill } from "event-source-polyfill";
 import { ApiPlaygroundDemo2 } from "../api-playground-demo";
 import { MyDrawer } from "../drawer";
+import { UserIcon } from "../run/SharePageComponent";
 import { Alert, AlertDescription } from "../ui/alert";
 import { CodeBlock } from "../ui/code-blocks";
-import { TooltipTrigger } from "../ui/tooltip";
-import { Tooltip, TooltipContent, TooltipProvider } from "../ui/tooltip";
-import { Copy } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../ui/tooltip";
 import {
   getEnvColor,
   useWorkflowDeployments,
 } from "../workspace/ContainersTable";
-import { useMachine } from "@/hooks/use-machine";
-import { UserIcon } from "../run/SharePageComponent";
-import { useQueryClient } from "@tanstack/react-query";
+import { InfoItem } from "./InfoItem";
 import { LiveStatus } from "./LiveStatus";
 import { RunTimeline } from "./RunTimeline";
-import { InfoItem } from "./InfoItem";
 
 export default function WorkflowComponent() {
   // Utility function for parsing timestamps with microsecond precision
@@ -179,6 +180,22 @@ export function RunDetails(props: {
 
   const handleClick = () => {
     if (!run) return;
+
+    if (isShare) {
+      // For share page, we need to trigger the tweak through a custom event
+      // since we can't access the setters directly from here
+      window.dispatchEvent(
+        new CustomEvent("triggerTweak", {
+          detail: { runId: run.id },
+        }),
+      );
+
+      // Close the modal/drawer
+      if (onClose) {
+        onClose();
+      }
+      return;
+    }
 
     navigate({
       to: "/workflows/$workflowId/$view",
@@ -821,10 +838,10 @@ function WebhookTab({ run, webhook }: { run: any; webhook: string }) {
                                   {typeof event.message.message === "string"
                                     ? event.message.message
                                     : JSON.stringify(
-                                      event.message.message,
-                                      null,
-                                      2,
-                                    )}
+                                        event.message.message,
+                                        null,
+                                        2,
+                                      )}
                                 </pre>
                               </div>
                             </div>
@@ -861,7 +878,11 @@ function FinishedRunLogDisplay({
   runId,
   modalFnCallId,
   runUpdatedAt,
-}: { runId: string; modalFnCallId: string; runUpdatedAt: string }) {
+}: {
+  runId: string;
+  modalFnCallId: string;
+  runUpdatedAt: string;
+}) {
   const { data: runLogs, isLoading } = useQuery<RunLog[]>({
     queryKey: ["v2", "clickhouse-run-logs", runId],
     enabled: !!runId,
