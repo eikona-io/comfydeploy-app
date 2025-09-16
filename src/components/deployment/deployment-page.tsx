@@ -1,6 +1,5 @@
-import { useOrganization } from "@clerk/clerk-react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import {
   ChevronRight,
   Copy,
@@ -41,7 +40,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import {
   Tooltip,
   TooltipContent,
@@ -57,7 +55,7 @@ import {
   useWorkflowDeployments,
 } from "../workspace/ContainersTable";
 import { DeploymentDrawer } from "../workspace/DeploymentDisplay";
-import { MachineSelect } from "../workspace/MachineSelect";
+import { DeploymentForm } from "./DeploymentForm";
 
 export interface Deployment {
   id: string;
@@ -349,6 +347,9 @@ interface DeploymentDialogProps {
   onSuccess?: (deploymentId: string) => void;
   publicLinkOnly?: boolean;
   existingDeployments?: Deployment[];
+  // Update mode props
+  isUpdateMode?: boolean;
+  deploymentToUpdate?: Deployment | null;
 }
 
 export function DeploymentDialog({
@@ -359,6 +360,8 @@ export function DeploymentDialog({
   onSuccess,
   publicLinkOnly = false,
   existingDeployments = [],
+  isUpdateMode = false,
+  deploymentToUpdate = null,
 }: DeploymentDialogProps) {
   const { selectedDeployment } = useSelectedDeploymentStore();
 
@@ -370,16 +373,45 @@ export function DeploymentDialog({
     | "community-share"
   >(publicLinkOnly ? "public-share" : "staging");
 
-  useEffect(() => {
-    const deployment = existingDeployments.find(
-      (d: Deployment) => d.id === selectedDeployment,
-    );
-    console.log("deployment", deployment);
+  const [selectedWorkflowVersion, setSelectedWorkflowVersion] =
+    useState<Version | null>(selectedVersion);
 
-    if (deployment) {
-      setSelectedEnvironment(deployment.environment as any);
+  // Get workflow versions for version selection
+  const { data: workflowVersions } = useQuery<Version[]>({
+    queryKey: ["workflow", workflowId, "versions"],
+    enabled: open && !!workflowId,
+  });
+
+  useEffect(() => {
+    if (isUpdateMode && deploymentToUpdate) {
+      // Initialize for update mode
+      setSelectedEnvironment(deploymentToUpdate.environment as any);
+      setSelectedMachineId(deploymentToUpdate.machine_id);
+      // selectedWorkflowVersion will be set from workflow versions query
+    } else {
+      // Initialize for create mode
+      const deployment = existingDeployments.find(
+        (d: Deployment) => d.id === selectedDeployment,
+      );
+      console.log("deployment", deployment);
+
+      if (deployment) {
+        setSelectedEnvironment(deployment.environment as any);
+      }
     }
-  }, [selectedDeployment]);
+  }, [selectedDeployment, isUpdateMode, deploymentToUpdate]);
+
+  useEffect(() => {
+    if (isUpdateMode && deploymentToUpdate && workflowVersions) {
+      // Find the current version for update mode
+      const currentVersion = workflowVersions.find(
+        (v: Version) => v.id === deploymentToUpdate.workflow_version_id,
+      );
+      setSelectedWorkflowVersion(currentVersion || null);
+    } else {
+      setSelectedWorkflowVersion(selectedVersion);
+    }
+  }, [selectedVersion, isUpdateMode, deploymentToUpdate, workflowVersions]);
 
   const showCommunity = true;
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
@@ -390,6 +422,7 @@ export function DeploymentDialog({
 
   const { data: deployments, refetch: refetchDeployments } =
     useWorkflowDeployments(workflowId);
+
   const final_machine = useMachine(
     selectedMachineId ?? workflow?.selected_machine_id,
   );
@@ -419,35 +452,53 @@ export function DeploymentDialog({
     try {
       setIsPromoting(true);
 
-      const myDeployment = existingDeployments.find(
-        (d: Deployment) => d.id === selectedDeployment,
-      );
-
-      // Look for existing deployment to update:
-      // 1. First check if there's already a deployment in the target environment
-      // 2. If not, look for any deployment with this version (to support environment changes)
-
-      const deployment = await callServerPromise(
-        api({
-          url: "deployment",
-          init: {
-            method: "POST",
-            body: JSON.stringify({
-              workflow_id: workflowId,
-              workflow_version_id: selectedVersion?.id,
-              machine_id: final_machine.data?.id,
-              machine_version_id: final_machine.data?.machine_version_id,
-              environment: selectedEnvironment,
-              ...(myDeployment && {
-                deployment_id: myDeployment.id,
+      if (isUpdateMode && deploymentToUpdate) {
+        // Update existing deployment
+        const deployment = await callServerPromise(
+          api({
+            url: `deployment/${deploymentToUpdate.id}`,
+            init: {
+              method: "PATCH",
+              body: JSON.stringify({
+                workflow_version_id: selectedWorkflowVersion?.id,
+                machine_id: selectedMachineId,
+                environment: selectedEnvironment,
               }),
-            }),
-          },
-        }),
-      );
-      refetchDeployments();
-      onSuccess?.(deployment.id);
-      toast.success("Deployment promoted successfully");
+            },
+          }),
+        );
+        refetchDeployments();
+        onSuccess?.(deployment.id);
+        toast.success("Deployment updated successfully");
+      } else {
+        // Create new deployment
+        const myDeployment = existingDeployments.find(
+          (d: Deployment) => d.id === selectedDeployment,
+        );
+
+        const deployment = await callServerPromise(
+          api({
+            url: "deployment",
+            init: {
+              method: "POST",
+              body: JSON.stringify({
+                workflow_id: workflowId,
+                workflow_version_id: selectedWorkflowVersion?.id,
+                machine_id: final_machine.data?.id,
+                machine_version_id: final_machine.data?.machine_version_id,
+                environment: selectedEnvironment,
+                ...(myDeployment && {
+                  deployment_id: myDeployment.id,
+                }),
+              }),
+            },
+          }),
+        );
+        refetchDeployments();
+        onSuccess?.(deployment.id);
+        toast.success("Deployment promoted successfully");
+      }
+
       onClose();
       queryClient.invalidateQueries({
         queryKey: ["deployment", selectedDeployment],
@@ -460,151 +511,38 @@ export function DeploymentDialog({
     }
   };
 
-  if (!selectedVersion) return null;
+  if (!selectedVersion && !isUpdateMode) return null;
+
+  const handleFormSubmit = (data: {
+    selectedWorkflowVersion: Version | null;
+    selectedEnvironment: string;
+    selectedMachineId: string;
+  }) => {
+    // Update the state variables for the existing handlePromoteToEnv function
+    setSelectedWorkflowVersion(data.selectedWorkflowVersion);
+    setSelectedEnvironment(data.selectedEnvironment as any);
+    setSelectedMachineId(data.selectedMachineId);
+
+    // Call the existing promotion function
+    handlePromoteToEnv();
+  };
 
   return (
     <MyDrawer open={open} onClose={onClose}>
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <h3 className="font-medium text-lg">Deploy Version</h3>
-          <Badge>v{selectedVersion.version}</Badge>
-        </div>
-        <div className="space-y-2">
-          <h3 className="font-medium text-sm">
-            {publicLinkOnly ? "Visibility" : "Environment"}
-          </h3>
-          <Tabs
-            value={selectedEnvironment}
-            onValueChange={(value) =>
-              setSelectedEnvironment(
-                value as
-                  | "staging"
-                  | "production"
-                  | "public-share"
-                  | "private-share"
-                  | "community-share",
-              )
-            }
-          >
-            <TabsList className="inline-flex h-fit items-center rounded-lg bg-white/95 ring-1 ring-gray-200/50 dark:bg-zinc-800 dark:ring-zinc-700/50">
-              {!publicLinkOnly ? (
-                <>
-                  <TabsTrigger
-                    value="staging"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      selectedEnvironment === "staging"
-                        ? "bg-gradient-to-b from-white to-yellow-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-yellow-900 dark:ring-yellow-900/50"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
-                    )}
-                  >
-                    Staging
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="production"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      selectedEnvironment === "production"
-                        ? "bg-gradient-to-b from-white to-blue-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-blue-900 dark:ring-blue-900/50"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
-                    )}
-                  >
-                    Production
-                  </TabsTrigger>
-                </>
-              ) : (
-                <>
-                  <TabsTrigger
-                    value="public-share"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      selectedEnvironment === "public-share"
-                        ? "bg-gradient-to-b from-white to-green-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-green-900 dark:ring-green-900/50"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
-                    )}
-                  >
-                    Link Access
-                  </TabsTrigger>
-                  {showCommunity && (
-                    <TabsTrigger
-                      value="community-share"
-                      className={cn(
-                        "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                        selectedEnvironment === "community-share"
-                          ? "bg-gradient-to-b from-white to-orange-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-orange-900 dark:ring-orange-900/50"
-                          : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
-                      )}
-                    >
-                      Community
-                    </TabsTrigger>
-                  )}
-                  <TabsTrigger
-                    value="private-share"
-                    className={cn(
-                      "rounded-md px-4 py-1.5 font-medium text-sm transition-all",
-                      selectedEnvironment === "private-share"
-                        ? "bg-gradient-to-b from-white to-purple-100 shadow-sm ring-1 ring-gray-200/50 dark:from-zinc-800 dark:to-purple-900 dark:ring-purple-900/50"
-                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-zinc-700",
-                    )}
-                  >
-                    Internal
-                  </TabsTrigger>
-                </>
-              )}
-            </TabsList>
-          </Tabs>
-          <div className="mt-1 ml-2 text-2xs text-muted-foreground">
-            {selectedEnvironment === "public-share"
-              ? "This deployment will be accessible via a public link. Anyone with the link can access it."
-              : selectedEnvironment === "private-share"
-                ? "This deployment will only be accessible within your organization."
-                : selectedEnvironment === "community-share"
-                  ? "This deployment will be visible in the community."
-                  : null}
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <h3 className="font-medium text-sm">Machine</h3>
-          <MachineSelect
-            workflow_id={workflowId}
-            value={selectedMachineId ?? ""}
-            onChange={(value) => setSelectedMachineId(value)}
-            className="rounded-md border bg-background"
-          />
-        </div>
-
-        {!selectedVersion.workflow_api && (
-          <div className="text-center text-muted-foreground text-sm">
-            Please save a new version in ComfyUI to deploy this workflow.
-          </div>
-        )}
-
-        <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSelectedEnvironment("staging");
-              setSelectedMachineId(null);
-              onClose();
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            disabled={
-              isPromoting ||
-              !selectedMachineId ||
-              final_machine.isLoading ||
-              !selectedVersion.workflow_api
-            }
-            onClick={handlePromoteToEnv}
-          >
-            {/* {isPromoting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} */}
-            Deploy
-          </Button>
-        </div>
-      </div>
+      <DeploymentForm
+        workflowId={workflowId}
+        isUpdateMode={isUpdateMode}
+        deploymentToUpdate={deploymentToUpdate}
+        selectedVersion={selectedVersion}
+        publicLinkOnly={publicLinkOnly}
+        isSubmitting={isPromoting}
+        onCancel={() => {
+          setSelectedEnvironment("staging");
+          setSelectedMachineId(null);
+          onClose();
+        }}
+        onSubmit={handleFormSubmit}
+      />
     </MyDrawer>
   );
 }
@@ -708,7 +646,8 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                           deployment.environment === "production" ||
                           deployment.environment === "staging" ||
                           deployment.environment === "public-share" ||
-                          deployment.environment === "community-share",
+                          deployment.environment === "community-share" ||
+                          deployment.environment === "private-share",
                       )
                       .map((deployment: Deployment) => (
                         <Badge
@@ -729,7 +668,9 @@ function DeploymentWorkflowVersionList({ workflowId }: { workflowId: string }) {
                           {deployment.environment === "public-share" ||
                           deployment.environment === "community-share"
                             ? "Link Share"
-                            : deployment.environment}
+                            : deployment.environment === "private-share"
+                              ? "Internal"
+                              : deployment.environment}
                         </Badge>
                       ))}
                   </div>

@@ -1166,48 +1166,43 @@ export function DeploymentSettings({
           <ShareLinkDisplay deployment={deployment} />
         </div>
       ) : (
-        <>
-          <ApiPlaygroundDemo
-            key={deployment.id}
-            defaultInputs={
-              workflowInput
-                ? Object.fromEntries([
-                    ["deployment_id", deployment.id],
-                    [
-                      "inputs",
-                      Object.fromEntries(
-                        workflowInput.map((x) => {
-                          if (!x) return [""];
-                          // Check for specific class types that require a custom URL
-                          if (
-                            [
-                              "ComfyUIDeployExternalImage",
-                              "ComfyUIDeployExternalImageAlpha",
-                            ].includes(x.class_type)
-                          ) {
-                            return [
-                              x.input_id,
-                              "/* put your image url here */",
-                            ];
-                          }
-                          // Special case for batch images
-                          if (
-                            x.class_type === "ComfyUIDeployExternalImageBatch"
-                          ) {
-                            return [
-                              x.input_id,
-                              ["/* put your image url here */"],
-                            ];
-                          }
-                          return [x.input_id, x.default_value ?? ""];
-                        }),
-                      ),
-                    ],
-                  ])
-                : {}
-            }
-          />
-        </>
+        <ApiPlaygroundDemo
+          key={deployment.id}
+          defaultInputs={
+            workflowInput
+              ? Object.fromEntries([
+                  ["deployment_id", deployment.id],
+                  [
+                    "inputs",
+                    Object.fromEntries(
+                      workflowInput.map((x) => {
+                        if (!x) return [""];
+                        // Check for specific class types that require a custom URL
+                        if (
+                          [
+                            "ComfyUIDeployExternalImage",
+                            "ComfyUIDeployExternalImageAlpha",
+                          ].includes(x.class_type)
+                        ) {
+                          return [x.input_id, "/* put your image url here */"];
+                        }
+                        // Special case for batch images
+                        if (
+                          x.class_type === "ComfyUIDeployExternalImageBatch"
+                        ) {
+                          return [
+                            x.input_id,
+                            ["/* put your image url here */"],
+                          ];
+                        }
+                        return [x.input_id, x.default_value ?? ""];
+                      }),
+                    ),
+                  ],
+                ])
+              : {}
+          }
+        />
       )}
     </div>
   );
@@ -1225,7 +1220,16 @@ export function DeploymentDrawer(props: {
   });
 
   if (isLoading) {
-    return <></>;
+    return (
+      <MyDrawer
+        open={!!selectedDeployment}
+        onClose={() => setSelectedDeployment(null)}
+      >
+        <div className="flex h-full w-full items-center justify-center">
+          <LoadingIcon />
+        </div>
+      </MyDrawer>
+    );
   }
 
   if (
@@ -1317,7 +1321,8 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
   const parts = deployment.share_slug?.split("_") ?? [];
   const slug = parts[0];
   const workflow_name = parts.slice(1).join("_");
-  const shareLink = `https://studio.comfydeploy.com/share/playground/${slug}/${workflow_name}`;
+  const commuityShareLink = `https://studio.comfydeploy.com/share/playground/${slug}/${workflow_name}`;
+  const shareLink = `https://app.comfydeploy.com/share/${slug}/${workflow_name}`;
 
   const handleCopy = async () => {
     if (!deployment.id) return;
@@ -1354,7 +1359,11 @@ function ShareLinkDisplay({ deployment }: { deployment: Deployment }) {
             onClick={() => {
               window.open(shareLink, "_blank");
             }}
-            value={shareLink}
+            value={
+              deployment.environment === "community-share"
+                ? commuityShareLink
+                : shareLink
+            }
             className="cursor-pointer border-zinc-200 bg-zinc-50 font-mono text-xs dark:border-zinc-800 dark:bg-zinc-800"
           />
           <Button

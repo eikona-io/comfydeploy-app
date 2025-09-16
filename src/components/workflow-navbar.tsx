@@ -30,6 +30,7 @@ import {
 import { parseAsString, useQueryState } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { DeploymentForm } from "@/components/deployment/DeploymentForm";
 import {
   DeploymentDialog,
   useSelectedDeploymentStore,
@@ -758,6 +759,7 @@ function WorkflowNavbarRight() {
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedVersion, setSelectedVersion] = useState<any>(null);
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
   const { selectedDeployment, setSelectedDeployment } =
     useSelectedDeploymentStore();
 
@@ -774,6 +776,13 @@ function WorkflowNavbarRight() {
   const privateShareDeployment = deployments?.find(
     (d: any) => d.environment === "private-share",
   );
+
+  // Reset update form state when deployment changes or drawer closes
+  useEffect(() => {
+    if (!selectedDeployment) {
+      setShowUpdateForm(false);
+    }
+  }, [selectedDeployment]);
 
   return (
     <>
@@ -906,31 +915,86 @@ function WorkflowNavbarRight() {
         {(selectedDeployment === publicShareDeployment?.id ||
           selectedDeployment === privateShareDeployment?.id ||
           selectedDeployment === communityShareDeployment?.id) && (
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="secondary"
-              className="transition-all hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600 hover:text-white"
-              confirm
-              onClick={async () => {
-                await callServerPromise(
-                  api({
-                    init: {
-                      method: "DELETE",
-                    },
-                    url: `deployment/${selectedDeployment}`,
-                  }),
-                );
-                setSelectedDeployment(null);
-                setSelectedVersion(null);
-                setIsDrawerOpen(false);
-                await queryClient.invalidateQueries({
-                  queryKey: ["workflow", workflowId, "deployments"],
-                });
-              }}
-            >
-              Delete
-            </Button>
-          </div>
+          <>
+            {showUpdateForm ? (
+              <DeploymentForm
+                workflowId={workflowId || ""}
+                isUpdateMode={true}
+                deploymentToUpdate={
+                  deployments?.find((d: any) => d.id === selectedDeployment) ||
+                  null
+                }
+                onCancel={() => setShowUpdateForm(false)}
+                onSubmit={async (data) => {
+                  const deployment = deployments?.find(
+                    (d: any) => d.id === selectedDeployment,
+                  );
+                  if (!deployment) return;
+
+                  try {
+                    await callServerPromise(
+                      api({
+                        url: `deployment/${deployment.id}`,
+                        init: {
+                          method: "PATCH",
+                          body: JSON.stringify({
+                            workflow_version_id:
+                              data.selectedWorkflowVersion?.id,
+                            machine_id: data.selectedMachineId,
+                            environment: data.selectedEnvironment,
+                          }),
+                        },
+                      }),
+                    );
+                    toast.success("Deployment updated successfully");
+                    setShowUpdateForm(false);
+                    await queryClient.invalidateQueries({
+                      queryKey: ["workflow", workflowId, "deployments"],
+                    });
+                    await queryClient.invalidateQueries({
+                      queryKey: ["deployment", selectedDeployment],
+                    });
+                  } catch (error: any) {
+                    toast.error(
+                      `Failed to update deployment: ${error.message}`,
+                    );
+                  }
+                }}
+              />
+            ) : (
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowUpdateForm(true)}
+                >
+                  Update
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="transition-all hover:bg-gradient-to-b hover:from-red-400 hover:to-red-600 hover:text-white"
+                  confirm
+                  onClick={async () => {
+                    await callServerPromise(
+                      api({
+                        init: {
+                          method: "DELETE",
+                        },
+                        url: `deployment/${selectedDeployment}`,
+                      }),
+                    );
+                    setSelectedDeployment(null);
+                    setSelectedVersion(null);
+                    setIsDrawerOpen(false);
+                    await queryClient.invalidateQueries({
+                      queryKey: ["workflow", workflowId, "deployments"],
+                    });
+                  }}
+                >
+                  Delete
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </DeploymentDrawer>
     </>
