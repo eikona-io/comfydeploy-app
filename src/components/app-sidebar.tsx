@@ -102,12 +102,14 @@ export interface Session {
   machine_version_id?: string;
 }
 
-function UserMenu() {
+function UserMenu({ className }: { className?: string }) {
   const isAdminAndMember = useIsAdminAndMember();
   const { theme } = useTheme();
 
   return (
-    <div className="flex h-full w-10 items-center justify-center">
+    <div
+      className={cn("flex h-full w-10 items-center justify-center", className)}
+    >
       <UserButton
         userProfileProps={{}}
         appearance={{
@@ -308,40 +310,25 @@ const links = [
 ];
 
 function ShareSidebar() {
-  const router = useRouter();
-
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex flex-row items-start justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              router.navigate({
-                to: "/",
-              });
-            }}
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
+          <Link href="/" className="flex flex-row items-start justify-between">
+            <img
+              src="/icon-light.svg"
+              alt="comfydeploy"
+              className="ml-0.5 h-7 w-7 dark:hidden"
+            />
+            <img
+              src="/icon.svg"
+              alt="comfydeploy"
+              className="ml-0.5 hidden h-7 w-7 dark:block"
+            />
+          </Link>
         </div>
+        <UserMenu className="w-8" />
       </SidebarHeader>
-      {/* <SidebarContent>
-        <SidebarGroup className="p-1">
-          <SidebarMenu>
-            <SidebarMenuItem className="p-0">
-              <Link
-                href="/"
-                className="flex flex-row items-start justify-between"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-      </SidebarContent> */}
     </Sidebar>
   );
 }
@@ -746,6 +733,8 @@ function PlanBadge() {
 export function GuestSidebar() {
   const router = useRouter();
   const location = useLocation();
+  const { setOpen } = useSidebar();
+  const shareSlug = useShareSlug();
 
   const guestLinks = [
     {
@@ -780,6 +769,14 @@ export function GuestSidebar() {
       icon: Rss,
     },
   ];
+
+  useEffect(() => {
+    setOpen(!shareSlug);
+  }, [shareSlug]);
+
+  if (shareSlug) {
+    return <ShareSidebar />;
+  }
 
   return (
     <Sidebar>
