@@ -869,7 +869,7 @@ export function GuestSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      {/* <SidebarFooter className="pb-4">
+      <SidebarFooter className="pb-4">
         <div className="px-2">
           <Link
             to="/pricing"
@@ -886,7 +886,7 @@ export function GuestSidebar() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </Link>
         </div>
-      </SidebarFooter> */}
+      </SidebarFooter>
     </Sidebar>
   );
 }
