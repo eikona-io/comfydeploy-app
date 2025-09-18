@@ -31,6 +31,7 @@ import NickPhoto from "@/logos/nick.png";
 import SliversideLogo from "@/logos/sliverside.svg";
 import VizcomLogo from "@/logos/vizcom.svg";
 import WildlifeLogo from "@/logos/wildlife.svg";
+import { SignedIn } from "@clerk/clerk-react";
 
 export const Route = createFileRoute("/pricing")({
   component: RouteComponent,
@@ -601,12 +602,14 @@ function PricingTier({
                 </svg>
               </a>
             </div>
-            <TopUpButton
-              className="border-b-0 border-t border-x-0 bg-green-900 text-white hover:bg-transparent hover:text-gray-900 p-6 rounded-none transition-colors w-full dark:bg-green-900/50 dark:text-zinc-100 dark:hover:bg-transparent dark:hover:text-green-600"
-              variant="outline"
-            >
-              Top up $25 to get started
-            </TopUpButton>
+            <SignedIn>
+              <TopUpButton
+                className="border-b-0 border-t border-x-0 bg-green-900 text-white hover:bg-transparent hover:text-gray-900 p-6 rounded-none transition-colors w-full dark:bg-green-900/50 dark:text-zinc-100 dark:hover:bg-transparent dark:hover:text-green-600"
+                variant="outline"
+              >
+                Top up $25 to get started
+              </TopUpButton>
+            </SignedIn>
           </div>
         )}
 
@@ -619,23 +622,25 @@ function PricingTier({
                   showBusinessUpgradeButton ? "grid-cols-2" : "grid-cols-1",
                 )}
               >
-                {showBusinessUpgradeButton && (
-                  <UpgradeButton
-                    plan={`${tier.id}_${isYearly ? "yearly" : "monthly"}`}
-                    href={`/checkout?plan=${tier.id}`}
-                    plans={plans}
-                    className="border-b-0 border-t border-x-0 hover:bg-gray-900 hover:text-white p-6 rounded-none text-gray-900 transition-colors w-full dark:hover:bg-zinc-700 dark:hover:text-zinc-100 dark:text-gray-300"
-                    trial={false}
-                    allowCoupon={true}
-                    data={{
-                      tier: tier.name,
-                      price: isYearly ? tier.priceYearly : tier.priceMonthly,
-                      billing: isYearly ? "yearly" : "monthly",
-                    }}
-                    subscription={_sub?.plans?.autumn_data}
-                  />
-                )}
-                <Button
+                <SignedIn>
+                  {showBusinessUpgradeButton && (
+                    <UpgradeButton
+                      plan={`${tier.id}_${isYearly ? "yearly" : "monthly"}`}
+                      href={`/checkout?plan=${tier.id}`}
+                      plans={plans}
+                      className="border-b-0 border-t border-x-0 hover:bg-gray-900 hover:text-white p-6 rounded-none text-gray-900 transition-colors w-full dark:hover:bg-zinc-700 dark:hover:text-zinc-100 dark:text-gray-300"
+                      trial={false}
+                      allowCoupon={true}
+                      data={{
+                        tier: tier.name,
+                        price: isYearly ? tier.priceYearly : tier.priceMonthly,
+                        billing: isYearly ? "yearly" : "monthly",
+                      }}
+                      subscription={_sub?.plans?.autumn_data}
+                    />
+                  )}
+                </SignedIn>
+                {/* <Button
                   asChild
                   className="border-b-0 border-t border-x-0 hover:bg-purple-900 hover:text-white p-6 rounded-none text-gray-900 transition-colors w-full dark:hover:bg-purple-900/50 dark:hover:text-zinc-100 dark:text-purple-400"
                   variant="outline"
@@ -660,7 +665,7 @@ function PricingTier({
                     <span>Talk to Nick and Benny</span>
                     <ExternalLink className="h-4 w-4" />
                   </Link>
-                </Button>
+                </Button> */}
               </div>
             ) : tier.name === "Enterprise" ? (
               <div className="grid grid-cols-1 gap-px">
@@ -836,54 +841,54 @@ function GPUPricingTable() {
               <TableBody>
                 {isLoading
                   ? // Skeleton loading state
-                    Array.from({ length: 6 }).map((_, index) => (
-                      <TableRow key={index} className="border-0">
-                        <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
-                          <div className="flex items-center gap-2">
-                            <Skeleton className="h-3 w-16" />
-                          </div>
-                        </TableCell>
-                        <TableCell className="border-0 px-1 py-0.5 text-right">
-                          <Skeleton className="h-3 w-12 ml-auto" />
-                        </TableCell>
-                      </TableRow>
-                    ))
+                  Array.from({ length: 6 }).map((_, index) => (
+                    <TableRow key={index} className="border-0">
+                      <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
+                        <div className="flex items-center gap-2">
+                          <Skeleton className="h-3 w-16" />
+                        </div>
+                      </TableCell>
+                      <TableCell className="border-0 px-1 py-0.5 text-right">
+                        <Skeleton className="h-3 w-12 ml-auto" />
+                      </TableCell>
+                    </TableRow>
+                  ))
                   : Object.entries(gpuPricing || {}).map(([gpu, price]) => (
-                      <TableRow key={gpu} className="border-0">
-                        <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
-                          <div className="flex items-center gap-1">
-                            {gpu}
-                            {(gpu === "H200" || gpu === "B200") && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-blue-50 h-3 px-1 py-0 text-[8px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
-                              >
-                                NEW
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell className="border-0 px-1 py-0.5 text-right">
-                          <AnimatePresence mode="wait">
-                            <motion.div
-                              key={`${activeTab}-${useTopupPricing}`}
-                              initial={{ opacity: 0, y: 5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -5 }}
-                              className="font-medium inline-block"
+                    <TableRow key={gpu} className="border-0">
+                      <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
+                        <div className="flex items-center gap-1">
+                          {gpu}
+                          {(gpu === "H200" || gpu === "B200") && (
+                            <Badge
+                              variant="secondary"
+                              className="bg-blue-50 h-3 px-1 py-0 text-[8px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
                             >
-                              <GPUPriceDisplay
-                                gpu={gpu}
-                                price={price as number}
-                                activeTab={activeTab}
-                                useTopupPricing={useTopupPricing}
-                                creditSchemaData={creditSchemaData}
-                              />
-                            </motion.div>
-                          </AnimatePresence>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                              NEW
+                            </Badge>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="border-0 px-1 py-0.5 text-right">
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={`${activeTab}-${useTopupPricing}`}
+                            initial={{ opacity: 0, y: 5 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -5 }}
+                            className="font-medium inline-block"
+                          >
+                            <GPUPriceDisplay
+                              gpu={gpu}
+                              price={price as number}
+                              activeTab={activeTab}
+                              useTopupPricing={useTopupPricing}
+                              creditSchemaData={creditSchemaData}
+                            />
+                          </motion.div>
+                        </AnimatePresence>
+                      </TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
             </Table>
           </div>
@@ -905,26 +910,26 @@ function GPUPriceDisplay({
   activeTab: "per_sec" | "per_hour";
   useTopupPricing: boolean;
   creditSchemaData:
-    | {
-        "gpu-credit": {
-          name: string;
-          display: { plural: string; singular: string };
-          schema: Array<{
-            credit_cost: number;
-            metered_feature_id: string;
-          }>;
-        };
-        "gpu-credit-topup": {
-          name: string;
-          display: { plural: string; singular: string };
-          schema: Array<{
-            credit_cost: number;
-            metered_feature_id: string;
-          }>;
-        };
-      }
-    | null
-    | undefined;
+  | {
+    "gpu-credit": {
+      name: string;
+      display: { plural: string; singular: string };
+      schema: Array<{
+        credit_cost: number;
+        metered_feature_id: string;
+      }>;
+    };
+    "gpu-credit-topup": {
+      name: string;
+      display: { plural: string; singular: string };
+      schema: Array<{
+        credit_cost: number;
+        metered_feature_id: string;
+      }>;
+    };
+  }
+  | null
+  | undefined;
 }) {
   // Get both pricing data for comparison
   const getPricingFromSchema = (
@@ -1098,12 +1103,14 @@ export function PricingPage() {
                     </div>
                   </div>
                 </div>
-                <UpgradeButton
-                  plan={_sub?.sub?.plan}
-                  href={`/checkout?plan=${_sub?.sub?.plan}`}
-                  plans={_sub?.plans?.plans ?? []}
-                  className="ml-8 flex-shrink-0"
-                />
+                <SignedIn>
+                  <UpgradeButton
+                    plan={_sub?.sub?.plan}
+                    href={`/checkout?plan=${_sub?.sub?.plan}`}
+                    plans={_sub?.plans?.plans ?? []}
+                    className="ml-8 flex-shrink-0"
+                  />
+                </SignedIn>
               </div>
             </div>
           )}
@@ -1228,58 +1235,58 @@ export function PricingPage() {
               {/* Creator and Deployment Tiers */}
               {(filteredTiers.some((tier) => tier.id === "creator") ||
                 filteredTiers.some((tier) => tier.id === "deployment")) && (
-                <div
-                  className={cn(
-                    "grid border border-gray-200 border-t-0 dark:border-zinc-700",
-                    filteredTiers.some((tier) => tier.id === "creator") &&
-                      filteredTiers.some((tier) => tier.id === "deployment")
-                      ? "grid-cols-1 lg:grid-cols-2"
-                      : "grid-cols-1",
-                  )}
-                >
-                  {filteredTiers.find((tier) => tier.id === "creator") && (
-                    <PricingTier
-                      tier={
-                        filteredTiers.find((tier) => tier.id === "creator")!
-                      }
-                      isLoading={isLoading}
-                      plans={_sub?.plans?.plans ?? []}
-                      className={cn(
-                        "bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100 dark:from-amber-900/10 dark:via-amber-900/30 dark:to-amber-800/50",
+                  <div
+                    className={cn(
+                      "grid border border-gray-200 border-t-0 dark:border-zinc-700",
+                      filteredTiers.some((tier) => tier.id === "creator") &&
                         filteredTiers.some((tier) => tier.id === "deployment")
-                          ? "rounded-bl-sm lg:border-r dark:lg:border-zinc-700"
-                          : "rounded-b-sm",
-                      )}
-                      isYearly={isYearly}
-                      showCreatorTier={filteredTiers.some(
-                        (tier) => tier.id === "creator",
-                      )}
-                      showDeploymentTier={filteredTiers.some(
-                        (tier) => tier.id === "deployment",
-                      )}
-                      showBusinessUpgradeButton={showBusinessUpgradeButton}
-                    />
-                  )}
-                  {filteredTiers.find((tier) => tier.id === "deployment") && (
-                    <PricingTier
-                      tier={
-                        filteredTiers.find((tier) => tier.id === "deployment")!
-                      }
-                      isLoading={isLoading}
-                      plans={_sub?.plans?.plans ?? []}
-                      className="rounded-br-sm bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100 dark:from-blue-900/10 dark:via-blue-900/30 dark:to-blue-800/50"
-                      isYearly={isYearly}
-                      showCreatorTier={filteredTiers.some(
-                        (tier) => tier.id === "creator",
-                      )}
-                      showDeploymentTier={filteredTiers.some(
-                        (tier) => tier.id === "deployment",
-                      )}
-                      showBusinessUpgradeButton={showBusinessUpgradeButton}
-                    />
-                  )}
-                </div>
-              )}
+                        ? "grid-cols-1 lg:grid-cols-2"
+                        : "grid-cols-1",
+                    )}
+                  >
+                    {filteredTiers.find((tier) => tier.id === "creator") && (
+                      <PricingTier
+                        tier={
+                          filteredTiers.find((tier) => tier.id === "creator")!
+                        }
+                        isLoading={isLoading}
+                        plans={_sub?.plans?.plans ?? []}
+                        className={cn(
+                          "bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100 dark:from-amber-900/10 dark:via-amber-900/30 dark:to-amber-800/50",
+                          filteredTiers.some((tier) => tier.id === "deployment")
+                            ? "rounded-bl-sm lg:border-r dark:lg:border-zinc-700"
+                            : "rounded-b-sm",
+                        )}
+                        isYearly={isYearly}
+                        showCreatorTier={filteredTiers.some(
+                          (tier) => tier.id === "creator",
+                        )}
+                        showDeploymentTier={filteredTiers.some(
+                          (tier) => tier.id === "deployment",
+                        )}
+                        showBusinessUpgradeButton={showBusinessUpgradeButton}
+                      />
+                    )}
+                    {filteredTiers.find((tier) => tier.id === "deployment") && (
+                      <PricingTier
+                        tier={
+                          filteredTiers.find((tier) => tier.id === "deployment")!
+                        }
+                        isLoading={isLoading}
+                        plans={_sub?.plans?.plans ?? []}
+                        className="rounded-br-sm bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100 dark:from-blue-900/10 dark:via-blue-900/30 dark:to-blue-800/50"
+                        isYearly={isYearly}
+                        showCreatorTier={filteredTiers.some(
+                          (tier) => tier.id === "creator",
+                        )}
+                        showDeploymentTier={filteredTiers.some(
+                          (tier) => tier.id === "deployment",
+                        )}
+                        showBusinessUpgradeButton={showBusinessUpgradeButton}
+                      />
+                    )}
+                  </div>
+                )}
             </div>
 
             <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] bg-white dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] dark:bg-zinc-900" />
