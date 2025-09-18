@@ -413,7 +413,6 @@ export function DeploymentDialog({
     }
   }, [selectedVersion, isUpdateMode, deploymentToUpdate, workflowVersions]);
 
-  const showCommunity = true;
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(
     null,
   );
@@ -448,9 +447,20 @@ export function DeploymentDialog({
     }
   }, [deployments, selectedEnvironment, machine?.id, publicLinkOnly]);
 
-  const handlePromoteToEnv = async () => {
+  const handlePromoteToEnv = async (formData?: {
+    selectedWorkflowVersion: Version | null;
+    selectedEnvironment: string;
+    selectedMachineId: string;
+  }) => {
     try {
       setIsPromoting(true);
+
+      // Use form data if provided, otherwise use component state
+      const environmentToUse =
+        formData?.selectedEnvironment || selectedEnvironment;
+      const versionToUse =
+        formData?.selectedWorkflowVersion || selectedWorkflowVersion;
+      const machineToUse = formData?.selectedMachineId || selectedMachineId;
 
       if (isUpdateMode && deploymentToUpdate) {
         // Update existing deployment
@@ -460,9 +470,9 @@ export function DeploymentDialog({
             init: {
               method: "PATCH",
               body: JSON.stringify({
-                workflow_version_id: selectedWorkflowVersion?.id,
-                machine_id: selectedMachineId,
-                environment: selectedEnvironment,
+                workflow_version_id: versionToUse?.id,
+                machine_id: machineToUse,
+                environment: environmentToUse,
               }),
             },
           }),
@@ -483,10 +493,9 @@ export function DeploymentDialog({
               method: "POST",
               body: JSON.stringify({
                 workflow_id: workflowId,
-                workflow_version_id: selectedWorkflowVersion?.id,
-                machine_id: final_machine.data?.id,
-                machine_version_id: final_machine.data?.machine_version_id,
-                environment: selectedEnvironment,
+                workflow_version_id: versionToUse?.id,
+                machine_id: machineToUse,
+                environment: environmentToUse,
                 ...(myDeployment && {
                   deployment_id: myDeployment.id,
                 }),
@@ -518,13 +527,8 @@ export function DeploymentDialog({
     selectedEnvironment: string;
     selectedMachineId: string;
   }) => {
-    // Update the state variables for the existing handlePromoteToEnv function
-    setSelectedWorkflowVersion(data.selectedWorkflowVersion);
-    setSelectedEnvironment(data.selectedEnvironment as any);
-    setSelectedMachineId(data.selectedMachineId);
-
-    // Call the existing promotion function
-    handlePromoteToEnv();
+    // Call promotion directly with the form data
+    handlePromoteToEnv(data);
   };
 
   return (
