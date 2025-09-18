@@ -123,7 +123,7 @@ export async function api({
               .includes("You are not authorized to access this resource");
           if (
             !isTokenError &&
-            isFolderExistsError &&
+            !isFolderExistsError &&
             !isInternalServerError &&
             !isAccessDenied
           ) {
@@ -212,7 +212,7 @@ export async function api({
           .includes("You are not authorized to access this resource");
       if (
         !isTokenError &&
-        isFolderExistsError &&
+        !isFolderExistsError &&
         !isInternalServerError &&
         !isAccessDenied
       ) {
