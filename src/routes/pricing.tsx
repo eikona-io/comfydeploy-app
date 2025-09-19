@@ -1,3 +1,4 @@
+import { SignedIn } from "@clerk/clerk-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, ExternalLink } from "lucide-react";
@@ -31,7 +32,6 @@ import NickPhoto from "@/logos/nick.png";
 import SliversideLogo from "@/logos/sliverside.svg";
 import VizcomLogo from "@/logos/vizcom.svg";
 import WildlifeLogo from "@/logos/wildlife.svg";
-import { SignedIn } from "@clerk/clerk-react";
 
 export const Route = createFileRoute("/pricing")({
   component: RouteComponent,
@@ -616,12 +616,7 @@ function PricingTier({
         {tier.id !== "free" && (
           <div className="">
             {tier.name === "Business" ? (
-              <div
-                className={cn(
-                  "grid gap-px",
-                  showBusinessUpgradeButton ? "grid-cols-2" : "grid-cols-1",
-                )}
-              >
+              <div className={cn("grid gap-px", "grid-cols-1")}>
                 <SignedIn>
                   {showBusinessUpgradeButton && (
                     <UpgradeButton
@@ -841,54 +836,54 @@ function GPUPricingTable() {
               <TableBody>
                 {isLoading
                   ? // Skeleton loading state
-                  Array.from({ length: 6 }).map((_, index) => (
-                    <TableRow key={index} className="border-0">
-                      <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
-                        <div className="flex items-center gap-2">
-                          <Skeleton className="h-3 w-16" />
-                        </div>
-                      </TableCell>
-                      <TableCell className="border-0 px-1 py-0.5 text-right">
-                        <Skeleton className="h-3 w-12 ml-auto" />
-                      </TableCell>
-                    </TableRow>
-                  ))
+                    Array.from({ length: 6 }).map((_, index) => (
+                      <TableRow key={index} className="border-0">
+                        <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        </TableCell>
+                        <TableCell className="border-0 px-1 py-0.5 text-right">
+                          <Skeleton className="h-3 w-12 ml-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ))
                   : Object.entries(gpuPricing || {}).map(([gpu, price]) => (
-                    <TableRow key={gpu} className="border-0">
-                      <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
-                        <div className="flex items-center gap-1">
-                          {gpu}
-                          {(gpu === "H200" || gpu === "B200") && (
-                            <Badge
-                              variant="secondary"
-                              className="bg-blue-50 h-3 px-1 py-0 text-[8px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
+                      <TableRow key={gpu} className="border-0">
+                        <TableCell className="border-0 font-medium px-1 py-0.5 text-xs">
+                          <div className="flex items-center gap-1">
+                            {gpu}
+                            {(gpu === "H200" || gpu === "B200") && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-blue-50 h-3 px-1 py-0 text-[8px] text-blue-700 dark:bg-blue-900/50 dark:text-blue-400"
+                              >
+                                NEW
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="border-0 px-1 py-0.5 text-right">
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={`${activeTab}-${useTopupPricing}`}
+                              initial={{ opacity: 0, y: 5 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -5 }}
+                              className="font-medium inline-block"
                             >
-                              NEW
-                            </Badge>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell className="border-0 px-1 py-0.5 text-right">
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={`${activeTab}-${useTopupPricing}`}
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -5 }}
-                            className="font-medium inline-block"
-                          >
-                            <GPUPriceDisplay
-                              gpu={gpu}
-                              price={price as number}
-                              activeTab={activeTab}
-                              useTopupPricing={useTopupPricing}
-                              creditSchemaData={creditSchemaData}
-                            />
-                          </motion.div>
-                        </AnimatePresence>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                              <GPUPriceDisplay
+                                gpu={gpu}
+                                price={price as number}
+                                activeTab={activeTab}
+                                useTopupPricing={useTopupPricing}
+                                creditSchemaData={creditSchemaData}
+                              />
+                            </motion.div>
+                          </AnimatePresence>
+                        </TableCell>
+                      </TableRow>
+                    ))}
               </TableBody>
             </Table>
           </div>
@@ -910,26 +905,26 @@ function GPUPriceDisplay({
   activeTab: "per_sec" | "per_hour";
   useTopupPricing: boolean;
   creditSchemaData:
-  | {
-    "gpu-credit": {
-      name: string;
-      display: { plural: string; singular: string };
-      schema: Array<{
-        credit_cost: number;
-        metered_feature_id: string;
-      }>;
-    };
-    "gpu-credit-topup": {
-      name: string;
-      display: { plural: string; singular: string };
-      schema: Array<{
-        credit_cost: number;
-        metered_feature_id: string;
-      }>;
-    };
-  }
-  | null
-  | undefined;
+    | {
+        "gpu-credit": {
+          name: string;
+          display: { plural: string; singular: string };
+          schema: Array<{
+            credit_cost: number;
+            metered_feature_id: string;
+          }>;
+        };
+        "gpu-credit-topup": {
+          name: string;
+          display: { plural: string; singular: string };
+          schema: Array<{
+            credit_cost: number;
+            metered_feature_id: string;
+          }>;
+        };
+      }
+    | null
+    | undefined;
 }) {
   // Get both pricing data for comparison
   const getPricingFromSchema = (
@@ -1069,9 +1064,47 @@ export function PricingPage() {
           <h1 className="font-bold sm:text-5xl text-4xl text-gray-900 tracking-tight dark:text-zinc-200">
             Power your teams with Cloud Hosted ComfyUI
           </h1>
-          <p className="leading-8 mt-4 text-lg text-gray-600 dark:text-zinc-400">
-            We work closely with you to bring your workflow to your teams.
-          </p>
+
+          {/* Aesthetic announcement card */}
+          <div className="mt-8 max-w-5xl">
+            <div className="rounded-lg bg-orange-50/80 p-4 ring-1 ring-orange-200/50 dark:bg-orange-900/20 dark:ring-orange-800/20">
+              <div className="flex items-start gap-3">
+                <span className="inline-flex items-center rounded-full bg-orange-100/80 px-2 py-1 text-xs font-medium text-orange-800 dark:bg-orange-900/40 dark:text-orange-200">
+                  👋 From Benny
+                </span>
+                <div className="flex-1 space-y-2 text-sm text-gray-700 dark:text-zinc-300">
+                  <p className="font-medium">
+                    We are no longer taking new customers.
+                  </p>
+                  <p className="text-gray-600 dark:text-zinc-400">
+                    Existing customers: service and support remain unchanged.
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 text-xs">
+                    See why:
+                    <a
+                      href="https://x.com/BennyKokMusic/status/1968325785158394089"
+                      className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                    >
+                      Twitter
+                    </a>
+                    <a
+                      href="https://www.comfydeploy.com/blog/re-open-sourcing-comfydeploy"
+                      className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                    >
+                      Blog Post
+                    </a>
+                    Contact us at:
+                    <a
+                      href="mailto:founders@comfydeploy.com"
+                      className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+                    >
+                      founders@comfydeploy.com
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Pricing Section */}
@@ -1235,58 +1268,58 @@ export function PricingPage() {
               {/* Creator and Deployment Tiers */}
               {(filteredTiers.some((tier) => tier.id === "creator") ||
                 filteredTiers.some((tier) => tier.id === "deployment")) && (
-                  <div
-                    className={cn(
-                      "grid border border-gray-200 border-t-0 dark:border-zinc-700",
-                      filteredTiers.some((tier) => tier.id === "creator") &&
+                <div
+                  className={cn(
+                    "grid border border-gray-200 border-t-0 dark:border-zinc-700",
+                    filteredTiers.some((tier) => tier.id === "creator") &&
+                      filteredTiers.some((tier) => tier.id === "deployment")
+                      ? "grid-cols-1 lg:grid-cols-2"
+                      : "grid-cols-1",
+                  )}
+                >
+                  {filteredTiers.find((tier) => tier.id === "creator") && (
+                    <PricingTier
+                      tier={
+                        filteredTiers.find((tier) => tier.id === "creator")!
+                      }
+                      isLoading={isLoading}
+                      plans={_sub?.plans?.plans ?? []}
+                      className={cn(
+                        "bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100 dark:from-amber-900/10 dark:via-amber-900/30 dark:to-amber-800/50",
                         filteredTiers.some((tier) => tier.id === "deployment")
-                        ? "grid-cols-1 lg:grid-cols-2"
-                        : "grid-cols-1",
-                    )}
-                  >
-                    {filteredTiers.find((tier) => tier.id === "creator") && (
-                      <PricingTier
-                        tier={
-                          filteredTiers.find((tier) => tier.id === "creator")!
-                        }
-                        isLoading={isLoading}
-                        plans={_sub?.plans?.plans ?? []}
-                        className={cn(
-                          "bg-gradient-to-bl from-amber-50/10 via-amber-50/80 to-amber-100 dark:from-amber-900/10 dark:via-amber-900/30 dark:to-amber-800/50",
-                          filteredTiers.some((tier) => tier.id === "deployment")
-                            ? "rounded-bl-sm lg:border-r dark:lg:border-zinc-700"
-                            : "rounded-b-sm",
-                        )}
-                        isYearly={isYearly}
-                        showCreatorTier={filteredTiers.some(
-                          (tier) => tier.id === "creator",
-                        )}
-                        showDeploymentTier={filteredTiers.some(
-                          (tier) => tier.id === "deployment",
-                        )}
-                        showBusinessUpgradeButton={showBusinessUpgradeButton}
-                      />
-                    )}
-                    {filteredTiers.find((tier) => tier.id === "deployment") && (
-                      <PricingTier
-                        tier={
-                          filteredTiers.find((tier) => tier.id === "deployment")!
-                        }
-                        isLoading={isLoading}
-                        plans={_sub?.plans?.plans ?? []}
-                        className="rounded-br-sm bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100 dark:from-blue-900/10 dark:via-blue-900/30 dark:to-blue-800/50"
-                        isYearly={isYearly}
-                        showCreatorTier={filteredTiers.some(
-                          (tier) => tier.id === "creator",
-                        )}
-                        showDeploymentTier={filteredTiers.some(
-                          (tier) => tier.id === "deployment",
-                        )}
-                        showBusinessUpgradeButton={showBusinessUpgradeButton}
-                      />
-                    )}
-                  </div>
-                )}
+                          ? "rounded-bl-sm lg:border-r dark:lg:border-zinc-700"
+                          : "rounded-b-sm",
+                      )}
+                      isYearly={isYearly}
+                      showCreatorTier={filteredTiers.some(
+                        (tier) => tier.id === "creator",
+                      )}
+                      showDeploymentTier={filteredTiers.some(
+                        (tier) => tier.id === "deployment",
+                      )}
+                      showBusinessUpgradeButton={showBusinessUpgradeButton}
+                    />
+                  )}
+                  {filteredTiers.find((tier) => tier.id === "deployment") && (
+                    <PricingTier
+                      tier={
+                        filteredTiers.find((tier) => tier.id === "deployment")!
+                      }
+                      isLoading={isLoading}
+                      plans={_sub?.plans?.plans ?? []}
+                      className="rounded-br-sm bg-gradient-to-bl from-blue-50/10 via-blue-50/80 to-blue-100 dark:from-blue-900/10 dark:via-blue-900/30 dark:to-blue-800/50"
+                      isYearly={isYearly}
+                      showCreatorTier={filteredTiers.some(
+                        (tier) => tier.id === "creator",
+                      )}
+                      showDeploymentTier={filteredTiers.some(
+                        (tier) => tier.id === "deployment",
+                      )}
+                      showBusinessUpgradeButton={showBusinessUpgradeButton}
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="absolute inset-0 h-full w-full bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] bg-[size:6rem_4rem] bg-white dark:bg-[linear-gradient(to_right,#27272a_1px,transparent_1px),linear-gradient(to_bottom,#27272a_1px,transparent_1px)] dark:bg-zinc-900" />
