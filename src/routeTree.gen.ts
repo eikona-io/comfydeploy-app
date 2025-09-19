@@ -8,206 +8,463 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as WaitlistRouteImport } from './routes/waitlist'
-import { Route as UsageRouteImport } from './routes/usage'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as SecretsRouteImport } from './routes/secrets'
-import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as OrgNotFoundRouteImport } from './routes/org-not-found'
-import { Route as OnboardingCallRouteImport } from './routes/onboarding-call'
-import { Route as ModelsRouteImport } from './routes/models'
-import { Route as ExploreRouteImport } from './routes/explore'
-import { Route as CreateOrgRouteImport } from './routes/create-org'
-import { Route as AssetsRouteImport } from './routes/assets'
-import { Route as ApiKeysRouteImport } from './routes/api-keys'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as WorkflowsIndexRouteImport } from './routes/workflows/index'
-import { Route as SessionsIndexRouteImport } from './routes/sessions/index'
-import { Route as OrganizationProfileIndexRouteImport } from './routes/organization-profile/index'
-import { Route as MachinesIndexRouteImport } from './routes/machines/index'
-import { Route as AnalyticsIndexRouteImport } from './routes/analytics/index'
-import { Route as AuthSignUpRouteImport } from './routes/auth/sign-up'
-import { Route as AuthSignInRouteImport } from './routes/auth/sign-in'
-import { Route as OrganizationProfileOrganizationMembersIndexRouteImport } from './routes/organization-profile/organization-members/index'
-import { Route as MachinesMachineIdIndexRouteImport } from './routes/machines/$machineId/index'
-import { Route as WorkflowsWorkflowIdViewRouteImport } from './routes/workflows/$workflowId/$view'
-import { Route as ShareUserSlugRouteImport } from './routes/share/$user/$slug'
-import { Route as MachinesMachineIdFilesRouteImport } from './routes/machines/$machineId/files'
-import { Route as MachinesMachineIdActivityRouteImport } from './routes/machines/$machineId/activity'
-import { Route as MachinesMachineIdMachineVersionIdRouteImport } from './routes/machines/$machineId/$machineVersionId'
-import { Route as MachinesMachineIdHistoryIndexRouteImport } from './routes/machines/$machineId/history/index'
-import { Route as AuthRequestRequestIdIndexRouteImport } from './routes/auth/request/$requestId/index'
-import { Route as ShareWorkflowUserSlugRouteImport } from './routes/share/workflow/$user/$slug'
-import { Route as SharePlaygroundUserSlugRouteImport } from './routes/share/playground/$user/$slug'
+// Import Routes
 
-const WaitlistRoute = WaitlistRouteImport.update({
+import { Route as rootRoute } from './routes/__root'
+import { Route as WaitlistImport } from './routes/waitlist'
+import { Route as UsageImport } from './routes/usage'
+import { Route as SettingsImport } from './routes/settings'
+import { Route as SecretsImport } from './routes/secrets'
+import { Route as PricingImport } from './routes/pricing'
+import { Route as OrgNotFoundImport } from './routes/org-not-found'
+import { Route as OnboardingCallImport } from './routes/onboarding-call'
+import { Route as ModelsImport } from './routes/models'
+import { Route as ExploreImport } from './routes/explore'
+import { Route as CreateOrgImport } from './routes/create-org'
+import { Route as AssetsImport } from './routes/assets'
+import { Route as ApiKeysImport } from './routes/api-keys'
+import { Route as IndexImport } from './routes/index'
+import { Route as WorkflowsIndexImport } from './routes/workflows/index'
+import { Route as SessionsIndexImport } from './routes/sessions/index'
+import { Route as OrganizationProfileIndexImport } from './routes/organization-profile/index'
+import { Route as MachinesIndexImport } from './routes/machines/index'
+import { Route as AnalyticsIndexImport } from './routes/analytics/index'
+import { Route as AuthSignUpImport } from './routes/auth/sign-up'
+import { Route as AuthSignInImport } from './routes/auth/sign-in'
+import { Route as OrganizationProfileOrganizationMembersIndexImport } from './routes/organization-profile/organization-members/index'
+import { Route as MachinesMachineIdIndexImport } from './routes/machines/$machineId/index'
+import { Route as WorkflowsWorkflowIdViewImport } from './routes/workflows/$workflowId/$view'
+import { Route as ShareUserSlugImport } from './routes/share/$user/$slug'
+import { Route as MachinesMachineIdFilesImport } from './routes/machines/$machineId/files'
+import { Route as MachinesMachineIdActivityImport } from './routes/machines/$machineId/activity'
+import { Route as MachinesMachineIdMachineVersionIdImport } from './routes/machines/$machineId/$machineVersionId'
+import { Route as MachinesMachineIdHistoryIndexImport } from './routes/machines/$machineId/history/index'
+import { Route as AuthRequestRequestIdIndexImport } from './routes/auth/request/$requestId/index'
+import { Route as ShareWorkflowUserSlugImport } from './routes/share/workflow/$user/$slug'
+import { Route as SharePlaygroundUserSlugImport } from './routes/share/playground/$user/$slug'
+
+// Create/Update Routes
+
+const WaitlistRoute = WaitlistImport.update({
   id: '/waitlist',
   path: '/waitlist',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const UsageRoute = UsageRouteImport.update({
+
+const UsageRoute = UsageImport.update({
   id: '/usage',
   path: '/usage',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const SettingsRoute = SettingsRouteImport.update({
+
+const SettingsRoute = SettingsImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const SecretsRoute = SecretsRouteImport.update({
+
+const SecretsRoute = SecretsImport.update({
   id: '/secrets',
   path: '/secrets',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const PricingRoute = PricingRouteImport.update({
+
+const PricingRoute = PricingImport.update({
   id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const OrgNotFoundRoute = OrgNotFoundRouteImport.update({
+
+const OrgNotFoundRoute = OrgNotFoundImport.update({
   id: '/org-not-found',
   path: '/org-not-found',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const OnboardingCallRoute = OnboardingCallRouteImport.update({
+
+const OnboardingCallRoute = OnboardingCallImport.update({
   id: '/onboarding-call',
   path: '/onboarding-call',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const ModelsRoute = ModelsRouteImport.update({
+
+const ModelsRoute = ModelsImport.update({
   id: '/models',
   path: '/models',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const ExploreRoute = ExploreRouteImport.update({
+
+const ExploreRoute = ExploreImport.update({
   id: '/explore',
   path: '/explore',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const CreateOrgRoute = CreateOrgRouteImport.update({
+
+const CreateOrgRoute = CreateOrgImport.update({
   id: '/create-org',
   path: '/create-org',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AssetsRoute = AssetsRouteImport.update({
+
+const AssetsRoute = AssetsImport.update({
   id: '/assets',
   path: '/assets',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const ApiKeysRoute = ApiKeysRouteImport.update({
+
+const ApiKeysRoute = ApiKeysImport.update({
   id: '/api-keys',
   path: '/api-keys',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+
+const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const WorkflowsIndexRoute = WorkflowsIndexRouteImport.update({
+
+const WorkflowsIndexRoute = WorkflowsIndexImport.update({
   id: '/workflows/',
   path: '/workflows/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any).lazy(() =>
   import('./routes/workflows/index.lazy').then((d) => d.Route),
 )
-const SessionsIndexRoute = SessionsIndexRouteImport.update({
+
+const SessionsIndexRoute = SessionsIndexImport.update({
   id: '/sessions/',
   path: '/sessions/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const OrganizationProfileIndexRoute =
-  OrganizationProfileIndexRouteImport.update({
-    id: '/organization-profile/',
-    path: '/organization-profile/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const MachinesIndexRoute = MachinesIndexRouteImport.update({
+
+const OrganizationProfileIndexRoute = OrganizationProfileIndexImport.update({
+  id: '/organization-profile/',
+  path: '/organization-profile/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const MachinesIndexRoute = MachinesIndexImport.update({
   id: '/machines/',
   path: '/machines/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AnalyticsIndexRoute = AnalyticsIndexRouteImport.update({
+
+const AnalyticsIndexRoute = AnalyticsIndexImport.update({
   id: '/analytics/',
   path: '/analytics/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any).lazy(() =>
   import('./routes/analytics/index.lazy').then((d) => d.Route),
 )
-const AuthSignUpRoute = AuthSignUpRouteImport.update({
+
+const AuthSignUpRoute = AuthSignUpImport.update({
   id: '/auth/sign-up',
   path: '/auth/sign-up',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AuthSignInRoute = AuthSignInRouteImport.update({
+
+const AuthSignInRoute = AuthSignInImport.update({
   id: '/auth/sign-in',
   path: '/auth/sign-in',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
+
 const OrganizationProfileOrganizationMembersIndexRoute =
-  OrganizationProfileOrganizationMembersIndexRouteImport.update({
+  OrganizationProfileOrganizationMembersIndexImport.update({
     id: '/organization-profile/organization-members/',
     path: '/organization-profile/organization-members/',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => rootRoute,
   } as any)
-const MachinesMachineIdIndexRoute = MachinesMachineIdIndexRouteImport.update({
+
+const MachinesMachineIdIndexRoute = MachinesMachineIdIndexImport.update({
   id: '/machines/$machineId/',
   path: '/machines/$machineId/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewRouteImport.update({
+
+const WorkflowsWorkflowIdViewRoute = WorkflowsWorkflowIdViewImport.update({
   id: '/workflows/$workflowId/$view',
   path: '/workflows/$workflowId/$view',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any).lazy(() =>
   import('./routes/workflows/$workflowId/$view.lazy').then((d) => d.Route),
 )
-const ShareUserSlugRoute = ShareUserSlugRouteImport.update({
+
+const ShareUserSlugRoute = ShareUserSlugImport.update({
   id: '/share/$user/$slug',
   path: '/share/$user/$slug',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const MachinesMachineIdFilesRoute = MachinesMachineIdFilesRouteImport.update({
+
+const MachinesMachineIdFilesRoute = MachinesMachineIdFilesImport.update({
   id: '/machines/$machineId/files',
   path: '/machines/$machineId/files',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const MachinesMachineIdActivityRoute =
-  MachinesMachineIdActivityRouteImport.update({
-    id: '/machines/$machineId/activity',
-    path: '/machines/$machineId/activity',
-    getParentRoute: () => rootRouteImport,
-  } as any)
+
+const MachinesMachineIdActivityRoute = MachinesMachineIdActivityImport.update({
+  id: '/machines/$machineId/activity',
+  path: '/machines/$machineId/activity',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const MachinesMachineIdMachineVersionIdRoute =
-  MachinesMachineIdMachineVersionIdRouteImport.update({
+  MachinesMachineIdMachineVersionIdImport.update({
     id: '/machines/$machineId/$machineVersionId',
     path: '/machines/$machineId/$machineVersionId',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => rootRoute,
   } as any)
+
 const MachinesMachineIdHistoryIndexRoute =
-  MachinesMachineIdHistoryIndexRouteImport.update({
+  MachinesMachineIdHistoryIndexImport.update({
     id: '/machines/$machineId/history/',
     path: '/machines/$machineId/history/',
-    getParentRoute: () => rootRouteImport,
+    getParentRoute: () => rootRoute,
   } as any)
-const AuthRequestRequestIdIndexRoute =
-  AuthRequestRequestIdIndexRouteImport.update({
-    id: '/auth/request/$requestId/',
-    path: '/auth/request/$requestId/',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ShareWorkflowUserSlugRoute = ShareWorkflowUserSlugRouteImport.update({
+
+const AuthRequestRequestIdIndexRoute = AuthRequestRequestIdIndexImport.update({
+  id: '/auth/request/$requestId/',
+  path: '/auth/request/$requestId/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ShareWorkflowUserSlugRoute = ShareWorkflowUserSlugImport.update({
   id: '/share/workflow/$user/$slug',
   path: '/share/workflow/$user/$slug',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const SharePlaygroundUserSlugRoute = SharePlaygroundUserSlugRouteImport.update({
+
+const SharePlaygroundUserSlugRoute = SharePlaygroundUserSlugImport.update({
   id: '/share/playground/$user/$slug',
   path: '/share/playground/$user/$slug',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
+
+// Populate the FileRoutesByPath interface
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/api-keys': {
+      id: '/api-keys'
+      path: '/api-keys'
+      fullPath: '/api-keys'
+      preLoaderRoute: typeof ApiKeysImport
+      parentRoute: typeof rootRoute
+    }
+    '/assets': {
+      id: '/assets'
+      path: '/assets'
+      fullPath: '/assets'
+      preLoaderRoute: typeof AssetsImport
+      parentRoute: typeof rootRoute
+    }
+    '/create-org': {
+      id: '/create-org'
+      path: '/create-org'
+      fullPath: '/create-org'
+      preLoaderRoute: typeof CreateOrgImport
+      parentRoute: typeof rootRoute
+    }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreImport
+      parentRoute: typeof rootRoute
+    }
+    '/models': {
+      id: '/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof ModelsImport
+      parentRoute: typeof rootRoute
+    }
+    '/onboarding-call': {
+      id: '/onboarding-call'
+      path: '/onboarding-call'
+      fullPath: '/onboarding-call'
+      preLoaderRoute: typeof OnboardingCallImport
+      parentRoute: typeof rootRoute
+    }
+    '/org-not-found': {
+      id: '/org-not-found'
+      path: '/org-not-found'
+      fullPath: '/org-not-found'
+      preLoaderRoute: typeof OrgNotFoundImport
+      parentRoute: typeof rootRoute
+    }
+    '/pricing': {
+      id: '/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof PricingImport
+      parentRoute: typeof rootRoute
+    }
+    '/secrets': {
+      id: '/secrets'
+      path: '/secrets'
+      fullPath: '/secrets'
+      preLoaderRoute: typeof SecretsImport
+      parentRoute: typeof rootRoute
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsImport
+      parentRoute: typeof rootRoute
+    }
+    '/usage': {
+      id: '/usage'
+      path: '/usage'
+      fullPath: '/usage'
+      preLoaderRoute: typeof UsageImport
+      parentRoute: typeof rootRoute
+    }
+    '/waitlist': {
+      id: '/waitlist'
+      path: '/waitlist'
+      fullPath: '/waitlist'
+      preLoaderRoute: typeof WaitlistImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/sign-in': {
+      id: '/auth/sign-in'
+      path: '/auth/sign-in'
+      fullPath: '/auth/sign-in'
+      preLoaderRoute: typeof AuthSignInImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/sign-up': {
+      id: '/auth/sign-up'
+      path: '/auth/sign-up'
+      fullPath: '/auth/sign-up'
+      preLoaderRoute: typeof AuthSignUpImport
+      parentRoute: typeof rootRoute
+    }
+    '/analytics/': {
+      id: '/analytics/'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AnalyticsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/': {
+      id: '/machines/'
+      path: '/machines'
+      fullPath: '/machines'
+      preLoaderRoute: typeof MachinesIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/organization-profile/': {
+      id: '/organization-profile/'
+      path: '/organization-profile'
+      fullPath: '/organization-profile'
+      preLoaderRoute: typeof OrganizationProfileIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/sessions/': {
+      id: '/sessions/'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof SessionsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/workflows/': {
+      id: '/workflows/'
+      path: '/workflows'
+      fullPath: '/workflows'
+      preLoaderRoute: typeof WorkflowsIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/$machineVersionId': {
+      id: '/machines/$machineId/$machineVersionId'
+      path: '/machines/$machineId/$machineVersionId'
+      fullPath: '/machines/$machineId/$machineVersionId'
+      preLoaderRoute: typeof MachinesMachineIdMachineVersionIdImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/activity': {
+      id: '/machines/$machineId/activity'
+      path: '/machines/$machineId/activity'
+      fullPath: '/machines/$machineId/activity'
+      preLoaderRoute: typeof MachinesMachineIdActivityImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/files': {
+      id: '/machines/$machineId/files'
+      path: '/machines/$machineId/files'
+      fullPath: '/machines/$machineId/files'
+      preLoaderRoute: typeof MachinesMachineIdFilesImport
+      parentRoute: typeof rootRoute
+    }
+    '/share/$user/$slug': {
+      id: '/share/$user/$slug'
+      path: '/share/$user/$slug'
+      fullPath: '/share/$user/$slug'
+      preLoaderRoute: typeof ShareUserSlugImport
+      parentRoute: typeof rootRoute
+    }
+    '/workflows/$workflowId/$view': {
+      id: '/workflows/$workflowId/$view'
+      path: '/workflows/$workflowId/$view'
+      fullPath: '/workflows/$workflowId/$view'
+      preLoaderRoute: typeof WorkflowsWorkflowIdViewImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/': {
+      id: '/machines/$machineId/'
+      path: '/machines/$machineId'
+      fullPath: '/machines/$machineId'
+      preLoaderRoute: typeof MachinesMachineIdIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/organization-profile/organization-members/': {
+      id: '/organization-profile/organization-members/'
+      path: '/organization-profile/organization-members'
+      fullPath: '/organization-profile/organization-members'
+      preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/share/playground/$user/$slug': {
+      id: '/share/playground/$user/$slug'
+      path: '/share/playground/$user/$slug'
+      fullPath: '/share/playground/$user/$slug'
+      preLoaderRoute: typeof SharePlaygroundUserSlugImport
+      parentRoute: typeof rootRoute
+    }
+    '/share/workflow/$user/$slug': {
+      id: '/share/workflow/$user/$slug'
+      path: '/share/workflow/$user/$slug'
+      fullPath: '/share/workflow/$user/$slug'
+      preLoaderRoute: typeof ShareWorkflowUserSlugImport
+      parentRoute: typeof rootRoute
+    }
+    '/auth/request/$requestId/': {
+      id: '/auth/request/$requestId/'
+      path: '/auth/request/$requestId'
+      fullPath: '/auth/request/$requestId'
+      preLoaderRoute: typeof AuthRequestRequestIdIndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/machines/$machineId/history/': {
+      id: '/machines/$machineId/history/'
+      path: '/machines/$machineId/history'
+      fullPath: '/machines/$machineId/history'
+      preLoaderRoute: typeof MachinesMachineIdHistoryIndexImport
+      parentRoute: typeof rootRoute
+    }
+  }
+}
+
+// Create and export the route tree
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -242,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/auth/request/$requestId': typeof AuthRequestRequestIdIndexRoute
   '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
+
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
@@ -275,8 +533,9 @@ export interface FileRoutesByTo {
   '/auth/request/$requestId': typeof AuthRequestRequestIdIndexRoute
   '/machines/$machineId/history': typeof MachinesMachineIdHistoryIndexRoute
 }
+
 export interface FileRoutesById {
-  __root__: typeof rootRouteImport
+  __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/api-keys': typeof ApiKeysRoute
   '/assets': typeof AssetsRoute
@@ -309,6 +568,7 @@ export interface FileRoutesById {
   '/auth/request/$requestId/': typeof AuthRequestRequestIdIndexRoute
   '/machines/$machineId/history/': typeof MachinesMachineIdHistoryIndexRoute
 }
+
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
@@ -411,6 +671,7 @@ export interface FileRouteTypes {
     | '/machines/$machineId/history/'
   fileRoutesById: FileRoutesById
 }
+
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiKeysRoute: typeof ApiKeysRoute
@@ -443,228 +704,6 @@ export interface RootRouteChildren {
   ShareWorkflowUserSlugRoute: typeof ShareWorkflowUserSlugRoute
   AuthRequestRequestIdIndexRoute: typeof AuthRequestRequestIdIndexRoute
   MachinesMachineIdHistoryIndexRoute: typeof MachinesMachineIdHistoryIndexRoute
-}
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/waitlist': {
-      id: '/waitlist'
-      path: '/waitlist'
-      fullPath: '/waitlist'
-      preLoaderRoute: typeof WaitlistRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/usage': {
-      id: '/usage'
-      path: '/usage'
-      fullPath: '/usage'
-      preLoaderRoute: typeof UsageRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/secrets': {
-      id: '/secrets'
-      path: '/secrets'
-      fullPath: '/secrets'
-      preLoaderRoute: typeof SecretsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/org-not-found': {
-      id: '/org-not-found'
-      path: '/org-not-found'
-      fullPath: '/org-not-found'
-      preLoaderRoute: typeof OrgNotFoundRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/onboarding-call': {
-      id: '/onboarding-call'
-      path: '/onboarding-call'
-      fullPath: '/onboarding-call'
-      preLoaderRoute: typeof OnboardingCallRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/models': {
-      id: '/models'
-      path: '/models'
-      fullPath: '/models'
-      preLoaderRoute: typeof ModelsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/explore': {
-      id: '/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof ExploreRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/create-org': {
-      id: '/create-org'
-      path: '/create-org'
-      fullPath: '/create-org'
-      preLoaderRoute: typeof CreateOrgRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/assets': {
-      id: '/assets'
-      path: '/assets'
-      fullPath: '/assets'
-      preLoaderRoute: typeof AssetsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api-keys': {
-      id: '/api-keys'
-      path: '/api-keys'
-      fullPath: '/api-keys'
-      preLoaderRoute: typeof ApiKeysRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workflows/': {
-      id: '/workflows/'
-      path: '/workflows'
-      fullPath: '/workflows'
-      preLoaderRoute: typeof WorkflowsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sessions/': {
-      id: '/sessions/'
-      path: '/sessions'
-      fullPath: '/sessions'
-      preLoaderRoute: typeof SessionsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organization-profile/': {
-      id: '/organization-profile/'
-      path: '/organization-profile'
-      fullPath: '/organization-profile'
-      preLoaderRoute: typeof OrganizationProfileIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/machines/': {
-      id: '/machines/'
-      path: '/machines'
-      fullPath: '/machines'
-      preLoaderRoute: typeof MachinesIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/analytics/': {
-      id: '/analytics/'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AnalyticsIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/sign-up': {
-      id: '/auth/sign-up'
-      path: '/auth/sign-up'
-      fullPath: '/auth/sign-up'
-      preLoaderRoute: typeof AuthSignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/sign-in': {
-      id: '/auth/sign-in'
-      path: '/auth/sign-in'
-      fullPath: '/auth/sign-in'
-      preLoaderRoute: typeof AuthSignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/organization-profile/organization-members/': {
-      id: '/organization-profile/organization-members/'
-      path: '/organization-profile/organization-members'
-      fullPath: '/organization-profile/organization-members'
-      preLoaderRoute: typeof OrganizationProfileOrganizationMembersIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/machines/$machineId/': {
-      id: '/machines/$machineId/'
-      path: '/machines/$machineId'
-      fullPath: '/machines/$machineId'
-      preLoaderRoute: typeof MachinesMachineIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/workflows/$workflowId/$view': {
-      id: '/workflows/$workflowId/$view'
-      path: '/workflows/$workflowId/$view'
-      fullPath: '/workflows/$workflowId/$view'
-      preLoaderRoute: typeof WorkflowsWorkflowIdViewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/share/$user/$slug': {
-      id: '/share/$user/$slug'
-      path: '/share/$user/$slug'
-      fullPath: '/share/$user/$slug'
-      preLoaderRoute: typeof ShareUserSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/machines/$machineId/files': {
-      id: '/machines/$machineId/files'
-      path: '/machines/$machineId/files'
-      fullPath: '/machines/$machineId/files'
-      preLoaderRoute: typeof MachinesMachineIdFilesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/machines/$machineId/activity': {
-      id: '/machines/$machineId/activity'
-      path: '/machines/$machineId/activity'
-      fullPath: '/machines/$machineId/activity'
-      preLoaderRoute: typeof MachinesMachineIdActivityRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/machines/$machineId/$machineVersionId': {
-      id: '/machines/$machineId/$machineVersionId'
-      path: '/machines/$machineId/$machineVersionId'
-      fullPath: '/machines/$machineId/$machineVersionId'
-      preLoaderRoute: typeof MachinesMachineIdMachineVersionIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/machines/$machineId/history/': {
-      id: '/machines/$machineId/history/'
-      path: '/machines/$machineId/history'
-      fullPath: '/machines/$machineId/history'
-      preLoaderRoute: typeof MachinesMachineIdHistoryIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/request/$requestId/': {
-      id: '/auth/request/$requestId/'
-      path: '/auth/request/$requestId'
-      fullPath: '/auth/request/$requestId'
-      preLoaderRoute: typeof AuthRequestRequestIdIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/share/workflow/$user/$slug': {
-      id: '/share/workflow/$user/$slug'
-      path: '/share/workflow/$user/$slug'
-      fullPath: '/share/workflow/$user/$slug'
-      preLoaderRoute: typeof ShareWorkflowUserSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/share/playground/$user/$slug': {
-      id: '/share/playground/$user/$slug'
-      path: '/share/playground/$user/$slug'
-      fullPath: '/share/playground/$user/$slug'
-      preLoaderRoute: typeof SharePlaygroundUserSlugRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -702,6 +741,143 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRequestRequestIdIndexRoute: AuthRequestRequestIdIndexRoute,
   MachinesMachineIdHistoryIndexRoute: MachinesMachineIdHistoryIndexRoute,
 }
-export const routeTree = rootRouteImport
+
+export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+/* ROUTE_MANIFEST_START
+{
+  "routes": {
+    "__root__": {
+      "filePath": "__root.tsx",
+      "children": [
+        "/",
+        "/api-keys",
+        "/assets",
+        "/create-org",
+        "/explore",
+        "/models",
+        "/onboarding-call",
+        "/org-not-found",
+        "/pricing",
+        "/secrets",
+        "/settings",
+        "/usage",
+        "/waitlist",
+        "/auth/sign-in",
+        "/auth/sign-up",
+        "/analytics/",
+        "/machines/",
+        "/organization-profile/",
+        "/sessions/",
+        "/workflows/",
+        "/machines/$machineId/$machineVersionId",
+        "/machines/$machineId/activity",
+        "/machines/$machineId/files",
+        "/share/$user/$slug",
+        "/workflows/$workflowId/$view",
+        "/machines/$machineId/",
+        "/organization-profile/organization-members/",
+        "/share/playground/$user/$slug",
+        "/share/workflow/$user/$slug",
+        "/auth/request/$requestId/",
+        "/machines/$machineId/history/"
+      ]
+    },
+    "/": {
+      "filePath": "index.tsx"
+    },
+    "/api-keys": {
+      "filePath": "api-keys.tsx"
+    },
+    "/assets": {
+      "filePath": "assets.tsx"
+    },
+    "/create-org": {
+      "filePath": "create-org.tsx"
+    },
+    "/explore": {
+      "filePath": "explore.tsx"
+    },
+    "/models": {
+      "filePath": "models.tsx"
+    },
+    "/onboarding-call": {
+      "filePath": "onboarding-call.tsx"
+    },
+    "/org-not-found": {
+      "filePath": "org-not-found.tsx"
+    },
+    "/pricing": {
+      "filePath": "pricing.tsx"
+    },
+    "/secrets": {
+      "filePath": "secrets.tsx"
+    },
+    "/settings": {
+      "filePath": "settings.tsx"
+    },
+    "/usage": {
+      "filePath": "usage.tsx"
+    },
+    "/waitlist": {
+      "filePath": "waitlist.tsx"
+    },
+    "/auth/sign-in": {
+      "filePath": "auth/sign-in.tsx"
+    },
+    "/auth/sign-up": {
+      "filePath": "auth/sign-up.tsx"
+    },
+    "/analytics/": {
+      "filePath": "analytics/index.tsx"
+    },
+    "/machines/": {
+      "filePath": "machines/index.tsx"
+    },
+    "/organization-profile/": {
+      "filePath": "organization-profile/index.tsx"
+    },
+    "/sessions/": {
+      "filePath": "sessions/index.tsx"
+    },
+    "/workflows/": {
+      "filePath": "workflows/index.tsx"
+    },
+    "/machines/$machineId/$machineVersionId": {
+      "filePath": "machines/$machineId/$machineVersionId.tsx"
+    },
+    "/machines/$machineId/activity": {
+      "filePath": "machines/$machineId/activity.tsx"
+    },
+    "/machines/$machineId/files": {
+      "filePath": "machines/$machineId/files.tsx"
+    },
+    "/share/$user/$slug": {
+      "filePath": "share/$user/$slug.tsx"
+    },
+    "/workflows/$workflowId/$view": {
+      "filePath": "workflows/$workflowId/$view.tsx"
+    },
+    "/machines/$machineId/": {
+      "filePath": "machines/$machineId/index.tsx"
+    },
+    "/organization-profile/organization-members/": {
+      "filePath": "organization-profile/organization-members/index.tsx"
+    },
+    "/share/playground/$user/$slug": {
+      "filePath": "share/playground/$user/$slug.tsx"
+    },
+    "/share/workflow/$user/$slug": {
+      "filePath": "share/workflow/$user/$slug.tsx"
+    },
+    "/auth/request/$requestId/": {
+      "filePath": "auth/request/$requestId/index.tsx"
+    },
+    "/machines/$machineId/history/": {
+      "filePath": "machines/$machineId/history/index.tsx"
+    }
+  }
+}
+ROUTE_MANIFEST_END */
