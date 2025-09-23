@@ -1,16 +1,9 @@
-import { InsertModal } from "@/components/auto-form/auto-form-dialog";
-import {
-  serverlessFormSchema,
-  sharedMachineConfig,
-} from "@/components/machine/machine-schema";
-import { CustomNodeList } from "@/components/machines/custom-node-list";
+import { useCustomer } from "autumn-js/react";
 import { analyzeWorkflowJson } from "@/components/onboarding/workflow-analyze";
 import {
   type StepValidation,
   useImportWorkflowStore,
 } from "@/components/onboarding/workflow-import";
-import { useCurrentPlan, useCurrentPlanWithStatus } from "@/hooks/use-current-plan";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Local type definitions
 interface CustomNodeData {
@@ -53,10 +46,8 @@ const CustomNodesLoadingSkeleton = () => (
 );
 
 import { useQuery } from "@tanstack/react-query";
-import type { Feature as AutumnFeature } from "@/types/autumn-v2";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import {
-  AlertCircle,
   AlertTriangle,
   CheckCircle,
   ChevronDown,
@@ -74,7 +65,6 @@ import {
   X,
 } from "lucide-react";
 import React, { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
 import { useDebounce } from "use-debounce";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -104,11 +94,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VirtualizedInfiniteList } from "@/components/virtualized-infinite-list";
 import { getBranchInfo } from "@/hooks/use-github-branch-info";
 import { useMachine, useMachines } from "@/hooks/use-machine";
-import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useLatestHashes } from "@/utils/comfydeploy-hash";
 import { MachineSettingsWrapper } from "../machine/machine-settings";
-import { ScrollArea } from "../ui/scroll-area";
 
 // Add this type
 export type ComfyUIOption = {
@@ -281,17 +269,9 @@ export function WorkflowImportSelectedMachine() {
   const validation = useImportWorkflowStore();
   const setValidation = validation.setValidation;
 
-  const sub = useCurrentPlan();
-  // Autumn machine limit for gating creation inside the import flow via plan status
-  // Use the existing plan status hook to avoid extra queries
-  const { data: planStatus } = useCurrentPlanWithStatus();
-  const autumnData = planStatus?.plans?.autumn_data;
-  const machineLimitFeature = (autumnData?.features?.["machine_limit"] ?? null) as (AutumnFeature | null);
-  const machineLimit = machineLimitFeature?.included_usage ?? sub?.features?.machineLimit;
-  const MACHINE_LIMIT_REACHED = machineLimitFeature
-    ? !(machineLimitFeature.unlimited) && (machineLimitFeature.balance ?? 0) <= 0
-    : sub?.features?.machineLimited;
-  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
+  const { check } = useCustomer();
+  const machineLimitCheck = check({ featureId: "machine_limit" });
+  const MACHINE_LIMIT_REACHED = !machineLimitCheck.data?.allowed;
 
   // Clear machine config when switching between new/existing machine
   const prevMachineOption = React.useRef(validation.machineOption);
@@ -324,11 +304,7 @@ export function WorkflowImportSelectedMachine() {
       ? validation.workflowJson
       : validation.importJson;
 
-  const {
-    data: rawDependencies,
-    error: dependenciesError,
-    isLoading: rawDependenciesLoading,
-  } = useQuery({
+  const { data: rawDependencies } = useQuery({
     queryKey: ["analyzeWorkflowJson", json],
     queryFn: () => (json ? analyzeWorkflowJson(json) : null),
     staleTime: Number.POSITIVE_INFINITY,
@@ -337,10 +313,10 @@ export function WorkflowImportSelectedMachine() {
   });
 
   // Enrich dependencies with GitHub star data
-  const { data: dependencies, isLoading: enrichmentLoading } =
-    useEnrichedDependencies(rawDependencies, skipCustomNodeCheck);
-
-  const dependenciesLoading = rawDependenciesLoading || enrichmentLoading;
+  const { data: dependencies } = useEnrichedDependencies(
+    rawDependencies,
+    skipCustomNodeCheck,
+  );
 
   // Initialize dependencies for validation purposes only
   useEffect(() => {
@@ -718,7 +694,7 @@ function ExistingMachineDialog({
                             "w-full text-left border rounded-md p-2 transition-all",
                             "hover:border-primary/50 hover:bg-muted/30",
                             isSelected &&
-                            "border-primary bg-primary/10 ring-1 ring-primary/20",
+                              "border-primary bg-primary/10 ring-1 ring-primary/20",
                             !isSelected && "border-border",
                           )}
                         >
@@ -782,15 +758,15 @@ function ExistingMachineDialog({
                                     node.type === "custom-node" ||
                                     node.type === "custom-node-manager",
                                 ).length > 3 && (
-                                    <span className="text-[9px] text-muted-foreground shrink-0">
-                                      +
-                                      {item.docker_command_steps.steps.filter(
-                                        (node: any) =>
-                                          node.type === "custom-node" ||
-                                          node.type === "custom-node-manager",
-                                      ).length - 3}
-                                    </span>
-                                  )}
+                                  <span className="text-[9px] text-muted-foreground shrink-0">
+                                    +
+                                    {item.docker_command_steps.steps.filter(
+                                      (node: any) =>
+                                        node.type === "custom-node" ||
+                                        node.type === "custom-node-manager",
+                                    ).length - 3}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           )}
@@ -983,9 +959,6 @@ function DetectedCustomNodesSection({
   const [activeTab, setActiveTab] = useState<"simplified" | "advanced">(
     "simplified",
   );
-  const { data: latestHashes } = useLatestHashes();
-  const sub = useCurrentPlan();
-  const isFreePlan = !sub?.plans?.plans?.length || sub?.plans?.plans?.includes("free");
 
   // Auto-generate machine name and set default GPU if not set
   useEffect(() => {
@@ -1048,7 +1021,7 @@ function DetectedCustomNodesSection({
         (step: any) =>
           step.type === "custom-node" &&
           (step.data as CustomNodeData)?.url?.toLowerCase() ===
-          url.toLowerCase(),
+            url.toLowerCase(),
       );
     },
     [existingMachineSteps],
@@ -1893,148 +1866,6 @@ export function WorkflowImportCustomNodeSetup() {
   );
 }
 
-function AdvanceSettings({ validation }: { validation: StepValidation }) {
-  const [openAdvanceSettings, setOpenAdvanceSettings] = useState(false);
-  const navigate = useNavigate();
-  const query = useMachines();
-  const sub = useCurrentPlan();
-  const [missingDockerSteps, setMissingDockerSteps] = useState<any>({
-    steps: [],
-  });
-
-  const createWorkflow = async (machineId?: string) => {
-    const requestBody = {
-      name: validation.workflowName,
-      workflow_json:
-        validation.importOption === "import"
-          ? validation.importJson
-          : validation.workflowJson,
-      ...(validation.workflowApi && { workflow_api: validation.workflowApi }),
-      ...(machineId && { machine_id: machineId }),
-    };
-
-    const result = await api({
-      url: "workflow",
-      init: {
-        method: "POST",
-        body: JSON.stringify(requestBody),
-      },
-    });
-
-    return result;
-  };
-
-  // Use the centralized docker_command_steps instead of rebuilding
-  useEffect(() => {
-    if (validation.docker_command_steps) {
-      setMissingDockerSteps(validation.docker_command_steps);
-    }
-  }, [validation.docker_command_steps]);
-
-  return (
-    <>
-      <div className="-top-10 absolute right-0 hidden md:block">
-        <Button
-          variant={"expandIcon"}
-          iconPlacement="right"
-          Icon={Settings2}
-          className={`${sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-            }`}
-          onClick={() => {
-            if (sub?.plans?.plans) {
-              setOpenAdvanceSettings(true);
-            }
-          }}
-        >
-          Advance Settings
-        </Button>
-      </div>
-      <div className="-top-10 absolute right-0 block md:hidden">
-        <Button
-          size={"icon"}
-          variant={"outline"}
-          className={`${sub?.plans?.plans ? "" : "cursor-not-allowed opacity-70"
-            }`}
-          onClick={() => {
-            if (sub?.plans?.plans) {
-              setOpenAdvanceSettings(true);
-            }
-          }}
-        >
-          <Settings2 className="h-4 w-4" />
-        </Button>
-      </div>
-
-      <InsertModal
-        hideButton
-        open={openAdvanceSettings && !MACHINE_LIMIT_REACHED}
-        mutateFn={query.refetch}
-        setOpen={setOpenAdvanceSettings}
-        disabled={MACHINE_LIMIT_REACHED}
-        dialogClassName="!max-w-[1200px] !max-h-[calc(90vh-10rem)]"
-        containerClassName="flex-col"
-        tooltip={
-          MACHINE_LIMIT_REACHED
-            ? `Max ${machineLimit ?? ""} ComfyUI machine for your account, upgrade to unlock more configuration.`
-            : `Max ${machineLimit ?? ""} ComfyUI machine for your account`
-        }
-        title="Create New Machine"
-        description="Create a new serverless ComfyUI machine based on the analyzed workflow."
-        serverAction={async (data: any) => {
-          try {
-            const machine = await api({
-              url: "machine/serverless",
-              init: {
-                method: "POST",
-                body: JSON.stringify(data),
-              },
-            });
-
-            toast.success(`${data.name} created successfully!`);
-            const workflowResult = await createWorkflow(machine.id);
-            toast.success(
-              `Workflow "${validation.workflowName}" created successfully!`,
-            );
-            window.open(
-              `/workflows/${workflowResult.data.workflow_id}?view=workspace`,
-              "_blank",
-            );
-            // toast.info("Redirecting to machine page...");
-            navigate({
-              to: "/machines/$machineId",
-              params: { machineId: machine.id },
-              search: { view: "deployments" },
-            });
-
-            return {}; // Return empty object since we're handling navigation manually
-          } catch (error) {
-            toast.error("Failed to create");
-            throw error;
-          }
-        }}
-        formSchema={serverlessFormSchema}
-        fieldConfig={sharedMachineConfig}
-        // dependencies={sharedMachineConfigDeps}
-        data={{
-          name: validation.machineName || "",
-          gpu: validation.gpuType?.toUpperCase() as "T4" | "A10G" | "A100",
-          comfyui_version: validation.comfyUiHash || "",
-          machine_builder_version: "4",
-          docker_command_steps: missingDockerSteps,
-
-          // default values
-          allow_concurrent_inputs: 1,
-          concurrency_limit: 2,
-          run_timeout: 300,
-          idle_timeout: 60,
-          ws_timeout: 2,
-          python_version: "3.11",
-        }}
-      />
-    </>
-  );
-}
-
 interface NodeConflict {
   url: string;
   name: string;
@@ -2131,9 +1962,9 @@ function NodeListItem({
       className={cn(
         "flex items-center gap-3 rounded-sm border px-3 py-2 hover:bg-gray-50",
         !hasHash &&
-        "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
+          "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800",
         isUrlDuplicate &&
-        "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
+          "bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800",
       )}
     >
       {checkbox}
