@@ -1,4 +1,46 @@
+// import { HandleFileUpload } from "@/server/uploadFile";
+import { useAuth, useClerk } from "@clerk/clerk-react";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import {
+  Edit,
+  GripVertical,
+  Play,
+  Plus,
+  Save,
+  Settings,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import { useQueryState } from "nuqs";
+import {
+  type FormEvent,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
+import type { z } from "zod";
+import { SortableDragHandle, SortableItem } from "@/components/custom/sortable";
 import { SDForm } from "@/components/SDInputs/SDForm";
+import { SDInputGroup } from "@/components/SDInputs/SDInputGroup";
 import {
   type RGBColor,
   SDInputsRender,
@@ -11,63 +53,23 @@ import {
 } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-// import { getFileDownloadUrlV2 } from "@/db/getFileDownloadUrl";
-import { useAuthStore } from "@/lib/auth-store";
-import { api } from "@/lib/api";
-import { withErrorContext } from "@/lib/error-context";
-import { callServerPromise } from "@/lib/call-server-promise";
-import {
-  type WorkflowInputsType,
-  type getInputsFromWorkflow,
-  getGroupsFromWorkflowAPI,
-} from "@/lib/getInputsFromWorkflow";
-import { cn } from "@/lib/utils";
-// import { HandleFileUpload } from "@/server/uploadFile";
-import { useAuth, useClerk } from "@clerk/clerk-react";
-import {
-  Edit,
-  GripVertical,
-  Play,
-  Plus,
-  Save,
-  Settings,
-  X,
-} from "lucide-react";
-import { useQueryState } from "nuqs";
-import {
-  type FormEvent,
-  type ReactNode,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useCallback,
-} from "react";
-import { SortableItem, SortableDragHandle } from "@/components/custom/sortable";
-import {
-  DndContext,
-  useSensors,
-  useSensor,
-  PointerSensor,
-  KeyboardSensor,
-  closestCenter,
-  useDroppable,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  sortableKeyboardCoordinates,
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { SDInputGroup } from "@/components/SDInputs/SDInputGroup";
-import { useHotkeys } from "react-hotkeys-hook";
-import { toast } from "sonner";
-import type { z } from "zod";
-import { uploadFile } from "../files-api";
-import { publicRunStore } from "./VersionSelect";
 import { useWorkflowIdInWorkflowPage } from "@/hooks/hook";
 import { useCurrentWorkflow } from "@/hooks/use-current-workflow";
+import { api } from "@/lib/api";
+// import { getFileDownloadUrlV2 } from "@/db/getFileDownloadUrl";
+import { useAuthStore } from "@/lib/auth-store";
+import { callServerPromise } from "@/lib/call-server-promise";
+import { withErrorContext } from "@/lib/error-context";
+import {
+  getGroupsFromWorkflowAPI,
+  type getInputsFromWorkflow,
+  type WorkflowInputsType,
+} from "@/lib/getInputsFromWorkflow";
 import { queryClient } from "@/lib/providers";
+import { cn } from "@/lib/utils";
+import { ErrorBoundary } from "../error-boundary";
+import { uploadFile } from "../files-api";
+import { publicRunStore } from "./VersionSelect";
 
 const MAX_FILE_SIZE_BYTES = 250_000_000; // 250MB
 
@@ -980,16 +982,14 @@ export function RunWorkflowInline({
         setLoading2(true);
       }
 
-      const data = await withErrorContext(
-        { action: "Run workflow" },
-        () =>
-          api({
-            url: `run${model_id ? "/sync" : ""}`,
-            init: {
-              method: "POST",
-              body: JSON.stringify(body),
-            },
-          }),
+      const data = await withErrorContext({ action: "Run workflow" }, () =>
+        api({
+          url: `run${model_id ? "/sync" : ""}`,
+          init: {
+            method: "POST",
+            body: JSON.stringify(body),
+          },
+        }),
       );
 
       if (runOrigin === "public-share") {
@@ -1273,313 +1273,388 @@ export function RunWorkflowInline({
   }, [reorderedInputs]);
 
   return (
-    <div className="relative h-full">
-      <style>{`
+    <ErrorBoundary
+      fallback={(error) => {
+        // Parse structured error: "Input: name | Type: type | Issue"
+        const parts = error.message.split(" | ");
+        const isStructured = parts.length >= 3;
+
+        return (
+          <div className="flex h-full items-center justify-center rounded-sm border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+            <div className="max-w-sm text-center">
+              <TriangleAlert
+                size={18}
+                className="mx-auto text-red-600 dark:text-red-400"
+              />
+              <h3 className="mb-2 font-medium text-red-800 text-sm dark:text-red-200">
+                {isStructured ? "Input Error" : "Something went wrong"}
+              </h3>
+              {isStructured ? (
+                <div className="space-y-1 text-left text-2xs">
+                  <div className="font-medium font-mono text-red-700 dark:text-red-300">
+                    {parts[0]}
+                  </div>
+                  <div className="text-red-600 dark:text-red-400">
+                    {parts[1]}
+                  </div>
+                  <div className="text-red-500 dark:text-red-400">
+                    {parts.slice(2).join(" | ")}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-2xs text-red-600 leading-5 dark:text-red-400">
+                  {error.message}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      }}
+    >
+      <div className="relative h-full">
+        <style>{`
         .sortable-item-transition {
           transition-property: transform, opacity;
           transition-duration: 0.2s;
           transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
         }
       `}</style>
-      {/* Edit button */}
-      {canEditOrder && inputs && inputs.length > 0 && (
-        <div className="absolute top-0 right-1 z-[100] flex gap-2">
-          {isEditMode ? (
-            <>
-              <Button
-                onClick={() => {
-                  // On cancel, restore the original state from workflow_api
-                  if (workflow_api && inputs) {
-                    // Restore original groups
-                    const existingGroups =
-                      getGroupsFromWorkflowAPI(workflow_api);
-                    setInputGroups(existingGroups);
+        {/* Edit button */}
+        {canEditOrder && inputs && inputs.length > 0 && (
+          <div className="absolute top-0 right-1 z-[100] flex gap-2">
+            {isEditMode ? (
+              <>
+                <Button
+                  onClick={() => {
+                    // On cancel, restore the original state from workflow_api
+                    if (workflow_api && inputs) {
+                      // Restore original groups
+                      const existingGroups =
+                        getGroupsFromWorkflowAPI(workflow_api);
+                      setInputGroups(existingGroups);
 
-                    // Restore original reorderedInputs with their original groupIds
-                    const inputsWithGroups = inputs.map((input) => ({
-                      ...input,
-                      groupId: input.groupId || undefined,
-                    }));
-                    setReorderedInputs(inputsWithGroups);
+                      // Restore original reorderedInputs with their original groupIds
+                      const inputsWithGroups = inputs.map((input) => ({
+                        ...input,
+                        groupId: input.groupId || undefined,
+                      }));
+                      setReorderedInputs(inputsWithGroups);
 
-                    // Restore original layout order
-                    if (
-                      existingGroups.length > 0 ||
-                      inputs.some((i) => i.groupId)
-                    ) {
-                      const newLayoutOrder: Array<{
-                        type: "group" | "input";
-                        id: string;
-                      }> = [];
-                      const processedGroups = new Set<string>();
+                      // Restore original layout order
+                      if (
+                        existingGroups.length > 0 ||
+                        inputs.some((i) => i.groupId)
+                      ) {
+                        const newLayoutOrder: Array<{
+                          type: "group" | "input";
+                          id: string;
+                        }> = [];
+                        const processedGroups = new Set<string>();
 
-                      for (const input of inputsWithGroups) {
-                        if (
-                          input.groupId &&
-                          !processedGroups.has(input.groupId)
-                        ) {
-                          newLayoutOrder.push({
-                            type: "group",
-                            id: input.groupId,
-                          });
-                          processedGroups.add(input.groupId);
-                        } else if (!input.groupId && input.input_id) {
-                          newLayoutOrder.push({
-                            type: "input",
-                            id: input.input_id,
-                          });
+                        for (const input of inputsWithGroups) {
+                          if (
+                            input.groupId &&
+                            !processedGroups.has(input.groupId)
+                          ) {
+                            newLayoutOrder.push({
+                              type: "group",
+                              id: input.groupId,
+                            });
+                            processedGroups.add(input.groupId);
+                          } else if (!input.groupId && input.input_id) {
+                            newLayoutOrder.push({
+                              type: "input",
+                              id: input.input_id,
+                            });
+                          }
                         }
+
+                        setLayoutOrder(newLayoutOrder);
+                      } else {
+                        // No groups, just ungrouped inputs
+                        setLayoutOrder(
+                          inputs
+                            .filter((i) => i.input_id)
+                            .map((i) => ({
+                              type: "input" as const,
+                              id: i.input_id!,
+                            })),
+                        );
                       }
-
-                      setLayoutOrder(newLayoutOrder);
-                    } else {
-                      // No groups, just ungrouped inputs
-                      setLayoutOrder(
-                        inputs
-                          .filter((i) => i.input_id)
-                          .map((i) => ({
-                            type: "input" as const,
-                            id: i.input_id!,
-                          })),
-                      );
                     }
-                  }
 
-                  setIsEditMode(false);
-                }}
-                variant="outline"
-                size="xs"
-                className="shadow-sm backdrop-blur-sm"
-                type="button"
-              >
-                <X size={16} className="mr-1" />
-                Cancel
-              </Button>
+                    setIsEditMode(false);
+                  }}
+                  variant="outline"
+                  size="xs"
+                  className="shadow-sm backdrop-blur-sm"
+                  type="button"
+                >
+                  <X size={16} className="mr-1" />
+                  Cancel
+                </Button>
+                <Button
+                  onClick={saveReordering}
+                  variant="default"
+                  size="xs"
+                  className="shadow-sm backdrop-blur-sm"
+                  isLoading={isSavingOrder}
+                  type="button"
+                >
+                  <Save size={16} className="mr-1" />
+                  Save
+                </Button>
+              </>
+            ) : (
               <Button
-                onClick={saveReordering}
+                onClick={() => setIsEditMode(true)}
                 variant="default"
                 size="xs"
                 className="shadow-sm backdrop-blur-sm"
-                isLoading={isSavingOrder}
                 type="button"
               >
-                <Save size={16} className="mr-1" />
-                Save
+                <Edit size={16} className="mr-1" />
+                Reorder
               </Button>
-            </>
-          ) : (
-            <Button
-              onClick={() => setIsEditMode(true)}
-              variant="default"
-              size="xs"
-              className="shadow-sm backdrop-blur-sm"
-              type="button"
-            >
-              <Edit size={16} className="mr-1" />
-              Reorder
-            </Button>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
 
-      <SDForm
-        onSubmit={onSubmit}
-        actionArea={
-          !hideRunButton && (
-            <div className="space-y-2">
-              {/* Advanced Settings */}
-              <Collapsible
-                open={showAdvancedSettings}
-                onOpenChange={setShowAdvancedSettings}
-              >
-                <CollapsibleContent className="space-y-3 rounded-md bg-gray-100 p-2 dark:bg-zinc-700/80">
-                  {/* Batch Number Controls */}
-                  {(() => {
-                    // Check if there's a folder selected
-                    const hasFolderInput = Object.values(values).some(
-                      (value) => {
-                        // Handle folder stored as JSON string
-                        if (typeof value === "string") {
-                          try {
-                            const parsed = JSON.parse(value);
-                            return (
-                              parsed &&
-                              typeof parsed === "object" &&
-                              parsed.type === "folder"
-                            );
-                          } catch {
-                            return false;
+        <SDForm
+          onSubmit={onSubmit}
+          actionArea={
+            !hideRunButton && (
+              <div className="space-y-2">
+                {/* Advanced Settings */}
+                <Collapsible
+                  open={showAdvancedSettings}
+                  onOpenChange={setShowAdvancedSettings}
+                >
+                  <CollapsibleContent className="space-y-3 rounded-md bg-gray-100 p-2 dark:bg-zinc-700/80">
+                    {/* Batch Number Controls */}
+                    {(() => {
+                      // Check if there's a folder selected
+                      const hasFolderInput = Object.values(values).some(
+                        (value) => {
+                          // Handle folder stored as JSON string
+                          if (typeof value === "string") {
+                            try {
+                              const parsed = JSON.parse(value);
+                              return (
+                                parsed &&
+                                typeof parsed === "object" &&
+                                parsed.type === "folder"
+                              );
+                            } catch {
+                              return false;
+                            }
                           }
-                        }
-                        // Handle folder stored as object
-                        return (
-                          typeof value === "object" &&
-                          value !== null &&
-                          !Array.isArray(value) &&
-                          !(value instanceof File) &&
-                          "type" in value &&
-                          (value as any).type === "folder"
-                        );
-                      },
-                    );
-
-                    return (
-                      <div className="flex items-center justify-between gap-3">
-                        <Label
-                          htmlFor="batch-number"
-                          className="text-sm font-medium"
-                        >
-                          Batch Size
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              setBatchNumber(Math.max(1, batchNumber - 1))
-                            }
-                            disabled={batchNumber <= 1 || hasFolderInput}
-                          >
-                            -
-                          </Button>
-                          <Input
-                            id="batch-number"
-                            type="number"
-                            min="1"
-                            max="99"
-                            value={batchNumber}
-                            onChange={(e) => {
-                              if (!hasFolderInput) {
-                                const value = Math.max(
-                                  1,
-                                  Math.min(
-                                    99,
-                                    Number.parseInt(e.target.value) || 1,
-                                  ),
-                                );
-                                setBatchNumber(value);
-                              }
-                            }}
-                            className="h-8 w-16 text-center text-sm"
-                            disabled={hasFolderInput}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") {
-                                e.preventDefault();
-                              }
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              setBatchNumber(Math.min(99, batchNumber + 1))
-                            }
-                            disabled={batchNumber >= 99 || hasFolderInput}
-                          >
-                            +
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </CollapsibleContent>
-              </Collapsible>
-
-              {/* Run Button Row */}
-              <div className="flex gap-2">
-                <Button
-                  disabled={!inputs || isEditMode}
-                  type="submit"
-                  className="flex-1"
-                  isLoading={isLoading || loading}
-                  variant="expandIcon"
-                  iconPlacement="right"
-                  Icon={Play}
-                >
-                  {batchNumber > 1 ? `Run (${batchNumber}x)` : "Run"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="default"
-                  className="h-10 w-10 p-0"
-                  onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-                >
-                  <Settings size={16} />
-                </Button>
-              </div>
-            </div>
-          )
-        }
-        scrollAreaClassName={cn("h-full pt-2", scrollAreaClassName)}
-      >
-        {inputs ? (
-          isEditMode ? (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={
-                  activeIdState &&
-                  !layoutOrder.some((i) => i.id === activeIdState)
-                    ? [...layoutOrder.map((item) => item.id), activeIdState]
-                    : layoutOrder.map((item) => item.id)
-                }
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="absolute top-0 z-50 h-24 w-full bg-gradient-to-b from-white to-transparent dark:from-zinc-900" />
-                <div ref={setUngroupedRef} className="space-y-2">
-                  {/* Create Group Button */}
-                  <Button
-                    onClick={createGroup}
-                    variant="outline"
-                    size="sm"
-                    className="sticky top-8 z-50 mb-8 w-full shadow-md"
-                    type="button"
-                  >
-                    <Plus size={16} className="mr-1" />
-                    Create Group
-                  </Button>
-
-                  {/* Render items based on layout order */}
-                  {layoutOrder.map((layoutItem) => {
-                    if (layoutItem.type === "group") {
-                      const group = inputGroups.find(
-                        (g) => g.id === layoutItem.id,
+                          // Handle folder stored as object
+                          return (
+                            typeof value === "object" &&
+                            value !== null &&
+                            !Array.isArray(value) &&
+                            !(value instanceof File) &&
+                            "type" in value &&
+                            (value as any).type === "folder"
+                          );
+                        },
                       );
-                      if (!group) return null;
 
-                      const groupInputs = groupedInputsByGroup[group.id] || [];
-                      const isEmpty = groupInputs.length === 0;
+                      return (
+                        <div className="flex items-center justify-between gap-3">
+                          <Label
+                            htmlFor="batch-number"
+                            className="text-sm font-medium"
+                          >
+                            Batch Size
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() =>
+                                setBatchNumber(Math.max(1, batchNumber - 1))
+                              }
+                              disabled={batchNumber <= 1 || hasFolderInput}
+                            >
+                              -
+                            </Button>
+                            <Input
+                              id="batch-number"
+                              type="number"
+                              min="1"
+                              max="99"
+                              value={batchNumber}
+                              onChange={(e) => {
+                                if (!hasFolderInput) {
+                                  const value = Math.max(
+                                    1,
+                                    Math.min(
+                                      99,
+                                      Number.parseInt(e.target.value) || 1,
+                                    ),
+                                  );
+                                  setBatchNumber(value);
+                                }
+                              }}
+                              className="h-8 w-16 text-center text-sm"
+                              disabled={hasFolderInput}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() =>
+                                setBatchNumber(Math.min(99, batchNumber + 1))
+                              }
+                              disabled={batchNumber >= 99 || hasFolderInput}
+                            >
+                              +
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })()}
+                  </CollapsibleContent>
+                </Collapsible>
 
-                      // Hide the dragged group placeholder while moving it
-                      if (
-                        isDraggingRef.current &&
-                        isEmpty &&
-                        activeIdState === group.id
-                      ) {
-                        return null;
-                      }
+                {/* Run Button Row */}
+                <div className="flex gap-2">
+                  <Button
+                    disabled={!inputs || isEditMode}
+                    type="submit"
+                    className="flex-1"
+                    isLoading={isLoading || loading}
+                    variant="expandIcon"
+                    iconPlacement="right"
+                    Icon={Play}
+                  >
+                    {batchNumber > 1 ? `Run (${batchNumber}x)` : "Run"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="default"
+                    className="h-10 w-10 p-0"
+                    onClick={() =>
+                      setShowAdvancedSettings(!showAdvancedSettings)
+                    }
+                  >
+                    <Settings size={16} />
+                  </Button>
+                </div>
+              </div>
+            )
+          }
+          scrollAreaClassName={cn("h-full pt-2", scrollAreaClassName)}
+        >
+          {inputs ? (
+            isEditMode ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={
+                    activeIdState &&
+                    !layoutOrder.some((i) => i.id === activeIdState)
+                      ? [...layoutOrder.map((item) => item.id), activeIdState]
+                      : layoutOrder.map((item) => item.id)
+                  }
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="absolute top-0 z-50 h-24 w-full bg-gradient-to-b from-white to-transparent dark:from-zinc-900" />
+                  <div ref={setUngroupedRef} className="space-y-2">
+                    {/* Create Group Button */}
+                    <Button
+                      onClick={createGroup}
+                      variant="outline"
+                      size="sm"
+                      className="sticky top-8 z-50 mb-8 w-full shadow-md"
+                      type="button"
+                    >
+                      <Plus size={16} className="mr-1" />
+                      Create Group
+                    </Button>
 
-                      // For empty groups, render without SortableItem to prevent dragging
-                      if (isEmpty) {
+                    {/* Render items based on layout order */}
+                    {layoutOrder.map((layoutItem) => {
+                      if (layoutItem.type === "group") {
+                        const group = inputGroups.find(
+                          (g) => g.id === layoutItem.id,
+                        );
+                        if (!group) return null;
+
+                        const groupInputs =
+                          groupedInputsByGroup[group.id] || [];
+                        const isEmpty = groupInputs.length === 0;
+
+                        // Hide the dragged group placeholder while moving it
+                        if (
+                          isDraggingRef.current &&
+                          isEmpty &&
+                          activeIdState === group.id
+                        ) {
+                          return null;
+                        }
+
+                        // For empty groups, render without SortableItem to prevent dragging
+                        if (isEmpty) {
+                          return (
+                            <div key={group.id} className="mb-4">
+                              <SDInputGroup
+                                id={group.id}
+                                title={group.title}
+                                onTitleChange={updateGroupTitle}
+                                onDelete={deleteGroup}
+                                isEmpty={true}
+                                items={[]}
+                                isDraggable={false}
+                                defaultCollapsed={
+                                  groupCollapseStates[group.id] || false
+                                }
+                                onCollapseToggle={(id, collapsed) => {
+                                  setGroupCollapseStates((prev) => ({
+                                    ...prev,
+                                    [id]: collapsed,
+                                  }));
+                                }}
+                              >
+                                <div className="rounded-md border-2 border-muted-foreground/20 border-dashed p-4 text-center text-muted-foreground text-sm">
+                                  Drag items here to add them to this group
+                                </div>
+                              </SDInputGroup>
+                            </div>
+                          );
+                        }
+
                         return (
-                          <div key={group.id} className="mb-4">
+                          <SortableItem
+                            key={group.id}
+                            value={group.id}
+                            className="mb-4"
+                          >
                             <SDInputGroup
                               id={group.id}
                               title={group.title}
                               onTitleChange={updateGroupTitle}
                               onDelete={deleteGroup}
-                              isEmpty={true}
-                              items={[]}
-                              isDraggable={false}
+                              isEmpty={false}
+                              items={groupInputs.map(
+                                (item) => item.input_id || "",
+                              )}
+                              isDraggable={true}
                               defaultCollapsed={
                                 groupCollapseStates[group.id] || false
                               }
@@ -1590,225 +1665,196 @@ export function RunWorkflowInline({
                                 }));
                               }}
                             >
-                              <div className="rounded-md border-2 border-muted-foreground/20 border-dashed p-4 text-center text-muted-foreground text-sm">
-                                Drag items here to add them to this group
-                              </div>
+                              {groupInputs.map((item, index) => {
+                                const stableKey =
+                                  item.input_id || `item-${index}`;
+                                return (
+                                  <SortableItem
+                                    key={stableKey}
+                                    value={item.input_id || `item-${index}`}
+                                    className="mb-2 flex items-center rounded-md border bg-card p-2 sortable-item-transition"
+                                  >
+                                    <div className="flex w-full items-center">
+                                      <SortableDragHandle
+                                        type="button"
+                                        variant="ghost"
+                                        className="mr-2 rounded p-1 hover:bg-muted"
+                                        size="sm"
+                                      >
+                                        <GripVertical size={16} />
+                                      </SortableDragHandle>
+                                      <div className="flex-1">
+                                        <SDInputsRender
+                                          key={item.input_id}
+                                          inputNode={item}
+                                          updateInput={() => {}}
+                                          inputValue={
+                                            values[item.input_id || ""]
+                                          }
+                                        />
+                                      </div>
+                                    </div>
+                                  </SortableItem>
+                                );
+                              })}
                             </SDInputGroup>
-                          </div>
+                          </SortableItem>
                         );
                       }
+                      const input = ungroupedInputs.find(
+                        (i) => i.input_id === layoutItem.id,
+                      );
+                      if (!input) return null;
 
                       return (
                         <SortableItem
-                          key={group.id}
-                          value={group.id}
-                          className="mb-4"
+                          key={input.input_id}
+                          value={input.input_id || ""}
+                          className="mb-2 flex items-center rounded-md border bg-card p-2 sortable-item-transition"
                         >
-                          <SDInputGroup
-                            id={group.id}
-                            title={group.title}
-                            onTitleChange={updateGroupTitle}
-                            onDelete={deleteGroup}
-                            isEmpty={false}
-                            items={groupInputs.map(
-                              (item) => item.input_id || "",
-                            )}
-                            isDraggable={true}
-                            defaultCollapsed={
-                              groupCollapseStates[group.id] || false
-                            }
-                            onCollapseToggle={(id, collapsed) => {
-                              setGroupCollapseStates((prev) => ({
-                                ...prev,
-                                [id]: collapsed,
-                              }));
-                            }}
-                          >
-                            {groupInputs.map((item, index) => {
-                              const stableKey =
-                                item.input_id || `item-${index}`;
-                              return (
-                                <SortableItem
-                                  key={stableKey}
-                                  value={item.input_id || `item-${index}`}
-                                  className="mb-2 flex items-center rounded-md border bg-card p-2 sortable-item-transition"
-                                >
-                                  <div className="flex w-full items-center">
-                                    <SortableDragHandle
-                                      type="button"
-                                      variant="ghost"
-                                      className="mr-2 rounded p-1 hover:bg-muted"
-                                      size="sm"
-                                    >
-                                      <GripVertical size={16} />
-                                    </SortableDragHandle>
-                                    <div className="flex-1">
-                                      <SDInputsRender
-                                        key={item.input_id}
-                                        inputNode={item}
-                                        updateInput={() => {}}
-                                        inputValue={values[item.input_id || ""]}
-                                      />
-                                    </div>
-                                  </div>
-                                </SortableItem>
-                              );
-                            })}
-                          </SDInputGroup>
-                        </SortableItem>
-                      );
-                    }
-                    const input = ungroupedInputs.find(
-                      (i) => i.input_id === layoutItem.id,
-                    );
-                    if (!input) return null;
-
-                    return (
-                      <SortableItem
-                        key={input.input_id}
-                        value={input.input_id || ""}
-                        className="mb-2 flex items-center rounded-md border bg-card p-2 sortable-item-transition"
-                      >
-                        <div className="flex w-full items-center">
-                          <SortableDragHandle
-                            type="button"
-                            variant="ghost"
-                            className="mr-2 rounded p-1 hover:bg-muted"
-                            size="sm"
-                          >
-                            <GripVertical size={16} />
-                          </SortableDragHandle>
-                          <div className="flex-1">
-                            <SDInputsRender
-                              key={input.input_id}
-                              inputNode={input}
-                              updateInput={() => {}}
-                              inputValue={values[input.input_id || ""]}
-                            />
-                          </div>
-                        </div>
-                      </SortableItem>
-                    );
-                  })}
-                </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            // Render inputs respecting groups in non-edit mode
-            (() => {
-              // If no groups exist, render inputs normally
-              if (inputGroups.length === 0) {
-                return inputs.map((item) => {
-                  if (!item?.input_id) {
-                    return null;
-                  }
-                  return (
-                    <SDInputsRender
-                      key={item.input_id}
-                      inputNode={item}
-                      updateInput={updateInput}
-                      inputValue={values[item.input_id]}
-                    />
-                  );
-                });
-              }
-
-              // Render with groups
-              const renderedItems: ReactNode[] = [];
-              const renderedInputIds = new Set<string>();
-
-              // First render items based on layout order
-              for (const layoutItem of layoutOrder) {
-                if (layoutItem.type === "group") {
-                  const group = inputGroups.find((g) => g.id === layoutItem.id);
-                  if (!group) return;
-
-                  const groupInputs = inputs.filter(
-                    (input) =>
-                      input.groupId === layoutItem.id && input.input_id,
-                  );
-
-                  if (groupInputs.length > 0) {
-                    renderedItems.push(
-                      <SDInputGroup
-                        key={group.id}
-                        id={group.id}
-                        title={group.title}
-                        onTitleChange={() => {}}
-                        onDelete={() => {}}
-                        isEmpty={false}
-                        items={groupInputs.map((item) => item.input_id || "")}
-                        isDraggable={false}
-                        isEditMode={false}
-                        defaultCollapsed={
-                          groupCollapseStates[group.id] || false
-                        }
-                        onCollapseToggle={(id, collapsed) => {
-                          setGroupCollapseStates((prev) => ({
-                            ...prev,
-                            [id]: collapsed,
-                          }));
-                        }}
-                      >
-                        {groupInputs.map((item) => {
-                          if (item.input_id) {
-                            renderedInputIds.add(item.input_id);
-                          }
-                          return (
-                            <div key={item.input_id} className="mb-2">
+                          <div className="flex w-full items-center">
+                            <SortableDragHandle
+                              type="button"
+                              variant="ghost"
+                              className="mr-2 rounded p-1 hover:bg-muted"
+                              size="sm"
+                            >
+                              <GripVertical size={16} />
+                            </SortableDragHandle>
+                            <div className="flex-1">
                               <SDInputsRender
-                                inputNode={item}
-                                updateInput={updateInput}
-                                inputValue={values[item.input_id || ""]}
+                                key={input.input_id}
+                                inputNode={input}
+                                updateInput={() => {}}
+                                inputValue={values[input.input_id || ""]}
                               />
                             </div>
-                          );
-                        })}
-                      </SDInputGroup>,
+                          </div>
+                        </SortableItem>
+                      );
+                    })}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            ) : (
+              // Render inputs respecting groups in non-edit mode
+              (() => {
+                // If no groups exist, render inputs normally
+                if (inputGroups.length === 0) {
+                  return inputs.map((item) => {
+                    if (!item?.input_id) {
+                      return null;
+                    }
+                    return (
+                      <SDInputsRender
+                        key={item.input_id}
+                        inputNode={item}
+                        updateInput={updateInput}
+                        inputValue={values[item.input_id]}
+                      />
                     );
+                  });
+                }
+
+                // Render with groups
+                const renderedItems: ReactNode[] = [];
+                const renderedInputIds = new Set<string>();
+
+                // First render items based on layout order
+                for (const layoutItem of layoutOrder) {
+                  if (layoutItem.type === "group") {
+                    const group = inputGroups.find(
+                      (g) => g.id === layoutItem.id,
+                    );
+                    if (!group) return;
+
+                    const groupInputs = inputs.filter(
+                      (input) =>
+                        input.groupId === layoutItem.id && input.input_id,
+                    );
+
+                    if (groupInputs.length > 0) {
+                      renderedItems.push(
+                        <SDInputGroup
+                          key={group.id}
+                          id={group.id}
+                          title={group.title}
+                          onTitleChange={() => {}}
+                          onDelete={() => {}}
+                          isEmpty={false}
+                          items={groupInputs.map((item) => item.input_id || "")}
+                          isDraggable={false}
+                          isEditMode={false}
+                          defaultCollapsed={
+                            groupCollapseStates[group.id] || false
+                          }
+                          onCollapseToggle={(id, collapsed) => {
+                            setGroupCollapseStates((prev) => ({
+                              ...prev,
+                              [id]: collapsed,
+                            }));
+                          }}
+                        >
+                          {groupInputs.map((item) => {
+                            if (item.input_id) {
+                              renderedInputIds.add(item.input_id);
+                            }
+                            return (
+                              <div key={item.input_id} className="mb-2">
+                                <SDInputsRender
+                                  inputNode={item}
+                                  updateInput={updateInput}
+                                  inputValue={values[item.input_id || ""]}
+                                />
+                              </div>
+                            );
+                          })}
+                        </SDInputGroup>,
+                      );
+                    }
+                  } else {
+                    // Render ungrouped input
+                    const input = inputs.find(
+                      (i) => i.input_id === layoutItem.id && !i.groupId,
+                    );
+                    if (input?.input_id) {
+                      renderedInputIds.add(input.input_id);
+                      renderedItems.push(
+                        <SDInputsRender
+                          key={input.input_id}
+                          inputNode={input}
+                          updateInput={updateInput}
+                          inputValue={values[input.input_id]}
+                        />,
+                      );
+                    }
                   }
-                } else {
-                  // Render ungrouped input
-                  const input = inputs.find(
-                    (i) => i.input_id === layoutItem.id && !i.groupId,
-                  );
-                  if (input?.input_id) {
-                    renderedInputIds.add(input.input_id);
+                }
+
+                // Render any remaining inputs that weren't in layoutOrder
+                for (const item of inputs) {
+                  if (item.input_id && !renderedInputIds.has(item.input_id)) {
                     renderedItems.push(
                       <SDInputsRender
-                        key={input.input_id}
-                        inputNode={input}
+                        key={item.input_id}
+                        inputNode={item}
                         updateInput={updateInput}
-                        inputValue={values[input.input_id]}
+                        inputValue={values[item.input_id]}
                       />,
                     );
                   }
                 }
-              }
 
-              // Render any remaining inputs that weren't in layoutOrder
-              for (const item of inputs) {
-                if (item.input_id && !renderedInputIds.has(item.input_id)) {
-                  renderedItems.push(
-                    <SDInputsRender
-                      key={item.input_id}
-                      inputNode={item}
-                      updateInput={updateInput}
-                      inputValue={values[item.input_id]}
-                    />,
-                  );
-                }
-              }
-
-              return renderedItems;
-            })()
-          )
-        ) : (
-          <div className="py-2 text-center text-muted-foreground text-sm">
-            Please save a new version in ComfyUI to run this workflow.
-          </div>
-        )}
-      </SDForm>
-    </div>
+                return renderedItems;
+              })()
+            )
+          ) : (
+            <div className="py-2 text-center text-muted-foreground text-sm">
+              Please save a new version in ComfyUI to run this workflow.
+            </div>
+          )}
+        </SDForm>
+      </div>
+    </ErrorBoundary>
   );
 }
