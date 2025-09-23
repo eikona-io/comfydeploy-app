@@ -310,7 +310,7 @@ export function Playground(props: {
             </div>
             <div
               className={cn(
-                "mt-2 overflow-auto rounded-sm border border-gray-200 p-2 shadow-sm",
+                "mt-2 overflow-auto rounded-sm border border-gray-200 p-2 shadow-sm dark:border-zinc-600/40",
                 logsCollapsed
                   ? "h-0 opacity-0 transition-all"
                   : "h-[calc(100%-30px)] opacity-100 transition-all",
