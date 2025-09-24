@@ -1,7 +1,4 @@
-"use client";
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCustomer } from "autumn-js/react";
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -50,7 +47,7 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
   );
   const queryClient = useQueryClient();
 
-  const { refetch } = useCustomer();
+  // const { refetch } = useCustomer();
 
   const topUpMutation = useMutation({
     mutationFn: async ({
@@ -85,7 +82,9 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
         toast.success("Credit added successfully!");
         setShowConfirmDialog(false);
         setPreviewData(null);
-        refetch();
+        queryClient.invalidateQueries({ queryKey: ["autumn-data"] });
+        queryClient.invalidateQueries({ queryKey: ["platform", "plan"] });
+        // refetch();
         onSuccess?.();
       }
     },
@@ -114,7 +113,7 @@ export function TopUpInline({ className, onSuccess }: TopUpInlineProps) {
         // Invalidate queries to refresh credit balance and plan data
         queryClient.invalidateQueries({ queryKey: ["autumn-data"] });
         queryClient.invalidateQueries({ queryKey: ["platform", "plan"] });
-        refetch();
+        // refetch();
         onSuccess?.();
       }
     },
