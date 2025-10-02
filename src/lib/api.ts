@@ -205,12 +205,17 @@ export async function api({
       const isFolderExistsError =
         res.status === 400 ||
         message.toLowerCase().includes("Folder already exists");
-      // const isAccessDenied =
-      //   res.status === 403 ||
-      //   message
-      //     .toLowerCase()
-      //     .includes("You are not authorized to access this resource");
-      if (!isTokenError && !isFolderExistsError && !isInternalServerError) {
+      const isAccessDenied =
+        res.status === 403 ||
+        message
+          .toLowerCase()
+          .includes("You are not authorized to access this resource");
+      if (
+        !isTokenError &&
+        !isFolderExistsError &&
+        !isInternalServerError &&
+        !isAccessDenied
+      ) {
         emitApiError(err);
       }
       throw err;
