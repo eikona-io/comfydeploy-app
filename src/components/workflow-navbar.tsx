@@ -787,7 +787,7 @@ function WorkflowNavbarRight() {
   return (
     <>
       <AnimatePresence mode="popLayout">
-        {view === "workspace" && !sessionId && (
+        {/* {view === "workspace" && !sessionId && (
           <motion.div
             layout
             key="workspace-share"
@@ -814,7 +814,7 @@ function WorkflowNavbarRight() {
               Share
             </button>
           </motion.div>
-        )}
+        )} */}
         {(view === "playground" || view === "gallery") && (
           <motion.div
             layout
