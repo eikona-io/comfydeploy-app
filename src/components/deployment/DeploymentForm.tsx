@@ -113,7 +113,7 @@ export function DeploymentForm({
     });
   };
 
-  const showCommunity = true;
+  const showCommunity = false;
 
   return (
     <div className="space-y-4">
