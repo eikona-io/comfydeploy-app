@@ -5,4 +5,4 @@
       { "run": "export BUN_INSTALL=$HOME/.bun && export PATH=$BUN_INSTALL/bin:$PATH && bun install --frozen-lockfile" },
       { "run": "export BUN_INSTALL=$HOME/.bun && export PATH=$BUN_INSTALL/bin:$PATH && bun run build" }
     ]
-}
+  }
