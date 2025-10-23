@@ -16,4 +16,5 @@ fi
 bun --version
 bun install --frozen-lockfile
 bun run build
+
 bun run start
