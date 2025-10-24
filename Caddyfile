@@ -30,7 +30,8 @@
     # This prevents try_files from running before reverse_proxy
     route {
         # API proxy - must come first
-        reverse_proxy /api/* https://prod-staging.api.comfydeploy.com {
+        # Point to your production API service on Railway
+        reverse_proxy /api/* https://comfy-api-production.up.railway.app {
             transport http {
                 tls
             }
