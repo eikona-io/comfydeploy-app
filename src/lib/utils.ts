@@ -90,7 +90,12 @@ export const getOptimizedImage = (
   const quality = isSmallView ? 30 : 75;
   const transformations = `q_${quality},f_webp`;
   const optimizedUrl = getOptimizedImageUrl(s3Key, transformations);
-  const urlWithToken = `${optimizedUrl}`;
-  // console.log("urlWithToken", urlWithToken);
-  return urlWithToken;
+
+  // Include auth token for private/custom buckets so optional-auth route can authenticate
+  if (authToken) {
+    const separator = optimizedUrl.includes("?") ? "&" : "?";
+    return `${optimizedUrl}${separator}cd_token=${encodeURIComponent(authToken)}`;
+  }
+
+  return optimizedUrl;
 };
