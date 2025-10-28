@@ -15,7 +15,7 @@ const exampleOpenApiSpec = {
   },
   servers: [
     {
-      url: "https://api.comfydeploy.com/api",
+      url: "https://comfy-api-production.up.railway.app/api",
       description: "Production server",
     },
     {
@@ -588,7 +588,7 @@ export function useOpenAPISpec() {
 
   const url = isLocalhost
     ? "http://localhost:3011"
-    : "https://api.comfydeploy.com";
+    : "https://comfy-api-production.up.railway.app";
 
   return useQuery({
     queryKey: ["api-playground-demo"],

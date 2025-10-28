@@ -8,7 +8,7 @@
           "value": "app.comfydeploy.com"
         }
       ],
-      "destination": "https://api.comfydeploy.com/api/:path*"
+      "destination": "https://comfy-api-production.up.railway.app/api/:path*"
     },
     {
       "source": "/api/:path*",
