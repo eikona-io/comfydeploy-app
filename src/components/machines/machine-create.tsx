@@ -18,7 +18,7 @@ import { MachineSettingsWrapper } from "../machine/machine-settings";
 import { LoadingIcon } from "../ui/custom/loading-icon";
 import { Input } from "../ui/input";
 
-const createNewMachine = (latestHashes: any) => ({
+const createNewMachine = (latestHashes: any, maxGPU: number = 1) => ({
   name: "My New Machine",
   id: "new",
   type: "comfy-deploy-serverless",
@@ -46,13 +46,14 @@ const createNewMachine = (latestHashes: any) => ({
   // default values
   machine_builder_version: "4",
   allow_concurrent_inputs: 1,
-  concurrency_limit: 1,
+  concurrency_limit: maxGPU,
   run_timeout: 300,
   idle_timeout: 60,
   ws_timeout: 2,
   python_version: "3.11",
   models_to_cache: [],
   enable_gpu_memory_snapshot: false,
+  extra_docker_commands: [],
 });
 
 export function filterMachineConfig(machine: any) {
@@ -86,6 +87,11 @@ export function filterMachineConfig(machine: any) {
 export function MachineCreate() {
   const navigate = useNavigate({ from: "/machines" });
 
+  // Fetch plan feature for GPU concurrency limit
+  const { check: checkFeature, isLoading: isCustomerLoading } = useCustomer();
+  const concurrencyCheck = checkFeature({ featureId: "gpu_concurrency_limit" });
+  const planMaxGPU = concurrencyCheck.data?.included_usage ?? 1;
+
   const { check, isLoading: isAutumnLoading } = useCustomer();
   const machineLimitedFeature = check({ featureId: "machine_limit" });
   const machineLimited = !machineLimitedFeature.data?.allowed;
@@ -96,7 +102,7 @@ export function MachineCreate() {
 
   // Initialize with newMachine if not cloning, otherwise wait for machine data
   const [formValues, setFormValues] = useState<any>(
-    cloneMachineId ? undefined : createNewMachine(latestHashes),
+    cloneMachineId ? undefined : createNewMachine(latestHashes, planMaxGPU),
   );
 
   // Update formValues when machine data is loaded
@@ -110,7 +116,7 @@ export function MachineCreate() {
   useEffect(() => {
     if (machineLimited && !isAutumnLoading) {
       navigate({
-        search: { view: undefined },
+        search: { view: undefined, action: undefined },
       });
     }
   }, [machineLimited, navigate, isAutumnLoading]);
@@ -154,7 +160,7 @@ export function MachineCreate() {
                   placeholder="Machine name..."
                   value={formValues?.name}
                   onChange={(e) =>
-                    setFormValues((prev) =>
+                    setFormValues((prev: any) =>
                       prev
                         ? { ...prev, name: e.target.value }
                         : createNewMachine(latestHashes),
@@ -166,7 +172,7 @@ export function MachineCreate() {
                 title={<div />}
                 machine={formValues}
                 onValueChange={(key, value) => {
-                  setFormValues((prev) =>
+                  setFormValues((prev: any) =>
                     prev
                       ? { ...prev, [key]: value }
                       : createNewMachine(latestHashes),
@@ -185,7 +191,7 @@ export function MachineCreate() {
           onClick={() => {
             navigate({
               to: "/machines",
-              search: { view: undefined, machineId: undefined },
+              search: { view: undefined, action: undefined },
             });
           }}
           className="drop-shadow-md"
